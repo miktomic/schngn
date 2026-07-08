@@ -5,6 +5,8 @@
 ```text
 schngn/
 ├── .bun-version
+├── .node-version
+├── .nvmrc
 ├── .github/workflows/ci.yml
 ├── apps/
 │   └── web/
@@ -87,6 +89,11 @@ Forbidden:
 5. Deploy `.svelte-kit/cloudflare` through Wrangler.
 
 ## Local setup
+
+Toolchain:
+
+- Node 24+ for Node-based tooling.
+- Bun 1.3.14 for package install, scripts, tests, and builds.
 
 Preferred:
 

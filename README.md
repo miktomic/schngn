@@ -6,7 +6,7 @@ The MVP is a mobile-first web/PWA: no account, local-only trip storage, a provab
 
 ## Current architecture
 
-- **Build/test/dev runtime:** Bun
+- **Build/test/dev runtime:** Bun 1.3.14, with Node 24+ for Node-based tooling and GitHub Actions
 - **App:** SvelteKit + Vite
 - **Production domain:** `https://schngn.com`
 - **Production runtime:** Cloudflare Workers / `workerd` V8 isolates
@@ -25,7 +25,7 @@ Read:
 
 ## Quick start
 
-Install Bun 1.3.14 or use `npx bun@1.3.14` if Bun is not installed globally.
+Install Node 24+ and Bun 1.3.14. If Bun is not installed globally, use `npx bun@1.3.14`.
 
 ```bash
 bun install

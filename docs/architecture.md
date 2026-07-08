@@ -8,7 +8,7 @@ SCHNGN is a local-first Schengen 90/180-day tracker and planner. The MVP optimiz
 
 The key architecture rule:
 
-> **Bun is the local build/test/dev tool. Cloudflare Workers is the production runtime.**
+> **Bun is the local build/test/dev tool. Node 24+ is the Node tooling baseline. Cloudflare Workers is the production runtime.**
 
 Bun never runs deployed production code. Production runs inside Cloudflare `workerd` V8 isolates. Therefore, anything that ships to the Worker or browser must avoid Bun-native APIs such as `bun:sqlite`, filesystem access, subprocesses, or raw sockets.
 

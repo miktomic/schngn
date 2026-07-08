@@ -28,7 +28,8 @@ Primary product promise:
 3. **No legal advice.** Use fixed, human-reviewed explanatory copy and clear disclaimers.
 4. **No secrets in repo/docs/logs.** Do not print or commit Cloudflare tokens, API keys, cookies, OAuth material, or `.env` contents.
 5. **No server-side trip persistence in MVP.** The only current server-side data path is waitlist email / fake-door intent.
-6. **Bun is tooling, not production runtime.** Production runs on Cloudflare Workers (`workerd` V8 isolates), not Bun or Node.
+6. **Node 24+ is the Node tooling baseline.** It is pinned through `.node-version` and `.nvmrc`; GitHub Actions uses Node-24-compatible actions and `actions/setup-node`.
+7. **Bun 1.3.14 remains the build/test/package runner.** Production still runs on Cloudflare Workers (`workerd`), not Node or Bun.
 
 ## Current architecture
 
@@ -44,7 +45,7 @@ Runtime model:
 
 ```text
 Production domain: https://schngn.com
-Build/dev/test: Bun
+Build/dev/test: Bun 1.3.14; Node 24+ for Node-based tooling and GitHub Actions
 App framework: SvelteKit + Vite
 Production: Cloudflare Workers + Static Assets
 Core logic: packages/engine, pure TypeScript
@@ -92,7 +93,7 @@ apps/web/src/lib/import-export/ # JSON import/export
 
 ## Commands
 
-Global Bun may not be installed on every machine. If `bun` is missing, use the pinned `npx` form.
+Global Bun may not be installed on every machine. Node-based tooling should use Node 24+ from `.node-version` / `.nvmrc`. If `bun` is missing, use the pinned `npx` form.
 
 Preferred:
 

@@ -19,8 +19,16 @@ Workflow file:
 
 ## CI stages
 
+Toolchain policy:
+
+- Node is pinned to `24` through `.node-version` and `.nvmrc` for Node-based tooling.
+- Bun is pinned to `1.3.14` through `.bun-version` and the root `packageManager` field.
+- Production is still Cloudflare Workers / `workerd`, not Node.
+
 ```text
 checkout
+  ↓
+setup Node 24 from `.node-version`
   ↓
 setup Bun 1.3.14
   ↓
