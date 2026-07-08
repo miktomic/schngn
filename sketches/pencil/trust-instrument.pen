@@ -1,0 +1,1245 @@
+{
+  "version": "2.14",
+  "children": [
+    {
+      "type": "frame",
+      "id": "QJkge",
+      "x": 0,
+      "y": 0,
+      "name": "SCHNGN Trust Instrument Mobile",
+      "clip": true,
+      "width": 390,
+      "height": "fit_content(844)",
+      "fill": "$bg",
+      "layout": "vertical"
+    },
+    {
+      "type": "frame",
+      "id": "K6XbUT",
+      "x": 470,
+      "y": 0,
+      "name": "SCHNGN Trust Instrument Mobile",
+      "clip": true,
+      "width": 390,
+      "fill": "$bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "y0rM2",
+          "name": "iOS Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "fill": "$bg",
+          "padding": [
+            18,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "JHIvl",
+              "name": "Status Time",
+              "fill": "$text",
+              "content": "9:41",
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "jkZ9a",
+              "name": "Status Indicators",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "j2oDXS",
+                  "name": "Signal",
+                  "fill": "$text",
+                  "width": 18,
+                  "height": 10
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 5,
+                  "id": "WzPga",
+                  "name": "WiFi",
+                  "fill": "$text",
+                  "width": 15,
+                  "height": 10
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 3,
+                  "id": "RL3M5",
+                  "name": "Battery",
+                  "fill": "#00000000",
+                  "width": 24,
+                  "height": 11,
+                  "stroke": "$text",
+                  "strokeWidth": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "fCazm",
+          "name": "Content Wrapper",
+          "width": "fill_container",
+          "fill": "$bg",
+          "layout": "vertical",
+          "gap": 14,
+          "padding": [
+            0,
+            18,
+            22,
+            18
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "APgEE",
+              "name": "Header",
+              "width": "fill_container",
+              "height": 48,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "PKZK2",
+                  "name": "Brand",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "i2jzp",
+                      "name": "SCHNGN Wordmark",
+                      "fill": "$navy",
+                      "content": "SCHNGN",
+                      "fontFamily": "Geist",
+                      "fontSize": 21,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "oqjNg",
+                      "name": "Planner Label",
+                      "fill": "$muted",
+                      "content": "Italy trip check",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "d4SFt",
+                  "name": "Local Private Badge",
+                  "height": 36,
+                  "fill": "$navy-soft",
+                  "cornerRadius": 18,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "gap": 7,
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "BH9Uu",
+                      "name": "Shield Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "shield-check",
+                      "library": "lucide",
+                      "fill": "$navy"
+                    },
+                    {
+                      "type": "text",
+                      "id": "qycB8",
+                      "name": "Local Private Label",
+                      "fill": "$navy",
+                      "content": "Local & private",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "g3mwi",
+              "name": "Answer Panel",
+              "width": "fill_container",
+              "fill": "$navy",
+              "cornerRadius": 8,
+              "stroke": "#021530",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "MoLrc",
+                  "name": "Safe Status Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fJgxV",
+                      "name": "Status Pill",
+                      "height": 34,
+                      "fill": "$safe-soft",
+                      "cornerRadius": 17,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "QPvvM",
+                          "name": "Safe Check Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "check",
+                          "library": "lucide",
+                          "fill": "$safe"
+                        },
+                        {
+                          "type": "text",
+                          "id": "n9urOg",
+                          "name": "Italy Fits Status",
+                          "fill": "$safe",
+                          "content": "Italy fits",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "GA8ox",
+                      "name": "Exit Date Stamp",
+                      "fill": "#CFE1FF",
+                      "content": "Exit check Oct 13",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "GfNwg",
+                  "name": "Hero Buffer Metric",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "15 safe buffer days",
+                  "lineHeight": 1.05,
+                  "fontFamily": "Geist",
+                  "fontSize": 34,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "oabhZ",
+                  "name": "Hero Plain Answer",
+                  "fill": "#E8F0FF",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "You can take Italy Oct 1–13. Must exit by Oct 13; entry and exit days both count.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "xCgkt",
+                  "name": "Key Result Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mFq82",
+                      "name": "Must exit by",
+                      "width": "fill_container",
+                      "fill": "#103364",
+                      "cornerRadius": 6,
+                      "stroke": "#2B548D",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lC7c7",
+                          "name": "Must exit by Label",
+                          "fill": "#B8C9E6",
+                          "content": "Must exit by",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "f643Xg",
+                          "name": "Must exit by Value",
+                          "fill": "#FFFFFF",
+                          "content": "Oct 13",
+                          "fontFamily": "IBM Plex Mono",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "F6jmW7",
+                      "name": "Days used",
+                      "width": "fill_container",
+                      "fill": "#103364",
+                      "cornerRadius": 6,
+                      "stroke": "#2B548D",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bM8ow",
+                          "name": "Days used Label",
+                          "fill": "#B8C9E6",
+                          "content": "Days used",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "jYZp4",
+                          "name": "Days used Value",
+                          "fill": "#FFFFFF",
+                          "content": "75 / 90",
+                          "fontFamily": "IBM Plex Mono",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "o2Yf3c",
+              "name": "Actions",
+              "width": "fill_container",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "y3swLl",
+                  "name": "Show Calculation Button",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$surface",
+                  "cornerRadius": 6,
+                  "stroke": "$navy",
+                  "strokeWidth": 1,
+                  "gap": 7,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "K4Vs6P",
+                      "name": "Show calculation Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "list-checks",
+                      "library": "lucide",
+                      "fill": "$navy"
+                    },
+                    {
+                      "type": "text",
+                      "id": "faIEM",
+                      "name": "Show calculation Label",
+                      "fill": "$navy",
+                      "content": "Show calculation",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZJvyG",
+                  "name": "Border Ready Report Button",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$navy",
+                  "cornerRadius": 6,
+                  "stroke": "$navy",
+                  "strokeWidth": 1,
+                  "gap": 7,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "p9AhM",
+                      "name": "Border-ready report Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "file-down",
+                      "library": "lucide",
+                      "fill": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "id": "G6HgC",
+                      "name": "Border-ready report Label",
+                      "fill": "#FFFFFF",
+                      "content": "Border-ready report",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jxiNn",
+              "name": "Bullet KPI 75 of 90",
+              "width": "fill_container",
+              "fill": "$surface",
+              "cornerRadius": 8,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "D9yHm9",
+                  "name": "Bullet Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "iGMgb",
+                      "name": "Bullet Title",
+                      "fill": "$text",
+                      "content": "Rolling capacity",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "c7yHaw",
+                      "name": "Bullet Value",
+                      "fill": "$navy",
+                      "content": "75 / 90 days used",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Y3NzkU",
+                  "name": "Bullet Chart",
+                  "width": 326,
+                  "height": 28,
+                  "fill": "#EEF2F7",
+                  "cornerRadius": 4,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": [
+                        4,
+                        0,
+                        0,
+                        4
+                      ],
+                      "id": "k9VbD",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Used Days Fill",
+                      "fill": "$safe",
+                      "width": 272,
+                      "height": 28
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "X5fjv",
+                      "x": 324,
+                      "y": 0,
+                      "name": "Limit Marker",
+                      "fill": "$navy",
+                      "width": 2,
+                      "height": 28
+                    },
+                    {
+                      "type": "text",
+                      "id": "bXaVq",
+                      "x": 12,
+                      "y": 6,
+                      "name": "Used Label In Bar",
+                      "fill": "#FFFFFF",
+                      "content": "75 used",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Mc6Aw",
+                  "name": "Bullet Caption",
+                  "fill": "$muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Target is 90 days inside the active 180-day window. The remaining 15 days are the safe buffer.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "o8l4J",
+              "name": "Rolling 180 Day Window",
+              "width": "fill_container",
+              "fill": "$surface",
+              "cornerRadius": 8,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Gu3il",
+                  "name": "Timeline Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "owVRA",
+                      "name": "Timeline Title",
+                      "fill": "$text",
+                      "content": "Rolling 180-day window",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RTxnT",
+                      "name": "Timeline Dates",
+                      "fill": "$muted",
+                      "content": "Apr 17 → Oct 13",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tAhAC",
+                  "name": "Window Visualization",
+                  "width": 326,
+                  "height": 132,
+                  "fill": "#00000000",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "xRP3D",
+                      "x": 0,
+                      "y": 22,
+                      "name": "Window Lens",
+                      "fill": "#F8FAFC",
+                      "width": 326,
+                      "height": 56,
+                      "stroke": "$navy",
+                      "strokeWidth": 2
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "CwvTz",
+                      "x": 0,
+                      "y": 49,
+                      "name": "Timeline Rail",
+                      "fill": "#D9E2EF",
+                      "width": 326,
+                      "height": 8
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "zu03D",
+                      "x": 25,
+                      "y": 40,
+                      "name": "France Segment",
+                      "fill": "#667085",
+                      "width": 28,
+                      "height": 26
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "mbSSC",
+                      "x": 198,
+                      "y": 34,
+                      "name": "Greece Segment",
+                      "fill": "$blue",
+                      "width": 31,
+                      "height": 38
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "fYott",
+                      "x": 302,
+                      "y": 34,
+                      "name": "Italy Segment",
+                      "fill": "$safe",
+                      "width": 24,
+                      "height": 38
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "PZGus",
+                      "x": 229,
+                      "y": 18,
+                      "name": "Today Marker",
+                      "fill": "$blue",
+                      "width": 2,
+                      "height": 68
+                    },
+                    {
+                      "type": "text",
+                      "id": "NlUZs",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Window Start Label",
+                      "fill": "$muted",
+                      "content": "Apr 17",
+                      "lineHeight": 1.15,
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xSVBs",
+                      "x": 250,
+                      "y": 0,
+                      "name": "Window End Label",
+                      "fill": "$muted",
+                      "content": "Oct 13 exit",
+                      "lineHeight": 1.15,
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "k6ZSg",
+                      "x": 14,
+                      "y": 82,
+                      "name": "France Timeline Label",
+                      "fill": "$muted",
+                      "textGrowth": "fixed-width",
+                      "width": 74,
+                      "content": "France\n15d past",
+                      "lineHeight": 1.15,
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xi8gj",
+                      "x": 166,
+                      "y": 82,
+                      "name": "Greece Timeline Label",
+                      "fill": "$blue",
+                      "textGrowth": "fixed-width",
+                      "width": 74,
+                      "content": "Greece\n16d booked",
+                      "lineHeight": 1.15,
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ONTKd",
+                      "x": 250,
+                      "y": 82,
+                      "name": "Italy Timeline Label",
+                      "fill": "$safe",
+                      "textGrowth": "fixed-width",
+                      "width": 76,
+                      "content": "Italy\n13d what-if",
+                      "lineHeight": 1.15,
+                      "textAlign": "right",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "imJYT",
+                  "name": "Timeline Explanation",
+                  "fill": "$muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The frame looks backward 180 days from the Italy exit date. Only days inside this sliding window count toward 90.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rzWza",
+              "name": "Trips Affecting Answer",
+              "width": "fill_container",
+              "fill": "$surface",
+              "cornerRadius": 8,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "I2bCj",
+                  "name": "Trips Section Title",
+                  "fill": "$text",
+                  "content": "Trips affecting this answer",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "frame",
+                  "id": "ep5DX",
+                  "name": "France Trip Row",
+                  "width": "fill_container",
+                  "height": 50,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "KaMqf",
+                      "name": "France Color Key",
+                      "fill": "#667085",
+                      "width": 6,
+                      "height": 34
+                    },
+                    {
+                      "type": "frame",
+                      "id": "H0z1Sg",
+                      "name": "France Trip Info",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ptN20",
+                          "name": "France Trip Name",
+                          "fill": "$text",
+                          "content": "France · May 1–15",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "o2RKqS",
+                          "name": "France Trip Meta",
+                          "fill": "$muted",
+                          "content": "15 days · Past",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "adjcO",
+                  "name": "Greece Trip Row",
+                  "width": "fill_container",
+                  "height": 50,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "MXWDM",
+                      "name": "Greece Color Key",
+                      "fill": "$blue",
+                      "width": 6,
+                      "height": 34
+                    },
+                    {
+                      "type": "frame",
+                      "id": "itzKw",
+                      "name": "Greece Trip Info",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ljju1",
+                          "name": "Greece Trip Name",
+                          "fill": "$text",
+                          "content": "Greece · Aug 3–18",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "t1vJw",
+                          "name": "Greece Trip Meta",
+                          "fill": "$muted",
+                          "content": "16 days · Booked / protected",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zG50d",
+                  "name": "Italy Trip Row",
+                  "width": "fill_container",
+                  "height": 50,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "Rgmwl",
+                      "name": "Italy Color Key",
+                      "fill": "$safe",
+                      "width": 6,
+                      "height": 34
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PaO9S",
+                      "name": "Italy Trip Info",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tpn9c",
+                          "name": "Italy Trip Name",
+                          "fill": "$text",
+                          "content": "Italy · Oct 1–13",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "lqIhj",
+                          "name": "Italy Trip Meta",
+                          "fill": "$muted",
+                          "content": "13 days · What-if trip",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Z6Uyll",
+              "name": "Proof Ledger",
+              "width": "fill_container",
+              "fill": "$surface",
+              "cornerRadius": 8,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "BvsBp",
+                  "name": "Proof Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "G8nbf0",
+                      "name": "Proof Title",
+                      "fill": "$text",
+                      "content": "Why this is safe",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "JOLEl",
+                      "name": "Chevron Icon",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "chevron-down",
+                      "library": "lucide",
+                      "fill": "$navy"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "E5sSr",
+                  "name": "Check date Ledger Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GmRbZ",
+                      "name": "Check date Ledger Label",
+                      "fill": "$muted",
+                      "content": "Check date",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "j8KTeM",
+                      "name": "Check date Ledger Value",
+                      "fill": "$text",
+                      "content": "Oct 13 Italy exit",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aKrPz",
+                  "name": "Window counted Ledger Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "QUo2Q",
+                      "name": "Window counted Ledger Label",
+                      "fill": "$muted",
+                      "content": "Window counted",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "bDOzm",
+                      "name": "Window counted Ledger Value",
+                      "fill": "$text",
+                      "content": "Apr 17–Oct 13",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OVCyd",
+                  "name": "Days used at exit Ledger Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Jwkny",
+                      "name": "Days used at exit Ledger Label",
+                      "fill": "$muted",
+                      "content": "Days used at exit",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zL1md",
+                      "name": "Days used at exit Ledger Value",
+                      "fill": "$text",
+                      "content": "75 of 90",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CKMMO",
+                  "name": "Safe buffer Ledger Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nwqia",
+                      "name": "Safe buffer Ledger Label",
+                      "fill": "$muted",
+                      "content": "Safe buffer",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hGWVF",
+                      "name": "Safe buffer Ledger Value",
+                      "fill": "$text",
+                      "content": "15 days remaining",
+                      "fontFamily": "IBM Plex Mono",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "L2ZDy",
+                  "name": "Inclusive Counting Note",
+                  "fill": "$text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Counting rule: entry day and exit day both count. Italy Oct 1–13 is 13 days, not 12.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "kXk9S",
+              "name": "Risk State Preview",
+              "width": "fill_container",
+              "fill": "$warning-soft",
+              "cornerRadius": 8,
+              "stroke": "#F79009",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "FHL0f",
+                  "name": "Risk Header",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "E7XmuH",
+                      "name": "Risk Alert Icon",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$warning"
+                    },
+                    {
+                      "type": "text",
+                      "id": "K2Ak7K",
+                      "name": "Risk Title",
+                      "fill": "$warning",
+                      "content": "If Italy extends by 9 days",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Td4dR",
+                  "name": "Risk Explanation",
+                  "fill": "#7A2E0E",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Plan becomes unsafe: 94 / 90 days used, 4 days over limit. First fix: leave Italy by Oct 13.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "bg": {
+      "type": "color",
+      "value": "#F6F8FB"
+    },
+    "surface": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "navy": {
+      "type": "color",
+      "value": "#06204A"
+    },
+    "navy-soft": {
+      "type": "color",
+      "value": "#EAF0F8"
+    },
+    "text": {
+      "type": "color",
+      "value": "#101828"
+    },
+    "muted": {
+      "type": "color",
+      "value": "#475467"
+    },
+    "border": {
+      "type": "color",
+      "value": "#CAD5E4"
+    },
+    "safe": {
+      "type": "color",
+      "value": "#0B6B4B"
+    },
+    "safe-soft": {
+      "type": "color",
+      "value": "#DDF4E8"
+    },
+    "warning": {
+      "type": "color",
+      "value": "#B54708"
+    },
+    "warning-soft": {
+      "type": "color",
+      "value": "#FEF0C7"
+    },
+    "danger": {
+      "type": "color",
+      "value": "#B42318"
+    },
+    "danger-soft": {
+      "type": "color",
+      "value": "#FEE4E2"
+    },
+    "blue": {
+      "type": "color",
+      "value": "#1D5FD1"
+    },
+    "font-head": {
+      "type": "string",
+      "value": "Geist"
+    },
+    "font-body": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "font-data": {
+      "type": "string",
+      "value": "IBM Plex Mono"
+    }
+  },
+  "fileToken": "3c6b887e-4ca4-4bc9-bf1b-442eebaef2e3"
+}

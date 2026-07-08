@@ -1,0 +1,1160 @@
+{
+  "version": "2.14",
+  "children": [
+    {
+      "type": "frame",
+      "id": "hxuiI",
+      "x": 0,
+      "y": 0,
+      "name": "SCHNGN Money Shot Mobile",
+      "clip": true,
+      "width": 390,
+      "fill": "$surface-app",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "tyMdg",
+          "name": "iOS Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "fill": "$surface-app",
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "rVZ5N",
+              "name": "Status Time",
+              "fill": "$text-primary",
+              "content": "9:41",
+              "fontFamily": "$font-body",
+              "fontSize": 15,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "QXsdX",
+              "name": "Status Indicators",
+              "gap": 7,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "cUwrZ",
+                  "name": "Signal Icon",
+                  "width": 17,
+                  "height": 17,
+                  "icon": "signal",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                },
+                {
+                  "type": "icon",
+                  "id": "M6zLL",
+                  "name": "Wifi Icon",
+                  "width": 17,
+                  "height": 17,
+                  "icon": "wifi",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                },
+                {
+                  "type": "icon",
+                  "id": "zH17j",
+                  "name": "Battery Icon",
+                  "width": 22,
+                  "height": 22,
+                  "icon": "battery-full",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "cCFCN",
+          "name": "Content Wrapper",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 18,
+          "padding": [
+            0,
+            18,
+            22,
+            18
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "a0Lrts",
+              "name": "Header",
+              "width": "fill_container",
+              "height": 46,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "soIZ7",
+                  "name": "Brand Block",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "IY4p6",
+                      "name": "Brand",
+                      "fill": "$text-primary",
+                      "content": "SCHNGN",
+                      "fontFamily": "$font-body",
+                      "fontSize": 19,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "P6jCed",
+                      "name": "Screen Context",
+                      "fill": "$text-secondary",
+                      "content": "Italy plan check",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hIQ6y",
+                  "name": "Local Private Badge",
+                  "height": 44,
+                  "fill": "$surface-card",
+                  "cornerRadius": 22,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "gap": 6,
+                  "padding": [
+                    0,
+                    11
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "XtInq",
+                      "name": "Private Shield Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "shield-check",
+                      "library": "lucide",
+                      "fill": "$safe"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a7m3TN",
+                      "name": "Private Badge Label",
+                      "fill": "$text-primary",
+                      "content": "Local & private",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "A4sun",
+              "name": "Calm Permission Object",
+              "width": "fill_container",
+              "fill": "$surface-card",
+              "cornerRadius": 8,
+              "stroke": "#B8C9C0",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0B201833",
+                "offset": {
+                  "x": 0,
+                  "y": 16
+                },
+                "blur": 36,
+                "spread": -20
+              },
+              "layout": "vertical",
+              "gap": 18,
+              "padding": 22,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "S4mSDP",
+                  "name": "Hero Status Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Subt3",
+                      "name": "Safe Status Pill",
+                      "height": 34,
+                      "fill": "$safe-soft",
+                      "cornerRadius": 17,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "VtZii",
+                          "name": "Safe Check Icon",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "check",
+                          "library": "lucide",
+                          "fill": "$safe"
+                        },
+                        {
+                          "type": "text",
+                          "id": "t9mEv",
+                          "name": "Safe Status Text",
+                          "fill": "$safe",
+                          "content": "Italy fits",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "tIsBH",
+                      "name": "Rule Window Label",
+                      "fill": "$text-muted",
+                      "content": "180-day check",
+                      "fontFamily": "$font-data",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ytnon",
+                  "name": "Hero Metric",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "y3B3cC",
+                      "name": "Safe Buffer Number",
+                      "fill": "$text-primary",
+                      "content": "15",
+                      "lineHeight": 0.95,
+                      "fontFamily": "$font-data",
+                      "fontSize": 74,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VghVm",
+                      "name": "Safe Buffer Label",
+                      "fill": "$text-primary",
+                      "content": "safe buffer days",
+                      "fontFamily": "$font-body",
+                      "fontSize": 23,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Jt8Eo",
+                      "name": "Hero Explanation",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "You can take Italy Oct 1-13. France and booked Greece are included in the count.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$font-body",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CV5el",
+                  "name": "Hero Fact Row",
+                  "width": "fill_container",
+                  "height": 68,
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "E04Wa",
+                      "name": "Must Exit Fact",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "$surface-soft",
+                      "cornerRadius": 6,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "justifyContent": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nSIA6",
+                          "name": "Must Exit Label",
+                          "fill": "$text-secondary",
+                          "content": "Must exit by",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "up4hC",
+                          "name": "Must Exit Date",
+                          "fill": "$text-primary",
+                          "content": "Oct 13",
+                          "fontFamily": "$font-data",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "D8cIst",
+                      "name": "Used Days Fact",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "$surface-soft",
+                      "cornerRadius": 6,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "justifyContent": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hOgNb",
+                          "name": "Used Days Label",
+                          "fill": "$text-secondary",
+                          "content": "Days used",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "RVyRx",
+                          "name": "Used Days Value",
+                          "fill": "$text-primary",
+                          "content": "75 / 90",
+                          "fontFamily": "$font-data",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "yJJAV",
+              "name": "Rolling Window Proof",
+              "width": "fill_container",
+              "fill": "$surface-card",
+              "cornerRadius": 8,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "u6shN",
+                  "name": "Proof Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "LQghZ",
+                      "name": "Proof Title",
+                      "fill": "$text-primary",
+                      "content": "Rolling 180-day window",
+                      "fontFamily": "$font-body",
+                      "fontSize": 16,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "A3l0bz",
+                      "name": "Window Dates",
+                      "fill": "$text-secondary",
+                      "content": "Apr 17-Oct 13",
+                      "fontFamily": "$font-data",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cCOmu",
+                  "name": "Timeline Lens",
+                  "width": "fill_container",
+                  "height": 118,
+                  "fill": "#F7FAF8",
+                  "cornerRadius": 6,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 2,
+                      "id": "xX8ZO",
+                      "x": 12,
+                      "y": 39,
+                      "name": "Active Window Track",
+                      "fill": "#D9E4DE",
+                      "width": 300,
+                      "height": 18
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "T4QKS",
+                      "x": 12,
+                      "y": 31,
+                      "name": "Window Lens Outline",
+                      "fill": "#FFFFFF00",
+                      "width": 300,
+                      "height": 66,
+                      "stroke": "#13231F",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "vuHKG",
+                      "x": 12,
+                      "y": 12,
+                      "name": "Window Start Label",
+                      "fill": "$text-secondary",
+                      "content": "Apr 17",
+                      "fontFamily": "$font-data",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "lohx3",
+                      "x": 246,
+                      "y": 0,
+                      "name": "Window End Label",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "HClYX",
+                      "x": 36,
+                      "y": 45,
+                      "name": "France Segment",
+                      "fill": "$past",
+                      "width": 25,
+                      "height": 18
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "WuFyN",
+                      "x": 194,
+                      "y": 45,
+                      "name": "Greece Segment",
+                      "fill": "$committed",
+                      "width": 29,
+                      "height": 18
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "vemUM",
+                      "x": 293,
+                      "y": 45,
+                      "name": "Italy Segment",
+                      "fill": "$whatif",
+                      "width": 23,
+                      "height": 18
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "pGPKq",
+                      "x": 313,
+                      "y": 37,
+                      "name": "Italy Exit Handle",
+                      "fill": "$whatif",
+                      "width": 6,
+                      "height": 34
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "c3uRR",
+                      "x": 36,
+                      "y": 80,
+                      "name": "Returning Days Tick One",
+                      "fill": "$safe",
+                      "width": 2,
+                      "height": 10
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "xRMUZ",
+                      "x": 39,
+                      "y": 80,
+                      "name": "Returning Days Tick Two",
+                      "fill": "$safe",
+                      "width": 2,
+                      "height": 10
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "jqsGq",
+                      "x": 42,
+                      "y": 80,
+                      "name": "Returning Days Tick Three",
+                      "fill": "$safe",
+                      "width": 2,
+                      "height": 10
+                    },
+                    {
+                      "type": "text",
+                      "id": "vNyKf",
+                      "x": 30,
+                      "y": 66,
+                      "name": "France Label",
+                      "fill": "$text-secondary",
+                      "content": "France 15d",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Wccm9",
+                      "x": 170,
+                      "y": 66,
+                      "name": "Greece Label",
+                      "fill": "$committed",
+                      "content": "Greece booked 16d",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "lxYyO",
+                      "x": 232,
+                      "y": 0,
+                      "name": "Italy Label",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "j5dlD",
+                      "x": 12,
+                      "y": 94,
+                      "name": "Returning Label",
+                      "fill": "$text-muted",
+                      "content": "Tiny ticks show old days starting to return as the window slides.",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "JoDBy",
+                  "name": "Capacity Meter Block",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 7,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "PD7Z5",
+                      "name": "Capacity Labels",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "D14yv2",
+                          "name": "Capacity Label",
+                          "fill": "$text-secondary",
+                          "content": "Capacity at Italy exit",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "E4hWw",
+                          "name": "Capacity Value",
+                          "fill": "$text-primary",
+                          "content": "75 / 90 days used",
+                          "fontFamily": "$font-data",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WVHDa",
+                      "name": "Capacity Bar",
+                      "width": "fill_container",
+                      "height": 14,
+                      "fill": "#E2EAE6",
+                      "cornerRadius": 7,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 7,
+                          "id": "my5gT",
+                          "x": 0,
+                          "y": 0,
+                          "name": "Used Portion",
+                          "fill": "$safe",
+                          "width": 280,
+                          "height": 14
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "Qabci",
+                          "x": 0,
+                          "y": 0,
+                          "name": "Limit Marker",
+                          "width": 0,
+                          "height": 14
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "z5I3r",
+              "name": "Explanation And Report Actions",
+              "width": "fill_container",
+              "height": 52,
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UXdAk",
+                  "name": "Why Safe Button",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$surface-ink",
+                  "cornerRadius": 8,
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "H2cK0p",
+                      "name": "Why Icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "list-checks",
+                      "library": "lucide",
+                      "fill": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "id": "spUbz",
+                      "name": "Why Label",
+                      "fill": "#FFFFFF",
+                      "content": "Why safe?",
+                      "fontFamily": "$font-body",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DFBdE",
+                  "name": "Border Ready Report Button",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$surface-card",
+                  "cornerRadius": 8,
+                  "stroke": "$text-primary",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "coUGw",
+                      "name": "Report Icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "file-text",
+                      "library": "lucide",
+                      "fill": "$text-primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "i7wuei",
+                      "name": "Report Label",
+                      "fill": "$text-primary",
+                      "content": "Report",
+                      "fontFamily": "$font-body",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "IMkKq",
+              "name": "Plain Language Proof",
+              "width": "fill_container",
+              "fill": "#EEF5F1",
+              "cornerRadius": 8,
+              "stroke": "#BFD2C7",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 9,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "X1EyQ",
+                  "name": "Proof Sentence",
+                  "fill": "$text-primary",
+                  "content": "Why this is safe",
+                  "fontFamily": "$font-body",
+                  "fontSize": 15,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "F7fQZx",
+                  "name": "Proof Copy",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Looking backward 180 days from your Oct 13 exit, SCHNGN counts France, protected Greece, and the Italy what-if. Entry and exit days both count. The total is 75, leaving 15 safe buffer days.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$font-body",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "S13twk",
+              "name": "Trips Affecting Answer",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "x0GUz",
+                  "name": "Trips Section Title",
+                  "fill": "$text-primary",
+                  "content": "Trips counted in this answer",
+                  "fontFamily": "$font-body",
+                  "fontSize": 15,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "frame",
+                  "id": "xcho1",
+                  "name": "France Trip Row",
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "$surface-card",
+                  "cornerRadius": 6,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "H8DyK",
+                      "name": "France Trip Icon",
+                      "width": 22,
+                      "height": 22,
+                      "icon": "calendar-check",
+                      "library": "lucide",
+                      "fill": "$past"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "i8S64",
+                      "name": "France Trip Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "W3qBqD",
+                          "name": "France Trip Name",
+                          "fill": "$text-primary",
+                          "content": "France · May 1-15",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "oSMUC",
+                          "name": "France Trip Meta",
+                          "fill": "$text-secondary",
+                          "content": "Past",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "MQJtl",
+                      "name": "France Trip Days",
+                      "fill": "$text-primary",
+                      "content": "15 days",
+                      "fontFamily": "$font-data",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EKozt",
+                  "name": "Greece Trip Row",
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "$surface-card",
+                  "cornerRadius": 6,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "U5lOFB",
+                      "name": "Greece Trip Icon",
+                      "width": 22,
+                      "height": 22,
+                      "icon": "lock",
+                      "library": "lucide",
+                      "fill": "$committed"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "poNvi",
+                      "name": "Greece Trip Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "I9pIO",
+                          "name": "Greece Trip Name",
+                          "fill": "$text-primary",
+                          "content": "Greece · Aug 3-18",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Jzko4",
+                          "name": "Greece Trip Meta",
+                          "fill": "$text-secondary",
+                          "content": "Booked, protected",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "k9wz1N",
+                      "name": "Greece Trip Days",
+                      "fill": "$text-primary",
+                      "content": "16 days",
+                      "fontFamily": "$font-data",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "n88a26",
+                  "name": "Italy Trip Row",
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "$surface-card",
+                  "cornerRadius": 6,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "vkb63",
+                      "name": "Italy Trip Icon",
+                      "width": 22,
+                      "height": 22,
+                      "icon": "move-horizontal",
+                      "library": "lucide",
+                      "fill": "$whatif"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OU54b",
+                      "name": "Italy Trip Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "EnjSO",
+                          "name": "Italy Trip Name",
+                          "fill": "$text-primary",
+                          "content": "Italy · Oct 1-13",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "zE70L",
+                          "name": "Italy Trip Meta",
+                          "fill": "$text-secondary",
+                          "content": "What-if plan",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "vB0lJ",
+                      "name": "Italy Trip Days",
+                      "fill": "$text-primary",
+                      "content": "13 days",
+                      "fontFamily": "$font-data",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "um2jR",
+              "name": "Risk State Preview",
+              "width": "fill_container",
+              "fill": "$risk-soft",
+              "cornerRadius": 8,
+              "stroke": "#D49A93",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "g3612",
+                  "name": "Risk Header",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Q82UA",
+                      "name": "Risk Warning Icon",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$risk"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hUTfJ",
+                      "name": "Risk Title",
+                      "fill": "$risk",
+                      "content": "If Italy extends by 9 days",
+                      "fontFamily": "$font-body",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "L7yTm",
+                  "name": "Risk Detail",
+                  "fill": "#5D2823",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The plan becomes unsafe: 94 / 90 days used, 4 days over limit. The fix is to leave earlier or shorten another Schengen stay.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$font-body",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "surface-app": {
+      "type": "color",
+      "value": "#F4F7F5"
+    },
+    "surface-card": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "surface-ink": {
+      "type": "color",
+      "value": "#13231F"
+    },
+    "surface-soft": {
+      "type": "color",
+      "value": "#E9F0EC"
+    },
+    "text-primary": {
+      "type": "color",
+      "value": "#13231F"
+    },
+    "text-secondary": {
+      "type": "color",
+      "value": "#52645D"
+    },
+    "text-muted": {
+      "type": "color",
+      "value": "#6E7D77"
+    },
+    "border": {
+      "type": "color",
+      "value": "#CAD7D1"
+    },
+    "safe": {
+      "type": "color",
+      "value": "#176B4D"
+    },
+    "safe-soft": {
+      "type": "color",
+      "value": "#DCEFE6"
+    },
+    "risk": {
+      "type": "color",
+      "value": "#A63F36"
+    },
+    "risk-soft": {
+      "type": "color",
+      "value": "#F6E1DE"
+    },
+    "committed": {
+      "type": "color",
+      "value": "#235F9E"
+    },
+    "whatif": {
+      "type": "color",
+      "value": "#7B5BDB"
+    },
+    "past": {
+      "type": "color",
+      "value": "#748079"
+    },
+    "font-body": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "font-data": {
+      "type": "string",
+      "value": "IBM Plex Mono"
+    }
+  },
+  "fileToken": "9144aa86-888d-4db8-adba-3b15109ae416"
+}

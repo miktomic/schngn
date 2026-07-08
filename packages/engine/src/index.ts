@@ -1,0 +1,152 @@
+const MS_PER_DAY = 86_400_000;
+
+export const SCHENGEN_ALLOWANCE_DAYS = 90;
+export const ROLLING_WINDOW_DAYS = 180;
+export const CLOSE_BUFFER_DAYS = 7;
+
+const EXCLUDED_SHORT_STAY_COUNTRIES = new Set(['CY', 'IE']);
+
+export type VerdictState = 'ok' | 'close' | 'over';
+
+export interface Trip {
+  entryDate: string;
+  exitDate: string;
+  countryCode?: string;
+  label?: string;
+}
+
+export interface UsageResult {
+  referenceDate: string;
+  windowStart: string;
+  windowEnd: string;
+  daysUsed: number;
+  daysRemaining: number;
+  overLimit: boolean;
+  overBy: number;
+  countedDays: string[];
+}
+
+export interface Verdict {
+  state: VerdictState;
+  label: string;
+  tone: 'success' | 'warning' | 'danger';
+}
+
+export function calculateUsageOnDate(trips: Trip[], referenceDate: string): UsageResult {
+  const reference = parseISODate(referenceDate);
+  const windowStart = addDays(reference, -(ROLLING_WINDOW_DAYS - 1));
+  const countedDays = new Set<string>();
+
+  for (const trip of trips) {
+    if (!countsForShortStay(trip)) continue;
+
+    const entry = parseISODate(trip.entryDate);
+    const exit = parseISODate(trip.exitDate);
+    assertValidTripRange(entry, exit, trip);
+
+    for (let current = entry; current.getTime() <= exit.getTime(); current = addDays(current, 1)) {
+      if (current.getTime() < windowStart.getTime()) continue;
+      if (current.getTime() > reference.getTime()) continue;
+      countedDays.add(formatISODate(current));
+    }
+  }
+
+  const daysUsed = countedDays.size;
+  const daysRemaining = Math.max(SCHENGEN_ALLOWANCE_DAYS - daysUsed, 0);
+  const overBy = Math.max(daysUsed - SCHENGEN_ALLOWANCE_DAYS, 0);
+
+  return {
+    referenceDate: formatISODate(reference),
+    windowStart: formatISODate(windowStart),
+    windowEnd: formatISODate(reference),
+    daysUsed,
+    daysRemaining,
+    overLimit: overBy > 0,
+    overBy,
+    countedDays: [...countedDays].sort()
+  };
+}
+
+export function classifyVerdict(daysRemaining: number): Verdict {
+  if (daysRemaining > CLOSE_BUFFER_DAYS) {
+    return { state: 'ok', label: 'OK', tone: 'success' };
+  }
+
+  if (daysRemaining >= 1) {
+    return { state: 'close', label: 'Cutting it close', tone: 'warning' };
+  }
+
+  return { state: 'over', label: 'Overstay / over limit', tone: 'danger' };
+}
+
+export function latestSafeExitDate(
+  existingTrips: Trip[],
+  entryDate: string,
+  countryCode?: string,
+  maxSearchDays = ROLLING_WINDOW_DAYS + SCHENGEN_ALLOWANCE_DAYS
+): string | null {
+  const entry = parseISODate(entryDate);
+  let latestSafe: string | null = null;
+
+  for (let offset = 0; offset < maxSearchDays; offset += 1) {
+    const exitDate = formatISODate(addDays(entry, offset));
+    const candidateTrip: Trip = countryCode
+      ? { entryDate: formatISODate(entry), exitDate, countryCode }
+      : { entryDate: formatISODate(entry), exitDate };
+
+    if (!isTripSafeForEveryDay(existingTrips, candidateTrip)) {
+      return latestSafe;
+    }
+
+    latestSafe = exitDate;
+  }
+
+  return latestSafe;
+}
+
+export function isTripSafeForEveryDay(existingTrips: Trip[], candidateTrip: Trip): boolean {
+  const entry = parseISODate(candidateTrip.entryDate);
+  const exit = parseISODate(candidateTrip.exitDate);
+  assertValidTripRange(entry, exit, candidateTrip);
+
+  const tripsWithCandidate = [...existingTrips, candidateTrip];
+
+  for (let current = entry; current.getTime() <= exit.getTime(); current = addDays(current, 1)) {
+    const usage = calculateUsageOnDate(tripsWithCandidate, formatISODate(current));
+    if (usage.daysUsed > SCHENGEN_ALLOWANCE_DAYS) return false;
+  }
+
+  return true;
+}
+
+export function countsForShortStay(trip: Trip): boolean {
+  if (!trip.countryCode) return true;
+  return !EXCLUDED_SHORT_STAY_COUNTRIES.has(trip.countryCode.toUpperCase());
+}
+
+export function parseISODate(value: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new RangeError(`Expected ISO date YYYY-MM-DD, got ${value}`);
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || formatISODate(date) !== value) {
+    throw new RangeError(`Invalid calendar date: ${value}`);
+  }
+
+  return date;
+}
+
+export function formatISODate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+export function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * MS_PER_DAY);
+}
+
+function assertValidTripRange(entry: Date, exit: Date, trip: Trip): void {
+  if (exit.getTime() < entry.getTime()) {
+    throw new RangeError(`Trip exit date ${trip.exitDate} cannot be before entry date ${trip.entryDate}`);
+  }
+}

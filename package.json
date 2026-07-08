@@ -1,0 +1,22 @@
+{
+  "name": "schngn",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "cd apps/web && bun run dev",
+    "build": "cd packages/engine && bun run build && cd ../../apps/web && bun run build",
+    "test": "bun test",
+    "test:engine": "bun test packages/engine/tests",
+    "typecheck": "cd apps/web && bun run check",
+    "check": "bun run test && bun run typecheck && bun run build",
+    "deploy": "cd apps/web && bun run deploy"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

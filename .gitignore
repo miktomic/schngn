@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+.bun/
+
+# build output
+dist/
+.svelte-kit/
+build/
+.cloudflare/
+.wrangler/
+
+# local env
+.env
+.env.*
+!.env.example
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# test/cache
+coverage/
+*.tsbuildinfo

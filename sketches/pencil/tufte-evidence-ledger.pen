@@ -1,0 +1,1572 @@
+{
+  "version": "2.14",
+  "children": [
+    {
+      "type": "frame",
+      "id": "w9knU",
+      "x": 0,
+      "y": 0,
+      "name": "SCHNGN Tufte Evidence Ledger Screen",
+      "clip": true,
+      "width": 390,
+      "fill": "$surface",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "qlOJ5",
+          "name": "Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "fill": "#F7F6F1",
+          "padding": [
+            0,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Iblsw",
+              "name": "Time",
+              "fill": "$ink",
+              "content": "9:41",
+              "fontFamily": "$font",
+              "fontSize": 14,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "kTQWl",
+              "name": "System Indicators",
+              "gap": 7,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "ufJLg",
+                  "name": "Signal",
+                  "fill": "$ink",
+                  "width": 18,
+                  "height": 10
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 5,
+                  "id": "n7fvCS",
+                  "name": "Wifi",
+                  "fill": "$ink",
+                  "width": 15,
+                  "height": 10
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "JM3MW",
+                  "name": "Battery",
+                  "fill": "$ink",
+                  "width": 24,
+                  "height": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "lT5AI",
+          "name": "Content Wrapper",
+          "width": "fill_container",
+          "fill": "$surface",
+          "layout": "vertical",
+          "gap": 18,
+          "padding": [
+            0,
+            18,
+            22,
+            18
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "AnLgC",
+              "name": "Top Bar",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "z6RmG8",
+                  "name": "Brand",
+                  "fill": "$ink",
+                  "content": "SCHNGN",
+                  "fontFamily": "$font",
+                  "fontSize": 18,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "frame",
+                  "id": "DbTSx",
+                  "name": "Local Private Badge",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 6,
+                  "stroke": "$hairline",
+                  "strokeWidth": 1,
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "qOotW",
+                      "name": "Private Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "lock",
+                      "library": "lucide",
+                      "fill": "$safe"
+                    },
+                    {
+                      "type": "text",
+                      "id": "H8VBV4",
+                      "name": "Private Label",
+                      "fill": "$ink",
+                      "content": "Local & private",
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jEk2V",
+              "name": "Answer First Panel",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": "$ink",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 13,
+              "padding": [
+                18,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mlKV7",
+                  "name": "Status Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "dW2LD",
+                      "name": "Safe Status Pill",
+                      "fill": "$safe-soft",
+                      "cornerRadius": 6,
+                      "gap": 7,
+                      "padding": [
+                        7,
+                        9
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "oOjKi",
+                          "name": "Check Icon",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "check",
+                          "library": "lucide",
+                          "fill": "$safe"
+                        },
+                        {
+                          "type": "text",
+                          "id": "JoiCh",
+                          "name": "Status Text",
+                          "fill": "$safe",
+                          "content": "Italy fits",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "b5obob",
+                      "name": "Exit Date",
+                      "fill": "$ink",
+                      "content": "Exit check Oct 13",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "NUwwx",
+                  "name": "Hero Metric",
+                  "fill": "$ink",
+                  "content": "15 safe\nbuffer days",
+                  "lineHeight": 0.95,
+                  "fontFamily": "$font",
+                  "fontSize": 44,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "frame",
+                  "id": "n0gxF",
+                  "name": "Key Results",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "P8ofY7",
+                      "name": "Must exit by",
+                      "width": "fill_container",
+                      "fill": "#F7F6F1",
+                      "cornerRadius": 4,
+                      "stroke": "$hairline",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        9,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N3AjB",
+                          "name": "Must exit by Label",
+                          "fill": "$muted",
+                          "content": "Must exit by",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "R7w0if",
+                          "name": "Must exit by Value",
+                          "fill": "$ink",
+                          "content": "Oct 13",
+                          "fontFamily": "$mono",
+                          "fontSize": 15,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "k1xQu",
+                      "name": "Days used",
+                      "width": "fill_container",
+                      "fill": "#F7F6F1",
+                      "cornerRadius": 4,
+                      "stroke": "$hairline",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        9,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NzDGx",
+                          "name": "Days used Label",
+                          "fill": "$muted",
+                          "content": "Days used",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "djBA4",
+                          "name": "Days used Value",
+                          "fill": "$ink",
+                          "content": "75 / 90",
+                          "fontFamily": "$mono",
+                          "fontSize": 15,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "r7dJi",
+                      "name": "Trips counted",
+                      "width": "fill_container",
+                      "fill": "#F7F6F1",
+                      "cornerRadius": 4,
+                      "stroke": "$hairline",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        9,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "R7IXhQ",
+                          "name": "Trips counted Label",
+                          "fill": "$muted",
+                          "content": "Trips counted",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "pLEFf",
+                          "name": "Trips counted Value",
+                          "fill": "$ink",
+                          "content": "3",
+                          "fontFamily": "$mono",
+                          "fontSize": 15,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "xCSeN",
+                  "name": "Plain Answer",
+                  "fill": "$muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Looking back 180 days from the Italy exit, your protected Greece trip and Italy what-if stay remain within the 90-day limit. Greece remains protected.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XYIj1",
+              "name": "Rolling 180 Day Evidence Ledger",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": "$ink",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 11,
+              "padding": [
+                14,
+                12
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "YnGBt",
+                  "name": "Ledger Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "iKtU2",
+                      "name": "Ledger Title Group",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "h5oIJZ",
+                          "name": "Ledger Title",
+                          "fill": "$ink",
+                          "content": "Rolling 180-day proof",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "NDgYF",
+                          "name": "Ledger Subtitle",
+                          "fill": "$muted",
+                          "content": "Window ending on Italy exit",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qZoMh",
+                      "name": "Capacity Badge",
+                      "layout": "vertical",
+                      "gap": 1,
+                      "alignItems": "end",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QbDCH",
+                          "name": "Capacity Number",
+                          "fill": "$ink",
+                          "content": "75 / 90",
+                          "fontFamily": "$mono",
+                          "fontSize": 20,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "hJTTk",
+                          "name": "Capacity Label",
+                          "fill": "$muted",
+                          "content": "days used",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J7XFCG",
+                  "name": "Date Scale",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "yd44v",
+                      "name": "Date Apr 17",
+                      "fill": "$ink",
+                      "content": "Apr 17",
+                      "fontFamily": "$mono",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "c5TNIU",
+                      "name": "Date May 1",
+                      "fill": "$muted",
+                      "content": "May 1",
+                      "fontFamily": "$mono",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "G9tNA",
+                      "name": "Date Aug 3",
+                      "fill": "$muted",
+                      "content": "Aug 3",
+                      "fontFamily": "$mono",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ALQob",
+                      "name": "Date Oct 1",
+                      "fill": "$muted",
+                      "content": "Oct 1",
+                      "fontFamily": "$mono",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "XCoZC",
+                      "name": "Date Oct 13",
+                      "fill": "$ink",
+                      "content": "Oct 13",
+                      "fontFamily": "$mono",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QdPNn",
+                  "name": "Timeline Rail",
+                  "width": "fill_container",
+                  "height": 94,
+                  "fill": "#FAFAF7",
+                  "cornerRadius": 4,
+                  "stroke": "$hairline",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "fh1E1",
+                      "x": 12,
+                      "y": 45,
+                      "name": "180 Day Window Line",
+                      "fill": "$ink",
+                      "width": 318,
+                      "height": 2
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "UHBcb",
+                      "x": 12,
+                      "y": 32,
+                      "name": "Window Start Tick",
+                      "fill": "$ink",
+                      "width": 1,
+                      "height": 28
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "WSEdb",
+                      "x": 329,
+                      "y": 32,
+                      "name": "Window End Tick",
+                      "fill": "$ink",
+                      "width": 1,
+                      "height": 28
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 2,
+                      "id": "exrTK",
+                      "x": 37,
+                      "y": 35,
+                      "name": "France Segment",
+                      "fill": "$past",
+                      "width": 28,
+                      "height": 20
+                    },
+                    {
+                      "type": "text",
+                      "id": "cRsiv",
+                      "x": 28,
+                      "y": 10,
+                      "name": "France Label",
+                      "fill": "$ink",
+                      "content": "France",
+                      "fontFamily": "$font",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Frlaq",
+                      "x": 37,
+                      "y": 61,
+                      "name": "France Days",
+                      "fill": "$muted",
+                      "content": "15d past",
+                      "fontFamily": "$mono",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 2,
+                      "id": "TugXz",
+                      "x": 194,
+                      "y": 31,
+                      "name": "Greece Segment",
+                      "fill": "$booked",
+                      "width": 30,
+                      "height": 28
+                    },
+                    {
+                      "type": "text",
+                      "id": "uy6Fa",
+                      "x": 177,
+                      "y": 10,
+                      "name": "Greece Label",
+                      "fill": "$ink",
+                      "content": "Greece",
+                      "fontFamily": "$font",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "KA5t4",
+                      "x": 176,
+                      "y": 64,
+                      "name": "Greece Days",
+                      "fill": "$booked",
+                      "content": "16d booked",
+                      "fontFamily": "$mono",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 2,
+                      "id": "mop4Y",
+                      "x": 304,
+                      "y": 27,
+                      "name": "Italy Segment",
+                      "fill": "$whatif",
+                      "width": 24,
+                      "height": 36
+                    },
+                    {
+                      "type": "text",
+                      "id": "BNcUJ",
+                      "x": 286,
+                      "y": 10,
+                      "name": "Italy Label",
+                      "fill": "$ink",
+                      "content": "Italy",
+                      "fontFamily": "$font",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "e1Yc3c",
+                      "x": 252,
+                      "y": 66,
+                      "name": "Italy Days",
+                      "fill": "$whatif",
+                      "content": "13d what-if",
+                      "fontFamily": "$mono",
+                      "fontSize": 9,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "path",
+                      "id": "AaxzI",
+                      "x": 313,
+                      "y": 18,
+                      "name": "Italy Exit Pointer",
+                      "geometry": "M8 0l8 10-6 0 0 6-4 0 0-6-6 0z",
+                      "viewBox": [
+                        0,
+                        0,
+                        16,
+                        16
+                      ],
+                      "fill": "$ink",
+                      "width": 14,
+                      "height": 14
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "n4fcav",
+                  "name": "Timeline Legend",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fWmA6",
+                      "name": "Past Legend",
+                      "gap": 5,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 2,
+                          "id": "dVVnv",
+                          "name": "Past Swatch",
+                          "fill": "$past",
+                          "width": 10,
+                          "height": 10
+                        },
+                        {
+                          "type": "text",
+                          "id": "Pd7S1",
+                          "name": "Past Legend Label",
+                          "fill": "$muted",
+                          "content": "Past",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Qm48K",
+                      "name": "Booked Legend",
+                      "gap": 5,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 2,
+                          "id": "KOBOS",
+                          "name": "Booked Swatch",
+                          "fill": "$booked",
+                          "width": 10,
+                          "height": 10
+                        },
+                        {
+                          "type": "text",
+                          "id": "sEaGU",
+                          "name": "Booked Legend Label",
+                          "fill": "$muted",
+                          "content": "Booked",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "G054vc",
+                      "name": "What-if Legend",
+                      "gap": 5,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 2,
+                          "id": "xffYu",
+                          "name": "What-if Swatch",
+                          "fill": "$whatif",
+                          "width": 10,
+                          "height": 10
+                        },
+                        {
+                          "type": "text",
+                          "id": "o0TlS",
+                          "name": "What-if Legend Label",
+                          "fill": "$muted",
+                          "content": "What-if",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "D8WDdz",
+                  "name": "Counted Stay Ledger",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    8,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "S9za8s",
+                      "name": "France Counted Stay",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Kwg9t",
+                          "name": "France Stay Label",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "rectangle",
+                              "cornerRadius": 2,
+                              "id": "UQat6",
+                              "name": "France Stay Mark",
+                              "fill": "$past",
+                              "width": 8,
+                              "height": 8
+                            },
+                            {
+                              "type": "text",
+                              "id": "xfPk7",
+                              "name": "France Stay Name",
+                              "fill": "$ink",
+                              "content": "France",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "nKdn1",
+                          "name": "France Stay Dates",
+                          "fill": "$muted",
+                          "content": "May 1-15  15d past",
+                          "fontFamily": "$mono",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bKtBR",
+                      "name": "Greece Counted Stay",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "hwxa7",
+                          "name": "Greece Stay Label",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "rectangle",
+                              "cornerRadius": 2,
+                              "id": "qDnGk",
+                              "name": "Greece Stay Mark",
+                              "fill": "$booked",
+                              "width": 8,
+                              "height": 8
+                            },
+                            {
+                              "type": "text",
+                              "id": "DpAdr",
+                              "name": "Greece Stay Name",
+                              "fill": "$ink",
+                              "content": "Greece",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "g5sKg",
+                          "name": "Greece Stay Dates",
+                          "fill": "$muted",
+                          "content": "Aug 3-18  16d booked",
+                          "fontFamily": "$mono",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "x3LT9W",
+                      "name": "Italy Counted Stay",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "utSeQ",
+                          "name": "Italy Stay Label",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "rectangle",
+                              "cornerRadius": 2,
+                              "id": "v6rGc",
+                              "name": "Italy Stay Mark",
+                              "fill": "$whatif",
+                              "width": 8,
+                              "height": 8
+                            },
+                            {
+                              "type": "text",
+                              "id": "BTPP8",
+                              "name": "Italy Stay Name",
+                              "fill": "$ink",
+                              "content": "Italy",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "VHmI9",
+                          "name": "Italy Stay Dates",
+                          "fill": "$muted",
+                          "content": "Oct 1-13  13d what-if",
+                          "fontFamily": "$mono",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "e9qpCe",
+                  "name": "Days Returning",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 7,
+                  "padding": [
+                    10,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MstWU",
+                      "name": "Days Returning Label",
+                      "fill": "$ink",
+                      "content": "Days returning soon",
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "n2Bna",
+                      "name": "Return Date Row",
+                      "width": "fill_container",
+                      "gap": 7,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "q3c1b",
+                          "name": "May 1 +1",
+                          "fill": "#F7F6F1",
+                          "cornerRadius": 4,
+                          "stroke": "$hairline",
+                          "strokeWidth": 1,
+                          "padding": [
+                            6,
+                            7
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "X4LTC",
+                              "name": "May 1 +1 Text",
+                              "fill": "$muted",
+                              "content": "May 1 +1",
+                              "fontFamily": "$mono",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "P5oha",
+                          "name": "May 2 +1",
+                          "fill": "#F7F6F1",
+                          "cornerRadius": 4,
+                          "stroke": "$hairline",
+                          "strokeWidth": 1,
+                          "padding": [
+                            6,
+                            7
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "frTeP",
+                              "name": "May 2 +1 Text",
+                              "fill": "$muted",
+                              "content": "May 2 +1",
+                              "fontFamily": "$mono",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "p5kGbT",
+                          "name": "May 3 +1",
+                          "fill": "#F7F6F1",
+                          "cornerRadius": 4,
+                          "stroke": "$hairline",
+                          "strokeWidth": 1,
+                          "padding": [
+                            6,
+                            7
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "u1BNtM",
+                              "name": "May 3 +1 Text",
+                              "fill": "$muted",
+                              "content": "May 3 +1",
+                              "fontFamily": "$mono",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "H1W87",
+                          "name": "May 4 +1",
+                          "fill": "#F7F6F1",
+                          "cornerRadius": 4,
+                          "stroke": "$hairline",
+                          "strokeWidth": 1,
+                          "padding": [
+                            6,
+                            7
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "SV106",
+                              "name": "May 4 +1 Text",
+                              "fill": "$muted",
+                              "content": "May 4 +1",
+                              "fontFamily": "$mono",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "HjmwV",
+                      "name": "Inclusive Count Note",
+                      "fill": "$muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Entry and exit days both count. The ledger checks every day inside Apr 17-Oct 13.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WFQiV",
+              "name": "Why Safe Explanation",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": "$hairline",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": [
+                14,
+                12
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "v95kVi",
+                  "name": "Why Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "XGujQ",
+                      "name": "Why Title",
+                      "fill": "$ink",
+                      "content": "Why am I safe?",
+                      "fontFamily": "$font",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "hA0bm",
+                      "name": "Why Chevron",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "chevron-down",
+                      "library": "lucide",
+                      "fill": "$ink"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "x2WUne",
+                  "name": "Calculation Steps",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 7,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "myxEZ",
+                      "name": "Step 1",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "FRDCW",
+                          "name": "Step 1 Number",
+                          "width": 24,
+                          "height": 24,
+                          "fill": "$safe-soft",
+                          "cornerRadius": 12,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "hmAyn",
+                              "name": "Step 1 Digit",
+                              "fill": "$safe",
+                              "content": "1",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "aH2Aj",
+                          "name": "Step 1 Text",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apr 17-Oct 13 is the active 180-day window for the Italy exit.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "USoxb",
+                      "name": "Step 2",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "x8w23",
+                          "name": "Step 2 Number",
+                          "width": 24,
+                          "height": 24,
+                          "fill": "$safe-soft",
+                          "cornerRadius": 12,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "HWceD",
+                              "name": "Step 2 Digit",
+                              "fill": "$safe",
+                              "content": "2",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "z20Jf",
+                          "name": "Step 2 Text",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "France, Greece, and Italy add up to 75 counted days in that window.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Hah9F",
+                      "name": "Step 3",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "CcktA",
+                          "name": "Step 3 Number",
+                          "width": 24,
+                          "height": 24,
+                          "fill": "$safe-soft",
+                          "cornerRadius": 12,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "iqrj0",
+                              "name": "Step 3 Digit",
+                              "fill": "$safe",
+                              "content": "3",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "GUFMv",
+                          "name": "Step 3 Text",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "75 used leaves 15 safe buffer days before the 90-day limit.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "y9xmcg",
+              "name": "Risk State Preview",
+              "width": "fill_container",
+              "fill": "$risk-soft",
+              "cornerRadius": 8,
+              "stroke": "$risk",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": [
+                13,
+                12
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "K5Fx3f",
+                  "name": "Risk Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "H7gMm",
+                      "name": "Risk Label Group",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ZZSvb",
+                          "name": "Risk Icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "triangle-alert",
+                          "library": "lucide",
+                          "fill": "$risk"
+                        },
+                        {
+                          "type": "text",
+                          "id": "I5qfPs",
+                          "name": "Risk Title",
+                          "fill": "$risk",
+                          "content": "If Italy extends 9 days",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "HmJiU",
+                      "name": "Risk Count",
+                      "fill": "$risk",
+                      "content": "94 / 90",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Y7R8gn",
+                  "name": "Risk Explanation",
+                  "fill": "#3A1714",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Unsafe: 4 days over limit. The first fix is to leave by Oct 13 or shorten another counted stay.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "Yvtmy",
+                  "name": "Risk Mini Rail",
+                  "width": "fill_container",
+                  "height": 24,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 4,
+                  "stroke": "#C48780",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 2,
+                      "id": "jaWpJ",
+                      "x": 8,
+                      "y": 8,
+                      "name": "Risk Used Bar",
+                      "fill": "$risk",
+                      "width": 283,
+                      "height": 8
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "G5BUv",
+                      "x": 274,
+                      "y": 4,
+                      "name": "Risk Limit Tick",
+                      "fill": "$ink",
+                      "width": 2,
+                      "height": 16
+                    },
+                    {
+                      "type": "text",
+                      "id": "hG8GB",
+                      "x": 244,
+                      "y": 5,
+                      "name": "Risk Limit Label",
+                      "fill": "#FFFFFF",
+                      "content": "90",
+                      "fontFamily": "$mono",
+                      "fontSize": 9,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "p30Xp",
+                      "x": 284,
+                      "y": 5,
+                      "name": "Risk Over Label",
+                      "fill": "$risk",
+                      "content": "+4 over",
+                      "fontFamily": "$mono",
+                      "fontSize": 9,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "h7nx5G",
+              "name": "Action Row",
+              "width": "fill_container",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "a0fdMa",
+                  "name": "Border Ready Report Button",
+                  "width": "fill_container",
+                  "height": 50,
+                  "fill": "$ink",
+                  "cornerRadius": 8,
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "quuux",
+                      "name": "Report Icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "file-text",
+                      "library": "lucide",
+                      "fill": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z98Ytd",
+                      "name": "Report Label",
+                      "fill": "#FFFFFF",
+                      "content": "Border-ready report",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "NDVyd",
+                  "name": "Show Calculation Button",
+                  "width": "fill_container",
+                  "height": 50,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": "$ink",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "hf3Bk",
+                      "name": "Calculation Icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "list-checks",
+                      "library": "lucide",
+                      "fill": "$ink"
+                    },
+                    {
+                      "type": "text",
+                      "id": "h8joN",
+                      "name": "Calculation Label",
+                      "fill": "$ink",
+                      "content": "Show calculation",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "fROta",
+              "name": "Footer Disclaimer",
+              "fill": "$muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Private by default. Data stays on this device. Not legal advice.",
+              "lineHeight": 1.35,
+              "textAlign": "center",
+              "fontFamily": "$font",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "surface": {
+      "type": "color",
+      "value": "#F7F6F1"
+    },
+    "ink": {
+      "type": "color",
+      "value": "#161616"
+    },
+    "muted": {
+      "type": "color",
+      "value": "#67645F"
+    },
+    "hairline": {
+      "type": "color",
+      "value": "#C9C4B8"
+    },
+    "safe": {
+      "type": "color",
+      "value": "#0E6B4E"
+    },
+    "safe-soft": {
+      "type": "color",
+      "value": "#E2F0EA"
+    },
+    "risk": {
+      "type": "color",
+      "value": "#9E2F25"
+    },
+    "risk-soft": {
+      "type": "color",
+      "value": "#F5DDD8"
+    },
+    "booked": {
+      "type": "color",
+      "value": "#2C5D90"
+    },
+    "whatif": {
+      "type": "color",
+      "value": "#C48217"
+    },
+    "past": {
+      "type": "color",
+      "value": "#5E625F"
+    },
+    "font": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "mono": {
+      "type": "string",
+      "value": "IBM Plex Mono"
+    }
+  },
+  "fileToken": "d3e443b5-f671-4012-b23b-f1bce8bea8ae"
+}

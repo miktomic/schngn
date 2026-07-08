@@ -1,0 +1,1135 @@
+{
+  "version": "2.14",
+  "children": [
+    {
+      "type": "frame",
+      "id": "EB5dh",
+      "x": 0,
+      "y": 0,
+      "name": "Victor Simulator Money Shot",
+      "clip": true,
+      "width": 390,
+      "fill": "$schngn-bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "D2x6Rk",
+          "name": "Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "fill": "$schngn-bg",
+          "padding": [
+            18,
+            22,
+            8,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "fnEBD",
+              "name": "Time",
+              "fill": "$schngn-ink",
+              "content": "9:41",
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "wJUvL",
+              "name": "Phone Indicators",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "Zr9NL",
+                  "name": "Signal Bars",
+                  "fill": "$schngn-ink",
+                  "width": 18,
+                  "height": 12
+                },
+                {
+                  "type": "ellipse",
+                  "id": "KB68E",
+                  "name": "Wifi Dot",
+                  "fill": "$schngn-ink",
+                  "width": 8,
+                  "height": 8
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 3,
+                  "id": "WDcsT",
+                  "name": "Battery Shape",
+                  "fill": "#00000000",
+                  "width": 22,
+                  "height": 11,
+                  "stroke": "$schngn-ink",
+                  "strokeWidth": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "F2cCDR",
+          "name": "Content Wrapper",
+          "width": "fill_container",
+          "fill": "$schngn-bg",
+          "layout": "vertical",
+          "gap": 16,
+          "padding": [
+            0,
+            18,
+            22,
+            18
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "B29n0o",
+              "name": "Header",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Lr6Lt",
+                  "name": "Brand Lockup",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 6,
+                      "id": "R3ams",
+                      "name": "Brand Mark",
+                      "fill": "$schngn-ink",
+                      "width": 22,
+                      "height": 22
+                    },
+                    {
+                      "type": "text",
+                      "id": "eck9O",
+                      "name": "SCHNGN",
+                      "fill": "$schngn-ink",
+                      "content": "SCHNGN",
+                      "fontFamily": "$font-head",
+                      "fontSize": 18,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "JGI91",
+                  "name": "Local Private Badge",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 9999,
+                  "stroke": "$schngn-line",
+                  "strokeWidth": 1,
+                  "gap": 6,
+                  "padding": [
+                    8,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "fGvxi",
+                      "name": "Lock Mark",
+                      "fill": "$schngn-safe",
+                      "content": "local",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "BesxF",
+                      "name": "Local Private Label",
+                      "fill": "$schngn-ink",
+                      "content": "Local & private",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xLuIV",
+              "name": "Live Result Card",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 18,
+              "stroke": "#CFE7D8",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#12351A18",
+                "offset": {
+                  "x": 0,
+                  "y": 10
+                },
+                "blur": 28
+              },
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "m2mkQ",
+                  "name": "Safe Status Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "sb1O8",
+                      "name": "Safe for Italy Chip",
+                      "fill": "$schngn-safe-soft",
+                      "cornerRadius": 9999,
+                      "gap": 7,
+                      "padding": [
+                        8,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "eyeQd",
+                          "name": "Safe Check Mark",
+                          "fill": "$schngn-safe",
+                          "content": "OK",
+                          "fontFamily": "$font-data",
+                          "fontSize": 12,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "k06ZE",
+                          "name": "Safe for Italy Label",
+                          "fill": "$schngn-safe",
+                          "content": "Italy fits",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "rvRZe",
+                      "name": "Live Recalculation Label",
+                      "fill": "$schngn-muted",
+                      "content": "live as you drag",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "XclKN",
+                  "name": "Hero Metric",
+                  "fill": "$schngn-ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "15 safe buffer days",
+                  "lineHeight": 0.98,
+                  "fontFamily": "$font-head",
+                  "fontSize": 36,
+                  "fontWeight": "750"
+                },
+                {
+                  "type": "frame",
+                  "id": "bWk4L",
+                  "name": "Critical Answer Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Py6yV",
+                      "name": "Must Exit Box",
+                      "width": "fill_container",
+                      "fill": "$schngn-bg",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WahBh",
+                          "name": "Must Exit Label",
+                          "fill": "$schngn-muted",
+                          "content": "Must exit by",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "kGmSE",
+                          "name": "Oct 13",
+                          "fill": "$schngn-ink",
+                          "content": "Oct 13",
+                          "fontFamily": "$font-head",
+                          "fontSize": 22,
+                          "fontWeight": "750"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tslsD",
+                      "name": "Used Days Box",
+                      "width": "fill_container",
+                      "fill": "$schngn-bg",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "j9t5L",
+                          "name": "Used Days Label",
+                          "fill": "$schngn-muted",
+                          "content": "Days used",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "odG3P",
+                          "name": "75 of 90",
+                          "fill": "$schngn-ink",
+                          "content": "75 / 90",
+                          "fontFamily": "$font-data",
+                          "fontSize": 22,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gUBQQ",
+                  "name": "Capacity Bullet",
+                  "width": "fill_container",
+                  "height": 16,
+                  "fill": "#EEF2EA",
+                  "cornerRadius": 9999,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9999,
+                      "id": "nlM7D",
+                      "x": 0,
+                      "y": 0,
+                      "name": "75 Days Fill",
+                      "fill": "$schngn-safe",
+                      "width": 274,
+                      "height": 16
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9999,
+                      "id": "XO5eJ",
+                      "x": 315,
+                      "y": 0,
+                      "name": "90 Day Limit Mark",
+                      "fill": "$schngn-ink",
+                      "width": 3,
+                      "height": 16
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "f8aB0o",
+                  "name": "Why Safe Button",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "#F8FAF7",
+                  "cornerRadius": 12,
+                  "stroke": "$schngn-line",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GWvNM",
+                      "name": "Why Safe Label",
+                      "fill": "$schngn-ink",
+                      "content": "Why am I safe?",
+                      "fontFamily": "$font-body",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "s7YW7",
+                      "name": "Why Safe Down Mark",
+                      "fill": "$schngn-muted",
+                      "content": "v",
+                      "fontFamily": "$font-data",
+                      "fontSize": 18,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AMmkZ",
+              "name": "Rolling 180 Day Simulator",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 18,
+              "stroke": "$schngn-line",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "kn0nJ",
+                  "name": "Simulator Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "PN8jc",
+                      "name": "Rolling Lens Title",
+                      "fill": "$schngn-ink",
+                      "content": "Rolling 180-day lens",
+                      "fontFamily": "$font-head",
+                      "fontSize": 18,
+                      "fontWeight": "750"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PgQiw",
+                      "name": "Window Dates",
+                      "fill": "$schngn-muted",
+                      "content": "Apr 17 - Oct 13",
+                      "fontFamily": "$font-data",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "N129RX",
+                  "name": "Explorable Timeline Rail",
+                  "width": "fill_container",
+                  "height": 138,
+                  "fill": "#F7F8F4",
+                  "cornerRadius": 14,
+                  "stroke": "#D5DDCF",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 12,
+                      "id": "cS0LH",
+                      "x": 31,
+                      "y": 20,
+                      "name": "Active Lens Fill",
+                      "fill": "#FFFFFF",
+                      "width": 284,
+                      "height": 98,
+                      "stroke": "$schngn-blue",
+                      "strokeWidth": 2
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z37tct",
+                      "x": 45,
+                      "y": 30,
+                      "name": "Lens Label",
+                      "fill": "$schngn-blue",
+                      "content": "Looking back 180 days from Oct 13",
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9,
+                      "id": "k60YAg",
+                      "x": 22,
+                      "y": 53,
+                      "name": "Lens Left Handle",
+                      "fill": "$schngn-blue",
+                      "width": 18,
+                      "height": 52
+                    },
+                    {
+                      "type": "text",
+                      "id": "C37gS4",
+                      "x": 25,
+                      "y": 68,
+                      "name": "Left Drag Mark",
+                      "fill": "#FFFFFF",
+                      "content": "||",
+                      "fontFamily": "$font-data",
+                      "fontSize": 16,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9,
+                      "id": "oJgXV",
+                      "x": 306,
+                      "y": 53,
+                      "name": "Lens Right Handle",
+                      "fill": "$schngn-blue",
+                      "width": 18,
+                      "height": 52
+                    },
+                    {
+                      "type": "text",
+                      "id": "v6Xr4",
+                      "x": 307,
+                      "y": 68,
+                      "name": "Right Drag Mark",
+                      "fill": "#FFFFFF",
+                      "content": "||",
+                      "fontFamily": "$font-data",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9999,
+                      "id": "WhdIo",
+                      "x": 44,
+                      "y": 88,
+                      "name": "Timeline Baseline",
+                      "fill": "#C8D2C2",
+                      "width": 248,
+                      "height": 3
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 8,
+                      "id": "z2wiW",
+                      "x": 55,
+                      "y": 72,
+                      "name": "France Trip Object",
+                      "fill": "#E5E8E1",
+                      "width": 34,
+                      "height": 28,
+                      "stroke": "#788273",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "A4VZA",
+                      "x": 50,
+                      "y": 103,
+                      "name": "France Label",
+                      "fill": "$schngn-muted",
+                      "textGrowth": "fixed-width",
+                      "width": 54,
+                      "content": "France\nMay 1-15",
+                      "lineHeight": 1.08,
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 8,
+                      "id": "waPAY",
+                      "x": 169,
+                      "y": 67,
+                      "name": "Greece Trip Object",
+                      "fill": "$schngn-blue-soft",
+                      "width": 48,
+                      "height": 34,
+                      "stroke": "$schngn-blue",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "f6OoH",
+                      "x": 182,
+                      "y": 75,
+                      "name": "Booked Lock Mark",
+                      "fill": "$schngn-blue",
+                      "content": "booked",
+                      "fontFamily": "$font-body",
+                      "fontSize": 9,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NXV6h",
+                      "x": 153,
+                      "y": 103,
+                      "name": "Greece Label",
+                      "fill": "$schngn-blue",
+                      "textGrowth": "fixed-width",
+                      "width": 78,
+                      "content": "Greece booked\nAug 3-18",
+                      "lineHeight": 1.08,
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9,
+                      "id": "Zi8AV",
+                      "x": 252,
+                      "y": 63,
+                      "name": "Italy What If Object",
+                      "fill": "$schngn-safe-soft",
+                      "width": 44,
+                      "height": 42,
+                      "stroke": "$schngn-safe",
+                      "strokeWidth": 2
+                    },
+                    {
+                      "type": "text",
+                      "id": "C1GQs",
+                      "x": 261,
+                      "y": 76,
+                      "name": "Italy Object Label",
+                      "fill": "$schngn-safe",
+                      "content": "Italy",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9,
+                      "id": "h4IzN7",
+                      "x": 289,
+                      "y": 58,
+                      "name": "Italy Extend Handle",
+                      "fill": "$schngn-safe",
+                      "width": 18,
+                      "height": 52
+                    },
+                    {
+                      "type": "text",
+                      "id": "O4U4z",
+                      "x": 292,
+                      "y": 74,
+                      "name": "Italy Drag Mark",
+                      "fill": "#FFFFFF",
+                      "content": "||",
+                      "fontFamily": "$font-data",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "TV4O6",
+                      "x": 232,
+                      "y": 106,
+                      "name": "Italy Label",
+                      "fill": "$schngn-safe",
+                      "textGrowth": "fixed-width",
+                      "width": 88,
+                      "content": "Italy what-if\nOct 1-13",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "z1avh",
+                      "x": 33,
+                      "y": 13,
+                      "name": "April Tick",
+                      "fill": "$schngn-muted",
+                      "content": "Apr 17",
+                      "fontFamily": "$font-data",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zzIcD",
+                      "x": 279,
+                      "y": 13,
+                      "name": "October Tick",
+                      "fill": "$schngn-muted",
+                      "content": "Oct 13",
+                      "fontFamily": "$font-data",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "R7mWl",
+                  "name": "Inline Cause Effect",
+                  "width": "fill_container",
+                  "fill": "$schngn-safe-soft",
+                  "cornerRadius": 12,
+                  "gap": 10,
+                  "padding": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "T013c",
+                      "name": "Drag Cause Mark",
+                      "fill": "$schngn-safe",
+                      "content": "drag",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "FFeUT",
+                      "name": "Safe Cause Effect Text",
+                      "fill": "$schngn-ink",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Move the Italy edge. The count updates from the Oct 13 exit date; entry and exit days both count.",
+                      "lineHeight": 1.25,
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gLXS6",
+              "name": "Unsafe Extension Preview",
+              "width": "fill_container",
+              "fill": "$schngn-risk-soft",
+              "cornerRadius": 16,
+              "stroke": "#F4B7AF",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "YqTjL",
+                  "name": "Risk Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "O3QJdn",
+                      "name": "Plus Nine Toggle",
+                      "height": 44,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 12,
+                      "stroke": "#E7A09A",
+                      "strokeWidth": 1,
+                      "gap": 8,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N2X6EL",
+                          "name": "Plus Nine Mark",
+                          "fill": "$schngn-risk",
+                          "content": "+9",
+                          "fontFamily": "$font-data",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "lfwsU",
+                          "name": "Plus Nine Label",
+                          "fill": "$schngn-risk",
+                          "content": "Extend Italy +9 days",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "eiRMI",
+                      "name": "Unsafe Count",
+                      "fill": "$schngn-risk",
+                      "content": "94 / 90",
+                      "fontFamily": "$font-data",
+                      "fontSize": 18,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "QRfbc",
+                  "name": "Unsafe Explanation",
+                  "fill": "#4F1712",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Unsafe state: first problem appears when Italy runs past Oct 13. The extended plan is 4 days over the limit; shorten Italy or move dates later.",
+                  "lineHeight": 1.25,
+                  "fontFamily": "$font-body",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "YS7Xj",
+              "name": "Trips Affecting Answer",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "stroke": "$schngn-line",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "s1gKt",
+                  "name": "Trips Affecting Title",
+                  "fill": "$schngn-ink",
+                  "content": "Trips affecting this answer",
+                  "fontFamily": "$font-head",
+                  "fontSize": 17,
+                  "fontWeight": "750"
+                },
+                {
+                  "type": "frame",
+                  "id": "wRnp9",
+                  "name": "France Trip Row",
+                  "width": "fill_container",
+                  "height": 48,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9999,
+                      "id": "bdv7c",
+                      "name": "France Trip Swatch",
+                      "fill": "#E5E8E1",
+                      "width": 10,
+                      "height": 32
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hUNyu",
+                      "name": "France Trip Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kiRfy",
+                          "name": "France Trip Name",
+                          "fill": "$schngn-ink",
+                          "content": "France  May 1-15",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "750"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wlZE6",
+                          "name": "France Trip Status",
+                          "fill": "$schngn-muted",
+                          "content": "Past · 15 inclusive days",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "hNiOI",
+                      "name": "France Days",
+                      "fill": "#667065",
+                      "content": "15d",
+                      "fontFamily": "$font-data",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "O1hcxm",
+                  "name": "Greece Trip Row",
+                  "width": "fill_container",
+                  "height": 48,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9999,
+                      "id": "g9ycI",
+                      "name": "Greece Trip Swatch",
+                      "fill": "$schngn-blue-soft",
+                      "width": 10,
+                      "height": 32
+                    },
+                    {
+                      "type": "frame",
+                      "id": "c7F54B",
+                      "name": "Greece Trip Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "B0HTfr",
+                          "name": "Greece Trip Name",
+                          "fill": "$schngn-ink",
+                          "content": "Greece  Aug 3-18",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "750"
+                        },
+                        {
+                          "type": "text",
+                          "id": "OK0om",
+                          "name": "Greece Trip Status",
+                          "fill": "$schngn-muted",
+                          "content": "Booked · 16 inclusive days",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "C9U7xv",
+                      "name": "Greece Days",
+                      "fill": "$schngn-blue",
+                      "content": "16d",
+                      "fontFamily": "$font-data",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "dY6fJ",
+                  "name": "Italy Trip Row",
+                  "width": "fill_container",
+                  "height": 48,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 9999,
+                      "id": "Osvjs",
+                      "name": "Italy Trip Swatch",
+                      "fill": "$schngn-safe-soft",
+                      "width": 10,
+                      "height": 32
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Zn6qi",
+                      "name": "Italy Trip Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "L3p3ur",
+                          "name": "Italy Trip Name",
+                          "fill": "$schngn-ink",
+                          "content": "Italy  Oct 1-13",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "750"
+                        },
+                        {
+                          "type": "text",
+                          "id": "SFuXz",
+                          "name": "Italy Trip Status",
+                          "fill": "$schngn-muted",
+                          "content": "What-if · 13 inclusive days",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "vCNLN",
+                      "name": "Italy Days",
+                      "fill": "$schngn-safe",
+                      "content": "13d",
+                      "fontFamily": "$font-data",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "S0GcbT",
+              "name": "Report Button",
+              "width": "fill_container",
+              "height": 50,
+              "fill": "$schngn-ink",
+              "cornerRadius": 14,
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "lTIsv",
+                  "name": "Report PDF Mark",
+                  "fill": "#FFFFFF",
+                  "content": "PDF",
+                  "fontFamily": "$font-data",
+                  "fontSize": 12,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "v79FHv",
+                  "name": "Report Label",
+                  "fill": "#FFFFFF",
+                  "content": "Border-ready report",
+                  "fontFamily": "$font-body",
+                  "fontSize": 15,
+                  "fontWeight": "800"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "schngn-bg": {
+      "type": "color",
+      "value": "#F7F8F4"
+    },
+    "schngn-ink": {
+      "type": "color",
+      "value": "#121712"
+    },
+    "schngn-muted": {
+      "type": "color",
+      "value": "#667065"
+    },
+    "schngn-line": {
+      "type": "color",
+      "value": "#DDE4D8"
+    },
+    "schngn-safe": {
+      "type": "color",
+      "value": "#1F7A4D"
+    },
+    "schngn-safe-soft": {
+      "type": "color",
+      "value": "#E5F4EB"
+    },
+    "schngn-risk": {
+      "type": "color",
+      "value": "#B42318"
+    },
+    "schngn-risk-soft": {
+      "type": "color",
+      "value": "#FDE8E5"
+    },
+    "schngn-blue": {
+      "type": "color",
+      "value": "#1B56D8"
+    },
+    "schngn-blue-soft": {
+      "type": "color",
+      "value": "#E7EEFF"
+    },
+    "schngn-amber": {
+      "type": "color",
+      "value": "#8A5A00"
+    },
+    "schngn-amber-soft": {
+      "type": "color",
+      "value": "#FFF2CC"
+    },
+    "font-head": {
+      "type": "string",
+      "value": "Geist"
+    },
+    "font-body": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "font-data": {
+      "type": "string",
+      "value": "Geist Mono"
+    }
+  },
+  "fileToken": "a3b592c3-f471-4733-aabb-d780e1dfba30"
+}
