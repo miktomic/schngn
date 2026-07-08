@@ -1,0 +1,58 @@
+## UI Pro Max Stack Guidelines
+**Stack:** html-tailwind | **Query:** mobile PWA dashboard timeline local storage accessibility
+**Source:** stacks/html-tailwind.csv | **Found:** 5 results
+
+### Result 1
+- **Category:** Buttons
+- **Guideline:** Touch targets
+- **Description:** Minimum 44px touch target on mobile
+- **Do:** min-h-[44px] on mobile
+- **Don't:** Small buttons on mobile
+- **Code Good:** min-h-[44px] min-w-[44px]
+- **Code Bad:** h-8 w-8 on mobile
+- **Severity:** High
+- **Docs URL:**
+
+### Result 2
+- **Category:** Responsive
+- **Guideline:** Mobile-first approach
+- **Description:** Start with mobile styles and add breakpoints
+- **Do:** Default mobile + md: lg: xl:
+- **Don't:** Desktop-first approach
+- **Code Good:** text-sm md:text-base
+- **Code Bad:** text-base max-md:text-sm
+- **Severity:** Medium
+- **Docs URL:** https://tailwindcss.com/docs/responsive-design
+
+### Result 3
+- **Category:** Accessibility
+- **Guideline:** Reduced motion
+- **Description:** Respect user motion preferences
+- **Do:** motion-reduce:animate-none
+- **Don't:** Ignore motion preferences
+- **Code Good:** motion-reduce:transition-none
+- **Code Bad:** No reduced motion support
+- **Severity:** High
+- **Docs URL:** https://tailwindcss.com/docs/hover-focus-and-other-states#prefers-reduced-motion
+
+### Result 4
+- **Category:** Accessibility
+- **Guideline:** Focus visible
+- **Description:** Show focus only for keyboard users
+- **Do:** focus-visible:ring-2
+- **Don't:** Focus on all interactions
+- **Code Good:** focus-visible:ring-2
+- **Code Bad:** focus:ring-2 (shows on click too)
+- **Severity:** Medium
+- **Docs URL:**
+
+### Result 5
+- **Category:** Accessibility
+- **Guideline:** Screen reader text
+- **Description:** Provide context for screen readers
+- **Do:** sr-only for hidden labels
+- **Don't:** Missing context for icons
+- **Code Good:** <span class='sr-only'>Close menu</span>
+- **Code Bad:** No label for icon button
+- **Severity:** High
+- **Docs URL:** https://tailwindcss.com/docs/screen-readers

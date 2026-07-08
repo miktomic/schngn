@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SCHNGN — Money Shot View Mock</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --ink: #101418;
+      --muted: #6e7781;
+      --line: #dde5ec;
+      --paper: #f4f7f5;
+      --card: #ffffff;
+      --navy: #0b1f33;
+      --navy-2: #102b45;
+      --green: #13a46f;
+      --green-soft: #dff8ee;
+      --lime: #b7f171;
+      --amber: #f6a623;
+      --amber-soft: #fff3da;
+      --red: #e6534f;
+      --red-soft: #ffe8e7;
+      --blue: #2d6cdf;
+      --shadow: 0 24px 70px rgba(13, 31, 51, 0.18);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(183,241,113,.35), transparent 32rem),
+        radial-gradient(circle at 80% 15%, rgba(45,108,223,.16), transparent 28rem),
+        linear-gradient(135deg, #eef5f1 0%, #f8faf8 48%, #ecf2f8 100%);
+      color: var(--ink);
+      display: grid;
+      place-items: start center;
+      padding: 34px 18px 54px;
+    }
+    .stage {
+      width: min(1180px, 100%);
+      display: grid;
+      grid-template-columns: minmax(340px, 430px) 1fr;
+      gap: 36px;
+      align-items: start;
+    }
+    .brief {
+      padding: 28px 4px 0;
+      position: sticky;
+      top: 24px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(16,20,24,.1);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,.66);
+      color: #344252;
+      font-size: 13px;
+      font-weight: 650;
+      backdrop-filter: blur(18px);
+    }
+    .brief h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(38px, 5vw, 72px);
+      line-height: .92;
+      letter-spacing: -0.055em;
+      max-width: 680px;
+    }
+    .brief p {
+      margin: 0 0 22px;
+      color: #52606d;
+      font-size: 18px;
+      line-height: 1.55;
+      max-width: 650px;
+    }
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+      max-width: 640px;
+    }
+    .principle {
+      padding: 16px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(16,20,24,.08);
+      border-radius: 18px;
+      box-shadow: 0 10px 35px rgba(13,31,51,.06);
+    }
+    .principle b { display:block; margin-bottom: 6px; }
+    .principle span { color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .device-wrap {
+      display: flex;
+      justify-content: center;
+    }
+    .device {
+      width: 390px;
+      max-width: 100%;
+      background: #101418;
+      border-radius: 46px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.5);
+    }
+    .screen {
+      min-height: 844px;
+      background: var(--paper);
+      border-radius: 38px;
+      overflow: hidden;
+      position: relative;
+    }
+    .screen::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 116px;
+      height: 24px;
+      background: #101418;
+      border-radius: 999px;
+      z-index: 5;
+    }
+    .app {
+      padding: 44px 16px 18px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 13px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--navy);
+    }
+    .mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--navy);
+      color: var(--lime);
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      box-shadow: inset 0 -6px 16px rgba(183,241,113,.12);
+    }
+    .private {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: #45515f;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: #e7eeeb;
+      padding: 4px;
+      border-radius: 999px;
+      margin: 8px 0 12px;
+    }
+    .segmented button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #66717e;
+      background: transparent;
+      letter-spacing: .02em;
+    }
+    .segmented button.active {
+      color: var(--navy);
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(13,31,51,.08);
+    }
+    .status-card {
+      background: linear-gradient(160deg, var(--navy) 0%, #123250 68%, #173f64 100%);
+      color: #fff;
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      box-shadow: 0 22px 45px rgba(13,31,51,.24);
+      position: relative;
+      overflow: hidden;
+    }
+    .status-card::after {
+      content:"";
+      position:absolute;
+      right:-42px;
+      top:-44px;
+      width:148px;
+      height:148px;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(183,241,113,.35), transparent 68%);
+    }
+    .status-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      position:relative;
+      z-index:1;
+    }
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .02em;
+    }
+    .pill.safe { background: rgba(183,241,113,.18); color: #dfffb9; border: 1px solid rgba(183,241,113,.34); }
+    .pill.risk { background: rgba(230,83,79,.16); color: #ffd3d1; border: 1px solid rgba(230,83,79,.34); }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+    .confidence {
+      margin-top: 22px;
+      position:relative;
+      z-index:1;
+    }
+    .confidence .big {
+      font-size: 54px;
+      line-height: .85;
+      letter-spacing: -0.07em;
+      font-weight: 900;
+      display: flex;
+      align-items: flex-end;
+      gap: 7px;
+    }
+    .confidence .big span:last-child { font-size: 15px; letter-spacing: -0.02em; color: #c9d7e4; padding-bottom: 5px; font-weight: 760; }
+    .confidence p {
+      margin: 10px 0 0;
+      color: #d8e7f5;
+      line-height: 1.36;
+      font-size: 14px;
+      max-width: 270px;
+    }
+    .exit-box {
+      position:relative;
+      z-index:1;
+      margin-top: 18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      padding: 13px 14px;
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 17px;
+    }
+    .exit-box span { color: #b9cadb; font-size: 12px; display:block; margin-bottom: 2px; }
+    .exit-box b { font-size: 16px; }
+    .mini-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 11px;
+      background: var(--lime);
+      color: #163300;
+      font-weight: 850;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .card {
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(16,20,24,.08);
+      box-shadow: 0 14px 34px rgba(13,31,51,.08);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .section-head h2 {
+      margin:0;
+      font-size: 15px;
+      letter-spacing: -0.03em;
+    }
+    .section-head span { color: var(--muted); font-size: 12px; font-weight: 650; }
+    .timeline {
+      position: relative;
+      height: 106px;
+      border-radius: 18px;
+      background: linear-gradient(90deg, #edf1f5, #f9fbfc);
+      border: 1px solid #dfe7ee;
+      overflow: hidden;
+      padding: 18px 14px;
+    }
+    .timeline .axis {
+      position:absolute;
+      left:14px; right:14px; top:52px;
+      height: 3px;
+      background: #ccd6df;
+      border-radius: 999px;
+    }
+    .window {
+      position:absolute;
+      left: 74px;
+      right: 36px;
+      top: 14px;
+      bottom: 15px;
+      border: 2px solid rgba(45,108,223,.66);
+      background: rgba(45,108,223,.045);
+      border-radius: 15px;
+    }
+    .window::before {
+      content: "active 180-day window";
+      position:absolute;
+      top: -10px;
+      left: 12px;
+      background: #f8fbfd;
+      color: var(--blue);
+      font-size: 10px;
+      font-weight: 850;
+      padding: 2px 7px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .tripbar {
+      position:absolute;
+      top: 46px;
+      height: 15px;
+      border-radius: 999px;
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
+    }
+    .tripbar.past { left: 34px; width: 40px; background: #b8c4cf; opacity:.62; }
+    .tripbar.greece { left: 140px; width: 102px; background: var(--green); }
+    .tripbar.italy { left: 266px; width: 46px; background: #7d69ff; }
+    .tripbar.extra { left: 312px; width: 27px; background: var(--red); display:none; }
+    .tick-label {
+      position:absolute;
+      bottom: 9px;
+      font-size: 10px;
+      color: #7b8794;
+      font-weight: 700;
+    }
+    .tick-label.a { left: 15px; }
+    .tick-label.b { left: 91px; color: var(--blue); }
+    .tick-label.c { right: 15px; color: var(--blue); }
+    .meter-label {
+      margin: 12px 2px 7px;
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      font-size: 12px;
+      color: #65717d;
+      font-weight: 700;
+    }
+    .meter-label b { color: var(--ink); font-size: 13px; }
+    .meter {
+      height: 13px;
+      border-radius: 999px;
+      background: #e8edf2;
+      overflow: hidden;
+      display:flex;
+      box-shadow: inset 0 0 0 1px rgba(16,20,24,.03);
+    }
+    .meter .used { width: 17%; background: #99a7b5; }
+    .meter .planned { width: 52%; background: var(--green); }
+    .meter .draft { width: 14%; background: #7d69ff; }
+    .meter .danger { width: 0%; background: var(--red); transition: width .25s ease; }
+    .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .legend span { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; color:#66717d; font-weight:700; }
+    .swatch { width:8px; height:8px; border-radius:50%; }
+    .trip-list { display:grid; gap: 9px; }
+    .trip-card {
+      display:grid;
+      grid-template-columns: 30px 1fr auto;
+      gap: 10px;
+      align-items:center;
+      padding: 11px;
+      border-radius: 16px;
+      border: 1px solid #e3eaf0;
+      background: #fbfcfd;
+    }
+    .trip-card.conflict {
+      border-color: rgba(230,83,79,.45);
+      background: var(--red-soft);
+    }
+    .icon {
+      width: 30px; height: 30px; border-radius: 11px;
+      display:grid; place-items:center;
+      font-size: 14px;
+      background: #eef3f6;
+    }
+    .trip-copy b { display:block; font-size: 13px; letter-spacing: -0.01em; }
+    .trip-copy span { display:block; margin-top:2px; color: #6b7580; font-size: 12px; }
+    .tag {
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 850;
+      color: #45515f;
+      background: #eef3f6;
+      white-space:nowrap;
+    }
+    .tag.lock { color: #07583b; background: var(--green-soft); }
+    .tag.draft { color: #4d3dcc; background: #eeebff; }
+    .tag.risk { color: #9d2723; background: #ffd9d7; display:none; }
+    .actions {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 12px;
+    }
+    .action {
+      appearance:none;
+      border:0;
+      border-radius: 15px;
+      padding: 12px 10px;
+      font-size: 12px;
+      font-weight: 850;
+      color: var(--navy);
+      background: #fff;
+      border: 1px solid #dfe7ee;
+      cursor: pointer;
+    }
+    .action.primary { background: var(--lime); border-color: #aadd5f; color:#163300; }
+    .action.warn { background: #fff; color:#9d2723; }
+    .explain {
+      padding: 0;
+      overflow: hidden;
+    }
+    .accordion {
+      width:100%;
+      border:0;
+      background: transparent;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 16px;
+      font-weight: 900;
+      font-size: 15px;
+      color: var(--ink);
+      cursor:pointer;
+    }
+    .explain-body {
+      padding: 0 16px 16px;
+      color: #4c5865;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .explain-body ul { margin: 10px 0 0 18px; padding:0; }
+    .explain-body li { margin: 6px 0; }
+    .drawer { display: block; }
+    .hidden { display:none; }
+    .pdf {
+      margin-top: 12px;
+      width:100%;
+      border:0;
+      border-radius: 18px;
+      padding: 14px;
+      background: var(--navy);
+      color: #fff;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 14px 30px rgba(13,31,51,.18);
+    }
+    .toast {
+      position:absolute;
+      left: 22px;
+      right: 22px;
+      bottom: 20px;
+      background: rgba(16,20,24,.92);
+      color:#fff;
+      border-radius: 18px;
+      padding: 13px 15px;
+      font-size: 12px;
+      line-height: 1.35;
+      box-shadow: 0 16px 34px rgba(0,0,0,.22);
+      transform: translateY(30px);
+      opacity: 0;
+      pointer-events:none;
+      transition: .25s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    .risk-state .status-card { background: linear-gradient(160deg, #311317 0%, #682822 76%, #8c362b 100%); }
+    .risk-state .pill.safe { display:none; }
+    .risk-state .pill.risk { display:inline-flex; }
+    .pill.risk { display:none; }
+    .risk-state .meter .danger { width: 10%; }
+    .risk-state .timeline .tripbar.extra { display:block; }
+    .risk-state .trip-card.italy-card { border-color: rgba(230,83,79,.45); background: var(--red-soft); }
+    .risk-state .tag.draft { display:none; }
+    .risk-state .tag.risk { display:inline-flex; }
+
+    @media (max-width: 880px) {
+      body { padding: 16px 10px 38px; }
+      .stage { grid-template-columns: 1fr; }
+      .brief { position:static; padding: 4px 8px 0; order: 2; }
+      .device-wrap { order: 1; }
+      .brief h1 { font-size: 42px; }
+      .brief p { font-size: 16px; }
+      .principles { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      body { padding: 0 0 38px; overflow-x: hidden; }
+      .stage { width: 100vw; }
+      .device-wrap { justify-content: stretch; width: 100%; }
+      .device { border-radius: 0; padding:0; box-shadow:none; border:0; background:transparent; width:100%; max-width:100%; }
+      .screen { border-radius:0; min-height:100vh; width: 100%; }
+      .screen::before { display:none; }
+      .app { padding-top: 18px; }
+      .brief { padding: 26px 18px 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <section class="brief" aria-label="Design brief">
+      <div class="eyebrow">Money shot mock · mobile-first PWA</div>
+      <h1>Answer first. Explain second.</h1>
+      <p>The key screen should not feel like a spreadsheet took a visa course. It should answer the user’s travel anxiety in five seconds, then make the calculation inspectable enough to trust.</p>
+      <div class="principles">
+        <div class="principle"><b>One status</b><span>Lead with “safe / action required,” not five competing counters.</span></div>
+        <div class="principle"><b>Sliding window</b><span>Make the 180-day rule visible as a time window, not a mysterious bucket.</span></div>
+        <div class="principle"><b>Protected plans</b><span>Future trips can be locked so simulations do not accidentally break them.</span></div>
+        <div class="principle"><b>Show your work</b><span>Plain-language explanation proves the answer without dumping legal soup.</span></div>
+      </div>
+    </section>
+
+    <section class="device-wrap" aria-label="Phone mockup">
+      <div class="device">
+        <div id="screen" class="screen">
+          <div class="app">
+            <header class="topbar">
+              <div class="brand"><div class="mark">S</div> SCHNGN</div>
+              <div class="private">✓ Offline & private</div>
+            </header>
+
+            <div class="segmented" aria-label="Mode">
+              <button>CHECK CURRENT</button>
+              <button class="active">TRIP PLANNER</button>
+            </div>
+
+            <section class="status-card" aria-label="Travel status">
+              <div class="status-row">
+                <div id="safePill" class="pill safe"><span class="dot"></span>SAFE & PROTECTED</div>
+                <div id="riskPill" class="pill risk"><span class="dot"></span>ACTION REQUIRED</div>
+              </div>
+              <div class="confidence">
+                <div class="big"><span id="cushion">15</span><span id="cushionLabel">safe buffer days</span></div>
+                <p id="statusCopy">Your Italy what-if trip fits and does not break your committed Greece trip.</p>
+              </div>
+              <div class="exit-box">
+                <div><span id="exitLabel">Must exit by for Italy</span><b id="exitDate">Oct 13, 2026</b></div>
+                <button class="mini-btn" id="whyTop">Why?</button>
+              </div>
+            </section>
+
+            <section class="card" aria-label="Rolling window visualizer">
+              <div class="section-head">
+                <h2>Rolling 180-day window</h2>
+                <span id="windowRange">Apr 17 → Oct 13</span>
+              </div>
+              <div class="timeline" aria-label="Timeline showing trips and active 180-day window">
+                <div class="window"></div>
+                <div class="axis"></div>
+                <div class="tripbar past" title="France past trip"></div>
+                <div class="tripbar greece" title="Greece protected trip"></div>
+                <div class="tripbar italy" title="Italy draft trip"></div>
+                <div class="tripbar extra" title="Extra risky days"></div>
+                <div class="tick-label a">May</div>
+                <div class="tick-label b">Window start</div>
+                <div class="tick-label c">Oct 13</div>
+              </div>
+              <div class="meter-label"><span>Days used in this window</span><b id="usedDays">75 / 90</b></div>
+              <div class="meter" aria-label="Days used meter">
+                <div class="used"></div><div class="planned"></div><div class="draft"></div><div class="danger"></div>
+              </div>
+              <div class="legend">
+                <span><i class="swatch" style="background:#99a7b5"></i>past</span>
+                <span><i class="swatch" style="background:var(--green)"></i>committed</span>
+                <span><i class="swatch" style="background:#7d69ff"></i>what-if</span>
+                <span><i class="swatch" style="background:var(--red)"></i>over limit</span>
+              </div>
+            </section>
+
+            <section class="card" aria-label="Trip timeline">
+              <div class="section-head">
+                <h2>Trips affecting this answer</h2>
+                <span>tap to edit</span>
+              </div>
+              <div class="trip-list">
+                <div class="trip-card">
+                  <div class="icon">🇫🇷</div>
+                  <div class="trip-copy"><b>France</b><span>May 01–15 · 15 days</span></div>
+                  <div class="tag">PAST</div>
+                </div>
+                <div class="trip-card">
+                  <div class="icon">🇬🇷</div>
+                  <div class="trip-copy"><b>Summer in Greece</b><span>Jul 10–Aug 25 · 47 days</span></div>
+                  <div class="tag lock">COMMITTED</div>
+                </div>
+                <div class="trip-card italy-card">
+                  <div class="icon">🇮🇹</div>
+                  <div class="trip-copy"><b id="italyName">Autumn in Italy</b><span id="italyDates">Oct 01–13 · 13 days</span></div>
+                  <div id="draftTag" class="tag draft">WHAT-IF</div>
+                  <div id="riskTag" class="tag risk">RISK</div>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="action primary" id="simulateBtn">Simulate +9 days</button>
+                <button class="action" id="removeBtn">Remove what-if</button>
+              </div>
+            </section>
+
+            <section class="card explain" aria-label="Explanation">
+              <button class="accordion" id="accordion">Why am I safe? <span id="chev">⌃</span></button>
+              <div class="explain-body drawer" id="drawer">
+                <div id="explainCopy">Looking backward from your planned Italy exit on Oct 13, you will have spent 75 days in Schengen inside the active 180-day window. Your committed Greece trip remains protected, leaving a 15-day safe buffer.</div>
+                <ul>
+                  <li>Entry and exit days both count.</li>
+                  <li>Older France days outside the window fade out automatically.</li>
+                  <li>What-if trips are simulations until you mark them committed.</li>
+                </ul>
+              </div>
+            </section>
+
+            <button class="pdf" id="pdfBtn">Generate border-ready PDF</button>
+          </div>
+          <div class="toast" id="toast">PDF report mocked: this would include trip list, active 180-day window, calculation summary, and EU-source disclaimer.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const screen = document.getElementById('screen');
+    const simulateBtn = document.getElementById('simulateBtn');
+    const removeBtn = document.getElementById('removeBtn');
+    const pdfBtn = document.getElementById('pdfBtn');
+    const toast = document.getElementById('toast');
+    const whyTop = document.getElementById('whyTop');
+    const accordion = document.getElementById('accordion');
+    const drawer = document.getElementById('drawer');
+    const chev = document.getElementById('chev');
+
+    let risk = false;
+    let drawerOpen = true;
+
+    function setRisk(next) {
+      risk = next;
+      screen.classList.toggle('risk-state', risk);
+      document.getElementById('cushion').textContent = risk ? '4' : '15';
+      document.getElementById('cushionLabel').textContent = risk ? 'days over limit' : 'safe buffer days';
+      document.getElementById('statusCopy').textContent = risk
+        ? 'Extending Italy to Oct 22 breaks the 90/180 rule and conflicts with your committed Greece trip.'
+        : 'Your Italy what-if trip fits and does not break your committed Greece trip.';
+      document.getElementById('exitLabel').textContent = risk ? 'Move exit earlier to' : 'Must exit by for Italy';
+      document.getElementById('exitDate').textContent = risk ? 'Oct 18, 2026' : 'Oct 13, 2026';
+      document.getElementById('usedDays').textContent = risk ? '94 / 90' : '75 / 90';
+      document.getElementById('italyDates').textContent = risk ? 'Oct 01–22 · 22 days' : 'Oct 01–13 · 13 days';
+      accordion.firstChild.textContent = risk ? 'What broke? ' : 'Why am I safe? ';
+      document.getElementById('explainCopy').textContent = risk
+        ? 'The extra 9 Italy days push the active 180-day window to 94 Schengen days. The first unsafe day is Oct 19. Keep the committed Greece trip, but shorten Italy or move it later.'
+        : 'Looking backward from your planned Italy exit on Oct 13, you will have spent 75 days in Schengen inside the active 180-day window. Your committed Greece trip remains protected, leaving a 15-day safe buffer.';
+      simulateBtn.textContent = risk ? 'Back to safe plan' : 'Simulate +9 days';
+    }
+
+    simulateBtn.addEventListener('click', () => setRisk(!risk));
+    removeBtn.addEventListener('click', () => {
+      showToast('What-if Italy trip removed in the mock. In product, this would recalculate the window instantly.');
+    });
+    pdfBtn.addEventListener('click', () => showToast('PDF report mocked: trip list, 180-day window, calculation summary, and EU-source disclaimer.'));
+    whyTop.addEventListener('click', () => {
+      if (!drawerOpen) toggleDrawer();
+      drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    accordion.addEventListener('click', toggleDrawer);
+
+    function toggleDrawer() {
+      drawerOpen = !drawerOpen;
+      drawer.classList.toggle('hidden', !drawerOpen);
+      chev.textContent = drawerOpen ? '⌃' : '⌄';
+    }
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add('show');
+      window.clearTimeout(window._toastTimer);
+      window._toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+  </script>
+</body>
+</html>

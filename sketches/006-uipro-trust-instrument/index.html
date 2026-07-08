@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SCHNGN — UI UX Pro Max Trust Instrument</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --surface-2:#eef4f9;
+    --text:#020617;
+    --muted:#475569;
+    --quiet:#64748b;
+    --border:#dbe4ee;
+    --primary:#0f172a;
+    --accent:#0369a1;
+    --accent-2:#0ea5e9;
+    --success:#059669;
+    --success-soft:#d1fae5;
+    --warn:#b45309;
+    --warn-soft:#fef3c7;
+    --danger:#dc2626;
+    --danger-soft:#fee2e2;
+    --shadow:0 24px 70px rgba(15,23,42,.10);
+    --radius:28px;
+    --gap:16px;
+  }
+  *{box-sizing:border-box}
+  html{background:linear-gradient(180deg,#f8fafc 0%,#eef4f9 100%); color:var(--text); -webkit-text-size-adjust:100%; text-size-adjust:100%;}
+  body{margin:0; font-family:"Source Sans 3", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height:100dvh; overflow-x:hidden;}
+  button{font:inherit; touch-action:manipulation; cursor:pointer;}
+  button:focus-visible, a:focus-visible{outline:3px solid rgba(3,105,161,.45); outline-offset:3px;}
+  .shell{width:min(100%,430px); margin:0 auto; padding:18px 14px 40px;}
+  .phone{background:var(--surface); border:1px solid rgba(15,23,42,.08); border-radius:34px; box-shadow:var(--shadow); overflow:hidden; min-height:880px;}
+  header{padding:18px 18px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.86); backdrop-filter: blur(14px); position:sticky; top:0; z-index:4;}
+  .brand{display:flex; gap:10px; align-items:center; min-width:0;}
+  .mark{width:34px; height:34px; border-radius:12px; background:var(--primary); color:white; display:grid; place-items:center; flex:0 0 auto;}
+  .brand strong{font-family:Lexend, sans-serif; letter-spacing:-.03em; display:block; line-height:1;}
+  .brand span{font-size:13px; color:var(--muted); display:block; line-height:1.1; margin-top:3px;}
+  .privacy{height:44px; min-width:44px; border:1px solid var(--border); background:#fff; border-radius:999px; padding:0 12px; display:flex; align-items:center; gap:7px; color:var(--primary); font-weight:700; font-size:13px;}
+  main{padding:18px; display:grid; gap:var(--gap);}
+  .status{border:1px solid var(--border); border-radius:var(--radius); padding:20px; background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);}
+  .status-top{display:flex; align-items:flex-start; justify-content:space-between; gap:14px;}
+  .pill{height:36px; padding:0 12px; border-radius:999px; display:inline-flex; gap:7px; align-items:center; font-size:12px; line-height:1; font-weight:800; letter-spacing:.06em; text-transform:uppercase; border:1px solid transparent; white-space:nowrap;}
+  .pill.safe{background:var(--success-soft); color:#064e3b; border-color:#a7f3d0;}
+  .pill.risk{background:var(--danger-soft); color:#7f1d1d; border-color:#fecaca;}
+  h1{font-family:Lexend, sans-serif; font-size:34px; letter-spacing:-.055em; line-height:.95; margin:18px 0 8px; color:var(--primary);}
+  .metric{display:flex; align-items:baseline; gap:10px; margin:0 0 8px;}
+  .metric strong{font-family:Lexend, sans-serif; font-size:56px; letter-spacing:-.07em; line-height:.9; color:var(--primary); font-variant-numeric:tabular-nums;}
+  .metric span{font-size:17px; font-weight:800; color:var(--muted);}
+  .summary{font-size:18px; line-height:1.34; color:#233044; margin:0; max-width:31ch;}
+  .actions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px;}
+  .btn{min-height:48px; border-radius:16px; border:1px solid var(--border); background:#fff; color:var(--primary); font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform .2s ease, border-color .2s ease, background .2s ease;}
+  .btn.primary{background:var(--primary); color:#fff; border-color:var(--primary);}
+  .btn:active{transform:scale(.98);}
+  .panel{border:1px solid var(--border); border-radius:24px; background:#fff; padding:16px;}
+  .panel h2{font-family:Lexend, sans-serif; font-size:16px; letter-spacing:-.03em; margin:0 0 12px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .panel h2 small{font:700 12px/1 "Source Sans 3", sans-serif; color:var(--quiet); letter-spacing:0;}
+  .bullet{position:relative; padding:11px 0 24px;}
+  .bullet-track{height:18px; border-radius:999px; background:linear-gradient(90deg,#d1fae5 0 83.33%,#fee2e2 83.33% 100%); border:1px solid rgba(15,23,42,.08); position:relative; overflow:hidden;}
+  .bullet-fill{height:100%; width:83.33%; background:linear-gradient(90deg,#0ea5e9,#059669); border-radius:999px; transition:width .25s ease, background .25s ease;}
+  .bullet-marker{position:absolute; top:3px; left:83.33%; width:3px; height:30px; border-radius:6px; background:#0f172a; transform:translateX(-1.5px);}
+  .bullet-labels{display:flex; justify-content:space-between; color:var(--muted); font-size:13px; font-weight:700; margin-top:10px;}
+  .timeline{padding-top:2px;}
+  .ruler{height:84px; border-radius:18px; background:var(--surface-2); border:1px solid var(--border); position:relative; overflow:hidden;}
+  .window{position:absolute; inset:14px 18px; border:2px solid rgba(3,105,161,.35); border-radius:12px; background:rgba(255,255,255,.62);}
+  .trip{position:absolute; top:34px; height:18px; border-radius:99px; border:1px solid rgba(15,23,42,.12);}
+  .trip.fr{left:15%; width:14%; background:#bae6fd;}
+  .trip.gr{left:43%; width:31%; background:#bfdbfe;}
+  .trip.it{left:77%; width:10%; background:#bbf7d0; transition:width .25s ease, background .25s ease;}
+  .trip.it.risk{width:19%; background:#fecaca;}
+  .dates{display:flex; justify-content:space-between; margin-top:10px; color:var(--muted); font-weight:700; font-size:13px;}
+  .proof{display:grid; gap:8px;}
+  .row{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:14px; align-items:center; min-height:44px; padding:9px 0; border-bottom:1px solid var(--border);}
+  .row:last-child{border-bottom:0;}
+  .row strong{display:block; font-size:15px; color:var(--primary);}
+  .row span{display:block; font-size:13px; color:var(--muted); margin-top:1px;}
+  .row b{font-family:Lexend, sans-serif; font-size:18px; font-variant-numeric:tabular-nums; color:var(--primary);}
+  .callout{border-radius:20px; padding:14px 15px; background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a8a; font-size:15px; line-height:1.35;}
+  .callout strong{display:block; font-family:Lexend, sans-serif; margin-bottom:4px;}
+  .risk-mode .pill.safe{display:none;}
+  .pill.risk{display:none;}
+  .risk-mode .pill.risk{display:inline-flex;}
+  .risk-mode .bullet-fill{width:100%; background:linear-gradient(90deg,#0ea5e9 0 76%,#dc2626 76% 100%);}
+  .risk-mode .callout{background:var(--danger-soft); border-color:#fecaca; color:#7f1d1d;}
+  .risk-mode .status{box-shadow:inset 0 0 0 2px rgba(220,38,38,.12);}
+  .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;}
+  svg{width:18px; height:18px; display:block; flex:0 0 auto;}
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.001ms!important;}}
+  @media (max-width:380px){.shell{padding:0}.phone{border-radius:0; border:0; min-height:100dvh}.metric strong{font-size:50px}h1{font-size:31px}.actions{grid-template-columns:1fr}.privacy span{display:none}}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="phone" id="app">
+      <header>
+        <div class="brand">
+          <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 5h10M7 12h10M7 19h6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+          <div><strong>SCHNGN</strong><span>90/180 planner</span></div>
+        </div>
+        <button class="privacy" aria-label="Privacy mode: data stays on this device"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Local</span></button>
+      </header>
+      <main>
+        <section class="status" aria-live="polite">
+          <div class="status-top">
+            <span class="pill safe"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Permitted</span>
+            <span class="pill risk"><svg viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 4h.01M10.3 4.6L2.8 18a2 2 0 001.7 3h15a2 2 0 001.7-3L13.7 4.6a2 2 0 00-3.4 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Action required</span>
+          </div>
+          <h1 id="headline">Italy fits</h1>
+          <p class="metric"><strong id="metric">15</strong><span id="metricLabel">safe buffer days</span></p>
+          <p class="summary" id="summary">Your Oct 1–13 Italy what-if trip fits and your committed Greece trip remains protected.</p>
+          <div class="actions">
+            <button class="btn primary" id="stress"><span id="stressLabel">Test +9 days</span></button>
+            <button class="btn" aria-label="Export border-ready proof report">Export proof</button>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="usage-title">
+          <h2 id="usage-title">Used inside rolling window <small id="usedText">75 / 90</small></h2>
+          <div class="bullet" role="img" aria-label="75 of 90 Schengen days used. 15 safe buffer days remain." id="bulletAria">
+            <div class="bullet-track"><div class="bullet-fill"></div></div>
+            <div class="bullet-marker" aria-hidden="true"></div>
+            <div class="bullet-labels"><span>0</span><span>limit 90</span></div>
+          </div>
+        </section>
+
+        <section class="panel timeline" aria-labelledby="window-title">
+          <h2 id="window-title">180-day window <small>Apr 17 → Oct 13</small></h2>
+          <div class="ruler" aria-label="Rolling 180-day window containing France, Greece, and Italy trips">
+            <div class="window" aria-hidden="true"></div>
+            <div class="trip fr" title="France, 15 days"></div>
+            <div class="trip gr" title="Greece, 47 days"></div>
+            <div class="trip it" id="italyBar" title="Italy, 13 days"></div>
+          </div>
+          <div class="dates"><span>oldest counted day</span><span>must exit by</span></div>
+        </section>
+
+        <section class="panel proof" aria-labelledby="proof-title">
+          <h2 id="proof-title">Why</h2>
+          <div class="row"><div><strong>France</strong><span>Already counted in this window</span></div><b>15</b></div>
+          <div class="row"><div><strong>Greece</strong><span>Committed trip, protected</span></div><b>47</b></div>
+          <div class="row"><div><strong>Italy</strong><span id="italyDates">What-if: Oct 1–13</span></div><b id="italyDays">13</b></div>
+          <div class="callout" id="callout"><strong>Next useful change</strong>On Nov 2, 10 France days age out of the rolling window.</div>
+        </section>
+      </main>
+    </div>
+  </div>
+<script>
+  const app = document.getElementById('app');
+  const stress = document.getElementById('stress');
+  const headline = document.getElementById('headline');
+  const metric = document.getElementById('metric');
+  const metricLabel = document.getElementById('metricLabel');
+  const summary = document.getElementById('summary');
+  const usedText = document.getElementById('usedText');
+  const bulletAria = document.getElementById('bulletAria');
+  const italyDates = document.getElementById('italyDates');
+  const italyDays = document.getElementById('italyDays');
+  const italyBar = document.getElementById('italyBar');
+  const callout = document.getElementById('callout');
+  const stressLabel = document.getElementById('stressLabel');
+  const params = new URLSearchParams(location.search);
+  let risky = params.get('risk') === '1';
+  function render(){
+    app.classList.toggle('risk-mode', risky);
+    italyBar.classList.toggle('risk', risky);
+    headline.textContent = risky ? 'Italy breaks it' : 'Italy fits';
+    metric.textContent = risky ? '4' : '15';
+    metricLabel.textContent = risky ? 'days over limit' : 'safe buffer days';
+    summary.textContent = risky ? 'The extended Italy trip reaches 94/90 days. Shorten it by 4 days or move the exit after France days age out.' : 'Your Oct 1–13 Italy what-if trip fits and your committed Greece trip remains protected.';
+    usedText.textContent = risky ? '94 / 90' : '75 / 90';
+    bulletAria.setAttribute('aria-label', risky ? '94 of 90 Schengen days used. 4 days over limit.' : '75 of 90 Schengen days used. 15 safe buffer days remain.');
+    italyDates.textContent = risky ? 'What-if: Oct 1–22' : 'What-if: Oct 1–13';
+    italyDays.textContent = risky ? '22' : '13';
+    callout.innerHTML = risky ? '<strong>Required fix</strong>Exit Italy by Oct 18, or move the trip until Nov 2 when 10 France days return.' : '<strong>Next useful change</strong>On Nov 2, 10 France days age out of the rolling window.';
+    stressLabel.textContent = risky ? 'Back to safe trip' : 'Test +9 days';
+  }
+  stress.addEventListener('click', () => { risky = !risky; render(); });
+  render();
+  if (params.get('measure') === '1') {
+    requestAnimationFrame(() => {
+      const metrics = {
+        innerWidth: window.innerWidth,
+        documentScrollWidth: document.documentElement.scrollWidth,
+        bodyScrollWidth: document.body.scrollWidth,
+        headline: headline.textContent,
+        used: usedText.textContent,
+        buttons: [...document.querySelectorAll('button')].map((button) => {
+          const rect = button.getBoundingClientRect();
+          return { text: button.textContent.trim(), width: Math.round(rect.width), height: Math.round(rect.height) };
+        })
+      };
+      const pre = document.createElement('pre');
+      pre.id = 'metrics';
+      pre.hidden = true;
+      pre.textContent = JSON.stringify(metrics);
+      document.body.append(pre);
+    });
+  }
+</script>
+</body>
+</html>

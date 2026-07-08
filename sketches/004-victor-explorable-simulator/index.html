@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>SCHNGN — Victor Explorable Simulator</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;650;800&display=swap" rel="stylesheet"><style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:#061018;color:#eaf4ff}button,input{font:inherit}.page{min-height:100vh;display:grid;place-items:start center;padding:18px 12px 48px;background:radial-gradient(circle at 80% -10%,rgba(0,153,255,.36),transparent 40%),#061018}.app{width:min(440px,100%);min-height:880px;border:1px solid rgba(255,255,255,.1);border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));box-shadow:0 40px 100px rgba(0,0,0,.45);padding:18px 16px}.top{display:flex;align-items:center;justify-content:space-between}.brand{font-weight:800;letter-spacing:-.02em}.pill{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:999px;color:#c8d7e6;padding:8px 11px;font-size:12px;font-weight:650}.hero{margin:18px 0;padding:20px;border-radius:24px;background:#eaf4ff;color:#061018;position:relative;overflow:hidden}.hero:after{content:"";position:absolute;right:-40px;top:-50px;width:150px;height:150px;border-radius:50%;background:#9cff57;opacity:.45}.hero .small{position:relative;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#27633f}.hero h1{position:relative;margin:10px 0 6px;font-size:42px;line-height:.98;letter-spacing:-1.8px}.hero p{position:relative;margin:0;font-size:15px;line-height:1.42;color:#324252}.result{display:flex;gap:10px;align-items:baseline;margin-top:16px;position:relative}.result b{font-size:64px;letter-spacing:-3px}.result span{font-weight:800}.warning .hero{background:#fff1d6}.warning .hero .small{color:#9a5a00}.warning .hero:after{background:#ff6b5e}.workspace{border-radius:24px;background:#0b1823;border:1px solid rgba(255,255,255,.1);padding:16px}.workspace h2{font-size:18px;margin:0 0 4px;letter-spacing:-.3px}.workspace .hint{font-size:13px;color:#91a3b6;margin:0 0 18px}.timeline{position:relative;height:190px;border-radius:18px;background:linear-gradient(180deg,#102231,#0d1b27);border:1px solid rgba(255,255,255,.08);overflow:hidden;padding:18px 14px}.axis{position:absolute;left:26px;right:26px;top:92px;height:2px;background:#6b7d8e}.lens{position:absolute;left:82px;right:28px;top:38px;height:110px;border:2px solid #64a2ff;border-radius:18px;background:rgba(100,162,255,.08);box-shadow:0 0 30px rgba(100,162,255,.15)}.trip{position:absolute;top:84px;height:18px;border-radius:999px;box-shadow:0 0 0 1px rgba(255,255,255,.12)}.france{left:30px;width:50px;background:#8a9bad}.greece{left:162px;width:124px;background:#1fcf7a}.italy{left:308px;width:var(--italyWidth);background:#8a7bff;transition:.18s}.overseg{display:none;position:absolute;left:356px;top:84px;height:18px;width:var(--overWidth);border-radius:999px;background:#ff6b5e}.warning .overseg{display:block}.labels{position:absolute;left:26px;right:26px;top:122px;display:flex;justify-content:space-between;font-size:11px;color:#8fa2b4;font-weight:650}.callout{position:absolute;left:92px;top:24px;font-size:11px;color:#b9d5ff;font-weight:800}.controls{padding:18px 0 2px}.range-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#b9c7d6;font-weight:650;margin-bottom:8px}input[type=range]{width:100%;accent-color:#9cff57}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.chip{border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:8px 10px;color:#c8d7e6;background:rgba(255,255,255,.04);font-size:12px;font-weight:650}.why{margin-top:14px;border-radius:20px;background:rgba(255,255,255,.06);padding:14px;color:#d8e6f4;line-height:1.45;font-size:14px}.why b{color:#fff}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.buttons button{min-height:48px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font-weight:800}.primary{background:#9cff57;color:#061018}.secondary{background:rgba(255,255,255,.06);color:#eaf4ff}.footer{font-size:12px;color:#91a3b6;line-height:1.45;text-align:center;margin:18px 4px 0}@media(max-width:480px){.page{padding:0;background:#061018}.app{border:0;border-radius:0;min-height:100vh}.hero h1{font-size:38px}.result b{font-size:58px}}</style></head><body><main class="page"><section class="app" id="app"><header class="top"><div class="brand">SCHNGN simulator</div><div class="pill">drag the plan</div></header><section class="hero"><div class="small" id="status">ITALY FITS</div><h1 id="headline">Move the trip. Watch the rule.</h1><p id="copy">Extend or shorten Italy and the 180-day window recalculates instantly.</p><div class="result"><b id="buffer">15</b><span id="bufferLabel">safe buffer days</span></div></section><section class="workspace"><h2>Explorable 180-day window</h2><p class="hint">The lens is the active 180-day window. Italy is the purple what-if block.</p><div class="timeline"><div class="lens"></div><div class="axis"></div><i class="trip france"></i><i class="trip greece"></i><i class="trip italy" id="italyBlock"></i><i class="overseg" id="overBlock"></i><div class="callout">active 180-day lens</div><div class="labels"><span>May</span><span>Greece committed</span><span id="exitLabel">Oct 13</span></div></div><div class="controls"><div class="range-row"><span>Italy length</span><span><b id="days">13</b> days · <b id="used">75</b>/90 used</span></div><input id="slider" type="range" min="1" max="30" value="13"/><div class="chips"><span class="chip">France: 15 past</span><span class="chip">Greece: 47 committed</span><span class="chip" id="italyChip">Italy: 13 what-if</span></div></div><div class="why" id="why"><b>Why:</b> At 13 Italy days, the active window holds 75 counted days. You can still add 15 days before the limit.</div><div class="buttons"><button class="primary" id="maxSafe">Snap to max safe</button><button class="secondary" id="report">Explain as report</button></div></section><p class="footer">Bret Victor direction: make the rule manipulable; understanding comes from seeing cause and effect.</p></section></main><script>
+const app=document.getElementById('app');
+const slider=document.getElementById('slider');
+const statusEl=document.getElementById('status');
+const daysEl=document.getElementById('days');
+const usedEl=document.getElementById('used');
+const italyChipEl=document.getElementById('italyChip');
+const exitLabelEl=document.getElementById('exitLabel');
+const italyBlockEl=document.getElementById('italyBlock');
+const overBlockEl=document.getElementById('overBlock');
+const headlineEl=document.getElementById('headline');
+const copyEl=document.getElementById('copy');
+const bufferEl=document.getElementById('buffer');
+const bufferLabelEl=document.getElementById('bufferLabel');
+const whyEl=document.getElementById('why');
+const maxSafeBtn=document.getElementById('maxSafe');
+const reportBtn=document.getElementById('report');
+function update(){
+  const d=+slider.value;
+  const used=62+d;
+  const over=Math.max(0,used-90);
+  app.classList.toggle('warning',over>0);
+  daysEl.textContent=d;
+  usedEl.textContent=used;
+  italyChipEl.textContent=`Italy: ${d} what-if`;
+  exitLabelEl.textContent=`Oct ${String(d).padStart(2,'0')}`;
+  italyBlockEl.style.setProperty('--italyWidth',`${Math.max(10,d*3.2)}px`);
+  overBlockEl.style.setProperty('--overWidth',`${Math.max(0,over*4)}px`);
+  if(over){
+    statusEl.textContent='ACTION REQUIRED';
+    headlineEl.textContent='You found the break point.';
+    copyEl.textContent=`At ${d} Italy days, the window reaches ${used}/90.`;
+    bufferEl.textContent=over;
+    bufferLabelEl.textContent='days over limit';
+    whyEl.innerHTML=`<b>What changed:</b> Italy now runs ${d} days, pushing the active window to ${used}/90. First unsafe day is around Oct ${19+Math.max(0,over-1)}. Shorten Italy or move it later.`;
+  } else {
+    statusEl.textContent='ITALY FITS';
+    headlineEl.textContent='Move the trip. Watch the rule.';
+    copyEl.textContent='Extend or shorten Italy and the 180-day window recalculates instantly.';
+    bufferEl.textContent=90-used;
+    bufferLabelEl.textContent='safe buffer days';
+    whyEl.innerHTML=`<b>Why:</b> At ${d} Italy days, the active window holds ${used} counted days. You can still add ${90-used} days before the limit.`;
+  }
+}
+slider.oninput=update;
+maxSafeBtn.onclick=()=>{slider.value=28;update()};
+reportBtn.onclick=()=>{whyEl.innerHTML='<b>Report mode:</b> France 15 + Greece 47 + Italy '+slider.value+' = '+(62+(+slider.value))+' counted Schengen days in the active 180-day window.'};
+update();
+</script></body></html>

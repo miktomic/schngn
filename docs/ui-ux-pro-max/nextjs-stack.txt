@@ -1,0 +1,25 @@
+## UI Pro Max Stack Guidelines
+**Stack:** nextjs | **Query:** mobile PWA dashboard timeline local storage accessibility
+**Source:** stacks/nextjs.csv | **Found:** 2 results
+
+### Result 1
+- **Category:** Environment
+- **Guideline:** Use .env.local for secrets
+- **Description:** Local env file for development secrets
+- **Do:** .env.local gitignored
+- **Don't:** Secrets in .env committed
+- **Code Good:** .env.local with secrets
+- **Code Bad:** .env with DATABASE_PASSWORD
+- **Severity:** High
+- **Docs URL:**
+
+### Result 2
+- **Category:** Fonts
+- **Guideline:** Use next/font for fonts
+- **Description:** Self-hosted fonts with zero layout shift
+- **Do:** next/font/google or next/font/local
+- **Don't:** External font links
+- **Code Good:** import { Inter } from 'next/font/google'
+- **Code Bad:** <link href="fonts.googleapis.com"/>
+- **Severity:** Medium
+- **Docs URL:** https://nextjs.org/docs/app/building-your-application/optimizing/fonts

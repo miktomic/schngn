@@ -1,0 +1,147 @@
+## UI Pro Max Search Results
+**Domain:** style | **Query:** minimal Swiss trust dashboard evidence timeline
+**Source:** styles.csv | **Found:** 8 results
+
+### Result 1
+- **Style Category:** Swiss Modernism 2.0
+- **Type:** General
+- **Keywords:** Grid system, Helvetica, modular, asymmetric, international style, rational, clean, mathematical spacing
+- **Primary Colors:** #000000, #FFFFFF, #F5F5F5, single vibrant accent only
+- **Effects & Animation:** display: grid, grid-template-columns: repeat(12 1fr), gap: 1rem, mathematical ratios, clear hierarchy
+- **Best For:** Corporate sites, architecture, editorial, SaaS, museums, professional services, documentation
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚡ Excellent
+- **Accessibility:** ✓ WCAG AAA
+- **Framework Compatibility:** Tailwind 10/10, Bootstrap 9/10, Foundation 10/10
+- **Complexity:** Low
+- **AI Prompt Keywords:** Design with Swiss Modernism 2.0. Use: strict grid system (12 columns), Helvetica/Inter fonts, mathematical spacing, asymmetric balance, high contrast, minimal decoration, clean hierarchy, single accent color.
+- **CSS/Technical Keywords:** display: grid, grid-template-columns: repeat(12, 1fr), gap: 1rem (8px base unit), font-family: Inter/Helvetica, font-weight: 400-700, color: #000/#FFF, single accent
+- **Implementation Checklist:** ☐ 12-column grid strict, ☐ Spacing mathematical, ☐ Typography hierarchy clear, ☐ Single accent only, ☐ No decorations, ☐ High contrast verified
+- **Design System Variables:** --grid-columns: 12, --grid-gap: 1rem, --base-unit: 8px, --font-primary: Inter, --color-text: #000000, --color-bg: #FFFFFF, --accent: single vibrant
+
+### Result 2
+- **Style Category:** Sales Intelligence Dashboard
+- **Type:** BI/Analytics
+- **Keywords:** Deal pipeline, sales metrics, territory performance, sales rep leaderboard, win-loss analysis, quota tracking, forecast accuracy
+- **Primary Colors:** Sales colors: won (green), lost (red), in-progress (blue), blocked (orange), quota met (gold), quota missed (grey)
+- **Effects & Animation:** Deal movement animations, metric updates, leaderboard ranking changes, gauge needle movements, status change highlights
+- **Best For:** CRM dashboards, sales management, opportunity tracking, performance management, quota planning
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚡ Good
+- **Accessibility:** ✓ WCAG AA
+- **Framework Compatibility:** Recharts 9/10, Chart.js 9/10
+- **Complexity:** Medium
+- **AI Prompt Keywords:** Design a sales intelligence dashboard. Use: pipeline funnel, deal cards (kanban), quota gauges, leaderboard table, territory map, win/loss ratios, forecast accuracy, activity timeline.
+- **CSS/Technical Keywords:** kanban columns (flex), gauge chart (SVG arc), leaderboard ranking styles, map integration (Mapbox/Google), timeline vertical, deal card with status border
+- **Implementation Checklist:** ☐ Pipeline stages shown, ☐ Deals draggable, ☐ Quotas visualized, ☐ Rankings updated, ☐ Territory clickable, ☐ CRM integration
+- **Design System Variables:** --pipeline-colors: stage gradient, --gauge-track: #E5E7EB, --gauge-fill: primary, --rank-1-color: #FFD700, --rank-2-color: #C0C0C0, --rank-3-color: #CD7F32
+
+### Result 3
+- **Style Category:** Conversion-Optimized
+- **Type:** Landing Page
+- **Keywords:** Form-focused, minimalist design, single CTA focus, high contrast, urgency elements, trust signals, social proof, clear value
+- **Primary Colors:** Primary brand color, high-contrast white/light backgrounds, warning/urgency colors for time-limited offers
+- **Effects & Animation:** Hover states on CTA (color shift, slight scale), form field focus animations, loading spinner, success feedback
+- **Best For:** E-commerce product pages, free trial signups, lead generation, SaaS pricing pages, limited-time offers
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚡ Excellent
+- **Accessibility:** ✓ WCAG AA
+- **Framework Compatibility:** Tailwind 10/10, Bootstrap 9/10
+- **Complexity:** Medium
+- **AI Prompt Keywords:** Design a conversion-optimized landing page. Use: single primary CTA, minimal distractions, trust badges, urgency elements (limited time), social proof (testimonials), clear value proposition, form above fold, progress indicators.
+- **CSS/Technical Keywords:** form with focus states, input:focus ring, button: primary color high contrast, position: sticky for CTA, max-width: 600px for form, loading spinner, success/error states
+- **Implementation Checklist:** ☐ Single primary CTA visible, ☐ Form fields minimal (3-5), ☐ Trust badges present, ☐ Social proof above fold, ☐ Mobile form optimized, ☐ Loading states implemented, ☐ A/B test ready
+- **Design System Variables:** --cta-color: high contrast primary, --form-max-width: 600px, --input-height: 48px, --focus-ring: 3px solid accent, --success-color: #22C55E, --error-color: #EF4444
+
+### Result 4
+- **Style Category:** Data-Dense Dashboard
+- **Type:** BI/Analytics
+- **Keywords:** Multiple charts/widgets, data tables, KPI cards, minimal padding, grid layout, space-efficient, maximum data visibility
+- **Primary Colors:** Neutral primary (light grey/white #F5F5F5), data colors (blue/green/red), dark text #333333
+- **Effects & Animation:** Hover tooltips, chart zoom on click, row highlighting on hover, smooth filter animations, data loading spinners
+- **Best For:** Business intelligence dashboards, financial analytics, enterprise reporting, operational dashboards, data warehousing
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚡ Excellent
+- **Accessibility:** ✓ WCAG AA
+- **Framework Compatibility:** Recharts 9/10, Chart.js 9/10, D3.js 10/10
+- **Complexity:** Medium
+- **AI Prompt Keywords:** Design a data-dense dashboard. Use: multiple chart widgets, KPI cards row, data tables with sorting, minimal padding (8-12px), efficient grid layout, filter sidebar, dense but readable typography, maximum information density.
+- **CSS/Technical Keywords:** display: grid, grid-template-columns: repeat(12, 1fr), gap: 8px, padding: 12px, font-size: 12-14px, overflow: auto for tables, compact card design, sticky headers
+- **Implementation Checklist:** ☐ Grid layout 12 columns, ☐ KPI cards responsive, ☐ Tables sortable, ☐ Filters functional, ☐ Loading states for data, ☐ Export functionality
+- **Design System Variables:** --grid-gap: 8px, --card-padding: 12px, --font-size-small: 12px, --table-row-height: 36px, --sidebar-width: 240px, --header-height: 56px
+
+### Result 5
+- **Style Category:** Executive Dashboard
+- **Type:** BI/Analytics
+- **Keywords:** High-level KPIs, large key metrics, minimal detail, summary view, trend indicators, at-a-glance insights, executive summary
+- **Primary Colors:** Brand colors, professional palette (blue/grey/white), accent for KPIs, red for alerts/concerns
+- **Effects & Animation:** KPI value animations (count-up), trend arrow direction animations, metric card hover lift, alert pulse effect
+- **Best For:** C-suite dashboards, business summary reports, decision-maker dashboards, strategic planning views
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚡ Excellent
+- **Accessibility:** ✓ WCAG AA
+- **Framework Compatibility:** Recharts 9/10, Chart.js 9/10, D3.js 10/10
+- **Complexity:** Medium
+- **AI Prompt Keywords:** Design an executive dashboard. Use: large KPI cards (4-6 max), trend sparklines, high-level summary only, clean layout with white space, traffic light indicators (red/yellow/green), at-a-glance insights, minimal detail.
+- **CSS/Technical Keywords:** display: flex for KPI row, large font-size (24-48px) for metrics, sparkline SVG inline, status indicators (border-left color), card shadows for hierarchy, responsive breakpoints
+- **Implementation Checklist:** ☐ KPIs 4-6 maximum, ☐ Trends visible, ☐ Status colors clear, ☐ One-page view, ☐ Mobile simplified, ☐ Print-friendly layout
+- **Design System Variables:** --kpi-font-size: 48px, --sparkline-height: 32px, --status-green: #22C55E, --status-yellow: #F59E0B, --status-red: #EF4444, --card-min-width: 280px
+
+### Result 6
+- **Style Category:** Trust & Authority
+- **Type:** Landing Page
+- **Keywords:** Certificates/badges displayed, expert credentials, case studies with metrics, before/after comparisons, industry recognition, security badges
+- **Primary Colors:** Professional colors (blue/grey), trust colors, certification badge colors (gold/silver accents)
+- **Effects & Animation:** Badge hover effects, metric pulse animations, certificate carousel, smooth stat reveal
+- **Best For:** Healthcare/medical landing pages, financial services, enterprise software, premium/luxury products, legal services
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚡ Excellent
+- **Accessibility:** ✓ WCAG AAA
+- **Framework Compatibility:** Tailwind 10/10, Bootstrap 9/10
+- **Complexity:** Medium
+- **AI Prompt Keywords:** Design a trust-focused landing page. Use: certification badges, security indicators, expert credentials, industry awards, case study metrics, compliance logos (GDPR, SOC2), guarantee badges, professional photography.
+- **CSS/Technical Keywords:** badge grid layout, shield icons, lock icons for security, certificate styling, metric cards with icons, professional color scheme (blue/grey), subtle shadows for depth
+- **Implementation Checklist:** ☐ Security badges visible, ☐ Certifications verified, ☐ Metrics with sources, ☐ Professional imagery, ☐ Guarantee clearly stated, ☐ Contact info accessible
+- **Design System Variables:** --badge-height: 48px, --trust-color: #1E40AF, --security-green: #059669, --card-shadow: 0 4px 6px rgba(0,0,0,0.1), --metric-highlight: #F59E0B
+
+### Result 7
+- **Style Category:** Minimalism & Swiss Style
+- **Type:** General
+- **Keywords:** Clean, simple, spacious, functional, white space, high contrast, geometric, sans-serif, grid-based, essential
+- **Primary Colors:** Monochromatic, Black #000000, White #FFFFFF
+- **Effects & Animation:** Subtle hover (200-250ms), smooth transitions, sharp shadows if any, clear type hierarchy, fast loading
+- **Best For:** Enterprise apps, dashboards, documentation sites, SaaS platforms, professional tools
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚡ Excellent
+- **Accessibility:** ✓ WCAG AAA
+- **Framework Compatibility:** Tailwind 10/10, Bootstrap 9/10, MUI 9/10
+- **Complexity:** Low
+- **AI Prompt Keywords:** Design a minimalist landing page. Use: white space, geometric layouts, sans-serif fonts, high contrast, grid-based structure, essential elements only. Avoid shadows and gradients. Focus on clarity and functionality.
+- **CSS/Technical Keywords:** display: grid, gap: 2rem, font-family: sans-serif, color: #000 or #FFF, max-width: 1200px, clean borders, no box-shadow unless necessary
+- **Implementation Checklist:** ☐ Grid-based layout 12-16 columns, ☐ Typography hierarchy clear, ☐ No unnecessary decorations, ☐ WCAG AAA contrast verified, ☐ Mobile responsive grid
+- **Design System Variables:** --spacing: 2rem, --border-radius: 0px, --font-weight: 400-700, --shadow: none, --accent-color: single primary only
+
+### Result 8
+- **Style Category:** Storytelling-Driven
+- **Type:** Landing Page
+- **Keywords:** Narrative flow, visual story progression, section transitions, consistent character/brand voice, emotional messaging, journey visualization
+- **Primary Colors:** Brand primary, warm/emotional colors, varied accent colors per story section, high visual variety
+- **Effects & Animation:** Section-to-section animations, scroll-triggered reveals, character/icon animations, morphing transitions, parallax narrative
+- **Best For:** Brand/startup stories, mission-driven products, premium/lifestyle brands, documentary-style products, educational
+- **Light Mode ✓:** ✓ Full
+- **Dark Mode ✓:** ✓ Full
+- **Performance:** ⚠ Moderate (animations)
+- **Accessibility:** ✓ WCAG AA
+- **Framework Compatibility:** Tailwind 10/10, Bootstrap 9/10
+- **Complexity:** Medium
+- **AI Prompt Keywords:** Design a storytelling landing page. Use: narrative flow sections, scroll-triggered reveals, chapter-like structure, emotional imagery, brand journey visualization, founder story, mission statement, timeline progression.
+- **CSS/Technical Keywords:** scroll-snap sections, Intersection Observer for reveals, parallax backgrounds, section transitions, timeline CSS, narrative typography (varied sizes), image-text alternating
+- **Implementation Checklist:** ☐ Story flows naturally, ☐ Scroll reveals smooth, ☐ Sections timed well, ☐ Emotional hooks present, ☐ Mobile story readable, ☐ Skip option available
+- **Design System Variables:** --section-min-height: 100vh, --reveal-duration: 600ms, --narrative-font: serif, --chapter-spacing: 8rem, --timeline-color: accent, --parallax-speed: 0.5
