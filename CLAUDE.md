@@ -260,6 +260,16 @@ Avoid:
 - Travel clipart confetti.
 - Technical/legal jargon like “payload,” “draft,” or “compliance object.”
 
+## Installed project skills
+
+Project-level agent skills live under `.agents/skills/` and are tracked through `skills-lock.json`.
+
+Installed:
+
+- `.agents/skills/design-taste-frontend/SKILL.md` from `Leonxlnx/taste-skill`.
+
+Use `design-taste-frontend` for landing page, portfolio-style, visual redesign, and marketing UI work where taste/hierarchy/anti-slop rules matter. Do **not** let it override SCHNGN’s higher-priority constraints: engine correctness, local-only trip data, no legal advice, accessibility, and the product/backlog pull order above.
+
 ## Testing expectations
 
 For code changes:
