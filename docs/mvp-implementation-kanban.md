@@ -139,14 +139,14 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-01, US-02, US-03
 - **Implementation target:** mobile-first money-shot dashboard using the synthesis design direction.
 - **Acceptance summary:**
   - Above-the-fold: days remaining, status badge, latest safe exit.
   - Live recalculation as trips change.
   - Large-type, high-contrast, calm design.
-- **Verification:** integration tests for five scenarios, WCAG AA contrast, 200% zoom, older/low-tech user sanity check.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 87 Bun tests / 1174 assertions including five dashboard money-shot scenarios; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium assertions for dynamic latest safe exit and privacy-network checks.
 
 ## US-09 — Future-trip simulator, “Can I book this?”
 

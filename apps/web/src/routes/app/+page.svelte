@@ -3,6 +3,7 @@
   import { FactCard, SchngnMark, StatusChip, TimelineLedger } from '$lib/design';
   import { onMount } from 'svelte';
   import { calculateUsageOnDate, type Trip } from '@schngn/engine';
+  import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import {
     deleteTripById,
     emptyTripForm,
@@ -64,7 +65,12 @@
       exitDate: '2026-07-19'
     } satisfies Trip
   ];
-  $: safeUsage = calculateUsageOnDate(engineTrips, '2026-10-13');
+  $: dashboardState = buildDashboardState(trips);
+  $: dashboardStatusTone = (dashboardState.statusTone === 'risk' ? 'risk' : dashboardState.statusTone === 'close' ? 'whatif' : 'safe') as
+    | 'safe'
+    | 'risk'
+    | 'whatif';
+  $: dashboardTextClass = dashboardState.statusTone === 'risk' ? 'risk-text' : dashboardState.statusTone === 'close' ? 'close-text' : 'safe-text';
   $: riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
   $: proofRows = trips.map((trip) => ({
     label: trip.label ?? trip.countryCode ?? 'Schengen trip',
@@ -206,19 +212,17 @@
 
     {#if active === 'dashboard'}
       <section class="screen" aria-labelledby="safe-heading">
-        <StatusChip tone="safe" label="Italy fits" />
-        <h1 id="safe-heading" class="verdict safe-text">{safeUsage.daysRemaining} safe buffer days</h1>
+        <StatusChip tone={dashboardStatusTone} label={dashboardState.statusLabel} />
+        <h1 id="safe-heading" class={`verdict ${dashboardTextClass}`}>{dashboardState.heroMetric}</h1>
         <div class="facts two">
-          <FactCard label="Must exit by" value="Oct 13" />
-          <FactCard label="Days used" value={`${safeUsage.daysUsed} / 90`} tone="safe" />
+          <FactCard label="Latest safe exit" value={dashboardState.latestSafeExitLabel} />
+          <FactCard label="Days used" value={dashboardState.daysUsedLabel} tone={dashboardState.statusTone === 'risk' ? 'ink' : 'safe'} />
         </div>
-        <TimelineLedger label="Rolling 180-day window" mode="safe" />
+        <TimelineLedger label="Rolling 180-day window" mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'} />
         <section class="panel mint" aria-labelledby="why-safe-heading">
-          <h2 id="why-safe-heading">Why this is safe</h2>
-          <p>
-            France, Germany, Greece, and Italy total {safeUsage.daysUsed} counted days in the Apr 17-Oct 13 window.
-            {safeUsage.daysRemaining} days remain before the 90-day limit.
-          </p>
+          <h2 id="why-safe-heading">Why this answer</h2>
+          <p>{dashboardState.whyCopy}</p>
+          <p class="micro-safe">{dashboardState.actionCopy}</p>
         </section>
         <button class="secondary-button" type="button" onclick={() => (active = 'proof')}>Show calculation</button>
         <button class="primary-button" type="button" onclick={() => (active = 'report')}>Border-ready report</button>
@@ -533,6 +537,7 @@
   }
 
   .safe-text { color: var(--safe); }
+  .close-text { color: var(--whatif); }
   .risk-text { color: var(--risk); }
 
   .facts {

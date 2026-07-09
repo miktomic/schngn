@@ -23,6 +23,8 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
 
     await expect(page.getByRole('heading', { name: '15 safe buffer days' })).toBeVisible();
     await expect(page.getByText('Italy fits')).toBeVisible();
+    await expect(page.getByText('Latest safe exit')).toBeVisible();
+    await expect(page.getByText('Nov 9', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Border-ready report' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Show calculation' }).click();
