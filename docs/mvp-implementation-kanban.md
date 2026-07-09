@@ -166,15 +166,15 @@
 
 - **Priority:** Must
 - **Estimate:** L
-- **Status:** Todo
-- **Depends on:** US-01, US-07
-- **Implementation target:** rolling-window availability visualization.
+- **Status:** Done
+- **Depends on:** US-01, US-02, US-07, US-09
+- **Implementation target:** timeline forecast component and allowance recovery view.
 - **Acceptance summary:**
+  - Shows when used days return.
   - Future dates show available days.
   - Next date allowance improves is clearly marked.
   - Handles ~50 trips under 300ms.
-- **Verification:** fixed trip-set unit assertions, EC planning-mode spot checks, performance test.
-
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 95 Bun tests / 1210 assertions including fixed trip-set, duplicate-day, non-Schengen exclusion, empty-window, and ~50-trip returning-day forecast cases; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the dynamic Returns screen, next-return date, forecast rows, and privacy-network assertions.
 ## US-10 — Disclaimers and “not legal advice” framing
 
 - **Priority:** Must

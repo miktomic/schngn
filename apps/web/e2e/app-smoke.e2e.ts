@@ -45,6 +45,12 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'Calculation proof' })).toBeVisible();
     await expect(page.getByText(/Entry and exit dates both count/i)).toBeVisible();
 
+    await page.getByRole('button', { name: 'Days returning soon' }).click();
+    await expect(page.getByRole('heading', { name: '12 days return in the next 30 days' })).toBeVisible();
+    await expect(page.getByText('Next return: Oct 28')).toBeVisible();
+    await expect(page.getByText('France May 1 leaves the window')).toBeVisible();
+    await expect(page.getByText('Nov 8')).toBeVisible();
+
     await page.getByRole('button', { name: 'Report' }).click();
     await expect(page.getByRole('heading', { name: 'Border-ready report' })).toBeVisible();
     await expect(page.getByText(/not legal advice/i)).toBeVisible();

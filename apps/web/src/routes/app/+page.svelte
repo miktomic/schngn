@@ -5,6 +5,7 @@
   import { calculateUsageOnDate, type Trip } from '@schngn/engine';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import { buildTripSimulationState, type ProposedTripInput } from '$lib/simulator/tripSimulator';
+  import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import {
     deleteTripById,
     emptyTripForm,
@@ -83,6 +84,7 @@
     | 'safe'
     | 'risk'
     | 'whatif';
+  $: returningForecast = buildReturningDaysForecast(trips, { referenceDate: '2026-10-13', horizonDays: 30 });
   $: riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
   $: proofRows = trips.map((trip) => ({
     label: trip.label ?? trip.countryCode ?? 'Schengen trip',
@@ -90,12 +92,6 @@
     days: inclusiveTripDays(trip),
     tone: trip.status
   }));
-
-  const returnRows = [
-    { date: 'Oct 22', days: '+3 days', source: 'France May 1-3 leaves the window' },
-    { date: 'Oct 31', days: '+6 days', source: 'France May 4-9 leaves the window' },
-    { date: 'Nov 8', days: '+3 days', source: 'France May 10-12 leaves the window' }
-  ];
 
   onMount(() => {
     const result = loadTripsFromStorage(window.localStorage);
@@ -393,14 +389,25 @@
       </section>
     {:else if active === 'returns'}
       <section class="screen" aria-labelledby="returns-heading">
-        <h1 id="returns-heading" class="verdict safe-text">12 days return in the next 30 days</h1>
+        <h1 id="returns-heading" class="verdict safe-text">{returningForecast.summaryLabel}</h1>
+        <p class="window-label">{returningForecast.currentUsedLabel} on Oct 13</p>
         <TimelineLedger label="Returning days forecast" mode="returns" />
+        <section class="panel mint">
+          <h2>{returningForecast.nextReturnLabel}</h2>
+          <p>Each listed day is a counted Schengen presence day aging out of the inclusive 180-day window. New booked trips can still consume allowance.</p>
+        </section>
         <div class="return-list">
-          {#each returnRows as row}
+          {#each returningForecast.rows as row}
             <article>
-              <strong>{row.date}</strong>
-              <span>{row.days}</span>
+              <strong>{row.dateLabel}</strong>
+              <span>{row.daysLabel}</span>
               <p>{row.source}</p>
+            </article>
+          {:else}
+            <article>
+              <strong>No returns</strong>
+              <span>+0 days</span>
+              <p>No counted Schengen days leave the window during this forecast horizon.</p>
             </article>
           {/each}
         </div>
