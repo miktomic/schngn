@@ -58,7 +58,7 @@
   let unlockPrice = chooseUnlockPriceBucket('eu', 0.34);
   let waitlistEmail = '';
   let waitlistConsent = false;
-  let waitlistState: 'idle' | 'submitting' | 'success' | 'error' = 'idle';
+  let waitlistState: 'idle' | 'submitting' | 'stored' | 'not_configured' | 'error' = 'idle';
   let waitlistError = '';
   let simulatorForm: ProposedTripInput = {
     label: 'Italy',
@@ -278,7 +278,8 @@
         })
       });
       if (!response.ok) throw new Error('Waitlist request failed');
-      waitlistState = 'success';
+      const result = (await response.json().catch(() => ({ stored: false }))) as { stored?: boolean };
+      waitlistState = result.stored ? 'stored' : 'not_configured';
       trackWaitlistSignup();
     } catch {
       waitlistState = 'error';
@@ -644,10 +645,16 @@
         <button class="primary-button" disabled={!waitlistEmail.trim() || !waitlistConsent || waitlistState === 'submitting'} onclick={submitWaitlist} type="button">
           {waitlistState === 'submitting' ? 'Joining…' : 'Join waitlist'}
         </button>
-        {#if waitlistState === 'success'}
+        {#if waitlistState === 'stored'}
           <section class="panel mint" aria-live="polite">
             <h2>You are on the list</h2>
             <p>We stored your email only.</p>
+          </section>
+        {/if}
+        {#if waitlistState === 'not_configured'}
+          <section class="panel mint" aria-live="polite">
+            <h2>Request noted</h2>
+            <p>Email storage is not fully configured yet. No trip data was sent.</p>
           </section>
         {/if}
         {#if waitlistState === 'error'}

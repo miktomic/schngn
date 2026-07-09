@@ -24,7 +24,7 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ ok: true, stored: true })
+        body: JSON.stringify({ ok: true, stored: false, reason: 'DB binding is not configured yet' })
       });
     });
     await page.addInitScript(() => {
@@ -190,7 +190,8 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByRole('button', { name: 'Join waitlist' })).toBeDisabled();
     await page.getByLabel(/I agree to receive SCHNGN updates/i).check();
     await page.getByRole('button', { name: 'Join waitlist' }).click();
-    await expect(page.getByRole('heading', { name: 'You are on the list' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Request noted' })).toBeVisible();
+    await expect(page.getByText(/Email storage is not fully configured yet/i)).toBeVisible();
     expect(waitlistRequests).toHaveLength(1);
     expect(JSON.parse(waitlistRequests[0])).toEqual({
       email: 'michael@example.com',
