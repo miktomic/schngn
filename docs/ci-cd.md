@@ -62,7 +62,7 @@ Current tests are now a real US-01 correctness gate:
 - deterministic property checks against an independent day-set oracle
 - golden counted-day scenario
 - verdict boundary classification
-- latest safe exit date starter coverage
+- latest safe exit date boundary coverage: no prior trips, 89-used one-day remaining, 90-used null, old-days-aging-out, missing country manual Schengen, and non-Schengen target `null`
 
 ### Build gate
 

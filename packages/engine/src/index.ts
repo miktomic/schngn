@@ -120,12 +120,18 @@ export function latestSafeExitDate(
   maxSearchDays = ROLLING_WINDOW_DAYS + SCHENGEN_ALLOWANCE_DAYS
 ): string | null {
   const entry = parseISODate(entryDate);
+  const normalizedCountryCode = countryCode?.trim().toUpperCase();
+
+  if (normalizedCountryCode && !isSchengenShortStayCountryCode(normalizedCountryCode)) {
+    return null;
+  }
+
   let latestSafe: string | null = null;
 
   for (let offset = 0; offset < maxSearchDays; offset += 1) {
     const exitDate = formatISODate(addDays(entry, offset));
-    const candidateTrip: Trip = countryCode
-      ? { entryDate: formatISODate(entry), exitDate, countryCode }
+    const candidateTrip: Trip = normalizedCountryCode
+      ? { entryDate: formatISODate(entry), exitDate, countryCode: normalizedCountryCode }
       : { entryDate: formatISODate(entry), exitDate };
 
     if (!isTripSafeForEveryDay(existingTrips, candidateTrip)) {

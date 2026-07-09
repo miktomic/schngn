@@ -49,13 +49,15 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-01
-- **Implementation target:** function that returns last legal/safe exit date for an active/planned stay.
+- **Implementation target:** function that returns last legal/safe exit date for an active/planned Schengen stay.
 - **Acceptance summary:**
-  - Computes latest exit while keeping usage ≤ 90.
+  - Computes latest exit while keeping usage ≤ 90 on every day of the candidate stay.
   - Handles already-at-limit and over-limit cases.
-- **Verification:** fixture tests prove returned exit is safe and exit + 1 day overstays.
+  - Treats missing country as manual Schengen input.
+  - Returns `null` for non-Schengen target countries because Schengen safe exit is not applicable.
+- **Verification:** boundary tests prove returned exit is safe and exit + 1 day overstays; covered no-prior-trip, 89-used, 90-used, old-days-aging-out, missing-country, and non-Schengen target cases.
 
 ## US-03 — Overstay / verdict flag
 
@@ -367,31 +369,29 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 
 ---
 
-# Pull order
+# Remaining pull order
 
-Use this order unless a dependency or decision changes:
+US-01 and US-02 are done. Use this order unless a dependency or decision changes:
 
-1. US-01 — Rolling 180-day engine
-2. US-02 — Latest safe exit date
-3. US-03 — Verdict flag
-4. US-19 — App test harness and privacy QA infrastructure
-5. US-04 — Trip CRUD
-6. US-05 — Local-only persistence
-7. US-06 — JSON import/export
-8. US-07 — Dashboard money-shot
-9. US-09 — Future-trip simulator
-10. US-08 — Days-coming-back visualization
-11. US-10 — Disclaimers
-12. US-11 — Why-this-number explainer
-13. US-15 — Privacy-friendly analytics
-14. US-13 — PDF fake-door
-15. US-14 — Paid unlock fake-door + pricing A/B
-16. US-18 — Waitlist/email capture
-17. US-16 — SEO landing page
-18. US-12 — Accuracy trust signal
-19. US-17 — Installable PWA/offline
-20. US-20 — Post-deploy smoke tests and privacy-safe operations
-21. US-21 — Canonical `www` redirect and domain hygiene
+1. US-03 — Verdict flag
+2. US-19 — App test harness and privacy QA infrastructure
+3. US-04 — Trip CRUD
+4. US-05 — Local-only persistence
+5. US-06 — JSON import/export
+6. US-07 — Dashboard money-shot
+7. US-09 — Future-trip simulator
+8. US-08 — Days-coming-back visualization
+9. US-10 — Disclaimers
+10. US-11 — Why-this-number explainer
+11. US-15 — Privacy-friendly analytics
+12. US-13 — PDF fake-door
+13. US-14 — Paid unlock fake-door + pricing A/B
+14. US-18 — Waitlist/email capture
+15. US-16 — SEO landing page
+16. US-12 — Accuracy trust signal
+17. US-17 — Installable PWA/offline
+18. US-20 — Post-deploy smoke tests and privacy-safe operations
+19. US-21 — Canonical `www` redirect and domain hygiene
 
 # Suggested GitHub issue labels
 

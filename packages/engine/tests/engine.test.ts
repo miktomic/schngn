@@ -5,6 +5,7 @@ import {
   classifyVerdict,
   countsForShortStay,
   isSchengenShortStayCountryCode,
+  isTripSafeForEveryDay,
   latestSafeExitDate,
   type Trip
 } from '../src/index';
@@ -149,8 +150,45 @@ describe('Schengen rolling 180-day engine', () => {
     expect(classifyVerdict(-1).state).toBe('over');
   });
 
-  test('computes latest safe exit date for a new stay with no prior trips', () => {
-    expect(latestSafeExitDate([], '2026-10-01', 'IT')).toBe('2026-12-29');
+});
+
+describe('latest safe exit date calculation', () => {
+  test('returns the 90th day for a new Schengen stay and proves the next day overstays', () => {
+    expectLatestSafeExitBoundary([], '2026-10-01', 'IT', '2026-12-29');
+  });
+
+  test('returns the only safe entry day when 89 days are already used', () => {
+    const existingTrips: Trip[] = [
+      { entryDate: '2026-01-01', exitDate: '2026-03-30', countryCode: 'FR' }
+    ];
+
+    expectLatestSafeExitBoundary(existingTrips, '2026-04-01', 'IT', '2026-04-01');
+  });
+
+  test('returns null when the entry day itself would exceed the allowance', () => {
+    const existingTrips: Trip[] = [
+      { entryDate: '2026-01-01', exitDate: '2026-03-31', countryCode: 'FR' }
+    ];
+
+    expect(latestSafeExitDate(existingTrips, '2026-04-01', 'IT')).toBeNull();
+  });
+
+  test('accounts for old days aging out of the rolling window during a continuous stay', () => {
+    const existingTrips: Trip[] = [
+      { entryDate: '2026-01-01', exitDate: '2026-03-30', countryCode: 'FR' }
+    ];
+
+    expectLatestSafeExitBoundary(existingTrips, '2026-06-30', 'IT', '2026-09-27');
+  });
+
+  test('treats missing country as a manual Schengen trip by default', () => {
+    expectLatestSafeExitBoundary([], '2026-10-01', undefined, '2026-12-29');
+  });
+
+  test('returns null for non-Schengen target countries because Schengen safe exit is not applicable', () => {
+    expect(latestSafeExitDate([], '2026-10-01', 'GB')).toBeNull();
+    expect(latestSafeExitDate([], '2026-10-01', 'IE')).toBeNull();
+    expect(latestSafeExitDate([], '2026-10-01', 'CY')).toBeNull();
   });
 });
 
@@ -295,6 +333,27 @@ function generateTrips(seed: number): Trip[] {
   }
 
   return trips;
+}
+
+function expectLatestSafeExitBoundary(
+  existingTrips: Trip[],
+  entryDate: string,
+  countryCode: string | undefined,
+  expectedExitDate: string
+): void {
+  const actualExitDate = latestSafeExitDate(existingTrips, entryDate, countryCode);
+  expect(actualExitDate).toBe(expectedExitDate);
+
+  const safeTrip = buildTrip(entryDate, expectedExitDate, countryCode);
+  expect(isTripSafeForEveryDay(existingTrips, safeTrip)).toBe(true);
+
+  const nextExitDate = formatDayNumber(dayNumber(expectedExitDate) + 1);
+  const unsafeTrip = buildTrip(entryDate, nextExitDate, countryCode);
+  expect(isTripSafeForEveryDay(existingTrips, unsafeTrip)).toBe(false);
+}
+
+function buildTrip(entryDate: string, exitDate: string, countryCode: string | undefined): Trip {
+  return countryCode ? { entryDate, exitDate, countryCode } : { entryDate, exitDate };
 }
 
 function dayNumber(value: string): number {
