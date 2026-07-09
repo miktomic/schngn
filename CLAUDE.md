@@ -213,9 +213,9 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-1. US-20 — post-deploy smoke and privacy-safe operations.
+All current MVP implementation cards are green. Next work should be explicit launch operations, production DNS/provider configuration, or new validation tasks—not another quiet scope creep goblin.
 
-US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, US-13, US-14, US-18, US-16, US-12, US-17, and US-21 are green. Next, finish launch operations.
+US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, US-13, US-14, US-18, US-16, US-12, US-17, US-21, and US-20 are green.
 
 ## Design direction
 

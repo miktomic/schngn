@@ -20,6 +20,7 @@
     "test:e2e": "cd apps/web && bun run test:e2e",
     "typecheck": "cd apps/web && bun run check",
     "check": "bun run test && bun run typecheck && bun run build",
+    "smoke:production": "node scripts/post-deploy-smoke.mjs",
     "deploy": "cd apps/web && bun run deploy"
   },
   "devDependencies": {

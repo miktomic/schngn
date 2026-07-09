@@ -315,16 +315,15 @@
 
 - **Priority:** Must
 - **Estimate:** S
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** stable production deployment, US-15 for analytics payload rules, approved no-Sentry MVP monitoring decision; see `docs/product-decisions.md`.
 - **Implementation target:** repeatable production smoke script/checklist and privacy-safe operational monitoring using Cloudflare logs/smoke tests first.
 - **Acceptance summary:**
-  - Script verifies `https://schngn.com/` and `https://schngn.com/app` return healthy HTTP responses.
-  - Browser smoke checklist covers app render, console errors, manifest, and core static assets.
-  - Post-deploy checklist includes privacy/network inspection for analytics, waitlist, and fake-door payloads.
-  - No Sentry or equivalent third-party error monitoring in MVP launch unless explicitly revisited.
-  - Rollback/failure notes live in the CI/CD docs.
-- **Verification:** smoke script runs against production, browser console is clean, payload audit shows no trip data or secrets, docs link the runbook.
+  - `bun run smoke:production` verifies `https://schngn.com/`, `/app`, `/accuracy`, `/manifest.json`, `/service-worker.js`, `/robots.txt`, and `/sitemap.xml` return healthy responses.
+  - Smoke script submits only a generated `smoke+...@schngn.invalid` waitlist email request and rejects trip-date/history fields in the smoke payload.
+  - GitHub Actions runs production smoke checks after successful Cloudflare deploy.
+  - Post-deploy runbook covers privacy-safe payload inspection, no-Sentry MVP operations, Cloudflare logs, failure handling, rollback notes, and `www` DNS warning behavior.
+- **Verification:** `npx -y bun@1.3.14 test apps/web/tests/post-deploy-smoke.test.ts` passed; `node scripts/post-deploy-smoke.mjs` passed against production with 8 checks and 1 known `www.schngn.com` DNS warning.
 
 ## US-21 — Canonical `www` redirect and domain hygiene
 

@@ -41,6 +41,8 @@ bun run typecheck
 bun run build
   ↓
 optional deploy to Cloudflare Workers on main
+  ↓
+production smoke checks when deploy credentials are configured
 ```
 
 ## Required quality gates
@@ -100,6 +102,37 @@ vite build && wrangler deploy
 ```
 
 The GitHub Actions production deploy job only runs on `main`, after `test-build` passes, and is attached to the GitHub Environment named `production`.
+
+## Post-deploy smoke and privacy-safe operations
+
+Run the production smoke script after every deploy:
+
+```bash
+bun run smoke:production
+```
+
+The script verifies:
+
+- `https://schngn.com/`, `/app`, and `/accuracy` return healthy HTML and expected launch copy.
+- PWA/static assets `/manifest.json`, `/service-worker.js`, `/robots.txt`, and `/sitemap.xml` return healthy responses.
+- Canonical metadata and sitemap content stay on the apex domain, not `www.schngn.com`.
+- `/api/waitlist` accepts a generated `smoke+...@schngn.invalid` email-only request.
+- The smoke request does not submit trip dates, trip history, country timelines, names, passports, secrets, or other traveler data.
+
+`www.schngn.com` is checked as a canonical redirect when DNS resolves. If the hostname still does not resolve, the script reports a warning rather than failing the deploy; that is a Cloudflare DNS/custom-domain provisioning task, not an app-regression signal.
+
+Privacy-safe operations for MVP:
+
+- Use Cloudflare logs plus the smoke script first; no Sentry or equivalent third-party error-monitoring SDK in the MVP.
+- Inspect analytics, waitlist, and fake-door payloads with browser/devtools or Playwright before changing those flows.
+- Keep operational logs aggregate; never log trip dates, labels, full history, passport/residence details, or secrets.
+
+Rollback/failure notes:
+
+- If `test-build` fails, do not deploy.
+- If deploy fails, inspect the GitHub Actions `Deploy production` logs and Wrangler error, then rerun after fixing credentials/routes/config.
+- If production smoke fails after deploy, use Cloudflare deployment history to roll back to the previous known-good Worker version or push a small revert/fix commit.
+- If only the `www` smoke emits the DNS warning, leave apex production live and fix Cloudflare DNS/custom-domain provisioning separately.
 
 ## Secrets strategy
 
