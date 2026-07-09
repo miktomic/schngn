@@ -239,14 +239,16 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-09, US-13, US-15, approved fake-door price buckets; see `docs/product-decisions.md`.
-- **Implementation target:** premium/full-tracker CTA with persisted one-time price bucket assignment.
+- **Implementation target:** premium/full-tracker planner CTA with persisted one-time price bucket assignment in local browser storage.
 - **Acceptance summary:**
-  - Gates premium framing behind buy/waitlist step.
-  - Randomly assigns €5 / €9 / €19 by default, or £5 / £9 / £19 on UK-targeted pages.
-  - Logs buy intent and assigned price.
-- **Verification:** distribution test across buckets, event payload test, persistence across reloads.
+  - Gates premium/full-planner framing behind an unlock fake-door CTA on the Planner screen.
+  - Assigns approved €5 / €9 / €19 EU buckets and £5 / £9 / £19 UK buckets through a tested bucket helper.
+  - Persists the assigned bucket across reloads using local storage; invalid stored values are ignored and reassigned.
+  - Logs aggregate-only `unlock_buy_intent` with `source: planner` and the assigned `price_bucket`.
+  - Shows honest early-access and “No payment was taken” copy; no checkout or charge path is enabled.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 110 Bun tests / 1266 assertions including bucket assignment, persistence, invalid-value recovery, and aggregate unlock-intent payload tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the planner unlock CTA, early-access/no-charge message, `unlock_buy_intent`, PDF fake-door, and no forbidden network payloads.
 - **Success metric:** targeted-traffic preorder/buy-intent > 2%.
 
 ## US-18 — Waitlist / email capture

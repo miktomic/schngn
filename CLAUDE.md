@@ -213,11 +213,11 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-1. US-14/US-18 — paid unlock fake-door and waitlist validation flows.
+1. US-18 — waitlist/email capture for fake-door conversion follow-up.
 2. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
 3. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
 
-US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, and US-13 are green. Next, build the paid unlock fake-door / waitlist validation flows on top of the aggregate-only analytics wrapper.
+US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, US-13, and US-14 are green. Next, build the waitlist/email capture flow for fake-door conversion follow-up.
 
 ## Design direction
 

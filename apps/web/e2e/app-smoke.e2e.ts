@@ -25,6 +25,7 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
       };
       analyticsWindow.__plausibleEvents = [];
       analyticsWindow.plausible = (name, options) => analyticsWindow.__plausibleEvents.push({ name, options });
+      window.localStorage.setItem('schngn.unlockPriceBucket.v1', 'eur_9');
     });
 
     await page.goto('/app');
@@ -50,6 +51,14 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'Can I book this?' })).toBeVisible();
     await expect(page.getByText('Italy fits', { exact: true })).toBeVisible();
     await expect(page.getByText('56 days max from Sep 15')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Unlock full trip planner — €9' })).toBeVisible();
+    await page.getByRole('button', { name: 'Unlock full trip planner — €9' }).click();
+    await expect(page.getByRole('heading', { name: 'Unlock request noted' })).toBeVisible();
+    await expect(page.getByText(/No payment was taken/i)).toBeVisible();
+    let plausibleEvents = await readPlausibleEvents(page);
+    let plausibleEventNames = plausibleEvents.map((event) => event.name);
+    expect(plausibleEventNames).toContain('unlock_buy_intent');
+    assertSafePlausiblePayload(plausibleEvents);
     await page.getByLabel('Simulation label').fill('Portugal simulation');
     await page.getByLabel('Simulation country').fill('PT');
     await page.getByLabel('Simulation entry date').fill('2026-09-15');
@@ -81,8 +90,8 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Generate border-ready PDF — €9' }).click();
     await expect(page.getByRole('heading', { name: 'Early-access request noted' })).toBeVisible();
     await expect(page.getByText(/No payment was taken/i)).toBeVisible();
-    let plausibleEvents = await readPlausibleEvents(page);
-    let plausibleEventNames = plausibleEvents.map((event) => event.name);
+    plausibleEvents = await readPlausibleEvents(page);
+    plausibleEventNames = plausibleEvents.map((event) => event.name);
     expect(plausibleEventNames).toContain('pdf_buy_intent');
     assertSafePlausiblePayload(plausibleEvents);
 

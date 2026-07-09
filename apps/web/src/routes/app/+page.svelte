@@ -9,6 +9,7 @@
   import { buildExplanationState } from '$lib/explanation/explanationState';
   import { FOOTER_DISCLAIMER_COPY, FULL_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '$lib/legal/legalCopy';
   import { buildPdfBuyIntentEvent, buildPdfReportFakeDoorState } from '$lib/fake-door/pdfReportFakeDoor';
+  import { buildUnlockBuyIntentEvent, buildUnlockFakeDoorState, chooseUnlockPriceBucket, loadOrAssignUnlockPriceBucket } from '$lib/fake-door/unlockFakeDoor';
   import {
     buildSafeBufferBucket,
     buildTripCountBucket,
@@ -53,6 +54,8 @@
   let importError = '';
   let disclaimerNoticeVisible = true;
   let pdfIntentMessageVisible = false;
+  let unlockIntentMessageVisible = false;
+  let unlockPrice = chooseUnlockPriceBucket('eu', 0.34);
   let simulatorForm: ProposedTripInput = {
     label: 'Italy',
     countryCode: 'IT',
@@ -99,6 +102,7 @@
   $: returningForecast = buildReturningDaysForecast(trips, { referenceDate: '2026-10-13', horizonDays: 30 });
   $: explanationState = buildExplanationState(trips, dashboardState.referenceDate);
   $: pdfFakeDoorState = buildPdfReportFakeDoorState(pdfIntentMessageVisible);
+  $: unlockFakeDoorState = buildUnlockFakeDoorState(unlockPrice, unlockIntentMessageVisible);
   $: riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
 
   onMount(() => {
@@ -106,6 +110,7 @@
     trips = result.trips;
     storageSource = result.source;
     storageWarning = result.warning ?? '';
+    unlockPrice = loadOrAssignUnlockPriceBucket(window.localStorage, { market: 'eu' });
     trackPageView('app');
   });
 
@@ -258,6 +263,12 @@
     const event = buildPdfBuyIntentEvent();
     trackAnalyticsEvent(event.name, event.props);
     pdfIntentMessageVisible = true;
+  }
+
+  function recordUnlockBuyIntent(): void {
+    const event = buildUnlockBuyIntentEvent(unlockPrice, 'planner');
+    trackAnalyticsEvent(event.name, event.props);
+    unlockIntentMessageVisible = true;
   }
 
   function analyticsVerdict(): AnalyticsVerdict {
@@ -453,6 +464,18 @@
           <button class="secondary-button" type="button" onclick={resetSimulation}>Use Italy example</button>
           <button class="secondary-button" type="button" onclick={clearSimulation}>Clear simulation</button>
         </div>
+        <section class="panel whatif-panel">
+          <h2>Need more planning power?</h2>
+          <p>{unlockFakeDoorState.helperCopy}</p>
+        </section>
+        <button class="primary-button" type="button" onclick={recordUnlockBuyIntent}>{unlockFakeDoorState.buttonLabel}</button>
+        {#if unlockFakeDoorState.showIntentMessage}
+          <section class="panel mint" aria-live="polite">
+            <h2>Unlock request noted</h2>
+            <p>{unlockFakeDoorState.messageCopy}</p>
+            <p class="micro-safe">No payment was taken. No trip dates or planner timeline were sent.</p>
+          </section>
+        {/if}
       </section>
     {:else if active === 'proof'}
       <section class="screen" id="proof" aria-labelledby="proof-heading">
