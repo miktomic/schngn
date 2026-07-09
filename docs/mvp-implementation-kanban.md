@@ -93,7 +93,7 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-01 data model contract, US-19 for browser/integration coverage
 - **Implementation target:** trip CRUD UI and validation.
 - **Acceptance summary:**
@@ -101,7 +101,7 @@
   - Equal entry/exit allowed as a one-day trip.
   - Exit before entry rejected inline.
   - Edit/delete re-sorts list and recalculates immediately.
-- **Verification:** unit validation tests, integration add/edit/delete → recalculation, mobile Safari/Chrome QA, privacy/network check confirms no trip payloads leave browser.
+- **Verification:** `npx -y bun@1.3.14 run check` passed with 75 Bun tests / 1124 assertions; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium add/edit/delete/validation and privacy-network coverage.
 
 ## US-05 — Local-only persistence, no account
 

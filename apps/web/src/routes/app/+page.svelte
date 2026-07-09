@@ -1,5 +1,17 @@
 <script lang="ts">
   import { calculateUsageOnDate, type Trip } from '@schngn/engine';
+  import {
+    deleteTripById,
+    emptyTripForm,
+    formatTripRange,
+    inclusiveTripDays,
+    toEngineTrips,
+    tripToForm,
+    upsertTrip,
+    type EditableTrip,
+    type TripFormInput,
+    type TripValidationErrors
+  } from '$lib/trips/tripCrud';
 
   type ScreenKey =
     | 'dashboard'
@@ -13,12 +25,10 @@
     | 'privacy'
     | 'waitlist';
 
-  interface AppTrip extends Trip {
-    status: 'past' | 'booked' | 'what-if';
-    days: number;
-  }
-
   let active: ScreenKey = 'dashboard';
+  let editingTripId: string | null = null;
+  let tripForm: TripFormInput = emptyTripForm('booked');
+  let formErrors: TripValidationErrors = {};
 
   const screens: { key: ScreenKey; label: string }[] = [
     { key: 'dashboard', label: 'Safe' },
@@ -33,32 +43,31 @@
     { key: 'waitlist', label: 'Waitlist' }
   ];
 
-  const baseTrips: AppTrip[] = [
-    { label: 'France', countryCode: 'FR', entryDate: '2026-05-01', exitDate: '2026-05-12', status: 'past', days: 12 },
-    { label: 'Germany', countryCode: 'DE', entryDate: '2026-06-10', exitDate: '2026-06-27', status: 'past', days: 18 },
-    { label: 'Greece', countryCode: 'GR', entryDate: '2026-08-03', exitDate: '2026-08-18', status: 'booked', days: 16 },
-    { label: 'Italy', countryCode: 'IT', entryDate: '2026-09-15', exitDate: '2026-10-13', status: 'booked', days: 29 }
+  let trips: EditableTrip[] = [
+    { id: 'france', label: 'France', countryCode: 'FR', entryDate: '2026-05-01', exitDate: '2026-05-12', status: 'past' },
+    { id: 'germany', label: 'Germany', countryCode: 'DE', entryDate: '2026-06-10', exitDate: '2026-06-27', status: 'past' },
+    { id: 'greece', label: 'Greece', countryCode: 'GR', entryDate: '2026-08-03', exitDate: '2026-08-18', status: 'booked' },
+    { id: 'italy', label: 'Italy', countryCode: 'IT', entryDate: '2026-09-15', exitDate: '2026-10-13', status: 'booked' }
   ];
 
-  const riskTrips: Trip[] = [
-    ...baseTrips,
+  $: engineTrips = toEngineTrips(trips);
+  $: riskTrips = [
+    ...engineTrips,
     {
       label: 'Spain what-if',
       countryCode: 'ES',
       entryDate: '2026-07-01',
       exitDate: '2026-07-19'
-    }
+    } satisfies Trip
   ];
-
-  const safeUsage = calculateUsageOnDate(baseTrips, '2026-10-13');
-  const riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
-
-  const proofRows = [
-    { label: 'France', dates: 'May 1-12', days: 12, tone: 'past' },
-    { label: 'Germany', dates: 'Jun 10-27', days: 18, tone: 'past' },
-    { label: 'Greece', dates: 'Aug 3-18', days: 16, tone: 'booked' },
-    { label: 'Italy', dates: 'Sep 15-Oct 13', days: 29, tone: 'booked' }
-  ];
+  $: safeUsage = calculateUsageOnDate(engineTrips, '2026-10-13');
+  $: riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
+  $: proofRows = trips.map((trip) => ({
+    label: trip.label ?? trip.countryCode ?? 'Schengen trip',
+    dates: formatTripRange(trip),
+    days: inclusiveTripDays(trip),
+    tone: trip.status
+  }));
 
   const returnRows = [
     { date: 'Oct 22', days: '+3 days', source: 'France May 1-3 leaves the window' },
@@ -66,7 +75,36 @@
     { date: 'Nov 8', days: '+3 days', source: 'France May 10-12 leaves the window' }
   ];
 
-  function statusLabel(status: AppTrip['status']): string {
+  function startAddTrip(): void {
+    editingTripId = null;
+    tripForm = emptyTripForm('booked');
+    formErrors = {};
+    active = 'trip';
+  }
+
+  function startEditTrip(trip: EditableTrip): void {
+    editingTripId = trip.id;
+    tripForm = tripToForm(trip);
+    formErrors = {};
+    active = 'trip';
+  }
+
+  function saveTrip(): void {
+    const result = upsertTrip(trips, { ...tripForm, id: editingTripId ?? tripForm.id });
+    formErrors = result.errors;
+    if (Object.keys(result.errors).length > 0) return;
+
+    trips = result.trips;
+    editingTripId = null;
+    tripForm = emptyTripForm('booked');
+    active = 'trips';
+  }
+
+  function deleteTrip(id: string): void {
+    trips = deleteTripById(trips, id);
+  }
+
+  function statusLabel(status: EditableTrip['status']): string {
     if (status === 'past') return 'Past, counted';
     if (status === 'booked') return 'Booked, counted';
     return 'What-if';
@@ -106,7 +144,7 @@
     {#if active === 'dashboard'}
       <section class="screen" aria-labelledby="safe-heading">
         {@render StatusChip('safe', 'Italy fits')}
-        <h1 id="safe-heading" class="verdict safe-text">15 safe buffer days</h1>
+        <h1 id="safe-heading" class="verdict safe-text">{safeUsage.daysRemaining} safe buffer days</h1>
         <div class="facts two">
           {@render Fact('Must exit by', 'Oct 13')}
           {@render Fact('Days used', `${safeUsage.daysUsed} / 90`, 'safe')}
@@ -140,54 +178,64 @@
       </section>
     {:else if active === 'trip'}
       <section class="screen" aria-labelledby="trip-heading">
-        <h1 id="trip-heading" class="screen-title">Add trip</h1>
-        <form class="trip-form" aria-label="Add trip demo form">
+        <h1 id="trip-heading" class="screen-title">{editingTripId ? 'Edit trip' : 'Add trip'}</h1>
+        <form class="trip-form" aria-label="Trip form" onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
+          <label>
+            <span>Label</span>
+            <input bind:value={tripForm.label} placeholder="Italy" />
+          </label>
           <label>
             <span>Country</span>
-            <input value="Italy" aria-describedby="country-help" />
-            <small id="country-help">Schengen counted</small>
+            <input bind:value={tripForm.countryCode} aria-describedby="country-help" placeholder="IT" />
+            <small id="country-help">Use a Schengen country code such as IT, FR, ES, CH, or leave blank for manual Schengen entry.</small>
           </label>
           <label>
             <span>Entry date</span>
-            <input value="Sep 15, 2026" aria-describedby="entry-help" />
-            <small id="entry-help">Entry day counts</small>
+            <input type="date" bind:value={tripForm.entryDate} aria-describedby="entry-help" aria-invalid={formErrors.entryDate ? 'true' : undefined} />
+            <small id="entry-help">Entry day counts.</small>
+            {#if formErrors.entryDate}<strong class="field-error">{formErrors.entryDate}</strong>{/if}
           </label>
           <label>
             <span>Exit date</span>
-            <input value="Oct 13, 2026" aria-describedby="exit-help" />
-            <small id="exit-help">Exit day counts</small>
+            <input type="date" bind:value={tripForm.exitDate} aria-describedby="exit-help" aria-invalid={formErrors.exitDate ? 'true' : undefined} />
+            <small id="exit-help">Exit day counts. Same-day entry/exit is valid.</small>
+            {#if formErrors.exitDate}<strong class="field-error">{formErrors.exitDate}</strong>{/if}
           </label>
           <fieldset>
             <legend>Trip status</legend>
-            <label class="toggle selected"><input type="radio" checked name="status" /> Booked</label>
-            <label class="toggle"><input type="radio" name="status" /> What-if</label>
+            <label class:selected={tripForm.status === 'past'} class="toggle"><input type="radio" bind:group={tripForm.status} value="past" /> Past</label>
+            <label class:selected={tripForm.status === 'booked'} class="toggle"><input type="radio" bind:group={tripForm.status} value="booked" /> Booked</label>
+            <label class:selected={tripForm.status === 'what-if'} class="toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> What-if</label>
           </fieldset>
         </form>
         <section class="panel mint">
-          <h2>29 Schengen days will be counted</h2>
-          <p>Cyprus and Ireland would be excluded. Iceland, Norway, Liechtenstein, and Switzerland are included.</p>
+          <h2>{formErrors.exitDate || formErrors.entryDate ? 'Fix the highlighted dates' : 'Trip will be counted immediately'}</h2>
+          <p>Equal entry/exit dates are allowed as one counted day. Cyprus and Ireland are excluded; Iceland, Norway, Liechtenstein, and Switzerland are included.</p>
         </section>
-        <button class="primary-button" type="button">Save trip</button>
+        <div class="form-actions">
+          <button class="primary-button" type="button" onclick={saveTrip}>Save trip</button>
+          <button class="secondary-button" type="button" onclick={() => { editingTripId = null; tripForm = emptyTripForm('booked'); formErrors = {}; active = 'trips'; }}>Cancel</button>
+        </div>
       </section>
     {:else if active === 'trips'}
       <section class="screen" aria-labelledby="trips-heading">
         <h1 id="trips-heading" class="screen-title">Trips</h1>
         <p class="micro-safe">Stored locally on this device.</p>
         <div class="trip-list">
-          {#each baseTrips as trip}
+          {#each trips as trip (trip.id)}
             <article class:booked={trip.status === 'booked'} class:past={trip.status === 'past'}>
               <span class="state-strip {trip.status}"></span>
               <div>
                 <h2>{trip.label}</h2>
-                <p>{trip.entryDate.slice(5)} to {trip.exitDate.slice(5)} · {trip.days}d</p>
+                <p>{formatTripRange(trip)} · {inclusiveTripDays(trip)}d</p>
               </div>
               <strong>{statusLabel(trip.status)}</strong>
-              <button type="button">Edit</button>
-              <button class="delete" type="button">Delete</button>
+              <button type="button" aria-label={`Edit ${trip.label}`} onclick={() => startEditTrip(trip)}>Edit</button>
+              <button class="delete" type="button" aria-label={`Delete ${trip.label}`} onclick={() => deleteTrip(trip.id)}>Delete</button>
             </article>
           {/each}
         </div>
-        <button class="primary-button" type="button" onclick={() => (active = 'trip')}>Add trip</button>
+        <button class="primary-button" type="button" onclick={startAddTrip}>Add trip</button>
       </section>
     {:else if active === 'planner'}
       <section class="screen" aria-labelledby="planner-heading">
@@ -827,10 +875,12 @@
     background: var(--past);
   }
 
-  .state-strip.booked,
-  .state-strip.booked,
-  .state-strip.what-if {
+  .state-strip.booked {
     background: var(--booked);
+  }
+
+  .state-strip.what-if {
+    background: var(--whatif);
   }
 
   .state-strip.past {
