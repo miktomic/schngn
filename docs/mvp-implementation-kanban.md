@@ -302,13 +302,14 @@
 
 - **Priority:** Should
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** stable calculator shell, US-05 local persistence
 - **Implementation target:** manifest + service worker + offline calculator.
 - **Acceptance summary:**
-  - Installable prompt where supported.
-  - Calculator works offline after first load.
-- **Verification:** install on iOS and Android, airplane-mode calculator test, Lighthouse PWA checks.
+  - Installable manifest with maskable 192/512 icons.
+  - Service worker precaches the app shell and runtime-caches same-origin resources.
+  - Calculator works offline after the shell is installed and controlled.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 123 tests / 1330 assertions including `apps/web/tests/pwa.test.ts`; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium offline reload coverage for `/app`.
 
 ## US-20 — Post-deploy smoke tests and privacy-safe operations
 

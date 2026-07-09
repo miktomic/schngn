@@ -42,6 +42,34 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
   });
 
+  test('installed PWA shell reloads the calculator offline after first load', async ({ page, context }) => {
+    await page.goto('/app');
+    await expect(page.getByRole('heading', { name: '15 safe buffer days' })).toBeVisible();
+    await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.json');
+
+    const offlineReady = await page.evaluate(async () => {
+      const offlineWindow = window as unknown as { __schngnOfflineReady?: Promise<boolean> };
+      if (!offlineWindow.__schngnOfflineReady) return false;
+      return offlineWindow.__schngnOfflineReady;
+    });
+    expect(offlineReady).toBe(true);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: '15 safe buffer days' })).toBeVisible();
+    const controlledOfflineReady = await page.evaluate(async () => {
+      const offlineWindow = window as unknown as { __schngnOfflineReady?: Promise<boolean> };
+      if (!navigator.serviceWorker.controller || !offlineWindow.__schngnOfflineReady) return false;
+      return offlineWindow.__schngnOfflineReady;
+    });
+    expect(controlledOfflineReady).toBe(true);
+
+    await context.setOffline(true);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: '15 safe buffer days' })).toBeVisible();
+    await expect(page.getByText('Latest safe exit')).toBeVisible();
+    await context.setOffline(false);
+  });
+
   test('app route renders money-shot, proof, report, privacy, and waitlist states without leaking private values', async ({ page }) => {
     const requests = observeNetwork(page);
     const waitlistRequests: string[] = [];
