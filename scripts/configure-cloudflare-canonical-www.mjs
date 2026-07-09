@@ -58,8 +58,16 @@ async function ensureWwwDns(zoneId) {
   };
 
   if (!cname) {
-    await cloudflare('POST', `/zones/${zoneId}/dns_records`, desired);
-    console.log(`created proxied CNAME for ${wwwHost}`);
+    try {
+      await cloudflare('POST', `/zones/${zoneId}/dns_records`, desired);
+      console.log(`created proxied CNAME for ${wwwHost}`);
+    } catch (error) {
+      if (String(error.message).includes('A DNS record managed by Workers already exists on that host')) {
+        console.log(`Workers-managed DNS for ${wwwHost} already exists`);
+        return;
+      }
+      throw error;
+    }
     return;
   }
 

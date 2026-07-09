@@ -19,6 +19,7 @@ describe('canonical domain hygiene', () => {
     expect(source).toContain('CLOUDFLARE_API_TOKEN');
     expect(source).toContain("type: 'CNAME'");
     expect(source).toContain('proxied: true');
+    expect(source).toContain('Workers-managed DNS for');
     expect(source).toContain('http_request_dynamic_redirect');
     expect(source).toContain('status_code: 308');
     expect(source).toContain('preserve_query_string: true');
