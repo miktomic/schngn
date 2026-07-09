@@ -1,12 +1,12 @@
 <svelte:head>
-  <title>SCHNGN — Schengen 90/180 planner</title>
+  <title>SCHNGN - Schengen 90/180 planner</title>
   <meta
     name="description"
     content="A privacy-first Schengen 90/180-day calculator and trip planner for frequent travelers, second-home owners, and families."
   />
   <link rel="canonical" href="https://schngn.com/" />
   <meta property="og:url" content="https://schngn.com/" />
-  <meta property="og:title" content="SCHNGN — Schengen 90/180 planner" />
+  <meta property="og:title" content="SCHNGN - Schengen 90/180 planner" />
   <meta
     property="og:description"
     content="A privacy-first Schengen 90/180-day calculator and trip planner."
@@ -14,31 +14,68 @@
 </svelte:head>
 
 <main class="landing">
-  <section class="hero">
-    <p class="eyebrow">Local-first · no account · no trip data uploaded</p>
-    <h1>Know if your Schengen trip fits before you book it.</h1>
-    <p class="lede">
-      SCHNGN explains your 90/180-day status in plain English, shows when days come back,
-      and keeps your travel history on your device.
-    </p>
-    <div class="actions">
-      <a class="primary" href="/app">Open calculator</a>
-      <a class="secondary" href="/app">See how it works</a>
+  <header class="topbar" aria-label="SCHNGN landing header">
+    <a class="brand" href="/" aria-label="SCHNGN home">
+      <span class="mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </span>
+      <span>SCHNGN</span>
+    </a>
+    <a class="toplink" href="/app">Open calculator</a>
+  </header>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="kicker">Local-first Schengen 90/180 tracker</p>
+      <h1 id="hero-title">Know if your Schengen trip fits before you book it.</h1>
+      <p class="lede">
+        SCHNGN gives the answer first, then shows the rolling-window proof. Your trip dates stay on this device.
+      </p>
+      <div class="actions">
+        <a class="primary" href="/app">Check Italy trip</a>
+        <a class="secondary" href="/app">Show calculation</a>
+      </div>
     </div>
+
+    <aside class="answer-card" aria-label="Example safe answer">
+      <div class="mini-header">
+        <span class="mini-brand">SCHNGN</span>
+        <span class="privacy">Local & private</span>
+      </div>
+      <span class="chip safe">Italy fits</span>
+      <strong>15 safe buffer days</strong>
+      <dl>
+        <div>
+          <dt>Must exit by</dt>
+          <dd>Oct 13</dd>
+        </div>
+        <div>
+          <dt>Days used</dt>
+          <dd>75 / 90</dd>
+        </div>
+      </dl>
+      <div class="timeline" aria-hidden="true">
+        <span class="past"></span>
+        <span class="booked"></span>
+        <span class="whatif"></span>
+        <span class="safe-segment"></span>
+      </div>
+      <p>France, Greece, and Italy are counted in the active 180-day window.</p>
+    </aside>
   </section>
 
-  <section class="cards" aria-label="Product promises">
+  <section class="principles" aria-label="Product principles">
     <article>
-      <strong>Answer first</strong>
-      <span>Safe, close, or over limit — with the date that matters.</span>
+      <h2>Answer first</h2>
+      <p>Safe, close, or over limit with the date that matters.</p>
     </article>
     <article>
-      <strong>Proof second</strong>
-      <span>Rolling 180-day window, inclusive entry/exit counting, and days returning.</span>
+      <h2>Proof second</h2>
+      <p>Rolling 180-day window, inclusive counting, and days returning.</p>
     </article>
     <article>
-      <strong>Private by default</strong>
-      <span>Trips live in browser storage. Analytics must never contain travel dates.</span>
+      <h2>Private by default</h2>
+      <p>Trips live in browser storage. Analytics never receive travel dates.</p>
     </article>
   </section>
 </main>
@@ -46,112 +83,272 @@
 <style>
   .landing {
     min-height: 100svh;
-    padding: 48px 20px;
+    padding: 20px clamp(16px, 4vw, 48px) 64px;
   }
 
+  .topbar,
   .hero,
-  .cards {
-    max-width: 980px;
+  .principles {
+    max-width: 1120px;
     margin: 0 auto;
   }
 
-  .hero {
-    padding: 64px 0 40px;
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 64px;
+    gap: 16px;
   }
 
-  .eyebrow {
-    margin: 0 0 16px;
-    color: #25605a;
-    font-size: 0.88rem;
+  .brand,
+  .toplink,
+  .actions a {
+    text-decoration: none;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    font-size: 1.15rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .mark {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--ink);
+  }
+
+  .mark span {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--star-gold);
+  }
+
+  .mark span:nth-child(1) { left: 8px; top: 9px; }
+  .mark span:nth-child(2) { left: 16px; top: 5px; }
+  .mark span:nth-child(3) { left: 25px; top: 11px; }
+  .mark span:nth-child(4) { left: 24px; top: 22px; }
+  .mark span:nth-child(5) { left: 14px; top: 27px; }
+  .mark span:nth-child(6) { left: 7px; top: 19px; }
+
+  .toplink,
+  .primary,
+  .secondary {
+    border-radius: 10px;
+    font-weight: 750;
+  }
+
+  .toplink {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    padding: 10px 14px;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    gap: clamp(28px, 6vw, 72px);
+    align-items: center;
+    padding: clamp(44px, 9vw, 92px) 0 48px;
+  }
+
+  .kicker {
+    margin: 0 0 14px;
+    color: var(--safe);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.83rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
 
   h1 {
     max-width: 760px;
     margin: 0;
-    color: #0b1f35;
-    font-size: clamp(2.6rem, 9vw, 5.8rem);
-    line-height: 0.93;
-    letter-spacing: -0.07em;
+    color: var(--ink);
+    font-size: clamp(2.7rem, 8vw, 5.3rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
   }
 
   .lede {
-    max-width: 620px;
+    max-width: 580px;
     margin: 24px 0 0;
-    color: #41516a;
-    font-size: clamp(1.08rem, 2vw, 1.35rem);
-    line-height: 1.55;
+    color: var(--muted);
+    font-size: clamp(1.08rem, 2vw, 1.28rem);
+    line-height: 1.5;
   }
 
   .actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-top: 32px;
+    margin-top: 30px;
   }
 
   .actions a {
-    min-height: 44px;
-    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
     padding: 13px 18px;
-    text-decoration: none;
-    font-weight: 800;
   }
 
   .primary {
-    background: #0f2a4a;
-    color: white;
+    background: var(--ink);
+    color: var(--surface);
   }
 
   .secondary {
-    border: 1px solid #b9c7d6;
-    background: white;
-    color: #17304f;
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    color: var(--ink);
   }
 
-  .cards {
+  .answer-card,
+  .principles article {
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .answer-card {
+    border-radius: 18px;
+    padding: 20px;
+  }
+
+  .mini-header,
+  dl {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .mini-brand {
+    font-weight: 850;
+    letter-spacing: 0.06em;
+  }
+
+  .privacy,
+  .chip {
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-size: 0.82rem;
+    font-weight: 750;
+  }
+
+  .privacy,
+  .safe {
+    border: 1px solid color-mix(in srgb, var(--safe), var(--line) 35%);
+    background: var(--safe-bg);
+    color: var(--safe);
+  }
+
+  .chip {
+    display: inline-flex;
+    margin-top: 28px;
+  }
+
+  .answer-card strong {
+    display: block;
+    margin-top: 14px;
+    color: var(--safe);
+    font-size: clamp(2.3rem, 8vw, 3.6rem);
+    line-height: 0.96;
+    letter-spacing: -0.03em;
+  }
+
+  dl {
+    margin: 20px 0 0;
+  }
+
+  dl div {
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    background: var(--paper);
+  }
+
+  dt {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 750;
+  }
+
+  dd {
+    margin: 5px 0 0;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .timeline {
+    display: grid;
+    grid-template-columns: 0.45fr 0.75fr 0.35fr 0.28fr;
+    gap: 3px;
+    height: 26px;
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--paper);
+    padding: 3px;
+  }
+
+  .timeline span {
+    border-radius: 4px;
+  }
+
+  .past { background: var(--past); }
+  .booked { background: var(--booked); }
+  .whatif { background: var(--whatif); }
+  .safe-segment { background: var(--safe); }
+
+  .answer-card p {
+    margin: 16px 0 0;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .principles {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
   }
 
-  article {
-    border: 1px solid #d7e1ea;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.82);
-    padding: 22px;
-    box-shadow: 0 18px 50px rgba(26, 48, 73, 0.08);
+  .principles article {
+    border-radius: 14px;
+    padding: 20px;
   }
 
-  article strong,
-  article span {
-    display: block;
+  .principles h2 {
+    margin: 0;
+    font-size: 1.15rem;
   }
 
-  article strong {
-    color: #10243b;
-    font-size: 1.05rem;
-  }
-
-  article span {
-    margin-top: 8px;
-    color: #4e5d72;
+  .principles p {
+    margin: 8px 0 0;
+    color: var(--muted);
     line-height: 1.45;
   }
 
-  @media (max-width: 760px) {
-    .landing {
-      padding-top: 20px;
+  @media (max-width: 840px) {
+    .hero,
+    .principles {
+      grid-template-columns: 1fr;
     }
 
     .hero {
-      padding-top: 38px;
-    }
-
-    .cards {
-      grid-template-columns: 1fr;
+      padding-top: 34px;
     }
   }
 </style>
