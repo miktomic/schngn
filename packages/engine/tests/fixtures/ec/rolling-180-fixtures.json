@@ -1,0 +1,1821 @@
+[
+  {
+    "id": "same-day-entry-exit-counts-one",
+    "description": "Entry and exit on the same day count as one physical Schengen day.",
+    "referenceDate": "2026-05-01",
+    "trips": [
+      {
+        "entryDate": "2026-05-01",
+        "exitDate": "2026-05-01",
+        "countryCode": "FR"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-03",
+      "windowEnd": "2026-05-01",
+      "daysUsed": 1,
+      "daysRemaining": 89,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "ten-day-stay-inclusive",
+    "description": "A 10-calendar-day stay counts 10 days, not 9 nights.",
+    "referenceDate": "2026-05-10",
+    "trips": [
+      {
+        "entryDate": "2026-05-01",
+        "exitDate": "2026-05-10",
+        "countryCode": "ES"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-12",
+      "windowEnd": "2026-05-10",
+      "daysUsed": 10,
+      "daysRemaining": 80,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "window-start-inclusive",
+    "description": "The day exactly 179 days before reference remains inside the inclusive 180-day window.",
+    "referenceDate": "2026-06-29",
+    "trips": [
+      {
+        "entryDate": "2026-01-01",
+        "exitDate": "2026-01-01",
+        "countryCode": "DE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-01-01",
+      "windowEnd": "2026-06-29",
+      "daysUsed": 1,
+      "daysRemaining": 89,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "day-before-window-drops-out",
+    "description": "A day 180 days before reference is outside the inclusive 180-day window.",
+    "referenceDate": "2026-06-30",
+    "trips": [
+      {
+        "entryDate": "2026-01-01",
+        "exitDate": "2026-01-01",
+        "countryCode": "DE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-01-02",
+      "windowEnd": "2026-06-30",
+      "daysUsed": 0,
+      "daysRemaining": 90,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "partial-trip-clipped-to-window-start",
+    "description": "Only the part of a long trip inside the rolling window is counted.",
+    "referenceDate": "2026-06-30",
+    "trips": [
+      {
+        "entryDate": "2025-12-20",
+        "exitDate": "2026-01-10",
+        "countryCode": "IT"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-01-02",
+      "windowEnd": "2026-06-30",
+      "daysUsed": 9,
+      "daysRemaining": 81,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "future-days-after-reference-ignored",
+    "description": "Days after the reference date do not count yet.",
+    "referenceDate": "2026-05-10",
+    "trips": [
+      {
+        "entryDate": "2026-05-01",
+        "exitDate": "2026-05-31",
+        "countryCode": "PT"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-12",
+      "windowEnd": "2026-05-10",
+      "daysUsed": 10,
+      "daysRemaining": 80,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "overlap-deduplicated",
+    "description": "Overlapping Schengen trips are de-duplicated by physical day.",
+    "referenceDate": "2026-05-07",
+    "trips": [
+      {
+        "entryDate": "2026-05-01",
+        "exitDate": "2026-05-05",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2026-05-03",
+        "exitDate": "2026-05-07",
+        "countryCode": "DE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-09",
+      "windowEnd": "2026-05-07",
+      "daysUsed": 7,
+      "daysRemaining": 83,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "duplicate-trip-deduplicated",
+    "description": "Duplicate imported trips do not double count the same physical days.",
+    "referenceDate": "2026-04-10",
+    "trips": [
+      {
+        "entryDate": "2026-04-01",
+        "exitDate": "2026-04-10",
+        "countryCode": "NL"
+      },
+      {
+        "entryDate": "2026-04-01",
+        "exitDate": "2026-04-10",
+        "countryCode": "NL"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-13",
+      "windowEnd": "2026-04-10",
+      "daysUsed": 10,
+      "daysRemaining": 80,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "adjacent-trips-count-contiguous-days",
+    "description": "Back-to-back adjacent trips count each physical day exactly once.",
+    "referenceDate": "2026-03-10",
+    "trips": [
+      {
+        "entryDate": "2026-03-01",
+        "exitDate": "2026-03-05",
+        "countryCode": "BE"
+      },
+      {
+        "entryDate": "2026-03-06",
+        "exitDate": "2026-03-10",
+        "countryCode": "LU"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-09-12",
+      "windowEnd": "2026-03-10",
+      "daysUsed": 10,
+      "daysRemaining": 80,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "ireland-and-cyprus-excluded",
+    "description": "Ireland and Cyprus stays are excluded from Schengen short-stay counting.",
+    "referenceDate": "2026-05-15",
+    "trips": [
+      {
+        "entryDate": "2026-05-01",
+        "exitDate": "2026-05-05",
+        "countryCode": "IE"
+      },
+      {
+        "entryDate": "2026-05-06",
+        "exitDate": "2026-05-10",
+        "countryCode": "CY"
+      },
+      {
+        "entryDate": "2026-05-11",
+        "exitDate": "2026-05-15",
+        "countryCode": "CH"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-17",
+      "windowEnd": "2026-05-15",
+      "daysUsed": 5,
+      "daysRemaining": 85,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "uk-and-us-excluded",
+    "description": "Non-Schengen country codes such as GB and US are excluded when imported.",
+    "referenceDate": "2026-04-16",
+    "trips": [
+      {
+        "entryDate": "2026-04-01",
+        "exitDate": "2026-04-07",
+        "countryCode": "GB"
+      },
+      {
+        "entryDate": "2026-04-08",
+        "exitDate": "2026-04-12",
+        "countryCode": "US"
+      },
+      {
+        "entryDate": "2026-04-13",
+        "exitDate": "2026-04-16",
+        "countryCode": "FR"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-19",
+      "windowEnd": "2026-04-16",
+      "daysUsed": 4,
+      "daysRemaining": 86,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "non-eu-schengen-included",
+    "description": "Iceland, Norway, Liechtenstein, and Switzerland count as Schengen.",
+    "referenceDate": "2026-01-12",
+    "trips": [
+      {
+        "entryDate": "2026-01-01",
+        "exitDate": "2026-01-03",
+        "countryCode": "IS"
+      },
+      {
+        "entryDate": "2026-01-04",
+        "exitDate": "2026-01-06",
+        "countryCode": "NO"
+      },
+      {
+        "entryDate": "2026-01-07",
+        "exitDate": "2026-01-09",
+        "countryCode": "LI"
+      },
+      {
+        "entryDate": "2026-01-10",
+        "exitDate": "2026-01-12",
+        "countryCode": "CH"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-07-17",
+      "windowEnd": "2026-01-12",
+      "daysUsed": 12,
+      "daysRemaining": 78,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "bulgaria-romania-count",
+    "description": "Bulgaria and Romania are counted as Schengen for the MVP baseline.",
+    "referenceDate": "2026-02-10",
+    "trips": [
+      {
+        "entryDate": "2026-02-01",
+        "exitDate": "2026-02-05",
+        "countryCode": "BG"
+      },
+      {
+        "entryDate": "2026-02-06",
+        "exitDate": "2026-02-10",
+        "countryCode": "RO"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-08-15",
+      "windowEnd": "2026-02-10",
+      "daysUsed": 10,
+      "daysRemaining": 80,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "missing-country-counts-as-schengen-manual-entry",
+    "description": "A manual trip without a country code counts as Schengen by default.",
+    "referenceDate": "2026-06-03",
+    "trips": [
+      {
+        "entryDate": "2026-06-01",
+        "exitDate": "2026-06-03"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-12-06",
+      "windowEnd": "2026-06-03",
+      "daysUsed": 3,
+      "daysRemaining": 87,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "leap-day-counted",
+    "description": "Leap day is just another counted physical day.",
+    "referenceDate": "2024-03-01",
+    "trips": [
+      {
+        "entryDate": "2024-02-28",
+        "exitDate": "2024-03-01",
+        "countryCode": "FR"
+      }
+    ],
+    "expected": {
+      "windowStart": "2023-09-04",
+      "windowEnd": "2024-03-01",
+      "daysUsed": 3,
+      "daysRemaining": 87,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "year-crossing-window",
+    "description": "Trips crossing year boundaries are clipped and counted correctly.",
+    "referenceDate": "2026-01-05",
+    "trips": [
+      {
+        "entryDate": "2025-12-20",
+        "exitDate": "2026-01-05",
+        "countryCode": "AT"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-07-10",
+      "windowEnd": "2026-01-05",
+      "daysUsed": 17,
+      "daysRemaining": 73,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "exactly-90-days-safe",
+    "description": "Exactly 90 days in the rolling window is not over limit.",
+    "referenceDate": "2026-03-31",
+    "trips": [
+      {
+        "entryDate": "2026-01-01",
+        "exitDate": "2026-03-31",
+        "countryCode": "ES"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-03",
+      "windowEnd": "2026-03-31",
+      "daysUsed": 90,
+      "daysRemaining": 0,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "ninety-one-days-over-by-one",
+    "description": "91 counted days is over limit by one.",
+    "referenceDate": "2026-04-01",
+    "trips": [
+      {
+        "entryDate": "2026-01-01",
+        "exitDate": "2026-04-01",
+        "countryCode": "ES"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-04",
+      "windowEnd": "2026-04-01",
+      "daysUsed": 91,
+      "daysRemaining": 0,
+      "overLimit": true,
+      "overBy": 1
+    }
+  },
+  {
+    "id": "old-days-free-new-stay",
+    "description": "Old days dropping out of the window restore allowance for later stays.",
+    "referenceDate": "2026-09-10",
+    "trips": [
+      {
+        "entryDate": "2026-01-01",
+        "exitDate": "2026-03-31",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2026-09-01",
+        "exitDate": "2026-09-10",
+        "countryCode": "IT"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-03-15",
+      "windowEnd": "2026-09-10",
+      "daysUsed": 27,
+      "daysRemaining": 63,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "mixed-excluded-overlap-with-schengen",
+    "description": "Excluded non-Schengen days overlapping Schengen trips do not add or remove Schengen days.",
+    "referenceDate": "2026-05-20",
+    "trips": [
+      {
+        "entryDate": "2026-05-01",
+        "exitDate": "2026-05-20",
+        "countryCode": "TR"
+      },
+      {
+        "entryDate": "2026-05-10",
+        "exitDate": "2026-05-15",
+        "countryCode": "GR"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-22",
+      "windowEnd": "2026-05-20",
+      "daysUsed": 6,
+      "daysRemaining": 84,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-01",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-01-29",
+    "trips": [
+      {
+        "entryDate": "2025-10-01",
+        "exitDate": "2025-10-01",
+        "countryCode": "IE"
+      },
+      {
+        "entryDate": "2025-11-04",
+        "exitDate": "2025-11-11",
+        "countryCode": "HR"
+      },
+      {
+        "entryDate": "2025-12-08",
+        "exitDate": "2025-12-22",
+        "countryCode": "EE"
+      },
+      {
+        "entryDate": "2025-10-01",
+        "exitDate": "2025-10-01",
+        "countryCode": "IE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-08-03",
+      "windowEnd": "2026-01-29",
+      "daysUsed": 23,
+      "daysRemaining": 67,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-02",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-02-21",
+    "trips": [
+      {
+        "entryDate": "2025-10-18",
+        "exitDate": "2025-10-29",
+        "countryCode": "DK"
+      },
+      {
+        "entryDate": "2025-11-21",
+        "exitDate": "2025-12-09",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2025-12-25",
+        "exitDate": "2026-01-19",
+        "countryCode": "HU"
+      },
+      {
+        "entryDate": "2026-01-13",
+        "exitDate": "2026-02-14",
+        "countryCode": "IE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-08-26",
+      "windowEnd": "2026-02-21",
+      "daysUsed": 57,
+      "daysRemaining": 33,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-03",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-03-16",
+    "trips": [
+      {
+        "entryDate": "2025-11-04",
+        "exitDate": "2025-11-26",
+        "countryCode": "GR"
+      },
+      {
+        "entryDate": "2025-12-08",
+        "exitDate": "2026-01-06",
+        "countryCode": "IT"
+      },
+      {
+        "entryDate": "2026-01-11",
+        "exitDate": "2026-02-16",
+        "countryCode": "GB"
+      },
+      {
+        "entryDate": "2026-01-30",
+        "exitDate": "2026-02-04",
+        "countryCode": "NL"
+      },
+      {
+        "entryDate": "2026-03-05",
+        "exitDate": "2026-03-17",
+        "countryCode": "PT"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-09-18",
+      "windowEnd": "2026-03-16",
+      "daysUsed": 71,
+      "daysRemaining": 19,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-04",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-04-08",
+    "trips": [
+      {
+        "entryDate": "2025-11-21",
+        "exitDate": "2025-12-24",
+        "countryCode": "LI"
+      },
+      {
+        "entryDate": "2025-12-25",
+        "exitDate": "2025-12-27",
+        "countryCode": "TR"
+      },
+      {
+        "entryDate": "2026-01-28",
+        "exitDate": "2026-02-06",
+        "countryCode": "PL"
+      },
+      {
+        "entryDate": "2026-02-16",
+        "exitDate": "2026-03-04",
+        "countryCode": "SK"
+      },
+      {
+        "entryDate": "2026-03-22",
+        "exitDate": "2026-04-14",
+        "countryCode": "SE"
+      },
+      {
+        "entryDate": "2026-04-25",
+        "exitDate": "2026-05-25",
+        "countryCode": "GB"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-11",
+      "windowEnd": "2026-04-08",
+      "daysUsed": 79,
+      "daysRemaining": 11,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-05",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-05-01",
+    "trips": [
+      {
+        "entryDate": "2025-12-08",
+        "exitDate": "2025-12-14",
+        "countryCode": "AL"
+      },
+      {
+        "entryDate": "2026-01-11",
+        "exitDate": "2026-01-24",
+        "countryCode": "RO"
+      },
+      {
+        "entryDate": "2026-02-14",
+        "exitDate": "2026-03-06",
+        "countryCode": "ES"
+      },
+      {
+        "entryDate": "2026-03-05",
+        "exitDate": "2026-04-01",
+        "countryCode": "AT"
+      },
+      {
+        "entryDate": "2026-04-08",
+        "exitDate": "2026-05-12",
+        "countryCode": "TR"
+      },
+      {
+        "entryDate": "2026-05-12",
+        "exitDate": "2026-05-15",
+        "countryCode": "EE"
+      },
+      {
+        "entryDate": "2026-05-31",
+        "exitDate": "2026-06-10",
+        "countryCode": "DE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-03",
+      "windowEnd": "2026-05-01",
+      "daysUsed": 61,
+      "daysRemaining": 29,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-06",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-05-24",
+    "trips": [
+      {
+        "entryDate": "2025-12-25",
+        "exitDate": "2026-01-11",
+        "countryCode": "SI"
+      },
+      {
+        "entryDate": "2026-01-28",
+        "exitDate": "2026-02-21",
+        "countryCode": "CH"
+      },
+      {
+        "entryDate": "2026-03-03",
+        "exitDate": "2026-04-03",
+        "countryCode": "BG"
+      },
+      {
+        "entryDate": "2026-03-22",
+        "exitDate": "2026-03-22",
+        "countryCode": "AL"
+      },
+      {
+        "entryDate": "2026-04-25",
+        "exitDate": "2026-05-02",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2026-05-29",
+        "exitDate": "2026-06-12",
+        "countryCode": "HU"
+      },
+      {
+        "entryDate": "2026-06-17",
+        "exitDate": "2026-07-08",
+        "countryCode": "LV"
+      },
+      {
+        "entryDate": "2026-07-21",
+        "exitDate": "2026-08-18",
+        "countryCode": "TR"
+      },
+      {
+        "entryDate": "2025-12-25",
+        "exitDate": "2026-01-11",
+        "countryCode": "SI"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-26",
+      "windowEnd": "2026-05-24",
+      "daysUsed": 83,
+      "daysRemaining": 7,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-07",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-06-16",
+    "trips": [
+      {
+        "entryDate": "2026-01-11",
+        "exitDate": "2026-02-08",
+        "countryCode": "BE"
+      },
+      {
+        "entryDate": "2026-02-14",
+        "exitDate": "2026-03-21",
+        "countryCode": "CZ"
+      },
+      {
+        "entryDate": "2026-03-20",
+        "exitDate": "2026-03-24",
+        "countryCode": "CY"
+      },
+      {
+        "entryDate": "2026-04-08",
+        "exitDate": "2026-04-19",
+        "countryCode": "GR"
+      },
+      {
+        "entryDate": "2026-05-12",
+        "exitDate": "2026-05-30",
+        "countryCode": "IT"
+      },
+      {
+        "entryDate": "2026-06-15",
+        "exitDate": "2026-07-10",
+        "countryCode": "LT"
+      },
+      {
+        "entryDate": "2026-07-04",
+        "exitDate": "2026-08-05",
+        "countryCode": "AL"
+      },
+      {
+        "entryDate": "2026-08-07",
+        "exitDate": "2026-08-08",
+        "countryCode": "PT"
+      },
+      {
+        "entryDate": "2025-10-25",
+        "exitDate": "2025-11-02",
+        "countryCode": "SI"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-12-19",
+      "windowEnd": "2026-06-16",
+      "daysUsed": 98,
+      "daysRemaining": 0,
+      "overLimit": true,
+      "overBy": 8
+    }
+  },
+  {
+    "id": "generated-ec-rule-08",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-07-09",
+    "trips": [
+      {
+        "entryDate": "2026-01-28",
+        "exitDate": "2026-01-29",
+        "countryCode": "EE"
+      },
+      {
+        "entryDate": "2026-03-03",
+        "exitDate": "2026-03-11",
+        "countryCode": "US"
+      },
+      {
+        "entryDate": "2026-04-06",
+        "exitDate": "2026-04-21",
+        "countryCode": "IS"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-01-11",
+      "windowEnd": "2026-07-09",
+      "daysUsed": 18,
+      "daysRemaining": 72,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-09",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-08-01",
+    "trips": [
+      {
+        "entryDate": "2026-02-14",
+        "exitDate": "2026-02-26",
+        "countryCode": "MA"
+      },
+      {
+        "entryDate": "2026-03-20",
+        "exitDate": "2026-04-08",
+        "countryCode": "LV"
+      },
+      {
+        "entryDate": "2026-04-23",
+        "exitDate": "2026-05-19",
+        "countryCode": "LU"
+      },
+      {
+        "entryDate": "2026-05-12",
+        "exitDate": "2026-06-14",
+        "countryCode": "NO"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-02-03",
+      "windowEnd": "2026-08-01",
+      "daysUsed": 73,
+      "daysRemaining": 17,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-10",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-08-24",
+    "trips": [
+      {
+        "entryDate": "2026-03-03",
+        "exitDate": "2026-03-26",
+        "countryCode": "LT"
+      },
+      {
+        "entryDate": "2026-04-06",
+        "exitDate": "2026-05-06",
+        "countryCode": "NL"
+      },
+      {
+        "entryDate": "2026-05-10",
+        "exitDate": "2026-06-16",
+        "countryCode": "PT"
+      },
+      {
+        "entryDate": "2026-05-29",
+        "exitDate": "2026-06-04",
+        "countryCode": "MA"
+      },
+      {
+        "entryDate": "2026-07-02",
+        "exitDate": "2026-07-15",
+        "countryCode": "CH"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-02-26",
+      "windowEnd": "2026-08-24",
+      "daysUsed": 107,
+      "daysRemaining": 0,
+      "overLimit": true,
+      "overBy": 17
+    }
+  },
+  {
+    "id": "generated-ec-rule-11",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-09-16",
+    "trips": [
+      {
+        "entryDate": "2026-03-20",
+        "exitDate": "2026-04-23",
+        "countryCode": "PL"
+      },
+      {
+        "entryDate": "2026-04-23",
+        "exitDate": "2026-04-26",
+        "countryCode": "SK"
+      },
+      {
+        "entryDate": "2026-05-27",
+        "exitDate": "2026-06-06",
+        "countryCode": "IE"
+      },
+      {
+        "entryDate": "2026-06-15",
+        "exitDate": "2026-07-02",
+        "countryCode": "BE"
+      },
+      {
+        "entryDate": "2026-07-19",
+        "exitDate": "2026-08-12",
+        "countryCode": "CZ"
+      },
+      {
+        "entryDate": "2025-10-06",
+        "exitDate": "2025-11-06",
+        "countryCode": "FI"
+      },
+      {
+        "entryDate": "2026-03-20",
+        "exitDate": "2026-04-23",
+        "countryCode": "PL"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-03-21",
+      "windowEnd": "2026-09-16",
+      "daysUsed": 80,
+      "daysRemaining": 10,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-12",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-10-09",
+    "trips": [
+      {
+        "entryDate": "2026-04-06",
+        "exitDate": "2026-04-13",
+        "countryCode": "ES"
+      },
+      {
+        "entryDate": "2026-05-10",
+        "exitDate": "2026-05-24",
+        "countryCode": "GB"
+      },
+      {
+        "entryDate": "2026-06-13",
+        "exitDate": "2026-07-04",
+        "countryCode": "HR"
+      },
+      {
+        "entryDate": "2026-07-02",
+        "exitDate": "2026-07-30",
+        "countryCode": "EE"
+      },
+      {
+        "entryDate": "2026-08-05",
+        "exitDate": "2026-09-09",
+        "countryCode": "DE"
+      },
+      {
+        "entryDate": "2025-10-23",
+        "exitDate": "2025-10-27",
+        "countryCode": "IE"
+      },
+      {
+        "entryDate": "2025-11-11",
+        "exitDate": "2025-11-22",
+        "countryCode": "LI"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-04-13",
+      "windowEnd": "2026-10-09",
+      "daysUsed": 85,
+      "daysRemaining": 5,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-13",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-02-14",
+    "trips": [
+      {
+        "entryDate": "2026-04-23",
+        "exitDate": "2026-05-11",
+        "countryCode": "TR"
+      },
+      {
+        "entryDate": "2026-05-27",
+        "exitDate": "2026-06-21",
+        "countryCode": "DK"
+      },
+      {
+        "entryDate": "2026-06-30",
+        "exitDate": "2026-08-01",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2026-07-19",
+        "exitDate": "2026-07-20",
+        "countryCode": "HU"
+      },
+      {
+        "entryDate": "2025-10-06",
+        "exitDate": "2025-10-14",
+        "countryCode": "GB"
+      },
+      {
+        "entryDate": "2025-11-09",
+        "exitDate": "2025-11-24",
+        "countryCode": "LU"
+      },
+      {
+        "entryDate": "2025-11-28",
+        "exitDate": "2025-12-20",
+        "countryCode": "NO"
+      },
+      {
+        "entryDate": "2026-01-01",
+        "exitDate": "2026-01-30",
+        "countryCode": "RO"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-08-19",
+      "windowEnd": "2026-02-14",
+      "daysUsed": 69,
+      "daysRemaining": 21,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-14",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-03-09",
+    "trips": [
+      {
+        "entryDate": "2026-05-10",
+        "exitDate": "2026-06-08",
+        "countryCode": "FI"
+      },
+      {
+        "entryDate": "2026-06-13",
+        "exitDate": "2026-07-19",
+        "countryCode": "GR"
+      },
+      {
+        "entryDate": "2026-07-17",
+        "exitDate": "2026-07-22",
+        "countryCode": "IT"
+      },
+      {
+        "entryDate": "2026-08-05",
+        "exitDate": "2026-08-17",
+        "countryCode": "TR"
+      },
+      {
+        "entryDate": "2025-10-23",
+        "exitDate": "2025-11-11",
+        "countryCode": "NL"
+      },
+      {
+        "entryDate": "2025-11-26",
+        "exitDate": "2025-12-22",
+        "countryCode": "PT"
+      },
+      {
+        "entryDate": "2025-12-15",
+        "exitDate": "2026-01-17",
+        "countryCode": "SI"
+      },
+      {
+        "entryDate": "2026-01-18",
+        "exitDate": "2026-01-20",
+        "countryCode": "GB"
+      },
+      {
+        "entryDate": "2026-02-21",
+        "exitDate": "2026-03-02",
+        "countryCode": "BG"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-09-11",
+      "windowEnd": "2026-03-09",
+      "daysUsed": 83,
+      "daysRemaining": 7,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-15",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-04-01",
+    "trips": [
+      {
+        "entryDate": "2026-05-27",
+        "exitDate": "2026-05-29",
+        "countryCode": "IS"
+      },
+      {
+        "entryDate": "2026-06-30",
+        "exitDate": "2026-07-09",
+        "countryCode": "LI"
+      },
+      {
+        "entryDate": "2026-08-03",
+        "exitDate": "2026-08-19",
+        "countryCode": "AL"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-04",
+      "windowEnd": "2026-04-01",
+      "daysUsed": 0,
+      "daysRemaining": 90,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-16",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-04-24",
+    "trips": [
+      {
+        "entryDate": "2026-06-13",
+        "exitDate": "2026-06-26",
+        "countryCode": "LU"
+      },
+      {
+        "entryDate": "2026-07-17",
+        "exitDate": "2026-08-06",
+        "countryCode": "CY"
+      },
+      {
+        "entryDate": "2025-10-04",
+        "exitDate": "2025-10-31",
+        "countryCode": "RO"
+      },
+      {
+        "entryDate": "2025-10-23",
+        "exitDate": "2025-11-26",
+        "countryCode": "ES"
+      },
+      {
+        "entryDate": "2026-06-13",
+        "exitDate": "2026-06-26",
+        "countryCode": "LU"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-27",
+      "windowEnd": "2026-04-24",
+      "daysUsed": 31,
+      "daysRemaining": 59,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-17",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-05-17",
+    "trips": [
+      {
+        "entryDate": "2026-06-30",
+        "exitDate": "2026-07-24",
+        "countryCode": "US"
+      },
+      {
+        "entryDate": "2026-08-03",
+        "exitDate": "2026-09-03",
+        "countryCode": "SI"
+      },
+      {
+        "entryDate": "2025-10-21",
+        "exitDate": "2025-10-21",
+        "countryCode": "CH"
+      },
+      {
+        "entryDate": "2025-11-09",
+        "exitDate": "2025-11-16",
+        "countryCode": "BG"
+      },
+      {
+        "entryDate": "2025-12-13",
+        "exitDate": "2025-12-27",
+        "countryCode": "CY"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-19",
+      "windowEnd": "2026-05-17",
+      "daysUsed": 0,
+      "daysRemaining": 90,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-18",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-06-09",
+    "trips": [
+      {
+        "entryDate": "2026-07-17",
+        "exitDate": "2026-08-21",
+        "countryCode": "SE"
+      },
+      {
+        "entryDate": "2025-10-04",
+        "exitDate": "2025-10-08",
+        "countryCode": "BE"
+      },
+      {
+        "entryDate": "2025-11-07",
+        "exitDate": "2025-11-18",
+        "countryCode": "CZ"
+      },
+      {
+        "entryDate": "2025-11-26",
+        "exitDate": "2025-12-14",
+        "countryCode": "US"
+      },
+      {
+        "entryDate": "2025-12-30",
+        "exitDate": "2026-01-24",
+        "countryCode": "GR"
+      },
+      {
+        "entryDate": "2026-02-02",
+        "exitDate": "2026-03-06",
+        "countryCode": "IT"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-12-12",
+      "windowEnd": "2026-06-09",
+      "daysUsed": 59,
+      "daysRemaining": 31,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-19",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-07-02",
+    "trips": [
+      {
+        "entryDate": "2026-08-03",
+        "exitDate": "2026-08-11",
+        "countryCode": "HR"
+      },
+      {
+        "entryDate": "2025-10-21",
+        "exitDate": "2025-11-05",
+        "countryCode": "EE"
+      },
+      {
+        "entryDate": "2025-11-24",
+        "exitDate": "2025-12-16",
+        "countryCode": "MA"
+      },
+      {
+        "entryDate": "2025-12-13",
+        "exitDate": "2026-01-11",
+        "countryCode": "IS"
+      },
+      {
+        "entryDate": "2026-01-16",
+        "exitDate": "2026-02-21",
+        "countryCode": "LI"
+      },
+      {
+        "entryDate": "2026-02-19",
+        "exitDate": "2026-02-24",
+        "countryCode": "MT"
+      },
+      {
+        "entryDate": "2026-03-10",
+        "exitDate": "2026-03-22",
+        "countryCode": "US"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-01-04",
+      "windowEnd": "2026-07-02",
+      "daysUsed": 48,
+      "daysRemaining": 42,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-20",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-07-25",
+    "trips": [
+      {
+        "entryDate": "2025-10-04",
+        "exitDate": "2025-10-23",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2025-11-07",
+        "exitDate": "2025-12-03",
+        "countryCode": "IE"
+      },
+      {
+        "entryDate": "2025-12-11",
+        "exitDate": "2026-01-13",
+        "countryCode": "LV"
+      },
+      {
+        "entryDate": "2025-12-30",
+        "exitDate": "2026-01-01",
+        "countryCode": "LU"
+      },
+      {
+        "entryDate": "2026-02-02",
+        "exitDate": "2026-02-11",
+        "countryCode": "NO"
+      },
+      {
+        "entryDate": "2026-03-08",
+        "exitDate": "2026-03-24",
+        "countryCode": "MA"
+      },
+      {
+        "entryDate": "2026-03-27",
+        "exitDate": "2026-04-19",
+        "countryCode": "ES"
+      },
+      {
+        "entryDate": "2026-04-30",
+        "exitDate": "2026-05-30",
+        "countryCode": "AT"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-01-27",
+      "windowEnd": "2026-07-25",
+      "daysUsed": 65,
+      "daysRemaining": 25,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-21",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-08-17",
+    "trips": [
+      {
+        "entryDate": "2025-10-21",
+        "exitDate": "2025-11-20",
+        "countryCode": "GB"
+      },
+      {
+        "entryDate": "2025-11-24",
+        "exitDate": "2025-12-31",
+        "countryCode": "LT"
+      },
+      {
+        "entryDate": "2025-12-28",
+        "exitDate": "2026-01-03",
+        "countryCode": "NL"
+      },
+      {
+        "entryDate": "2026-01-16",
+        "exitDate": "2026-01-29",
+        "countryCode": "PT"
+      },
+      {
+        "entryDate": "2026-02-19",
+        "exitDate": "2026-03-11",
+        "countryCode": "IE"
+      },
+      {
+        "entryDate": "2026-03-25",
+        "exitDate": "2026-04-21",
+        "countryCode": "CH"
+      },
+      {
+        "entryDate": "2026-04-13",
+        "exitDate": "2026-05-17",
+        "countryCode": "BG"
+      },
+      {
+        "entryDate": "2026-05-17",
+        "exitDate": "2026-05-20",
+        "countryCode": "DK"
+      },
+      {
+        "entryDate": "2026-06-20",
+        "exitDate": "2026-06-30",
+        "countryCode": "MA"
+      },
+      {
+        "entryDate": "2025-10-21",
+        "exitDate": "2025-11-20",
+        "countryCode": "GB"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-02-19",
+      "windowEnd": "2026-08-17",
+      "daysUsed": 57,
+      "daysRemaining": 33,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-22",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-09-09",
+    "trips": [
+      {
+        "entryDate": "2025-11-07",
+        "exitDate": "2025-11-10",
+        "countryCode": "MT"
+      },
+      {
+        "entryDate": "2025-12-11",
+        "exitDate": "2025-12-21",
+        "countryCode": "PL"
+      },
+      {
+        "entryDate": "2026-01-14",
+        "exitDate": "2026-01-31",
+        "countryCode": "SK"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-03-14",
+      "windowEnd": "2026-09-09",
+      "daysUsed": 0,
+      "daysRemaining": 90,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-23",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-10-02",
+    "trips": [
+      {
+        "entryDate": "2025-11-24",
+        "exitDate": "2025-12-08",
+        "countryCode": "RO"
+      },
+      {
+        "entryDate": "2025-12-28",
+        "exitDate": "2026-01-18",
+        "countryCode": "ES"
+      },
+      {
+        "entryDate": "2026-01-31",
+        "exitDate": "2026-02-28",
+        "countryCode": "TR"
+      },
+      {
+        "entryDate": "2026-02-19",
+        "exitDate": "2026-03-26",
+        "countryCode": "HR"
+      }
+    ],
+    "expected": {
+      "windowStart": "2026-04-06",
+      "windowEnd": "2026-10-02",
+      "daysUsed": 0,
+      "daysRemaining": 90,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-24",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-02-07",
+    "trips": [
+      {
+        "entryDate": "2025-12-11",
+        "exitDate": "2026-01-05",
+        "countryCode": "CH"
+      },
+      {
+        "entryDate": "2026-01-14",
+        "exitDate": "2026-02-15",
+        "countryCode": "AL"
+      },
+      {
+        "entryDate": "2026-02-17",
+        "exitDate": "2026-02-18",
+        "countryCode": "DK"
+      },
+      {
+        "entryDate": "2026-03-08",
+        "exitDate": "2026-03-16",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2026-04-11",
+        "exitDate": "2026-04-26",
+        "countryCode": "HU"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-08-12",
+      "windowEnd": "2026-02-07",
+      "daysUsed": 26,
+      "daysRemaining": 64,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-25",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-03-02",
+    "trips": [
+      {
+        "entryDate": "2025-12-28",
+        "exitDate": "2026-02-02",
+        "countryCode": "CY"
+      },
+      {
+        "entryDate": "2026-01-31",
+        "exitDate": "2026-02-05",
+        "countryCode": "FI"
+      },
+      {
+        "entryDate": "2026-03-06",
+        "exitDate": "2026-03-18",
+        "countryCode": "GR"
+      },
+      {
+        "entryDate": "2026-03-25",
+        "exitDate": "2026-04-13",
+        "countryCode": "IT"
+      },
+      {
+        "entryDate": "2026-04-28",
+        "exitDate": "2026-05-24",
+        "countryCode": "AL"
+      },
+      {
+        "entryDate": "2026-06-01",
+        "exitDate": "2026-07-04",
+        "countryCode": "NL"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-09-04",
+      "windowEnd": "2026-03-02",
+      "daysUsed": 6,
+      "daysRemaining": 84,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-26",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-03-25",
+    "trips": [
+      {
+        "entryDate": "2026-01-14",
+        "exitDate": "2026-01-23",
+        "countryCode": "DE"
+      },
+      {
+        "entryDate": "2026-02-17",
+        "exitDate": "2026-03-05",
+        "countryCode": "IS"
+      },
+      {
+        "entryDate": "2026-03-23",
+        "exitDate": "2026-04-15",
+        "countryCode": "LI"
+      },
+      {
+        "entryDate": "2026-04-11",
+        "exitDate": "2026-05-11",
+        "countryCode": "CY"
+      },
+      {
+        "entryDate": "2026-05-15",
+        "exitDate": "2026-06-21",
+        "countryCode": "PL"
+      },
+      {
+        "entryDate": "2026-06-18",
+        "exitDate": "2026-06-24",
+        "countryCode": "SK"
+      },
+      {
+        "entryDate": "2026-07-07",
+        "exitDate": "2026-07-20",
+        "countryCode": "SE"
+      },
+      {
+        "entryDate": "2026-01-14",
+        "exitDate": "2026-01-23",
+        "countryCode": "DE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-09-27",
+      "windowEnd": "2026-03-25",
+      "daysUsed": 30,
+      "daysRemaining": 60,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-27",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-04-17",
+    "trips": [
+      {
+        "entryDate": "2026-01-31",
+        "exitDate": "2026-02-20",
+        "countryCode": "LV"
+      },
+      {
+        "entryDate": "2026-03-06",
+        "exitDate": "2026-04-02",
+        "countryCode": "LU"
+      },
+      {
+        "entryDate": "2026-04-09",
+        "exitDate": "2026-05-13",
+        "countryCode": "US"
+      },
+      {
+        "entryDate": "2026-04-28",
+        "exitDate": "2026-05-01",
+        "countryCode": "RO"
+      },
+      {
+        "entryDate": "2026-06-01",
+        "exitDate": "2026-06-11",
+        "countryCode": "ES"
+      },
+      {
+        "entryDate": "2026-07-05",
+        "exitDate": "2026-07-22",
+        "countryCode": "AT"
+      },
+      {
+        "entryDate": "2026-07-24",
+        "exitDate": "2026-08-17",
+        "countryCode": "CY"
+      },
+      {
+        "entryDate": "2025-10-11",
+        "exitDate": "2025-11-11",
+        "countryCode": "EE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-10-20",
+      "windowEnd": "2026-04-17",
+      "daysUsed": 72,
+      "daysRemaining": 18,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-28",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-05-10",
+    "trips": [
+      {
+        "entryDate": "2026-02-17",
+        "exitDate": "2026-03-20",
+        "countryCode": "NL"
+      },
+      {
+        "entryDate": "2026-03-23",
+        "exitDate": "2026-03-23",
+        "countryCode": "MA"
+      },
+      {
+        "entryDate": "2026-04-26",
+        "exitDate": "2026-05-03",
+        "countryCode": "SI"
+      },
+      {
+        "entryDate": "2026-05-15",
+        "exitDate": "2026-05-29",
+        "countryCode": "CH"
+      },
+      {
+        "entryDate": "2026-06-18",
+        "exitDate": "2026-07-09",
+        "countryCode": "BG"
+      },
+      {
+        "entryDate": "2026-07-22",
+        "exitDate": "2026-08-19",
+        "countryCode": "US"
+      },
+      {
+        "entryDate": "2026-08-10",
+        "exitDate": "2026-09-14",
+        "countryCode": "FR"
+      },
+      {
+        "entryDate": "2025-10-28",
+        "exitDate": "2025-11-01",
+        "countryCode": "HU"
+      },
+      {
+        "entryDate": "2025-12-01",
+        "exitDate": "2025-12-12",
+        "countryCode": "LV"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-11-12",
+      "windowEnd": "2026-05-10",
+      "daysUsed": 52,
+      "daysRemaining": 38,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-29",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-06-02",
+    "trips": [
+      {
+        "entryDate": "2026-03-06",
+        "exitDate": "2026-03-10",
+        "countryCode": "IE"
+      },
+      {
+        "entryDate": "2026-04-09",
+        "exitDate": "2026-04-20",
+        "countryCode": "SE"
+      },
+      {
+        "entryDate": "2026-05-13",
+        "exitDate": "2026-05-31",
+        "countryCode": "BE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-12-05",
+      "windowEnd": "2026-06-02",
+      "daysUsed": 31,
+      "daysRemaining": 59,
+      "overLimit": false,
+      "overBy": 0
+    }
+  },
+  {
+    "id": "generated-ec-rule-30",
+    "description": "Deterministic mixed-trip EC-rule parity fixture with rolling-window clipping, exclusions, and overlaps.",
+    "referenceDate": "2026-06-25",
+    "trips": [
+      {
+        "entryDate": "2026-03-23",
+        "exitDate": "2026-04-07",
+        "countryCode": "AT"
+      },
+      {
+        "entryDate": "2026-04-26",
+        "exitDate": "2026-05-18",
+        "countryCode": "HR"
+      },
+      {
+        "entryDate": "2026-05-30",
+        "exitDate": "2026-06-28",
+        "countryCode": "EE"
+      },
+      {
+        "entryDate": "2026-06-18",
+        "exitDate": "2026-07-24",
+        "countryCode": "IE"
+      }
+    ],
+    "expected": {
+      "windowStart": "2025-12-28",
+      "windowEnd": "2026-06-25",
+      "daysUsed": 66,
+      "daysRemaining": 24,
+      "overLimit": false,
+      "overBy": 0
+    }
+  }
+]

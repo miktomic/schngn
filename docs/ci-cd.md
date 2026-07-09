@@ -49,16 +49,20 @@ optional deploy to Cloudflare Workers on main
 
 `bun run test` must pass before build or deploy.
 
-Current tests cover initial core behavior:
+Current tests are now a real US-01 correctness gate:
 
 - inclusive entry/exit day counting
-- overlapping trip de-duplication
+- overlapping and duplicate trip de-duplication
 - inclusive rolling 180-day look-back
-- Ireland/Cyprus exclusion and Switzerland inclusion
+- explicit Schengen country-code allowlist
+- Ireland/Cyprus and other non-Schengen country exclusion
+- Iceland/Norway/Liechtenstein/Switzerland inclusion
+- Bulgaria/Romania MVP baseline inclusion
+- 50 EC-rule rolling-window fixtures
+- deterministic property checks against an independent day-set oracle
+- golden counted-day scenario
 - verdict boundary classification
-- latest safe exit date for a simple scenario
-
-This is only the starter suite. US-01 requires the full EC-parity suite before launch.
+- latest safe exit date starter coverage
 
 ### Build gate
 

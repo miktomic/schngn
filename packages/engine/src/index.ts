@@ -4,7 +4,41 @@ export const SCHENGEN_ALLOWANCE_DAYS = 90;
 export const ROLLING_WINDOW_DAYS = 180;
 export const CLOSE_BUFFER_DAYS = 7;
 
-const EXCLUDED_SHORT_STAY_COUNTRIES = new Set(['CY', 'IE']);
+export const SCHENGEN_SHORT_STAY_COUNTRY_CODES = [
+  'AT',
+  'BE',
+  'BG',
+  'HR',
+  'CZ',
+  'DK',
+  'EE',
+  'FI',
+  'FR',
+  'DE',
+  'GR',
+  'HU',
+  'IS',
+  'IT',
+  'LV',
+  'LI',
+  'LT',
+  'LU',
+  'MT',
+  'NL',
+  'NO',
+  'PL',
+  'PT',
+  'RO',
+  'SK',
+  'SI',
+  'ES',
+  'SE',
+  'CH'
+] as const;
+
+export type SchengenShortStayCountryCode = (typeof SCHENGEN_SHORT_STAY_COUNTRY_CODES)[number];
+
+const SCHENGEN_SHORT_STAY_COUNTRIES = new Set<string>(SCHENGEN_SHORT_STAY_COUNTRY_CODES);
 
 export type VerdictState = 'ok' | 'close' | 'over';
 
@@ -38,11 +72,11 @@ export function calculateUsageOnDate(trips: Trip[], referenceDate: string): Usag
   const countedDays = new Set<string>();
 
   for (const trip of trips) {
-    if (!countsForShortStay(trip)) continue;
-
     const entry = parseISODate(trip.entryDate);
     const exit = parseISODate(trip.exitDate);
     assertValidTripRange(entry, exit, trip);
+
+    if (!countsForShortStay(trip)) continue;
 
     for (let current = entry; current.getTime() <= exit.getTime(); current = addDays(current, 1)) {
       if (current.getTime() < windowStart.getTime()) continue;
@@ -121,7 +155,11 @@ export function isTripSafeForEveryDay(existingTrips: Trip[], candidateTrip: Trip
 
 export function countsForShortStay(trip: Trip): boolean {
   if (!trip.countryCode) return true;
-  return !EXCLUDED_SHORT_STAY_COUNTRIES.has(trip.countryCode.toUpperCase());
+  return isSchengenShortStayCountryCode(trip.countryCode);
+}
+
+export function isSchengenShortStayCountryCode(countryCode: string): boolean {
+  return SCHENGEN_SHORT_STAY_COUNTRIES.has(countryCode.trim().toUpperCase());
 }
 
 export function parseISODate(value: string): Date {

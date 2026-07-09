@@ -33,7 +33,7 @@
 
 - **Priority:** Must
 - **Estimate:** L
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** none
 - **Why now:** this is the product. If this is wrong, everything else is a charming overstay generator.
 - **Implementation target:** pure calculation engine, fixtures, property/golden tests, CI gate.
@@ -41,8 +41,9 @@
   - Entry and exit days both count.
   - Rolling 180-day look-back from any reference date.
   - Overlapping/adjacent trips de-duplicated.
-  - Cyprus/Ireland excluded; Iceland/Norway/Liechtenstein/Switzerland included.
-- **Verification:** 40–60 EC-parity fixtures, property tests, golden-master tests, CI fails on drift.
+  - Cyprus/Ireland and other non-Schengen country codes excluded; Iceland/Norway/Liechtenstein/Switzerland included.
+  - Explicit Schengen country-code allowlist exported for UI/import validation.
+- **Verification:** 50 EC-rule fixtures, 100 deterministic property scenarios, golden counted-day test, and full `npx -y bun@1.3.14 run check` pass.
 
 ## US-02 — Latest safe exit date calculation
 

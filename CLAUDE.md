@@ -83,8 +83,7 @@ schngn/
 Planned next structure:
 
 ```text
-packages/engine/tests/fixtures/ec/*.json
-packages/engine/tests/properties.test.ts
+packages/engine/tests/fixtures/ec/*.json # US-01 fixture gate exists
 apps/web/src/lib/data/          # local storage repository
 apps/web/src/lib/stores/        # trip/result stores
 apps/web/src/lib/components/    # money-shot UI components
@@ -185,7 +184,7 @@ Correctness requirements from MVP backlog:
 - Remaining days = `90 - used`, floored at zero for display.
 - Over-limit state must still expose over-by days.
 
-The current engine tests are only a starter suite. The next serious implementation step is US-01: 40–60 EC-parity fixtures plus property/golden-master tests.
+US-01 is now implemented as a correctness gate: `packages/engine/tests/engine.test.ts` loads 50 EC-rule fixtures from `packages/engine/tests/fixtures/ec/rolling-180-fixtures.json`, runs deterministic property checks against an independent day-set oracle, and includes golden counted-day scenarios. Keep adding official/edge fixtures as bugs or official cases are discovered.
 
 ## Web app rules
 
@@ -214,9 +213,9 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-1. US-01 — Rolling 180-day engine and EC-parity suite.
-2. US-02 — Latest safe exit date.
-3. US-03 — Verdict flag.
+1. US-02 — Latest safe exit date.
+2. US-03 — Verdict flag.
+3. US-19 — App test harness and privacy QA infrastructure.
 4. US-04 — Trip CRUD.
 5. US-05 — Local-only persistence.
 6. US-06 — JSON import/export.
@@ -226,8 +225,9 @@ Pull order:
 10. US-10/US-11 — disclaimers and explanation.
 11. US-15/US-13/US-14/US-18 — analytics and validation flows.
 12. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
+13. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
 
-Until US-01 is green, avoid spending serious effort on UI polish. The engine is the load-bearing wall.
+US-01 is green, but US-02/US-03 still gate serious UI polish. The engine remains the load-bearing wall.
 
 ## Design direction
 

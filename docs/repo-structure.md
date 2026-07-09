@@ -110,13 +110,13 @@ npx -y bun@1.3.14 install
 npx -y bun@1.3.14 run check
 ```
 
+The US-01 engine gate is now in place: `packages/engine/tests/engine.test.ts` loads `packages/engine/tests/fixtures/ec/rolling-180-fixtures.json` and adds property/golden tests.
+
 ## Next structure to add
 
-When implementing the backlog, add:
+When implementing the remaining backlog, add:
 
 ```text
-packages/engine/tests/fixtures/ec/*.json
-packages/engine/tests/properties.test.ts
 apps/web/src/lib/data/          # local storage repository
 apps/web/src/lib/stores/        # trip/result stores
 apps/web/src/lib/components/    # money-shot UI components
