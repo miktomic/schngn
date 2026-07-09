@@ -17,6 +17,10 @@ describe('canonical domain hygiene', () => {
     expect(hook).toContain("event.url.hostname === 'www.schngn.com'");
     expect(hook).toContain("redirect(308");
     expect(hook).toContain("event.url.hostname = 'schngn.com'");
+
+    const svelteConfig = readFileSync('apps/web/svelte.config.js', 'utf8');
+    expect(svelteConfig).toContain("exclude: ['<build>', '<files>']");
+    expect(svelteConfig).not.toContain("'<prerendered>'");
   });
 
   test('robots and sitemap advertise only apex canonical URLs', () => {
