@@ -75,8 +75,8 @@ Current tests are now a real US-01 correctness gate:
 
 US-19 adds two app-level gates:
 
-- `bun run test` includes `apps/web/tests/privacy-network.test.ts`, which exercises `apps/web/src/lib/privacy/networkPrivacy.ts` and proves forbidden payload fixtures fail loudly. It also includes local-first trip storage tests for empty, saved, corrupt, and unavailable `localStorage` states, plus US-07 dashboard money-shot scenarios for safe, at-limit, over-limit, imported/saved-trip, and empty states.
-- `bun run test:e2e` runs Playwright mobile Chromium smoke for `/` and `/app`, including proof/report/privacy/waitlist states, US-04 add/edit/delete/validation behavior, US-05 reload persistence, US-06 JSON export/import/malformed-import behavior, US-07 dynamic latest-safe-exit display, keyboard focus reachability, and no forbidden trip/email values in observed network URLs or request bodies.
+- `bun run test` includes `apps/web/tests/privacy-network.test.ts`, which exercises `apps/web/src/lib/privacy/networkPrivacy.ts` and proves forbidden payload fixtures fail loudly. It also includes local-first trip storage tests for empty, saved, corrupt, and unavailable `localStorage` states, US-07 dashboard money-shot scenarios for safe, at-limit, over-limit, imported/saved-trip, and empty states, plus US-09 simulator scenarios for safe, at-limit, over-limit, invalid-input, max-stay, and non-mutating what-if behavior.
+- `bun run test:e2e` runs Playwright mobile Chromium smoke for `/` and `/app`, including proof/report/privacy/waitlist states, US-04 add/edit/delete/validation behavior, US-05 reload persistence, US-06 JSON export/import/malformed-import behavior, US-07 dynamic latest-safe-exit display, US-09 future-trip simulator safe/unsafe behavior with non-mutating saved trips, keyboard focus reachability, and no forbidden trip/email values in observed network URLs or request bodies.
 
 Before enabling analytics or fake-door flows, CI/manual QA must confirm:
 

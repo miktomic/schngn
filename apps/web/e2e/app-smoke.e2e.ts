@@ -27,6 +27,20 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByText('Nov 9', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Border-ready report' })).toBeVisible();
 
+    await page.getByRole('button', { name: 'Planner' }).click();
+    await expect(page.getByRole('heading', { name: 'Can I book this?' })).toBeVisible();
+    await expect(page.getByText('Italy fits', { exact: true })).toBeVisible();
+    await expect(page.getByText('56 days max from Sep 15')).toBeVisible();
+    await page.getByLabel('Simulation label').fill('Portugal simulation');
+    await page.getByLabel('Simulation country').fill('PT');
+    await page.getByLabel('Simulation entry date').fill('2026-09-15');
+    await page.getByLabel('Simulation exit date').fill('2026-11-30');
+    await expect(page.getByText('Portugal simulation needs changes')).toBeVisible();
+    await expect(page.getByText(/Latest safe exit is Nov 9/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Trips' }).click();
+    await expect(page.getByText(/Portugal simulation/i)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Safe' }).click();
+
     await page.getByRole('button', { name: 'Show calculation' }).click();
     await expect(page.getByRole('heading', { name: 'Calculation proof' })).toBeVisible();
     await expect(page.getByText(/Entry and exit dates both count/i)).toBeVisible();

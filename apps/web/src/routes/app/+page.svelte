@@ -4,6 +4,7 @@
   import { onMount } from 'svelte';
   import { calculateUsageOnDate, type Trip } from '@schngn/engine';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
+  import { buildTripSimulationState, type ProposedTripInput } from '$lib/simulator/tripSimulator';
   import {
     deleteTripById,
     emptyTripForm,
@@ -39,6 +40,12 @@
   let storageSource: 'defaults' | 'storage' = 'defaults';
   let importMessage = '';
   let importError = '';
+  let simulatorForm: ProposedTripInput = {
+    label: 'Italy',
+    countryCode: 'IT',
+    entryDate: '2026-09-15',
+    exitDate: '2026-10-13'
+  };
 
   const screens: { key: ScreenKey; label: string }[] = [
     { key: 'dashboard', label: 'Safe' },
@@ -71,6 +78,11 @@
     | 'risk'
     | 'whatif';
   $: dashboardTextClass = dashboardState.statusTone === 'risk' ? 'risk-text' : dashboardState.statusTone === 'close' ? 'close-text' : 'safe-text';
+  $: simulationState = buildTripSimulationState(trips, simulatorForm);
+  $: simulatorStatusTone = (simulationState.statusTone === 'risk' ? 'risk' : simulationState.statusTone === 'close' ? 'whatif' : 'safe') as
+    | 'safe'
+    | 'risk'
+    | 'whatif';
   $: riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
   $: proofRows = trips.map((trip) => ({
     label: trip.label ?? trip.countryCode ?? 'Schengen trip',
@@ -179,6 +191,19 @@
     if (status === 'past') return 'Past, counted';
     if (status === 'booked') return 'Booked, counted';
     return 'What-if';
+  }
+
+  function resetSimulation(): void {
+    simulatorForm = {
+      label: 'Italy',
+      countryCode: 'IT',
+      entryDate: '2026-09-15',
+      exitDate: '2026-10-13'
+    };
+  }
+
+  function clearSimulation(): void {
+    simulatorForm = { label: '', countryCode: '', entryDate: '', exitDate: '' };
   }
 </script>
 
@@ -306,16 +331,41 @@
       </section>
     {:else if active === 'planner'}
       <section class="screen" aria-labelledby="planner-heading">
-        <h1 id="planner-heading" class="screen-title">Planner</h1>
-        <StatusChip tone="whatif" label="What-if mode" />
-        <TimelineLedger label="Planner timeline" mode="planner" />
-        <section class="panel risk-panel">
-          <h2>Unsafe from Oct 10</h2>
-          <p>Adding the July what-if trip crosses the limit because the rolling 180-day lens still contains 75 booked counted days.</p>
-        </section>
+        <h1 id="planner-heading" class="screen-title">Can I book this?</h1>
+        <StatusChip tone={simulatorStatusTone} label={simulationState.statusLabel} />
+        <form class="trip-form" aria-label="Future trip simulator" onsubmit={(event) => event.preventDefault()}>
+          <label>
+            <span>Simulation label</span>
+            <input bind:value={simulatorForm.label} placeholder="Italy" />
+          </label>
+          <label>
+            <span>Simulation country</span>
+            <input bind:value={simulatorForm.countryCode} placeholder="IT" />
+          </label>
+          <label>
+            <span>Simulation entry date</span>
+            <input type="date" bind:value={simulatorForm.entryDate} aria-invalid={simulationState.errors.entryDate ? 'true' : undefined} />
+            {#if simulationState.errors.entryDate}<strong class="field-error">{simulationState.errors.entryDate}</strong>{/if}
+          </label>
+          <label>
+            <span>Simulation exit date</span>
+            <input type="date" bind:value={simulatorForm.exitDate} aria-invalid={simulationState.errors.exitDate ? 'true' : undefined} />
+            {#if simulationState.errors.exitDate}<strong class="field-error">{simulationState.errors.exitDate}</strong>{/if}
+          </label>
+        </form>
         <div class="facts two">
-          <button class="secondary-button" type="button">Move earlier</button>
-          <button class="secondary-button" type="button">Shorten 4 days</button>
+          <FactCard label="Simulated days used" value={simulationState.daysUsedLabel} tone={simulationState.statusTone === 'risk' ? 'ink' : 'safe'} />
+          <FactCard label="Max additional days" value={simulationState.maxStayLabel} />
+        </div>
+        <section class:mint={simulationState.statusTone !== 'risk'} class:risk-panel={simulationState.statusTone === 'risk'} class="panel" aria-labelledby="simulation-result-heading">
+          <h2 id="simulation-result-heading">{simulationState.valid ? simulationState.latestSafeExitLabel : 'Add a valid trip'}</h2>
+          <p>{simulationState.summaryCopy}</p>
+          <p class="micro-safe">{simulationState.firstFixCopy}</p>
+        </section>
+        <TimelineLedger label="Planner timeline" mode={simulationState.statusTone === 'risk' ? 'risk' : 'planner'} />
+        <div class="facts two">
+          <button class="secondary-button" type="button" onclick={resetSimulation}>Use Italy example</button>
+          <button class="secondary-button" type="button" onclick={clearSimulation}>Clear simulation</button>
         </div>
       </section>
     {:else if active === 'proof'}

@@ -152,14 +152,15 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-01, US-03, US-07
 - **Implementation target:** non-mutating what-if trip input and verdict panel.
 - **Acceptance summary:**
-  - Proposed dates produce instant yes/no verdict.
+  - Proposed dates produce instant safe / at-limit / not-safe verdict.
   - Simulation does not mutate saved trips.
   - Shows max additional days for proposed start date.
-- **Verification:** simulated-trip unit tests, integration test proves saved totals unchanged, clear/reset manual QA.
+  - Shows first useful fix when a proposal is unsafe.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 91 Bun tests / 1195 assertions including future-trip simulator safe, at-limit, over-limit, invalid-input, max-stay, and non-mutating what-if behavior; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage proving simulator safe/unsafe UI updates and simulated labels do not appear in saved trips.
 
 ## US-08 — Days coming back calendar/timeline visualization
 
