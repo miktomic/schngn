@@ -5,14 +5,20 @@ import { assertNoForbiddenNetworkPayloads, type ObservedNetworkRequest } from '.
 const forbiddenTripValues = ['2026-10-01', '2026-10-13', 'Italy booked trip', 'michael@example.com'];
 
 test.describe('SCHNGN app smoke and privacy checks', () => {
-  test('landing page renders on mobile without leaking private trip values', async ({ page }) => {
+  test('landing page renders UK second-home SEO pitch on mobile without leaking private trip values', async ({ page }) => {
     const requests = observeNetwork(page);
 
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: /Know if your Schengen trip fits/i })).toBeVisible();
-    await expect(page.getByText(/Your trip dates stay on this device/i)).toBeVisible();
-    await expect(page.getByRole('link', { name: /Open calculator|Check Italy trip/i }).first()).toBeVisible();
+    await expect(page).toHaveTitle('Schengen 90/180 calculator for UK second-home owners | SCHNGN');
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      /UK second-home owners and frequent travellers/
+    );
+    await expect(page.getByRole('heading', { name: /Plan Europe stays without guessing your 90 days/i })).toBeVisible();
+    await expect(page.getByText('For UK second-home owners')).toBeVisible();
+    await expect(page.getByText('Your dates stay in this browser.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'See if your Europe trip fits' })).toHaveAttribute('href', '/app');
     assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
   });
 

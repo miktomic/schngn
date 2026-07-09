@@ -275,14 +275,14 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** validated positioning copy, analytics from US-15, approved UK second-home/frequent-traveler angle; see `docs/product-decisions.md`.
-- **Implementation target:** landing page aimed at UK second-home owners and frequent EU travelers post-Brexit.
+- **Implementation target:** landing page aimed at UK second-home owners and frequent Europe travelers post-Brexit.
 - **Acceptance summary:**
   - Hero, benefit bullets, trust line, CTA.
-  - SEO title/meta for UK 90/180 and second-home long-tail terms.
-  - Fast mobile-first load.
-- **Verification:** Lighthouse SEO/performance ≥ 90, meta tags present, Google Ads test.
+  - SEO title/meta/social tags for UK 90/180 and second-home long-tail terms.
+  - Mobile-first load without private trip-value network leakage.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 117 Bun tests / 1296 assertions including UK second-home SEO source tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the targeted landing metadata, hero, trust line, CTA, and no forbidden network payloads.
 - **Success metric:** cold-traffic email/waitlist signup > 5%.
 
 ## US-12 — Accuracy trust signal

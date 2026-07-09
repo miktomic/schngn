@@ -3,17 +3,23 @@
 </script>
 
 <svelte:head>
-  <title>SCHNGN - Schengen 90/180 planner</title>
+  <title>Schengen 90/180 calculator for UK second-home owners | SCHNGN</title>
   <meta
     name="description"
-    content="A privacy-first Schengen 90/180-day calculator and trip planner for frequent travelers, second-home owners, and families."
+    content="Plan Europe trips around the Schengen 90/180-day rule with a private calculator built for UK second-home owners and frequent travellers."
   />
   <link rel="canonical" href="https://schngn.com/" />
   <meta property="og:url" content="https://schngn.com/" />
-  <meta property="og:title" content="SCHNGN - Schengen 90/180 planner" />
+  <meta property="og:title" content="Schengen 90/180 calculator for UK second-home owners | SCHNGN" />
   <meta
     property="og:description"
-    content="A privacy-first Schengen 90/180-day calculator and trip planner."
+    content="A private Schengen 90/180 calculator for UK second-home owners planning Europe stays."
+  />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Schengen 90/180 calculator for UK second-home owners | SCHNGN" />
+  <meta
+    name="twitter:description"
+    content="Check whether your next Europe stay fits the Schengen 90/180-day rule. Your dates stay in this browser."
   />
 </svelte:head>
 
@@ -28,15 +34,16 @@
 
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <p class="kicker">Local-first Schengen 90/180 tracker</p>
-      <h1 id="hero-title">Know if your Schengen trip fits before you book it.</h1>
+      <p class="kicker">For UK second-home owners</p>
+      <h1 id="hero-title">Plan Europe stays without guessing your 90 days.</h1>
       <p class="lede">
-        SCHNGN gives the answer first, then shows the rolling-window proof. Your trip dates stay on this device.
+        A private Schengen 90/180 calculator for frequent Europe trips, family visits, and second-home planning.
       </p>
-      <div class="actions">
-        <a class="primary" href="/app">Check Italy trip</a>
-        <a class="secondary" href="/app">Show calculation</a>
+      <div class="actions" aria-label="Landing page actions">
+        <a class="primary" href="/app">See if your Europe trip fits</a>
+        <a class="secondary" href="/app">Open calculator</a>
       </div>
+      <p class="trust-line">Your dates stay in this browser. Not legal advice. Not an EU service.</p>
     </div>
 
     <aside class="answer-card" aria-label="Example safe answer">
@@ -44,7 +51,7 @@
         <span class="mini-brand">SCHNGN</span>
         <span class="privacy">Local & private</span>
       </div>
-      <span class="chip safe">Italy fits</span>
+      <span class="chip safe">France fits</span>
       <strong>15 safe buffer days</strong>
       <dl>
         <div>
@@ -62,23 +69,31 @@
         <span class="whatif"></span>
         <span class="safe-segment"></span>
       </div>
-      <p>France, Greece, and Italy are counted in the active 180-day window.</p>
+      <p>France, Spain, Italy, and Greece are counted inside the active 180-day window.</p>
     </aside>
   </section>
 
-  <section class="principles" aria-label="Product principles">
-    <article>
-      <h2>Answer first</h2>
-      <p>Safe, close, or over limit with the date that matters.</p>
-    </article>
-    <article>
-      <h2>Proof second</h2>
-      <p>Rolling 180-day window, inclusive counting, and days returning.</p>
-    </article>
-    <article>
-      <h2>Private by default</h2>
-      <p>Trips live in browser storage. Analytics never receive travel dates.</p>
-    </article>
+  <section class="audience" aria-label="Who SCHNGN is for">
+    <div>
+      <h2>Built for the second-home pattern.</h2>
+      <p>
+        Multiple short stays, family calendars, ferry bookings, and old entry dates make mental math fragile. SCHNGN turns those dates into one answer and a proof trail.
+      </p>
+    </div>
+    <ul aria-label="Second-home planning benefits">
+      <li>
+        <strong>Check before booking</strong>
+        <span>Try a future stay without changing saved trips.</span>
+      </li>
+      <li>
+        <strong>See days coming back</strong>
+        <span>Understand when old Schengen days leave the 180-day window.</span>
+      </li>
+      <li>
+        <strong>Keep travel private</strong>
+        <span>Trips live in browser storage unless you export JSON yourself.</span>
+      </li>
+    </ul>
   </section>
 </main>
 
@@ -90,7 +105,7 @@
 
   .topbar,
   .hero,
-  .principles {
+  .audience {
     max-width: 1120px;
     margin: 0 auto;
   }
@@ -119,7 +134,6 @@
     letter-spacing: 0.05em;
   }
 
-
   .toplink,
   .primary,
   .secondary {
@@ -130,6 +144,7 @@
   .toplink {
     border: 1px solid var(--line);
     background: var(--surface);
+    color: var(--ink);
     padding: 10px 14px;
   }
 
@@ -138,7 +153,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
     gap: clamp(28px, 6vw, 72px);
     align-items: center;
-    padding: clamp(44px, 9vw, 92px) 0 48px;
+    padding: clamp(44px, 9vw, 88px) 0 48px;
   }
 
   .kicker {
@@ -154,13 +169,13 @@
     max-width: 760px;
     margin: 0;
     color: var(--ink);
-    font-size: clamp(2.7rem, 8vw, 5.3rem);
+    font-size: clamp(2.65rem, 7.4vw, 5.1rem);
     line-height: 0.98;
     letter-spacing: -0.035em;
   }
 
   .lede {
-    max-width: 580px;
+    max-width: 600px;
     margin: 24px 0 0;
     color: var(--muted);
     font-size: clamp(1.08rem, 2vw, 1.28rem);
@@ -193,8 +208,16 @@
     color: var(--ink);
   }
 
+  .trust-line {
+    max-width: 520px;
+    margin: 18px 0 0;
+    color: var(--muted);
+    font-size: 0.96rem;
+    line-height: 1.45;
+  }
+
   .answer-card,
-  .principles article {
+  .audience {
     border: 1px solid var(--line);
     background: var(--surface);
   }
@@ -298,31 +321,64 @@
     line-height: 1.45;
   }
 
-  .principles {
+  .audience {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(20px, 4vw, 52px);
+    align-items: start;
+    border-radius: 18px;
+    padding: clamp(22px, 5vw, 40px);
   }
 
-  .principles article {
-    border-radius: 14px;
-    padding: 20px;
-  }
-
-  .principles h2 {
+  .audience h2 {
+    max-width: 420px;
     margin: 0;
-    font-size: 1.15rem;
+    color: var(--ink);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
   }
 
-  .principles p {
-    margin: 8px 0 0;
+  .audience p {
+    max-width: 520px;
+    margin: 18px 0 0;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .audience ul {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .audience li {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper);
+    padding: 16px;
+  }
+
+  .audience strong,
+  .audience span {
+    display: block;
+  }
+
+  .audience strong {
+    color: var(--ink);
+  }
+
+  .audience span {
+    margin-top: 5px;
     color: var(--muted);
     line-height: 1.45;
   }
 
   @media (max-width: 840px) {
     .hero,
-    .principles {
+    .audience {
       grid-template-columns: 1fr;
     }
 
