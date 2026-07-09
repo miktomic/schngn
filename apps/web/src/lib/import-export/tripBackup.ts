@@ -1,4 +1,4 @@
-import { sortTrips, validateTripInput, type EditableTrip } from '$lib/trips/tripCrud';
+import { sortTrips, validateTripInput, type EditableTrip } from '../trips/tripCrud';
 
 export const SCHNGN_BACKUP_SCHEMA_VERSION = 1;
 
