@@ -77,6 +77,14 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     const reportRegion = page.getByLabel('Border-ready report');
     await expect(page.getByRole('heading', { name: 'Border-ready report' })).toBeVisible();
     await expect(reportRegion.getByText(/Not legal advice/i)).toBeVisible();
+    await expect(page.getByText(/PDF export is an early-access fake door/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Generate border-ready PDF — €9' }).click();
+    await expect(page.getByRole('heading', { name: 'Early-access request noted' })).toBeVisible();
+    await expect(page.getByText(/No payment was taken/i)).toBeVisible();
+    let plausibleEvents = await readPlausibleEvents(page);
+    let plausibleEventNames = plausibleEvents.map((event) => event.name);
+    expect(plausibleEventNames).toContain('pdf_buy_intent');
+    assertSafePlausiblePayload(plausibleEvents);
 
     await page.getByRole('button', { name: 'Privacy' }).click();
     await expect(page.getByRole('heading', { name: 'Privacy & data' })).toBeVisible();
@@ -95,8 +103,8 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'Trips' })).toBeVisible();
     await expect(page.getByText(/Spain/i)).toBeVisible();
     await expect(page.getByText(/07-01 to 07-19/i)).toBeVisible();
-    let plausibleEvents = await readPlausibleEvents(page);
-    let plausibleEventNames = plausibleEvents.map((event) => event.name);
+    plausibleEvents = await readPlausibleEvents(page);
+    plausibleEventNames = plausibleEvents.map((event) => event.name);
     expect(plausibleEventNames).toContain('page_view');
     expect(plausibleEventNames).toContain('calculator_start');
     expect(plausibleEventNames).toContain('trip_added');

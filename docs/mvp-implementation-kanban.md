@@ -224,14 +224,15 @@
 
 - **Priority:** Must
 - **Estimate:** S
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-07, US-15, approved fake-door pricing; see `docs/product-decisions.md`.
-- **Implementation target:** fake-door CTA from dashboard using €5/€9/€19 by default and £5/£9/£19 on UK-targeted pages.
+- **Implementation target:** report-screen fake-door CTA using the approved €9 MVP default; broader price-bucket persistence/distribution remains US-14.
 - **Acceptance summary:**
-  - “Generate border-ready PDF — $X” button.
-  - Click logs `pdf_buy_intent` and shows honest coming-soon / early-access message.
-  - No accidental charge.
-- **Verification:** event fires, message displays, no payment captured unless explicitly enabled.
+  - “Generate border-ready PDF — €9” button on the border-ready report screen.
+  - Click logs aggregate-only `pdf_buy_intent` with `source: report` and `price_bucket: eur_9`.
+  - Shows honest early-access message and explicit “No payment was taken” copy.
+  - Does not send trip dates, report contents, labels, email, or personal travel timelines.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 106 Bun tests / 1250 assertions including PDF fake-door state and analytics-event tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the PDF fake-door CTA, early-access/no-charge message, `pdf_buy_intent`, and no forbidden network payloads.
 - **Success metric:** PDF-click rate after completed calculation > 10%.
 
 ## US-14 — Paid unlock fake-door + pricing A/B

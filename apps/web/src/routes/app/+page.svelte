@@ -8,6 +8,7 @@
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
   import { FOOTER_DISCLAIMER_COPY, FULL_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '$lib/legal/legalCopy';
+  import { buildPdfBuyIntentEvent, buildPdfReportFakeDoorState } from '$lib/fake-door/pdfReportFakeDoor';
   import {
     buildSafeBufferBucket,
     buildTripCountBucket,
@@ -51,6 +52,7 @@
   let importMessage = '';
   let importError = '';
   let disclaimerNoticeVisible = true;
+  let pdfIntentMessageVisible = false;
   let simulatorForm: ProposedTripInput = {
     label: 'Italy',
     countryCode: 'IT',
@@ -96,6 +98,7 @@
     | 'whatif';
   $: returningForecast = buildReturningDaysForecast(trips, { referenceDate: '2026-10-13', horizonDays: 30 });
   $: explanationState = buildExplanationState(trips, dashboardState.referenceDate);
+  $: pdfFakeDoorState = buildPdfReportFakeDoorState(pdfIntentMessageVisible);
   $: riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
 
   onMount(() => {
@@ -249,6 +252,12 @@
 
   function trackWaitlistSignup(): void {
     trackAnalyticsEvent('waitlist_signup', { source: 'waitlist' });
+  }
+
+  function recordPdfBuyIntent(): void {
+    const event = buildPdfBuyIntentEvent();
+    trackAnalyticsEvent(event.name, event.props);
+    pdfIntentMessageVisible = true;
   }
 
   function analyticsVerdict(): AnalyticsVerdict {
@@ -516,10 +525,18 @@
           <p>{FOOTER_DISCLAIMER_COPY}</p>
         </article>
         <section class="panel whatif-panel">
-          <h2>Export is not live yet</h2>
-          <p>Join the list and we will email when PDF export is available.</p>
+          <h2>{pdfFakeDoorState.messageTitle}</h2>
+          <p>{pdfFakeDoorState.helperCopy}</p>
         </section>
-        <button class="primary-button" type="button" onclick={() => setActiveScreen('waitlist')}>Get PDF export updates</button>
+        <button class="primary-button" type="button" onclick={recordPdfBuyIntent}>{pdfFakeDoorState.buttonLabel}</button>
+        {#if pdfFakeDoorState.showIntentMessage}
+          <section class="panel mint" aria-live="polite">
+            <h2>Early-access request noted</h2>
+            <p>{pdfFakeDoorState.messageCopy}</p>
+            <p class="micro-safe">No payment was taken. No trip dates or report content were sent.</p>
+          </section>
+        {/if}
+        <button class="secondary-button" type="button" onclick={() => setActiveScreen('waitlist')}>Join PDF export list</button>
       </section>
     {:else if active === 'privacy'}
       <section class="screen" aria-labelledby="privacy-heading">
