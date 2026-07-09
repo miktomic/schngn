@@ -12,7 +12,8 @@
     "enabled": true
   },
   "routes": [
-    { "pattern": "schngn.com", "custom_domain": true }
+    { "pattern": "schngn.com", "custom_domain": true },
+    { "pattern": "www.schngn.com", "custom_domain": true }
   ]
   // Waitlist storage, pick one when enabling real capture:
   // "kv_namespaces": [{ "binding": "WAITLIST", "id": "xxxx" }]

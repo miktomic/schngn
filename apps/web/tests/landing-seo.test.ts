@@ -26,6 +26,8 @@ describe('UK second-home landing SEO', () => {
 
   test('sets share metadata and canonical URL for the public landing page', () => {
     expect(pageSource).toContain('<link rel="canonical" href="https://schngn.com/" />');
+    expect(pageSource).toContain('<meta property="og:url" content="https://schngn.com/" />');
+    expect(pageSource).not.toContain('www.schngn.com');
     expect(pageSource).toContain('property="og:title"');
     expect(pageSource).toContain('property="og:description"');
     expect(pageSource).toContain('name="twitter:card"');

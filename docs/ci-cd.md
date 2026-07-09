@@ -87,7 +87,7 @@ Before enabling analytics or fake-door flows, CI/manual QA must confirm:
 
 ## Deployment
 
-Deployment uses Wrangler from `apps/web` and targets the production domain `https://schngn.com`:
+Deployment uses Wrangler from `apps/web` and targets the production domain `https://schngn.com` plus a canonical `www.schngn.com` custom-domain redirect route:
 
 ```bash
 bun run deploy

@@ -330,14 +330,15 @@
 
 - **Priority:** Should
 - **Estimate:** S
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** approved `www.schngn.com` → apex redirect decision and Cloudflare DNS/custom-domain setup; see `docs/product-decisions.md`.
 - **Implementation target:** implement canonical `www.schngn.com` redirect to `https://schngn.com`.
 - **Acceptance summary:**
-  - `www.schngn.com` redirects to `https://schngn.com`.
+  - Cloudflare routes include apex and `www.schngn.com` custom domains.
+  - SvelteKit server hook redirects any `www.schngn.com` request that reaches the Worker to the apex URL with HTTP 308.
   - Canonical URL, Open Graph URL, robots, and sitemap behavior agree with the apex domain decision.
-  - No duplicate-content/confusing-domain behavior for launch traffic.
-- **Verification:** `curl -I https://www.schngn.com` shows intended behavior if configured, browser check confirms redirect/no-error path, canonical tags remain apex-only unless strategy changes.
+  - Sitemap advertises apex-only `/`, `/app`, and `/accuracy` URLs.
+- **Verification:** `npx -y bun@1.3.14 test apps/web/tests/domain-hygiene.test.ts apps/web/tests/landing-seo.test.ts` passed; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed. Pre-implementation live check showed `www.schngn.com` did not resolve yet, so post-deploy DNS/redirect smoke is still required after Cloudflare accepts/provisions the new custom domain.
 
 ---
 
