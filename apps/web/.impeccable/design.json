@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-09T00:45:57+02:00",
+  "title": "Design System: SCHNGN Web",
+  "extensions": {
+    "northStar": "The Border Ledger",
+    "sourceArtifacts": [
+      "docs/pencil-visual-identity-results.md",
+      "docs/pencil-visual-identity-brief.md",
+      "sketches/pencil/exports/schngn-visual-identity-system-v2.png",
+      "sketches/pencil/exports/tufte-evidence-ledger.png",
+      "sketches/pencil/exports/synthesis-compelling-mock.png"
+    ],
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#F7F5EF", "usage": "App background and report paper." },
+      "ink": { "role": "primary", "displayName": "Ink", "canonical": "#10231F", "usage": "Primary text, wordmark, CTA background, ledger strokes." },
+      "starGold": { "role": "brand", "displayName": "Star Gold", "canonical": "#C8A74E", "usage": "Logo-only star accent for the EU-stars-inspired Schengen constellation mark." },
+      "safe": { "role": "semantic", "displayName": "Safe Green", "canonical": "#0F6B4F", "usage": "Safe status and local/private state." },
+      "booked": { "role": "semantic", "displayName": "Booked Blue", "canonical": "#1F5F9F", "usage": "Booked or committed trips, not legal protection." },
+      "whatif": { "role": "semantic", "displayName": "What-if Amber", "canonical": "#8A5A00", "usage": "Simulations and uncommitted planned trips." },
+      "risk": { "role": "semantic", "displayName": "Risk Red", "canonical": "#A8322A", "usage": "Over-limit and destructive states." }
+    },
+    "motion": {
+      "default": "150-220ms ease-out for state changes only",
+      "reducedMotion": "Disable non-essential motion. Preserve instant state feedback."
+    },
+    "breakpoints": {
+      "mobile": "320px-767px",
+      "tablet": "768px-1023px",
+      "desktop": "1024px+"
+    },
+    "signatureComponents": {
+      "answerCard": "Verdict chip, dominant metric, supporting facts, proof affordance.",
+      "rollingWindowTimeline": "Active 180-day frame with past, booked, what-if, return, and risk segments.",
+      "proofLedger": "Inspectable explanation of counted days, inclusive counting, and days returning soon."
+    },
+    "critiqueSummary": {
+      "identityBoard": "Strong enough to canonize. Lock paper-and-ink palette, Source Sans 3 plus IBM Plex Mono, Star Gold, and EU-stars-inspired Schengen constellation mark direction.",
+      "tufteMock": "Best proof density and trust language. Too dense for default home but ideal for explanation/report surfaces.",
+      "synthesisMock": "Best mobile production base. Replace purple simulation state with amber and remove protected-language ambiguity.",
+      "currentSvelteShell": "Functional prototype only. It uses Inter, blue gradients, over-rounded cards, and shadows that conflict with the canonical direction."
+    }
+  }
+}

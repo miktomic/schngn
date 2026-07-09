@@ -39,6 +39,7 @@ Read these before making structural changes:
 - `docs/repo-structure.md`
 - `docs/ci-cd.md`
 - `docs/cloudflare-github-secrets-setup.md`
+- `docs/product-decisions.md`
 - `docs/mvp-implementation-kanban.md`
 
 Runtime model:
@@ -209,7 +210,7 @@ The `/api/waitlist` endpoint may accept email only. It must not accept trip data
 
 ## Product/backlog priority
 
-Use `docs/mvp-implementation-kanban.md` as the implementation board.
+Use `docs/product-decisions.md` for approved MVP product/provider/domain decisions. Use `docs/mvp-implementation-kanban.md` as the implementation board.
 
 Pull order:
 
@@ -263,13 +264,14 @@ Avoid:
 
 ## Installed project skills
 
-Project-level agent skills live under `.agents/skills/` and are tracked through `skills-lock.json`.
+Project-level agent skills live under `.agents/skills/`; provider-native companion copies may also live under `.github/skills/`. Skills installed through the generic `skills` CLI are tracked through `skills-lock.json`; provider-native installs such as Impeccable may vendor their own payload directly.
 
 Installed:
 
 - `.agents/skills/design-taste-frontend/SKILL.md` from `Leonxlnx/taste-skill`.
+- `.agents/skills/impeccable/SKILL.md` and `.github/skills/impeccable/SKILL.md` from `pbakaus/impeccable`, installed with `npx impeccable install`.
 
-Use `design-taste-frontend` for landing page, portfolio-style, visual redesign, and marketing UI work where taste/hierarchy/anti-slop rules matter. Do **not** let it override SCHNGN’s higher-priority constraints: engine correctness, local-only trip data, no legal advice, accessibility, and the product/backlog pull order above.
+Use `design-taste-frontend` for landing page, portfolio-style, visual redesign, and marketing UI work where taste/hierarchy/anti-slop rules matter. Use `impeccable` for design-system context, UI critique/polish/audit/layout/type/color passes, and deterministic UI anti-pattern detection via `npx impeccable detect`. Do **not** let either design skill override SCHNGN’s higher-priority constraints: engine correctness, local-only trip data, no legal advice, accessibility, and the product/backlog pull order above.
 
 ## Testing expectations
 
@@ -322,7 +324,7 @@ If configuring any external service, do not write secrets to files. Use GitHub s
 Before coding:
 
 1. Read this file.
-2. Read `docs/architecture.md`, `docs/repo-structure.md`, and the relevant backlog/design docs.
+2. Read `docs/architecture.md`, `docs/repo-structure.md`, `docs/product-decisions.md`, and the relevant backlog/design docs.
 3. Check `git status --short`.
 4. Avoid mixing unrelated changes.
 

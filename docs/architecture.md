@@ -6,6 +6,12 @@ SCHNGN is a local-first Schengen 90/180-day tracker and planner. The MVP optimiz
 
 ## Runtime model
 
+Diagram artifacts:
+
+- [`docs/app-architecture-diagram.md`](app-architecture-diagram.md) — Mermaid diagram plus explanation.
+- [`docs/app-architecture.drawio`](app-architecture.drawio) — editable draw.io source.
+- [`docs/app-architecture.html`](app-architecture.html) — standalone browser/SVG visual.
+
 The key architecture rule:
 
 > **Bun is the local build/test/dev tool. Node 24+ is the Node tooling baseline. Cloudflare Workers is the production runtime.**

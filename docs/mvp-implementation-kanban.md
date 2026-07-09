@@ -1,6 +1,6 @@
 # SCHNGN MVP Implementation Kanban
 
-> Source: Schengen Tracker MVP Product Backlog pasted into Hermes on 2026-07-08.  
+> Source: Schengen Tracker MVP Product Backlog pasted into Hermes on 2026-07-08.
 > Scope: **Option B Web/PWA MVP** — no login, local-only storage, provably-correct engine, free calculator + fake-door paid unlock.
 
 ## Board policy
@@ -9,6 +9,7 @@
 - **Quality gate:** US-01/US-02/US-03 must pass EC-parity + boundary tests before implementation moves into polished dashboard work.
 - **Privacy gate:** any analytics/fake-door work must prove it sends **no trip dates, no PII, no local travel history**.
 - **Definition of done for every card:** acceptance criteria met, relevant automated tests pass, mobile manual QA done, privacy/disclaimer unaffected, analytics verified where relevant.
+- **Test infrastructure is a first-class card.** Do not hide browser, accessibility, performance, or privacy/network checks as “later.” Later is where bugs rent office space.
 - **Default status:** all cards start in `Todo`. Move only when actually implemented and verified.
 
 ## Kanban overview
@@ -16,6 +17,7 @@
 | Column | Purpose | WIP limit |
 |---|---|---:|
 | `Ready / Sprint 1` | Correctness and data foundation | 1–2 |
+| `Infrastructure / Cross-cutting` | Test harness, privacy QA, production smoke, domain hygiene | 1 |
 | `Next / Sprint 2` | Core UX, trust, simulator, import/export | 2 |
 | `Validation / Sprint 2–3` | Fake-door monetization and analytics | 2 |
 | `Launch / Sprint 3` | SEO, waitlist, PWA, accuracy proof | 2 |
@@ -67,32 +69,49 @@
   - `Overstay / over limit` when usage exceeds allowance.
 - **Verification:** boundary tests at 82/83/89/90/91 days used.
 
+## US-19 — App test harness and privacy QA infrastructure
+
+- **Priority:** Must
+- **Estimate:** M
+- **Status:** Todo
+- **Depends on:** US-01/US-02/US-03 calculation contract; can begin once app route shape is stable
+- **Why now:** every app card after this needs browser, accessibility, and privacy-network verification. If the harness is missing, “manual QA” becomes folklore.
+- **Implementation target:** Playwright/browser smoke tests, app utility test structure, mobile viewport checks, accessibility/contrast checks, and reusable privacy/network assertions.
+- **Acceptance summary:**
+  - Automated smoke covers `/` and `/app`.
+  - Test command exists for app-level utility/integration coverage.
+  - Privacy test helper can fail if trip dates, email, names, or travel history appear in forbidden network payloads.
+  - Mobile viewport and keyboard-navigation checks are documented and runnable.
+  - CI/local check sequence includes the app test harness without making every run painfully slow.
+- **Verification:** Playwright/browser smoke passes, app utility tests pass, deliberate forbidden-payload fixture fails, `npx -y bun@1.3.14 run check` remains green.
+
 ## US-04 — Add / edit / delete a trip
 
 - **Priority:** Must
 - **Estimate:** M
 - **Status:** Todo
-- **Depends on:** US-01 data model contract
+- **Depends on:** US-01 data model contract, US-19 for browser/integration coverage
 - **Implementation target:** trip CRUD UI and validation.
 - **Acceptance summary:**
   - Add entry date, exit date, optional country/label.
   - Equal entry/exit allowed as a one-day trip.
   - Exit before entry rejected inline.
   - Edit/delete re-sorts list and recalculates immediately.
-- **Verification:** unit validation tests, integration add/edit/delete → recalculation, mobile Safari/Chrome QA.
+- **Verification:** unit validation tests, integration add/edit/delete → recalculation, mobile Safari/Chrome QA, privacy/network check confirms no trip payloads leave browser.
 
 ## US-05 — Local-only persistence, no account
 
 - **Priority:** Must
 - **Estimate:** M
 - **Status:** Todo
-- **Depends on:** US-04
+- **Depends on:** US-04, US-19
 - **Implementation target:** localStorage or IndexedDB persistence layer.
 - **Acceptance summary:**
   - Trips persist across reload/restart.
   - Trip dates are never transmitted.
   - Visible local/private data message.
-- **Verification:** reload/reopen test, DevTools network audit, storage-disabled warning.
+  - User-facing backup warning explains that local-only data needs export/backup if the device/browser is cleared.
+- **Verification:** reload/reopen test, DevTools network audit, storage-disabled warning, backup warning visible.
 
 ---
 
@@ -109,6 +128,7 @@
   - Export downloads JSON.
   - Import validates schema, restores trips, recalculates.
   - Malformed imports fail with clear error.
+  - Backup/restore copy explains how local-only data can be moved between devices manually.
 - **Verification:** serialize/deserialize round-trip tests, corrupted import manual QA.
 
 ## US-07 — Dashboard: days used / remaining / status
@@ -155,12 +175,13 @@
 - **Priority:** Must
 - **Estimate:** S
 - **Status:** Todo
-- **Depends on:** copy/legal review decision
-- **Implementation target:** persistent footer + first-run disclaimer notice.
+- **Depends on:** approved fixed disclaimer copy and official-source references; see `docs/product-decisions.md`.
+- **Implementation target:** persistent footer + first-run disclaimer notice using fixed copy only.
 - **Acceptance summary:**
   - Planning tool only; not legal advice; not guarantee of entry.
   - Edge cases explicitly excluded.
-  - Links to official EC calculator and EES information.
+  - Links to official EC calculator, EES, and ETIAS information.
+  - No runtime AI-generated legal explanations.
 - **Verification:** disclaimer visible on every core screen, first-run notice dismissible, official links resolve.
 
 ## US-11 — “Why this number?” plain-English explainer
@@ -168,7 +189,7 @@
 - **Priority:** Must
 - **Estimate:** M
 - **Status:** Todo
-- **Depends on:** US-01, human-reviewed copy
+- **Depends on:** US-01 and approved fixed copy boundaries; see `docs/product-decisions.md`.
 - **Implementation target:** expandable explainer tied to calculation output.
 - **Acceptance summary:**
   - Explains entry/exit counting.
@@ -185,8 +206,8 @@
 - **Priority:** Must
 - **Estimate:** S
 - **Status:** Todo
-- **Depends on:** analytics provider decision
-- **Implementation target:** Plausible/Fathom/PostHog configured without PII/trip dates.
+- **Depends on:** approved Plausible Cloud decision; see `docs/product-decisions.md`.
+- **Implementation target:** Plausible Cloud configured through a typed allowlisted analytics wrapper without PII/trip dates.
 - **Acceptance summary:**
   - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`, `pdf_buy_intent`, `unlock_buy_intent`, `waitlist_signup`.
   - Trip event payloads contain count buckets only, never dates.
@@ -197,8 +218,8 @@
 - **Priority:** Must
 - **Estimate:** S
 - **Status:** Todo
-- **Depends on:** US-07, US-15, price/copy decision
-- **Implementation target:** fake-door CTA from dashboard.
+- **Depends on:** US-07, US-15, approved fake-door pricing; see `docs/product-decisions.md`.
+- **Implementation target:** fake-door CTA from dashboard using €5/€9/€19 by default and £5/£9/£19 on UK-targeted pages.
 - **Acceptance summary:**
   - “Generate border-ready PDF — $X” button.
   - Click logs `pdf_buy_intent` and shows honest coming-soon / early-access message.
@@ -211,11 +232,11 @@
 - **Priority:** Must
 - **Estimate:** M
 - **Status:** Todo
-- **Depends on:** US-09, US-13, US-15, price bucket decision
-- **Implementation target:** premium/full-tracker CTA with persisted A/B price assignment.
+- **Depends on:** US-09, US-13, US-15, approved fake-door price buckets; see `docs/product-decisions.md`.
+- **Implementation target:** premium/full-tracker CTA with persisted one-time price bucket assignment.
 - **Acceptance summary:**
   - Gates premium framing behind buy/waitlist step.
-  - Randomly assigns $5 / $9 / $19 or local equivalent.
+  - Randomly assigns €5 / €9 / €19 by default, or £5 / £9 / £19 on UK-targeted pages.
   - Logs buy intent and assigned price.
 - **Verification:** distribution test across buckets, event payload test, persistence across reloads.
 - **Success metric:** targeted-traffic preorder/buy-intent > 2%.
@@ -225,11 +246,12 @@
 - **Priority:** Should
 - **Estimate:** S
 - **Status:** Todo
-- **Depends on:** provider + privacy copy decision
-- **Implementation target:** email capture on landing and fake-door steps.
+- **Depends on:** approved Cloudflare D1 waitlist decision and privacy copy; see `docs/product-decisions.md`.
+- **Implementation target:** email capture on landing and fake-door steps using Cloudflare D1.
 - **Acceptance summary:**
   - Email field with GDPR consent and privacy note.
-  - Stored separately from trip data.
+  - Stored in Cloudflare D1 separately from trip data.
+  - Trip dates/history/calculation results are never accepted by the waitlist endpoint.
 - **Verification:** submit → confirmation → appears in provider; consent/privacy link present.
 
 ---
@@ -241,8 +263,8 @@
 - **Priority:** Must
 - **Estimate:** M
 - **Status:** Todo
-- **Depends on:** validated positioning copy, analytics from US-15
-- **Implementation target:** landing page aimed at UK second-home owners / frequent travelers.
+- **Depends on:** validated positioning copy, analytics from US-15, approved UK second-home/frequent-traveler angle; see `docs/product-decisions.md`.
+- **Implementation target:** landing page aimed at UK second-home owners and frequent EU travelers post-Brexit.
 - **Acceptance summary:**
   - Hero, benefit bullets, trust line, CTA.
   - SEO title/meta for UK 90/180 and second-home long-tail terms.
@@ -255,11 +277,12 @@
 - **Priority:** Should
 - **Estimate:** S
 - **Status:** Todo
-- **Depends on:** US-01 EC-parity suite, decision on public test-case page
-- **Implementation target:** trust claim and link to validation evidence.
+- **Depends on:** US-01 EC-parity suite, approved public `/accuracy` page decision, and official-source references; see `docs/product-decisions.md`.
+- **Implementation target:** trust claim and `/accuracy` validation evidence page.
 - **Acceptance summary:**
   - “Validated against the European Commission's official short-stay calculator” with link.
-  - Optional public test cases.
+  - Public `/accuracy` page with curated test cases.
+  - No “certified,” “approved,” or guaranteed-entry language.
 - **Verification:** claim present, link works, public test-case page loads if included.
 
 ## US-17 — Installable PWA + offline
@@ -274,25 +297,55 @@
   - Calculator works offline after first load.
 - **Verification:** install on iOS and Android, airplane-mode calculator test, Lighthouse PWA checks.
 
+## US-20 — Post-deploy smoke tests and privacy-safe operations
+
+- **Priority:** Must
+- **Estimate:** S
+- **Status:** Todo
+- **Depends on:** stable production deployment, US-15 for analytics payload rules, approved no-Sentry MVP monitoring decision; see `docs/product-decisions.md`.
+- **Implementation target:** repeatable production smoke script/checklist and privacy-safe operational monitoring using Cloudflare logs/smoke tests first.
+- **Acceptance summary:**
+  - Script verifies `https://schngn.com/` and `https://schngn.com/app` return healthy HTTP responses.
+  - Browser smoke checklist covers app render, console errors, manifest, and core static assets.
+  - Post-deploy checklist includes privacy/network inspection for analytics, waitlist, and fake-door payloads.
+  - No Sentry or equivalent third-party error monitoring in MVP launch unless explicitly revisited.
+  - Rollback/failure notes live in the CI/CD docs.
+- **Verification:** smoke script runs against production, browser console is clean, payload audit shows no trip data or secrets, docs link the runbook.
+
+## US-21 — Canonical `www` redirect and domain hygiene
+
+- **Priority:** Should
+- **Estimate:** S
+- **Status:** Todo
+- **Depends on:** approved `www.schngn.com` → apex redirect decision and Cloudflare DNS/custom-domain setup; see `docs/product-decisions.md`.
+- **Implementation target:** implement canonical `www.schngn.com` redirect to `https://schngn.com`.
+- **Acceptance summary:**
+  - `www.schngn.com` redirects to `https://schngn.com`.
+  - Canonical URL, Open Graph URL, robots, and sitemap behavior agree with the apex domain decision.
+  - No duplicate-content/confusing-domain behavior for launch traffic.
+- **Verification:** `curl -I https://www.schngn.com` shows intended behavior if configured, browser check confirms redirect/no-error path, canonical tags remain apex-only unless strategy changes.
+
 ---
 
-# Blocked / Needs decision
+# Resolved product decisions
 
-Move these decisions out of the way before pulling dependent cards:
+These decisions were approved on 2026-07-09 and recorded in `docs/product-decisions.md` and the Hermes Kanban board:
 
-- **Analytics provider:** Plausible vs Fathom vs PostHog. Must support privacy-friendly event tracking without dates/PII.
-- **Fake-door pricing:** confirm $5 / $9 / $19, EUR/GBP equivalent, or a different price ladder.
-- **Email/waitlist provider:** choose lightweight provider and GDPR consent copy.
-- **Legal/disclaimer copy:** final human-reviewed wording for not-legal-advice and excluded edge cases.
-- **Official-source references:** canonical EC calculator/EES links to display.
-- **Public validation page:** decide whether US-12 includes public test cases in MVP.
-- **Ad test angle:** UK second-home owners vs frequent travelers vs remote workers for the first landing page/ad campaign.
+- **Analytics provider:** Plausible Cloud for MVP.
+- **Fake-door pricing:** one-time €5 / €9 / €19 default; £5 / £9 / £19 for UK-targeted pages.
+- **Email/waitlist provider:** Cloudflare D1 with email + consent/source metadata only.
+- **Legal/disclaimer copy:** fixed planning-aid/not-legal-advice copy; no runtime AI legal explanations.
+- **Official-source references:** EC short-stay calculator, EES, and ETIAS official links.
+- **Public validation page:** include `/accuracy` after US-01 is robust.
+- **Production error monitoring:** no Sentry for MVP launch; use Cloudflare logs + smoke tests first.
+- **`www` domain policy:** redirect `www.schngn.com` to `https://schngn.com`.
+- **Ad test angle:** UK second-home owners and frequent EU travelers post-Brexit.
 
 ---
 
 # Done
 
-Nothing yet. Correct state; honesty is cheaper than optimistic project management cosplay.
+No implementation cards are done yet. Product decision cards were completed in the Hermes Kanban board and recorded above / in `docs/product-decisions.md`. Correctly boring distinction: decisions are not shipped product.
 
 ---
 
@@ -320,21 +373,24 @@ Use this order unless a dependency or decision changes:
 1. US-01 — Rolling 180-day engine
 2. US-02 — Latest safe exit date
 3. US-03 — Verdict flag
-4. US-04 — Trip CRUD
-5. US-05 — Local-only persistence
-6. US-06 — JSON import/export
-7. US-07 — Dashboard money-shot
-8. US-09 — Future-trip simulator
-9. US-08 — Days-coming-back visualization
-10. US-10 — Disclaimers
-11. US-11 — Why-this-number explainer
-12. US-15 — Privacy-friendly analytics
-13. US-13 — PDF fake-door
-14. US-14 — Paid unlock fake-door + pricing A/B
-15. US-18 — Waitlist/email capture
-16. US-16 — SEO landing page
-17. US-12 — Accuracy trust signal
-18. US-17 — Installable PWA/offline
+4. US-19 — App test harness and privacy QA infrastructure
+5. US-04 — Trip CRUD
+6. US-05 — Local-only persistence
+7. US-06 — JSON import/export
+8. US-07 — Dashboard money-shot
+9. US-09 — Future-trip simulator
+10. US-08 — Days-coming-back visualization
+11. US-10 — Disclaimers
+12. US-11 — Why-this-number explainer
+13. US-15 — Privacy-friendly analytics
+14. US-13 — PDF fake-door
+15. US-14 — Paid unlock fake-door + pricing A/B
+16. US-18 — Waitlist/email capture
+17. US-16 — SEO landing page
+18. US-12 — Accuracy trust signal
+19. US-17 — Installable PWA/offline
+20. US-20 — Post-deploy smoke tests and privacy-safe operations
+21. US-21 — Canonical `www` redirect and domain hygiene
 
 # Suggested GitHub issue labels
 
@@ -342,8 +398,11 @@ If we convert this to GitHub Issues/Projects later, use:
 
 - `priority:must`, `priority:should`
 - `size:s`, `size:m`, `size:l`
-- `epic:correctness`, `epic:data-entry`, `epic:core-ux`, `epic:trust-legal`, `epic:monetization`, `epic:analytics-distribution`, `epic:pwa`
+- `epic:correctness`, `epic:data-entry`, `epic:testing`, `epic:core-ux`, `epic:trust-legal`, `epic:monetization`, `epic:analytics-distribution`, `epic:pwa`, `epic:ops`
 - `privacy-critical`
 - `ec-parity`
+- `test-infrastructure`
+- `post-deploy-smoke`
+- `domain-hygiene`
 - `blocked:decision`
 - `won't-mvp`

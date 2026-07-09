@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SCHNGN App Architecture</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --panel: #0f172a;
+      --grid: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --cyan: #22d3ee;
+      --blue: #60a5fa;
+      --emerald: #34d399;
+      --orange: #fb923c;
+      --violet: #a78bfa;
+      --rose: #fb7185;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(30, 41, 59, .35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 41, 59, .35) 1px, transparent 1px),
+        radial-gradient(circle at 20% 10%, rgba(34, 211, 238, .12), transparent 32rem),
+        radial-gradient(circle at 80% 20%, rgba(52, 211, 153, .10), transparent 30rem),
+        var(--bg);
+      background-size: 40px 40px, 40px 40px, auto, auto, auto;
+      color: var(--text);
+      padding: 32px;
+    }
+    header { max-width: 1180px; margin: 0 auto 20px; }
+    .eyebrow { color: var(--cyan); letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    h1 { margin: 8px 0 8px; font-size: clamp(28px, 4vw, 46px); }
+    .subtitle { color: var(--muted); max-width: 900px; line-height: 1.6; }
+    .canvas {
+      max-width: 1240px;
+      margin: 0 auto;
+      background: rgba(15, 23, 42, .78);
+      border: 1px solid rgba(148, 163, 184, .25);
+      border-radius: 22px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .35);
+      overflow: auto;
+    }
+    svg { display: block; width: 1220px; height: 720px; }
+    .box { fill: rgba(15, 23, 42, .94); stroke-width: 1.5; rx: 14; }
+    .group { fill: rgba(15, 23, 42, .55); stroke-dasharray: 8 6; stroke-width: 1.3; rx: 18; }
+    .ci { stroke: var(--blue); }
+    .cf { stroke: var(--emerald); }
+    .browser { stroke: var(--orange); }
+    .data { stroke: var(--violet); }
+    .privacy { stroke: var(--rose); }
+    text { fill: var(--text); font-size: 13px; }
+    .label { font-size: 15px; font-weight: 700; }
+    .small { fill: var(--muted); font-size: 11px; }
+    .flow { stroke: #64748b; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+    .flow-blue { stroke: var(--blue); marker-end: url(#arrow-blue); }
+    .flow-green { stroke: var(--emerald); marker-end: url(#arrow-green); }
+    .flow-orange { stroke: var(--orange); marker-end: url(#arrow-orange); }
+    .flow-rose { stroke: var(--rose); stroke-dasharray: 6 5; marker-end: url(#arrow-rose); }
+    .cards { max-width: 1240px; margin: 22px auto 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .card { border: 1px solid rgba(148, 163, 184, .22); border-radius: 18px; background: rgba(15, 23, 42, .72); padding: 16px; }
+    .card h2 { font-size: 14px; margin: 0 0 10px; }
+    .card p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0; }
+    @media (max-width: 900px) { body { padding: 16px; } .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">SCHNGN architecture</div>
+    <h1>Local-first Schengen planner on Cloudflare Workers</h1>
+    <p class="subtitle">The important line: trip dates stay in the browser. Cloudflare serves the app and handles only tiny dynamic endpoints like email-only waitlist signup. The calculation engine stays pure and testable.</p>
+  </header>
+
+  <main class="canvas" aria-label="SCHNGN application architecture diagram">
+    <svg viewBox="0 0 1220 720" role="img" aria-labelledby="title desc">
+      <title id="title">SCHNGN application architecture</title>
+      <desc id="desc">Diagram showing GitHub Actions build pipeline, Cloudflare Worker and Static Assets production runtime, and browser-local PWA with pure Schengen engine and local storage.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64748b" /></marker>
+        <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#60a5fa" /></marker>
+        <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#34d399" /></marker>
+        <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#fb923c" /></marker>
+        <marker id="arrow-rose" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#fb7185" /></marker>
+      </defs>
+
+      <rect class="group ci" x="32" y="42" width="312" height="430" />
+      <rect class="group cf" x="416" y="42" width="360" height="430" />
+      <rect class="group browser" x="848" y="42" width="340" height="430" />
+
+      <text class="label" x="56" y="76">CI/CD — GitHub Actions</text>
+      <text class="label" x="440" y="76">Cloudflare edge — production</text>
+      <text class="label" x="872" y="76">Traveler browser / PWA</text>
+
+      <path class="flow" d="M188 152 V198" />
+      <path class="flow" d="M188 262 V304" />
+      <path class="flow" d="M188 370 V402" />
+      <path class="flow-blue" d="M300 430 C360 430 360 226 456 226" />
+      <path class="flow-green" d="M596 146 V190" />
+      <path class="flow-green" d="M596 260 V312" />
+      <path class="flow-green" d="M596 260 C650 270 672 300 690 320" />
+      <path class="flow" d="M690 386 V418" />
+      <path class="flow-green" d="M600 348 C760 348 760 130 900 130" />
+      <path class="flow-orange" d="M1020 166 V204" />
+      <path class="flow-orange" d="M976 276 V318" />
+      <path class="flow-orange" d="M1060 276 V318" />
+      <path class="flow-orange" d="M900 144 C790 150 780 335 746 342" />
+      <path class="flow-rose" d="M950 392 V520" />
+      <path class="flow-rose" d="M1010 548 C830 560 760 390 726 370" />
+
+      <rect class="box ci" x="68" y="104" width="240" height="64" /><text x="88" y="130">GitHub repo</text><text class="small" x="88" y="150">miktomic/schngn</text>
+      <rect class="box ci" x="68" y="204" width="240" height="74" /><text x="88" y="230">Node 24 + Bun 1.3.14</text><text class="small" x="88" y="250">install → test → typecheck → build</text>
+      <rect class="box ci" x="68" y="312" width="240" height="74" /><text x="88" y="338">Correctness gates</text><text class="small" x="88" y="358">engine tests + Svelte/TS + build</text>
+      <rect class="box ci" x="68" y="404" width="240" height="54" /><text x="88" y="428">wrangler deploy</text><text class="small" x="88" y="448">production env secrets</text>
+
+      <rect class="box cf" x="466" y="104" width="260" height="64" /><text x="486" y="130">schngn.com</text><text class="small" x="486" y="150">custom domain</text>
+      <rect class="box cf" x="466" y="204" width="260" height="74" /><text x="486" y="230">Worker: schngn-web</text><text class="small" x="486" y="250">workerd V8 isolate; not Node/Bun</text>
+      <rect class="box cf" x="450" y="318" width="166" height="74" /><text x="470" y="344">Static Assets</text><text class="small" x="470" y="364">SvelteKit/Vite output</text>
+      <rect class="box cf" x="632" y="318" width="128" height="74" /><text x="650" y="344">/api/waitlist</text><text class="small" x="650" y="364">email only</text>
+      <rect class="box data" x="540" y="424" width="210" height="54" /><text x="560" y="448">Optional KV / D1</text><text class="small" x="560" y="466">waitlist email only</text>
+
+      <rect class="box browser" x="900" y="104" width="240" height="74" /><text x="920" y="130">Svelte UI</text><text class="small" x="920" y="150">landing + app shell</text>
+      <rect class="box browser" x="900" y="218" width="240" height="74" /><text x="920" y="244">@schngn/engine</text><text class="small" x="920" y="264">pure TS 90/180 calculator</text>
+      <rect class="box data" x="884" y="328" width="140" height="74" /><text x="902" y="354">Local storage</text><text class="small" x="902" y="374">trip dates + scenarios</text>
+      <rect class="box browser" x="1044" y="328" width="126" height="74" /><text x="1060" y="354">Import/export</text><text class="small" x="1060" y="374">local JSON files</text>
+      <rect class="box privacy" x="850" y="522" width="338" height="72" /><text x="872" y="548">Privacy boundary</text><text class="small" x="872" y="568">no server-side trip persistence</text>
+    </svg>
+  </main>
+
+  <section class="cards">
+    <article class="card"><h2>Safety-critical core</h2><p>The 90/180 calculation engine is isolated in <code>packages/engine</code> and must be tested before UI polish outruns correctness.</p></article>
+    <article class="card"><h2>Privacy boundary</h2><p>Trip dates and scenarios stay in browser storage. The server path is email-only waitlist/fake-door validation.</p></article>
+    <article class="card"><h2>Runtime boundary</h2><p>Bun and Node 24 are tooling. Production is Cloudflare <code>workerd</code> plus static assets; deployed code avoids Bun-native APIs.</p></article>
+  </section>
+</body>
+</html>

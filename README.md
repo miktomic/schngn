@@ -21,6 +21,7 @@ Read:
 - [`docs/repo-structure.md`](docs/repo-structure.md)
 - [`docs/ci-cd.md`](docs/ci-cd.md)
 - [`docs/cloudflare-github-secrets-setup.md`](docs/cloudflare-github-secrets-setup.md)
+- [`docs/product-decisions.md`](docs/product-decisions.md)
 - [`docs/mvp-implementation-kanban.md`](docs/mvp-implementation-kanban.md)
 
 ## Quick start
