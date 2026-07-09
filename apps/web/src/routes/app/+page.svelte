@@ -41,17 +41,17 @@
   ];
 
   const riskTrips: Trip[] = [
-    ...baseTrips.slice(0, 3),
+    ...baseTrips,
     {
-      label: 'Italy extended',
-      countryCode: 'IT',
-      entryDate: '2026-09-15',
-      exitDate: '2026-11-01'
+      label: 'Spain what-if',
+      countryCode: 'ES',
+      entryDate: '2026-07-01',
+      exitDate: '2026-07-19'
     }
   ];
 
   const safeUsage = calculateUsageOnDate(baseTrips, '2026-10-13');
-  const riskUsage = calculateUsageOnDate(riskTrips, '2026-11-01');
+  const riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
 
   const proofRows = [
     { label: 'France', dates: 'May 1-12', days: 12, tone: 'past' },
@@ -96,7 +96,7 @@
           type="button"
           class:active={active === screen.key}
           aria-pressed={active === screen.key}
-          on:click={() => (active = screen.key)}
+          onclick={() => (active = screen.key)}
         >
           {screen.label}
         </button>
@@ -119,8 +119,8 @@
             {safeUsage.daysRemaining} days remain before the 90-day limit.
           </p>
         </section>
-        <button class="secondary-button" type="button" on:click={() => (active = 'proof')}>Show calculation</button>
-        <button class="primary-button" type="button" on:click={() => (active = 'report')}>Border-ready report</button>
+        <button class="secondary-button" type="button" onclick={() => (active = 'proof')}>Show calculation</button>
+        <button class="primary-button" type="button" onclick={() => (active = 'report')}>Border-ready report</button>
       </section>
     {:else if active === 'risk'}
       <section class="screen" aria-labelledby="risk-heading">
@@ -128,15 +128,15 @@
         <h1 id="risk-heading" class="verdict risk-text">{riskUsage.overBy} days over limit</h1>
         <section class="panel risk-panel" aria-labelledby="first-fix-heading">
           <h2 id="first-fix-heading">First fix</h2>
-          <p>Leave Italy by Oct 28 or shorten the September what-if trip by {riskUsage.overBy} counted days.</p>
+          <p>Leave Italy by Oct 9 or shorten the July what-if trip by {riskUsage.overBy} counted days.</p>
         </section>
         {@render Timeline('Risk rolling 180-day proof', 'risk')}
         <section class="cause-row">
           <span>Which date causes it</span>
-          <strong>Oct 29 becomes day 91 in the active window.</strong>
+          <strong>Oct 10 becomes day 91 in the active window.</strong>
         </section>
-        <button class="primary-button risk-action" type="button" on:click={() => (active = 'planner')}>Fix unsafe plan</button>
-        <button class="secondary-button" type="button" on:click={() => (active = 'proof')}>Show calculation</button>
+        <button class="primary-button risk-action" type="button" onclick={() => (active = 'planner')}>Fix unsafe plan</button>
+        <button class="secondary-button" type="button" onclick={() => (active = 'proof')}>Show calculation</button>
       </section>
     {:else if active === 'trip'}
       <section class="screen" aria-labelledby="trip-heading">
@@ -187,7 +187,7 @@
             </article>
           {/each}
         </div>
-        <button class="primary-button" type="button" on:click={() => (active = 'trip')}>Add trip</button>
+        <button class="primary-button" type="button" onclick={() => (active = 'trip')}>Add trip</button>
       </section>
     {:else if active === 'planner'}
       <section class="screen" aria-labelledby="planner-heading">
@@ -195,8 +195,8 @@
         {@render StatusChip('whatif', 'What-if mode')}
         {@render Timeline('Planner timeline', 'planner')}
         <section class="panel risk-panel">
-          <h2>Unsafe from Oct 29</h2>
-          <p>Extending Italy by 19 days crosses the limit because the rolling 180-day lens still contains 46 earlier days.</p>
+          <h2>Unsafe from Oct 10</h2>
+          <p>Adding the July what-if trip crosses the limit because the rolling 180-day lens still contains 75 booked counted days.</p>
         </section>
         <div class="facts two">
           <button class="secondary-button" type="button">Move earlier</button>
@@ -224,7 +224,7 @@
           <h2>Inclusive counting</h2>
           <p>Entry and exit dates both count as physical presence days.</p>
         </section>
-        <button class="secondary-button" type="button" on:click={() => (active = 'returns')}>Days returning soon</button>
+        <button class="secondary-button" type="button" onclick={() => (active = 'returns')}>Days returning soon</button>
       </section>
     {:else if active === 'returns'}
       <section class="screen" aria-labelledby="returns-heading">
@@ -257,7 +257,7 @@
           <h2>Export is not live yet</h2>
           <p>Join the list and we will email when PDF export is available.</p>
         </section>
-        <button class="primary-button" type="button" on:click={() => (active = 'waitlist')}>Get PDF export updates</button>
+        <button class="primary-button" type="button" onclick={() => (active = 'waitlist')}>Get PDF export updates</button>
       </section>
     {:else if active === 'privacy'}
       <section class="screen" aria-labelledby="privacy-heading">
