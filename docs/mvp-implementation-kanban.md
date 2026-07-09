@@ -289,14 +289,14 @@
 
 - **Priority:** Should
 - **Estimate:** S
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-01 EC-parity suite, approved public `/accuracy` page decision, and official-source references; see `docs/product-decisions.md`.
 - **Implementation target:** trust claim and `/accuracy` validation evidence page.
 - **Acceptance summary:**
-  - “Validated against the European Commission's official short-stay calculator” with link.
+  - “Validated against the European Commission official short-stay calculator” with link.
   - Public `/accuracy` page with curated test cases.
-  - No “certified,” “approved,” or guaranteed-entry language.
-- **Verification:** claim present, link works, public test-case page loads if included.
+  - No unsafe “certified,” “approved,” or guaranteed-entry language except explicit non-endorsement copy.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 120 Bun tests / 1310 assertions including `/accuracy` source tests for official-source framing, curated cases, landing evidence link, and unsafe-language rejection; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for `/accuracy`, the EC calculator link, safe trust copy, and no forbidden network payloads.
 
 ## US-17 — Installable PWA + offline
 

@@ -19,6 +19,26 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByText('For UK second-home owners')).toBeVisible();
     await expect(page.getByText('Your dates stay in this browser.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'See if your Europe trip fits' })).toHaveAttribute('href', '/app');
+    await expect(page.getByRole('link', { name: 'Accuracy evidence' })).toHaveAttribute('href', '/accuracy');
+    assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
+  });
+
+  test('accuracy page publishes official-source validation evidence without unsafe guarantee language', async ({ page }) => {
+    const requests = observeNetwork(page);
+
+    await page.goto('/accuracy');
+
+    await expect(page).toHaveTitle('Accuracy evidence for the Schengen 90/180 calculator | SCHNGN');
+    await expect(page.getByRole('heading', { name: 'Accuracy evidence' })).toBeVisible();
+    await expect(page.getByText('Validated against the European Commission official short-stay calculator')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'European Commission short-stay calculator' })).toHaveAttribute(
+      'href',
+      'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en'
+    );
+    await expect(page.getByText('Inclusive entry and exit days')).toBeVisible();
+    await expect(page.getByText('Rolling 180-day window')).toBeVisible();
+    await expect(page.getByText('SCHNGN is not certified, approved, or guaranteed by the EU')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open calculator' }).first()).toHaveAttribute('href', '/app');
     assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
   });
 

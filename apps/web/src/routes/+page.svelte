@@ -43,7 +43,8 @@
         <a class="primary" href="/app">See if your Europe trip fits</a>
         <a class="secondary" href="/app">Open calculator</a>
       </div>
-      <p class="trust-line">Your dates stay in this browser. Not legal advice. Not an EU service.</p>
+      <p class="trust-line">Your dates stay in this browser. Validated against official-rule fixtures. Not legal advice. Not an EU service.</p>
+      <a class="evidence-link" href="/accuracy">Accuracy evidence</a>
     </div>
 
     <aside class="answer-card" aria-label="Example safe answer">
@@ -214,6 +215,14 @@
     color: var(--muted);
     font-size: 0.96rem;
     line-height: 1.45;
+  }
+
+  .evidence-link {
+    display: inline-flex;
+    margin-top: 10px;
+    color: var(--safe);
+    font-weight: 750;
+    text-decoration: none;
   }
 
   .answer-card,
