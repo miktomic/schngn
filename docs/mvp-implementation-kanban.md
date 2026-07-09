@@ -125,7 +125,7 @@
 
 - **Priority:** Must
 - **Estimate:** S
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-04, US-05
 - **Implementation target:** JSON backup and restore flow.
 - **Acceptance summary:**
@@ -133,7 +133,7 @@
   - Import validates schema, restores trips, recalculates.
   - Malformed imports fail with clear error.
   - Backup/restore copy explains how local-only data can be moved between devices manually.
-- **Verification:** serialize/deserialize round-trip tests, corrupted import manual QA.
+- **Verification:** `npx -y bun@1.3.14 run check` passed with 82 Bun tests / 1145 assertions; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium JSON download/import/clear/malformed-import coverage and privacy-network assertions.
 
 ## US-07 — Dashboard: days used / remaining / status
 
@@ -372,25 +372,22 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 
 # Remaining pull order
 
-US-01, US-02, US-03, and US-19 are done. Use this order unless a dependency or decision changes:
+US-01, US-02, US-03, US-19, US-04, US-05, and US-06 are done. Use this order unless a dependency or decision changes:
 
-1. US-04 — Trip CRUD
-2. US-05 — Local-only persistence
-3. US-06 — JSON export / import
-4. US-07 — Dashboard money-shot
-5. US-09 — Future-trip simulator
-6. US-08 — Days-coming-back visualization
-7. US-10 — Disclaimers
-8. US-11 — Why-this-number explainer
-9. US-15 — Privacy-friendly analytics
-10. US-13 — PDF fake-door
-11. US-14 — Paid unlock fake-door + pricing A/B
-12. US-18 — Waitlist/email capture
-13. US-16 — SEO landing page
-14. US-12 — Accuracy trust signal
-15. US-17 — Installable PWA/offline
-16. US-20 — Post-deploy smoke tests and privacy-safe operations
-17. US-21 — Canonical `www` redirect and domain hygiene
+1. US-07 — Dashboard money-shot
+2. US-09 — Future-trip simulator
+3. US-08 — Days-coming-back visualization
+4. US-10 — Disclaimers
+5. US-11 — Plain-language explanations
+6. US-15 — Privacy-safe analytics
+7. US-13 — PDF/export fake-door
+8. US-14 — Paid unlock fake-door
+9. US-18 — Waitlist / email capture
+10. US-16 — Public `/accuracy` page
+11. US-12 — PWA/offline install
+12. US-17 — Launch landing page / SEO
+13. US-20 — Post-deploy production smoke
+14. US-21 — `www` redirect to apex
 
 # Suggested GitHub issue labels
 

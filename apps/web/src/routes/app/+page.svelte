@@ -15,7 +15,8 @@
     type TripFormInput,
     type TripValidationErrors
   } from '$lib/trips/tripCrud';
-  import { createDefaultTrips, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
+  import { importTripsFromJson, tripsToBackupJson } from '$lib/import-export/tripBackup';
+  import { clearTripsFromStorage, createDefaultTrips, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
 
   type ScreenKey =
     | 'dashboard'
@@ -35,6 +36,8 @@
   let formErrors: TripValidationErrors = {};
   let storageWarning = '';
   let storageSource: 'defaults' | 'storage' = 'defaults';
+  let importMessage = '';
+  let importError = '';
 
   const screens: { key: ScreenKey; label: string }[] = [
     { key: 'dashboard', label: 'Safe' },
@@ -120,6 +123,50 @@
     persistTrips(deleteTripById(trips, id));
     storageSource = 'storage';
     storageWarning = '';
+  }
+
+  function exportTrips(): void {
+    if (!browser) return;
+
+    const json = tripsToBackupJson(trips);
+    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `schngn-trips-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    importMessage = 'Exported JSON backup. Keep it somewhere private; it contains your trip dates.';
+    importError = '';
+  }
+
+  async function importTrips(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const result = importTripsFromJson(await file.text());
+    input.value = '';
+
+    if (result.ok === false) {
+      importError = result.error;
+      importMessage = '';
+      return;
+    }
+
+    persistTrips(result.trips);
+    storageSource = 'storage';
+    storageWarning = '';
+    importError = '';
+    importMessage = `Imported ${result.trips.length} trips from JSON. Your calculation has been refreshed on this device.`;
+  }
+
+  function clearLocalTrips(): void {
+    if (browser) clearTripsFromStorage(window.localStorage);
+    trips = createDefaultTrips();
+    storageSource = 'defaults';
+    storageWarning = '';
+    importMessage = 'Local trip data cleared from this browser. Bundled example trips are shown now.';
+    importError = '';
   }
 
   function statusLabel(status: EditableTrip['status']): string {
@@ -329,18 +376,23 @@
         <section class="panel mint">
           <h2>Local-only trip storage</h2>
           <p>Stored only in this browser. Trips, dates, and calculated timelines stay on this device unless you export a JSON file.</p>
-          <p>If this browser is cleared, export JSON first or your local trip history may be lost.</p>
+          <p>Export JSON before switching devices or clearing this browser. Import the same file later to restore your trips manually.</p>
           {#if storageWarning}
             <p class="storage-warning">{storageWarning}</p>
+          {:else if importError}
+            <p class="storage-warning">{importError}</p>
+          {:else if importMessage}
+            <p class="micro-safe">{importMessage}</p>
           {:else if storageSource === 'storage'}
             <p class="micro-safe">Loaded from this browser's local storage.</p>
           {:else}
             <p class="micro-safe">Using bundled example trips until you save your own.</p>
           {/if}
         </section>
-        <button class="secondary-button" type="button">Export JSON</button>
-        <button class="secondary-button" type="button">Import JSON</button>
-        <button class="secondary-button danger-outline" type="button">Clear local data</button>
+        <button class="secondary-button" type="button" onclick={exportTrips}>Export JSON</button>
+        <label class="secondary-button import-button" for="trip-import-file">Import JSON</label>
+        <input id="trip-import-file" class="visually-hidden" aria-label="Import JSON file" type="file" accept="application/json,.json" onchange={importTrips} />
+        <button class="secondary-button danger-outline" type="button" onclick={clearLocalTrips}>Clear local data</button>
         <section class="panel paper-panel">
           <h2>Analytics never include trip dates</h2>
           <p>Allowed events are aggregate only: page view, calculator start, trip count bucket, simulation run, and intent clicks.</p>
@@ -577,6 +629,23 @@
     border: 1px solid var(--line);
     background: var(--surface);
     color: var(--ink);
+  }
+
+  .import-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   .risk-action {

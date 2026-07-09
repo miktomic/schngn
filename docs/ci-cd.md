@@ -76,7 +76,7 @@ Current tests are now a real US-01 correctness gate:
 US-19 adds two app-level gates:
 
 - `bun run test` includes `apps/web/tests/privacy-network.test.ts`, which exercises `apps/web/src/lib/privacy/networkPrivacy.ts` and proves forbidden payload fixtures fail loudly. It also includes local-first trip storage tests for empty, saved, corrupt, and unavailable `localStorage` states.
-- `bun run test:e2e` runs Playwright mobile Chromium smoke for `/` and `/app`, including proof/report/privacy/waitlist states, US-04 add/edit/delete/validation behavior, US-05 reload persistence, keyboard focus reachability, and no forbidden trip/email values in observed network URLs or request bodies.
+- `bun run test:e2e` runs Playwright mobile Chromium smoke for `/` and `/app`, including proof/report/privacy/waitlist states, US-04 add/edit/delete/validation behavior, US-05 reload persistence, US-06 JSON export/import/malformed-import behavior, keyboard focus reachability, and no forbidden trip/email values in observed network URLs or request bodies.
 
 Before enabling analytics or fake-door flows, CI/manual QA must confirm:
 

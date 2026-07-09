@@ -213,16 +213,15 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-1. US-06 — JSON import/export.
-2. US-07 — Dashboard money-shot.
-3. US-09 — Future-trip simulator.
-4. US-08 — Days-coming-back visualization.
-5. US-10/US-11 — disclaimers and explanation.
-6. US-15/US-13/US-14/US-18 — analytics and validation flows.
-7. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
-8. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
+1. US-07 — Dashboard money-shot.
+2. US-09 — Future-trip simulator.
+3. US-08 — Days-coming-back visualization.
+4. US-10/US-11 — disclaimers and explanation.
+5. US-15/US-13/US-14/US-18 — analytics and validation flows.
+6. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
+7. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
 
-US-01/US-02/US-03, US-19, US-04, and US-05 are green. Next, build US-06 JSON import/export on top of local-only persistence.
+US-01/US-02/US-03, US-19, US-04, US-05, and US-06 are green. Next, build US-07 dashboard money-shot on top of saved/imported trips.
 
 ## Design direction
 

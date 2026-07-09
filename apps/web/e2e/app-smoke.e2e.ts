@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { assertNoForbiddenNetworkPayloads, type ObservedNetworkRequest } from '../src/lib/privacy/networkPrivacy';
 
 const forbiddenTripValues = ['2026-10-01', '2026-10-13', 'Italy booked trip', 'michael@example.com'];
@@ -35,7 +36,7 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Privacy' }).click();
     await expect(page.getByRole('heading', { name: 'Privacy & data' })).toBeVisible();
     await expect(page.getByText(/Stored only in this browser/i)).toBeVisible();
-    await expect(page.getByText(/If this browser is cleared, export JSON first/i)).toBeVisible();
+    await expect(page.getByText(/Export JSON before switching devices or clearing this browser/i)).toBeVisible();
     await expect(page.getByText(/Analytics never include trip dates/i)).toBeVisible();
 
     await page.getByRole('button', { name: 'Add trip' }).click();
@@ -59,6 +60,39 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByText(/Spain shortened/i)).toBeVisible();
     await expect(page.getByText(/07-01 to 07-01 · 1d/i)).toBeVisible();
 
+    await page.getByRole('button', { name: 'Privacy' }).click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export JSON' }).click();
+    const download = await downloadPromise;
+    const exportPath = await download.path();
+    expect(exportPath).toBeTruthy();
+    const exportedJson = await readFile(exportPath ?? '', 'utf8');
+    expect(exportedJson).toContain('"schemaVersion": 1');
+    expect(exportedJson).toContain('Spain shortened');
+
+    await page.getByRole('button', { name: 'Clear local data' }).click();
+    await page.getByRole('button', { name: 'Trips' }).click();
+    await expect(page.getByText(/Spain shortened/i)).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Privacy' }).click();
+    await page.getByLabel('Import JSON file').setInputFiles({
+      name: 'schngn-backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(exportedJson)
+    });
+    await expect(page.getByText(/Imported 5 trips from JSON/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Trips' }).click();
+    await expect(page.getByText(/Spain shortened/i)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Privacy' }).click();
+    await page.getByLabel('Import JSON file').setInputFiles({
+      name: 'broken.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from('{not json')
+    });
+    await expect(page.getByText(/Import file is not valid JSON/i)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Trips' }).click();
     await page.getByRole('button', { name: 'Delete Spain shortened' }).click();
     await expect(page.getByText(/Spain shortened/i)).toHaveCount(0);
 
