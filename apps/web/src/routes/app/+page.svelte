@@ -6,6 +6,8 @@
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import { buildTripSimulationState, type ProposedTripInput } from '$lib/simulator/tripSimulator';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
+  import { buildExplanationState } from '$lib/explanation/explanationState';
+  import { FOOTER_DISCLAIMER_COPY, FULL_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '$lib/legal/legalCopy';
   import {
     deleteTripById,
     emptyTripForm,
@@ -41,6 +43,7 @@
   let storageSource: 'defaults' | 'storage' = 'defaults';
   let importMessage = '';
   let importError = '';
+  let disclaimerNoticeVisible = true;
   let simulatorForm: ProposedTripInput = {
     label: 'Italy',
     countryCode: 'IT',
@@ -85,13 +88,8 @@
     | 'risk'
     | 'whatif';
   $: returningForecast = buildReturningDaysForecast(trips, { referenceDate: '2026-10-13', horizonDays: 30 });
+  $: explanationState = buildExplanationState(trips, dashboardState.referenceDate);
   $: riskUsage = calculateUsageOnDate(riskTrips, '2026-10-13');
-  $: proofRows = trips.map((trip) => ({
-    label: trip.label ?? trip.countryCode ?? 'Schengen trip',
-    dates: formatTripRange(trip),
-    days: inclusiveTripDays(trip),
-    tone: trip.status
-  }));
 
   onMount(() => {
     const result = loadTripsFromStorage(window.localStorage);
@@ -231,6 +229,21 @@
       {/each}
     </nav>
 
+    {#if disclaimerNoticeVisible}
+      <aside class="disclaimer-notice" aria-labelledby="disclaimer-heading">
+        <div>
+          <h2 id="disclaimer-heading">Planning calculator only</h2>
+          <p>{FULL_DISCLAIMER_COPY}</p>
+          <div class="official-links" aria-label="Official source links">
+            {#each OFFICIAL_SOURCE_LINKS as source}
+              <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
+            {/each}
+          </div>
+        </div>
+        <button class="secondary-button compact" type="button" onclick={() => (disclaimerNoticeVisible = false)}>Dismiss</button>
+      </aside>
+    {/if}
+
     {#if active === 'dashboard'}
       <section class="screen" aria-labelledby="safe-heading">
         <StatusChip tone={dashboardStatusTone} label={dashboardState.statusLabel} />
@@ -367,23 +380,32 @@
     {:else if active === 'proof'}
       <section class="screen" id="proof" aria-labelledby="proof-heading">
         <h1 id="proof-heading" class="screen-title">Calculation proof</h1>
+        <section class="panel mint" aria-labelledby="explanation-heading">
+          <h2 id="explanation-heading">{explanationState.heading}</h2>
+          <p>{explanationState.summary}</p>
+          <p class="micro-safe">{explanationState.verdictLine}</p>
+        </section>
         <p class="window-label">Active 180-day window</p>
-        <p class="mono-range">Apr 17-Oct 13, 2026</p>
+        <p class="mono-range">{explanationState.windowLabel}, 2026</p>
         <div class="ledger">
-          {#each proofRows as row}
-            <article class={row.tone}>
-              <span class="state-strip {row.tone}"></span>
+          {#each explanationState.countedTripRows as row}
+            <article class="booked">
+              <span class="state-strip booked"></span>
               <div>
                 <h2>{row.label}</h2>
-                <p>{row.dates}</p>
+                <p>{row.rangeLabel}</p>
               </div>
-              <strong>{row.days} counted</strong>
+              <strong>{row.daysLabel}</strong>
             </article>
           {/each}
         </div>
         <section class="panel paper-panel">
-          <h2>Inclusive counting</h2>
-          <p>Entry and exit dates both count as physical presence days.</p>
+          <h2>Rules used</h2>
+          <ul class="rule-list">
+            {#each explanationState.ruleBullets as bullet}
+              <li>{bullet}</li>
+            {/each}
+          </ul>
         </section>
         <button class="secondary-button" type="button" onclick={() => (active = 'returns')}>Days returning soon</button>
       </section>
@@ -420,10 +442,10 @@
             <SchngnMark small />
             <span>SCHNGN</span>
           </div>
-          <h2>Italy fits · 15 safe buffer days</h2>
-          <p class="mono-range">75 / 90 days used</p>
-          <p>Trip ledger: France 12, Germany 18, Greece 16, Italy 29, prior counted 0.</p>
-          <p>This is a calculation summary, not legal advice or an official document.</p>
+          <h2>{dashboardState.statusLabel} · {dashboardState.heroMetric}</h2>
+          <p class="mono-range">{dashboardState.daysUsedLabel} days used</p>
+          <p>{explanationState.summary}</p>
+          <p>{FOOTER_DISCLAIMER_COPY}</p>
         </article>
         <section class="panel whatif-panel">
           <h2>Export is not live yet</h2>
@@ -449,6 +471,15 @@
           {:else}
             <p class="micro-safe">Using bundled example trips until you save your own.</p>
           {/if}
+        </section>
+        <section class="panel paper-panel">
+          <h2>Official sources</h2>
+          <p>SCHNGN is not an EU service and does not imply official endorsement. Use these references before booking or travelling.</p>
+          <div class="official-links stacked">
+            {#each OFFICIAL_SOURCE_LINKS as source}
+              <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
+            {/each}
+          </div>
         </section>
         <button class="secondary-button" type="button" onclick={exportTrips}>Export JSON</button>
         <label class="secondary-button import-button" for="trip-import-file">Import JSON</label>
@@ -482,6 +513,10 @@
         </section>
       </section>
     {/if}
+
+    <aside class="legal-footer" aria-label="Planning disclaimer">
+      <p>{FOOTER_DISCLAIMER_COPY}</p>
+    </aside>
   </section>
 </main>
 
@@ -574,6 +609,69 @@
     border-radius: 18px;
     background: var(--surface);
     padding: 20px;
+  }
+
+  .disclaimer-notice,
+  .legal-footer {
+    width: min(100%, 680px);
+    margin: 0 auto 18px;
+    border: 1px solid color-mix(in srgb, var(--whatif), var(--line) 35%);
+    border-radius: 14px;
+    background: var(--whatif-bg);
+    color: var(--ink);
+    padding: 14px;
+  }
+
+  .disclaimer-notice {
+    display: grid;
+    gap: 12px;
+  }
+
+  .disclaimer-notice h2,
+  .legal-footer p {
+    margin: 0;
+  }
+
+  .disclaimer-notice p,
+  .legal-footer p {
+    margin-top: 6px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .official-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .official-links.stacked {
+    display: grid;
+  }
+
+  .official-links a {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    padding: 7px 9px;
+    font-size: 0.86rem;
+    font-weight: 740;
+    text-decoration: none;
+  }
+
+  .compact {
+    min-height: 40px;
+    justify-self: start;
+    padding: 8px 12px;
+  }
+
+  .rule-list {
+    margin: 10px 0 0;
+    padding-left: 20px;
+    color: var(--muted);
+    line-height: 1.45;
   }
 
   .screen-title,
@@ -818,8 +916,7 @@
     background: var(--booked-bg);
   }
 
-  .trip-list article.past,
-  .ledger article.past {
+  .trip-list article.past {
     background: var(--surface);
   }
 

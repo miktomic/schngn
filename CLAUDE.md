@@ -213,12 +213,11 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-1. US-10/US-11 — disclaimers and explanation.
-2. US-15/US-13/US-14/US-18 — analytics and validation flows.
-3. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
-4. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
+1. US-15/US-13/US-14/US-18 — analytics and validation flows.
+2. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
+3. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
 
-US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, and US-08 are green. Next, build US-10/US-11 disclaimer and plain-English explanation surfaces.
+US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, and US-11 are green. Next, build privacy-safe analytics/fake-door/waitlist validation flows.
 
 ## Design direction
 

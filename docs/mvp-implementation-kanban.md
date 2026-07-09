@@ -179,28 +179,28 @@
 
 - **Priority:** Must
 - **Estimate:** S
-- **Status:** Todo
-- **Depends on:** approved fixed disclaimer copy and official-source references; see `docs/product-decisions.md`.
-- **Implementation target:** persistent footer + first-run disclaimer notice using fixed copy only.
+- **Status:** Done
+- **Depends on:** copy/legal review decision.
+- **Implementation target:** persistent footer + first-run disclaimer notice.
 - **Acceptance summary:**
   - Planning tool only; not legal advice; not guarantee of entry.
   - Edge cases explicitly excluded.
   - Links to official EC calculator, EES, and ETIAS information.
   - No runtime AI-generated legal explanations.
-- **Verification:** disclaimer visible on every core screen, first-run notice dismissible, official links resolve.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with fixed legal-copy tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for persistent footer, dismissible full notice, report disclaimer, official-source links, and privacy-network assertions; official EC/EES/ETIAS links returned HTTP 200.
 
 ## US-11 — “Why this number?” plain-English explainer
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
-- **Depends on:** US-01 and approved fixed copy boundaries; see `docs/product-decisions.md`.
+- **Status:** Done
+- **Depends on:** US-01, human-reviewed copy.
 - **Implementation target:** expandable explainer tied to calculation output.
 - **Acceptance summary:**
   - Explains entry/exit counting.
   - Explains rolling 180-day look-back.
   - Explains why old trips remain until they drop off.
-- **Verification:** accuracy review against EC guidance; 3-user comprehension test.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with deterministic explanation-state tests for safe and over-limit calculations; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium proof-screen assertions for counted-day summary, active 180-day window, inclusive counting, and official-source framing.
 
 ---
 

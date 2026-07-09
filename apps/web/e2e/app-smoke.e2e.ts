@@ -22,6 +22,15 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await page.goto('/app');
 
     await expect(page.getByRole('heading', { name: '15 safe buffer days' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Planning calculator only' })).toBeVisible();
+    await expect(page.getByText(/not legal advice and not a guarantee of entry/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: 'European Commission short-stay calculator' })).toHaveAttribute(
+      'href',
+      'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en'
+    );
+    await page.getByRole('button', { name: 'Dismiss' }).click();
+    await expect(page.getByRole('heading', { name: 'Planning calculator only' })).toHaveCount(0);
+    await expect(page.getByText(/Planning aid only\. Not legal advice/i)).toBeVisible();
     await expect(page.getByText('Italy fits')).toBeVisible();
     await expect(page.getByText('Latest safe exit')).toBeVisible();
     await expect(page.getByText('Nov 9', { exact: true })).toBeVisible();
@@ -43,7 +52,10 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
 
     await page.getByRole('button', { name: 'Show calculation' }).click();
     await expect(page.getByRole('heading', { name: 'Calculation proof' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Why this number?' })).toBeVisible();
+    await expect(page.getByText('75 counted days between Apr 17 and Oct 13. That leaves 15 safe buffer days.')).toBeVisible();
     await expect(page.getByText(/Entry and exit dates both count/i)).toBeVisible();
+    await expect(page.getByText(/The app looks back 180 calendar days from Oct 13/i)).toBeVisible();
 
     await page.getByRole('button', { name: 'Days returning soon' }).click();
     await expect(page.getByRole('heading', { name: '12 days return in the next 30 days' })).toBeVisible();
@@ -52,11 +64,15 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByText('Nov 8')).toBeVisible();
 
     await page.getByRole('button', { name: 'Report' }).click();
+    const reportRegion = page.getByLabel('Border-ready report');
     await expect(page.getByRole('heading', { name: 'Border-ready report' })).toBeVisible();
-    await expect(page.getByText(/not legal advice/i)).toBeVisible();
+    await expect(reportRegion.getByText(/Not legal advice/i)).toBeVisible();
 
     await page.getByRole('button', { name: 'Privacy' }).click();
     await expect(page.getByRole('heading', { name: 'Privacy & data' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Official sources' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Entry/Exit System information' })).toHaveAttribute('href', 'https://travel-europe.europa.eu/en/ees');
+    await expect(page.getByRole('link', { name: 'ETIAS information' })).toHaveAttribute('href', 'https://travel-europe.europa.eu/en/etias');
     await expect(page.getByText(/Stored only in this browser/i)).toBeVisible();
     await expect(page.getByText(/Export JSON before switching devices or clearing this browser/i)).toBeVisible();
     await expect(page.getByText(/Analytics never include trip dates/i)).toBeVisible();
