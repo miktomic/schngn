@@ -34,6 +34,8 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
 
     await page.getByRole('button', { name: 'Privacy' }).click();
     await expect(page.getByRole('heading', { name: 'Privacy & data' })).toBeVisible();
+    await expect(page.getByText(/Stored only in this browser/i)).toBeVisible();
+    await expect(page.getByText(/If this browser is cleared, export JSON first/i)).toBeVisible();
     await expect(page.getByText(/Analytics never include trip dates/i)).toBeVisible();
 
     await page.getByRole('button', { name: 'Add trip' }).click();
@@ -49,6 +51,11 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await page.getByLabel('Label').fill('Spain shortened');
     await page.getByLabel('Exit date').fill('2026-07-01');
     await page.getByRole('button', { name: 'Save trip' }).click();
+    await expect(page.getByText(/Spain shortened/i)).toBeVisible();
+    await expect(page.getByText(/07-01 to 07-01 · 1d/i)).toBeVisible();
+
+    await page.reload();
+    await page.getByRole('button', { name: 'Trips' }).click();
     await expect(page.getByText(/Spain shortened/i)).toBeVisible();
     await expect(page.getByText(/07-01 to 07-01 · 1d/i)).toBeVisible();
 

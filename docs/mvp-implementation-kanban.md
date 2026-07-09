@@ -107,15 +107,15 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-04, US-19
-- **Implementation target:** localStorage or IndexedDB persistence layer.
+- **Implementation target:** localStorage repository with no server fallback.
 - **Acceptance summary:**
   - Trips persist across reload/restart.
   - Trip dates are never transmitted.
   - Visible local/private data message.
   - User-facing backup warning explains that local-only data needs export/backup if the device/browser is cleared.
-- **Verification:** reload/reopen test, DevTools network audit, storage-disabled warning, backup warning visible.
+- **Verification:** `npx -y bun@1.3.14 run check` passed with 79 Bun tests / 1137 assertions; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium reload-persistence and privacy-network coverage; storage-disabled/corrupt-storage fallbacks covered by unit tests.
 
 ---
 

@@ -1,3 +1,7 @@
+<script lang="ts">
+  import { SchngnMark } from '$lib/design';
+</script>
+
 <svelte:head>
   <title>SCHNGN - Schengen 90/180 planner</title>
   <meta
@@ -16,9 +20,7 @@
 <main class="landing">
   <header class="topbar" aria-label="SCHNGN landing header">
     <a class="brand" href="/" aria-label="SCHNGN home">
-      <span class="mark" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span><span></span>
-      </span>
+      <SchngnMark />
       <span>SCHNGN</span>
     </a>
     <a class="toplink" href="/app">Open calculator</a>
@@ -117,29 +119,6 @@
     letter-spacing: 0.05em;
   }
 
-  .mark {
-    position: relative;
-    display: inline-block;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    background: var(--ink);
-  }
-
-  .mark span {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--star-gold);
-  }
-
-  .mark span:nth-child(1) { left: 8px; top: 9px; }
-  .mark span:nth-child(2) { left: 16px; top: 5px; }
-  .mark span:nth-child(3) { left: 25px; top: 11px; }
-  .mark span:nth-child(4) { left: 24px; top: 22px; }
-  .mark span:nth-child(5) { left: 14px; top: 27px; }
-  .mark span:nth-child(6) { left: 7px; top: 19px; }
 
   .toplink,
   .primary,

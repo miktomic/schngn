@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
+  import { FactCard, SchngnMark, StatusChip, TimelineLedger } from '$lib/design';
+  import { onMount } from 'svelte';
   import { calculateUsageOnDate, type Trip } from '@schngn/engine';
   import {
     deleteTripById,
@@ -12,6 +15,7 @@
     type TripFormInput,
     type TripValidationErrors
   } from '$lib/trips/tripCrud';
+  import { createDefaultTrips, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
 
   type ScreenKey =
     | 'dashboard'
@@ -29,6 +33,8 @@
   let editingTripId: string | null = null;
   let tripForm: TripFormInput = emptyTripForm('booked');
   let formErrors: TripValidationErrors = {};
+  let storageWarning = '';
+  let storageSource: 'defaults' | 'storage' = 'defaults';
 
   const screens: { key: ScreenKey; label: string }[] = [
     { key: 'dashboard', label: 'Safe' },
@@ -43,12 +49,7 @@
     { key: 'waitlist', label: 'Waitlist' }
   ];
 
-  let trips: EditableTrip[] = [
-    { id: 'france', label: 'France', countryCode: 'FR', entryDate: '2026-05-01', exitDate: '2026-05-12', status: 'past' },
-    { id: 'germany', label: 'Germany', countryCode: 'DE', entryDate: '2026-06-10', exitDate: '2026-06-27', status: 'past' },
-    { id: 'greece', label: 'Greece', countryCode: 'GR', entryDate: '2026-08-03', exitDate: '2026-08-18', status: 'booked' },
-    { id: 'italy', label: 'Italy', countryCode: 'IT', entryDate: '2026-09-15', exitDate: '2026-10-13', status: 'booked' }
-  ];
+  let trips: EditableTrip[] = createDefaultTrips();
 
   $: engineTrips = toEngineTrips(trips);
   $: riskTrips = [
@@ -75,6 +76,19 @@
     { date: 'Nov 8', days: '+3 days', source: 'France May 10-12 leaves the window' }
   ];
 
+  onMount(() => {
+    const result = loadTripsFromStorage(window.localStorage);
+    trips = result.trips;
+    storageSource = result.source;
+    storageWarning = result.warning ?? '';
+  });
+
+  function persistTrips(nextTrips: EditableTrip[]): void {
+    trips = nextTrips;
+    if (!browser) return;
+    saveTripsToStorage(window.localStorage, nextTrips);
+  }
+
   function startAddTrip(): void {
     editingTripId = null;
     tripForm = emptyTripForm('booked');
@@ -94,14 +108,18 @@
     formErrors = result.errors;
     if (Object.keys(result.errors).length > 0) return;
 
-    trips = result.trips;
+    persistTrips(result.trips);
+    storageSource = 'storage';
+    storageWarning = '';
     editingTripId = null;
     tripForm = emptyTripForm('booked');
     active = 'trips';
   }
 
   function deleteTrip(id: string): void {
-    trips = deleteTripById(trips, id);
+    persistTrips(deleteTripById(trips, id));
+    storageSource = 'storage';
+    storageWarning = '';
   }
 
   function statusLabel(status: EditableTrip['status']): string {
@@ -120,9 +138,7 @@
   <section class="device" aria-labelledby="app-title">
     <header class="app-header">
       <div class="brand" id="app-title">
-        <span class="mark" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span><span></span>
-        </span>
+        <SchngnMark />
         <span>SCHNGN</span>
       </div>
       <span class="local-chip">Local & private</span>
@@ -143,13 +159,13 @@
 
     {#if active === 'dashboard'}
       <section class="screen" aria-labelledby="safe-heading">
-        {@render StatusChip('safe', 'Italy fits')}
+        <StatusChip tone="safe" label="Italy fits" />
         <h1 id="safe-heading" class="verdict safe-text">{safeUsage.daysRemaining} safe buffer days</h1>
         <div class="facts two">
-          {@render Fact('Must exit by', 'Oct 13')}
-          {@render Fact('Days used', `${safeUsage.daysUsed} / 90`, 'safe')}
+          <FactCard label="Must exit by" value="Oct 13" />
+          <FactCard label="Days used" value={`${safeUsage.daysUsed} / 90`} tone="safe" />
         </div>
-        {@render Timeline('Rolling 180-day window', 'safe')}
+        <TimelineLedger label="Rolling 180-day window" mode="safe" />
         <section class="panel mint" aria-labelledby="why-safe-heading">
           <h2 id="why-safe-heading">Why this is safe</h2>
           <p>
@@ -162,13 +178,13 @@
       </section>
     {:else if active === 'risk'}
       <section class="screen" aria-labelledby="risk-heading">
-        {@render StatusChip('risk', 'Action required')}
+        <StatusChip tone="risk" label="Action required" />
         <h1 id="risk-heading" class="verdict risk-text">{riskUsage.overBy} days over limit</h1>
         <section class="panel risk-panel" aria-labelledby="first-fix-heading">
           <h2 id="first-fix-heading">First fix</h2>
           <p>Leave Italy by Oct 9 or shorten the July what-if trip by {riskUsage.overBy} counted days.</p>
         </section>
-        {@render Timeline('Risk rolling 180-day proof', 'risk')}
+        <TimelineLedger label="Risk rolling 180-day proof" mode="risk" />
         <section class="cause-row">
           <span>Which date causes it</span>
           <strong>Oct 10 becomes day 91 in the active window.</strong>
@@ -240,8 +256,8 @@
     {:else if active === 'planner'}
       <section class="screen" aria-labelledby="planner-heading">
         <h1 id="planner-heading" class="screen-title">Planner</h1>
-        {@render StatusChip('whatif', 'What-if mode')}
-        {@render Timeline('Planner timeline', 'planner')}
+        <StatusChip tone="whatif" label="What-if mode" />
+        <TimelineLedger label="Planner timeline" mode="planner" />
         <section class="panel risk-panel">
           <h2>Unsafe from Oct 10</h2>
           <p>Adding the July what-if trip crosses the limit because the rolling 180-day lens still contains 75 booked counted days.</p>
@@ -277,7 +293,7 @@
     {:else if active === 'returns'}
       <section class="screen" aria-labelledby="returns-heading">
         <h1 id="returns-heading" class="verdict safe-text">12 days return in the next 30 days</h1>
-        {@render Timeline('Returning days forecast', 'returns')}
+        <TimelineLedger label="Returning days forecast" mode="returns" />
         <div class="return-list">
           {#each returnRows as row}
             <article>
@@ -293,7 +309,7 @@
         <h1 id="report-heading" class="screen-title">Border-ready report</h1>
         <article class="report-preview">
           <div class="brand report-brand">
-            <span class="mark small" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></span>
+            <SchngnMark small />
             <span>SCHNGN</span>
           </div>
           <h2>Italy fits · 15 safe buffer days</h2>
@@ -312,7 +328,15 @@
         <h1 id="privacy-heading" class="screen-title">Privacy & data</h1>
         <section class="panel mint">
           <h2>Local-only trip storage</h2>
-          <p>Trips, dates, and calculated timelines stay in browser storage unless you export a JSON file.</p>
+          <p>Stored only in this browser. Trips, dates, and calculated timelines stay on this device unless you export a JSON file.</p>
+          <p>If this browser is cleared, export JSON first or your local trip history may be lost.</p>
+          {#if storageWarning}
+            <p class="storage-warning">{storageWarning}</p>
+          {:else if storageSource === 'storage'}
+            <p class="micro-safe">Loaded from this browser's local storage.</p>
+          {:else}
+            <p class="micro-safe">Using bundled example trips until you save your own.</p>
+          {/if}
         </section>
         <button class="secondary-button" type="button">Export JSON</button>
         <button class="secondary-button" type="button">Import JSON</button>
@@ -325,7 +349,7 @@
     {:else if active === 'waitlist'}
       <section class="screen" aria-labelledby="waitlist-heading">
         <div class="brand report-brand">
-          <span class="mark small" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></span>
+          <SchngnMark small />
           <span>SCHNGN</span>
         </div>
         <h1 id="waitlist-heading" class="screen-title">Get PDF export updates</h1>
@@ -348,40 +372,6 @@
   </section>
 </main>
 
-{#snippet StatusChip(tone: 'safe' | 'risk' | 'whatif', label: string)}
-  <span class="status-chip {tone}"><span aria-hidden="true"></span>{label}</span>
-{/snippet}
-
-{#snippet Fact(label: string, value: string, tone: 'safe' | 'ink' = 'ink')}
-  <article class="fact">
-    <span>{label}</span>
-    <strong class:{tone}>{value}</strong>
-  </article>
-{/snippet}
-
-{#snippet Timeline(label: string, mode: 'safe' | 'risk' | 'planner' | 'returns')}
-  <section class="timeline-card" aria-label={label}>
-    <div class="timeline-head">
-      <h2>{label}</h2>
-      <span>Apr 17-Oct 13</span>
-    </div>
-    <div class="timeline-rail {mode}" role="img" aria-label={`${label}: past, booked, what-if, risk, and safe segments shown with labels below.`}>
-      <span class="past-seg"></span>
-      <span class="booked-seg"></span>
-      <span class="whatif-seg"></span>
-      <span class="risk-seg"></span>
-      <span class="safe-seg"></span>
-    </div>
-    <ul class="timeline-legend" aria-label="Timeline legend">
-      <li><span class="past-dot"></span>Past</li>
-      <li><span class="booked-dot"></span>Booked</li>
-      <li><span class="whatif-dot"></span>What-if</li>
-      <li><span class="risk-dot"></span>Risk</li>
-      <li><span class="safe-dot"></span>Return</li>
-    </ul>
-  </section>
-{/snippet}
-
 <style>
   .app-shell {
     min-height: 100svh;
@@ -401,8 +391,6 @@
   .brand,
   .screen-tabs,
   .facts,
-  .timeline-head,
-  .timeline-legend,
   .trip-list article,
   .ledger article,
   .return-list article {
@@ -425,71 +413,18 @@
     letter-spacing: 0.05em;
   }
 
-  .mark {
-    position: relative;
-    display: inline-block;
-    width: 34px;
-    height: 34px;
-    flex: 0 0 auto;
-    border-radius: 8px;
-    background: var(--ink);
-  }
 
-  .mark.small {
-    width: 30px;
-    height: 30px;
-  }
-
-  .mark span {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--star-gold);
-  }
-
-  .mark span:nth-child(1) { left: 8px; top: 9px; }
-  .mark span:nth-child(2) { left: 16px; top: 5px; }
-  .mark span:nth-child(3) { left: 25px; top: 11px; }
-  .mark span:nth-child(4) { left: 24px; top: 22px; }
-  .mark span:nth-child(5) { left: 14px; top: 27px; }
-  .mark span:nth-child(6) { left: 7px; top: 19px; }
-
-  .local-chip,
-  .status-chip {
+  .local-chip {
     display: inline-flex;
     align-items: center;
     gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--safe), var(--line) 35%);
     border-radius: 6px;
+    background: var(--safe-bg);
+    color: var(--safe);
     padding: 7px 10px;
     font-size: 0.82rem;
     font-weight: 760;
-  }
-
-  .local-chip,
-  .status-chip.safe {
-    border: 1px solid color-mix(in srgb, var(--safe), var(--line) 35%);
-    background: var(--safe-bg);
-    color: var(--safe);
-  }
-
-  .status-chip.risk {
-    border: 1px solid var(--risk);
-    background: var(--risk-bg);
-    color: var(--risk);
-  }
-
-  .status-chip.whatif {
-    border: 1px solid var(--whatif);
-    background: var(--whatif-bg);
-    color: var(--whatif);
-  }
-
-  .status-chip span {
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-    background: currentColor;
   }
 
   .screen-tabs {
@@ -556,9 +491,11 @@
     flex: 1;
   }
 
-  .fact,
+  .facts :global(.fact-card) {
+    flex: 1;
+  }
+
   .panel,
-  .timeline-card,
   .report-preview {
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -566,7 +503,6 @@
     padding: 14px;
   }
 
-  .fact span,
   .window-label,
   .cause-row span,
   .trip-form small,
@@ -574,7 +510,6 @@
     color: var(--muted);
   }
 
-  .fact span,
   .window-label,
   .cause-row span {
     display: block;
@@ -582,7 +517,6 @@
     font-weight: 750;
   }
 
-  .fact strong,
   .mono-range {
     display: block;
     margin-top: 5px;
@@ -591,7 +525,6 @@
   }
 
   .panel h2,
-  .timeline-card h2,
   .trip-list h2,
   .ledger h2,
   .report-preview h2 {
@@ -625,85 +558,6 @@
   .paper-panel {
     background: var(--paper);
   }
-
-  .timeline-card {
-    display: grid;
-    gap: 10px;
-  }
-
-  .timeline-head {
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .timeline-head span,
-  .mono-range {
-    color: var(--ink);
-    font-size: 0.82rem;
-  }
-
-  .timeline-rail {
-    display: grid;
-    grid-template-columns: 0.45fr 0.72fr 0.32fr 0.18fr 0.28fr;
-    gap: 3px;
-    min-height: 30px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
-    padding: 3px;
-  }
-
-  .timeline-rail span {
-    border-radius: 4px;
-  }
-
-  .past-seg { background: var(--past); }
-  .booked-seg { background: var(--booked); }
-  .whatif-seg { background: var(--whatif); }
-  .risk-seg { background: transparent; }
-  .safe-seg { background: var(--safe); }
-
-  .timeline-rail.risk .risk-seg,
-  .timeline-rail.planner .risk-seg {
-    background: var(--risk);
-  }
-
-  .timeline-rail.returns {
-    grid-template-columns: 0.32fr 0.86fr 0.22fr;
-  }
-
-  .timeline-rail.returns .booked-seg,
-  .timeline-rail.returns .whatif-seg {
-    display: none;
-  }
-
-  .timeline-legend {
-    flex-wrap: wrap;
-    gap: 8px 12px;
-    margin: 0;
-    padding: 0;
-    color: var(--muted);
-    font-size: 0.76rem;
-    list-style: none;
-  }
-
-  .timeline-legend li {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .timeline-legend span {
-    width: 9px;
-    height: 9px;
-    border-radius: 2px;
-  }
-
-  .past-dot { background: var(--past); }
-  .booked-dot { background: var(--booked); }
-  .whatif-dot { background: var(--whatif); }
-  .risk-dot { background: var(--risk); }
-  .safe-dot { background: var(--safe); }
 
   .primary-button,
   .secondary-button {
@@ -804,6 +658,11 @@
     margin: -8px 0 0;
     color: var(--safe);
     font-size: 0.9rem;
+    font-weight: 760;
+  }
+
+  .storage-warning {
+    color: var(--risk);
     font-weight: 760;
   }
 
