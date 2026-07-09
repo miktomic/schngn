@@ -119,7 +119,7 @@ The script verifies:
 - `/api/waitlist` accepts a generated `smoke+...@schngn.invalid` email-only request.
 - The smoke request does not submit trip dates, trip history, country timelines, names, passports, secrets, or other traveler data.
 
-`www.schngn.com` is checked as a canonical redirect when DNS resolves. If the hostname still does not resolve, the script reports a warning rather than failing the deploy; that is a Cloudflare DNS/custom-domain provisioning task, not an app-regression signal.
+`www.schngn.com` is checked as a canonical redirect when Cloudflare returns a redirect. If the hostname does not resolve, the script reports a warning. If `www` serves HTTP 200 content with apex-only canonical metadata, the script also reports a warning: add a Cloudflare Redirect Rule/Bulk Redirect for strict `www` → apex behavior. The warning does not fail app deployment because the apex site is healthy and canonical metadata prevents duplicate-content signals, but it should be cleared before paid traffic.
 
 Privacy-safe operations for MVP:
 

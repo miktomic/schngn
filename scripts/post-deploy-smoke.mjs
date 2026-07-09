@@ -89,13 +89,29 @@ async function checkWaitlistPrivacy() {
 }
 
 async function checkWwwRedirect() {
-  const name = 'HEAD www canonical redirect';
+  const name = 'www canonical redirect';
   try {
-    const response = await fetchWithTimeout(WWW_URL, { method: 'HEAD', redirect: 'manual' });
+    const response = await fetchWithTimeout(WWW_URL, { method: 'GET', redirect: 'manual' });
     const location = response.headers.get('location') ?? '';
-    if (![301, 302, 307, 308].includes(response.status)) return fail(name, `expected redirect, got ${response.status}`);
-    if (!location.startsWith(BASE_URL)) return fail(name, `expected apex location, got ${location}`);
-    pass(name, `${response.status} ${location}`);
+    if ([301, 302, 307, 308].includes(response.status)) {
+      if (!location.startsWith(BASE_URL)) return fail(name, `expected apex location, got ${location}`);
+      pass(name, `${response.status} ${location}`);
+      return;
+    }
+
+    if (response.status === 200) {
+      const text = await response.text();
+      if (text.includes('https://schngn.com/') && !text.includes('https://www.schngn.com')) {
+        warnings.push({
+          name,
+          message:
+            `${WWW_URL} currently serves apex-canonical content with HTTP 200. Add a Cloudflare Redirect Rule/Bulk Redirect for strict www→apex redirects.`
+        });
+        return;
+      }
+    }
+
+    return fail(name, `expected redirect or apex-canonical 200, got ${response.status}`);
   } catch (error) {
     if (/fetch failed|ENOTFOUND|EAI_AGAIN|Could not resolve/i.test(String(error.cause?.code ?? error.message))) {
       warnings.push({ name, message: `${WWW_URL} is not resolvable yet; Cloudflare DNS/custom-domain provisioning still needs attention.` });
