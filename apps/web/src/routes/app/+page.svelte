@@ -9,6 +9,13 @@
   import { buildExplanationState } from '$lib/explanation/explanationState';
   import { FOOTER_DISCLAIMER_COPY, FULL_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '$lib/legal/legalCopy';
   import {
+    buildSafeBufferBucket,
+    buildTripCountBucket,
+    trackAnalyticsEvent,
+    type AnalyticsSource,
+    type AnalyticsVerdict
+  } from '$lib/analytics/privacyAnalytics';
+  import {
     deleteTripById,
     emptyTripForm,
     formatTripRange,
@@ -96,6 +103,7 @@
     trips = result.trips;
     storageSource = result.source;
     storageWarning = result.warning ?? '';
+    trackPageView('app');
   });
 
   function persistTrips(nextTrips: EditableTrip[]): void {
@@ -104,18 +112,30 @@
     saveTripsToStorage(window.localStorage, nextTrips);
   }
 
+  function setActiveScreen(screen: ScreenKey): void {
+    active = screen;
+    trackPageView(screen);
+    if (screen === 'trip') {
+      trackCalculatorStart('trip_form');
+    }
+    if (screen === 'planner' && simulationState.valid) {
+      trackSimulationRun('planner');
+    }
+  }
+
   function startAddTrip(): void {
     editingTripId = null;
     tripForm = emptyTripForm('booked');
     formErrors = {};
-    active = 'trip';
+    trackCalculatorStart('trip_form');
+    setActiveScreen('trip');
   }
 
   function startEditTrip(trip: EditableTrip): void {
     editingTripId = trip.id;
     tripForm = tripToForm(trip);
     formErrors = {};
-    active = 'trip';
+    setActiveScreen('trip');
   }
 
   function saveTrip(): void {
@@ -123,12 +143,19 @@
     formErrors = result.errors;
     if (Object.keys(result.errors).length > 0) return;
 
+    const wasAdding = editingTripId === null;
     persistTrips(result.trips);
     storageSource = 'storage';
     storageWarning = '';
+    if (wasAdding) {
+      trackAnalyticsEvent('trip_added', {
+        source: 'trip_form',
+        trip_count_bucket: buildTripCountBucket(result.trips.length)
+      });
+    }
     editingTripId = null;
     tripForm = emptyTripForm('booked');
-    active = 'trips';
+    setActiveScreen('trips');
   }
 
   function deleteTrip(id: string): void {
@@ -199,6 +226,47 @@
   function clearSimulation(): void {
     simulatorForm = { label: '', countryCode: '', entryDate: '', exitDate: '' };
   }
+
+  function trackPageView(screen: ScreenKey | 'app'): void {
+    trackAnalyticsEvent('page_view', { source: screenToAnalyticsSource(screen) });
+  }
+
+  function trackCalculatorStart(source: AnalyticsSource): void {
+    trackAnalyticsEvent('calculator_start', {
+      source,
+      trip_count_bucket: buildTripCountBucket(trips.length)
+    });
+  }
+
+  function trackSimulationRun(source: AnalyticsSource): void {
+    trackAnalyticsEvent('simulation_run', {
+      source,
+      trip_count_bucket: buildTripCountBucket(trips.length),
+      verdict: analyticsVerdict(),
+      safe_buffer_bucket: buildSafeBufferBucket(simulationState.usage?.daysRemaining ?? 0)
+    });
+  }
+
+  function trackWaitlistSignup(): void {
+    trackAnalyticsEvent('waitlist_signup', { source: 'waitlist' });
+  }
+
+  function analyticsVerdict(): AnalyticsVerdict {
+    if (!simulationState.valid || !simulationState.usage) return 'empty';
+    if (simulationState.usage.overLimit) return 'over_limit';
+    if (simulationState.usage.daysRemaining === 0) return 'at_limit';
+    return simulationState.statusTone === 'close' ? 'close' : 'safe';
+  }
+
+  function screenToAnalyticsSource(screen: ScreenKey | 'app'): AnalyticsSource {
+    if (screen === 'trip') return 'trip_form';
+    if (screen === 'dashboard') return 'dashboard';
+    if (screen === 'report') return 'report';
+    if (screen === 'waitlist') return 'waitlist';
+    if (screen === 'privacy') return 'privacy';
+    if (screen === 'planner') return 'planner';
+    return 'app';
+  }
 </script>
 
 <svelte:head>
@@ -222,7 +290,7 @@
           type="button"
           class:active={active === screen.key}
           aria-pressed={active === screen.key}
-          onclick={() => (active = screen.key)}
+          onclick={() => setActiveScreen(screen.key)}
         >
           {screen.label}
         </button>
@@ -258,8 +326,8 @@
           <p>{dashboardState.whyCopy}</p>
           <p class="micro-safe">{dashboardState.actionCopy}</p>
         </section>
-        <button class="secondary-button" type="button" onclick={() => (active = 'proof')}>Show calculation</button>
-        <button class="primary-button" type="button" onclick={() => (active = 'report')}>Border-ready report</button>
+        <button class="secondary-button" type="button" onclick={() => setActiveScreen('proof')}>Show calculation</button>
+        <button class="primary-button" type="button" onclick={() => setActiveScreen('report')}>Border-ready report</button>
       </section>
     {:else if active === 'risk'}
       <section class="screen" aria-labelledby="risk-heading">
@@ -274,8 +342,8 @@
           <span>Which date causes it</span>
           <strong>Oct 10 becomes day 91 in the active window.</strong>
         </section>
-        <button class="primary-button risk-action" type="button" onclick={() => (active = 'planner')}>Fix unsafe plan</button>
-        <button class="secondary-button" type="button" onclick={() => (active = 'proof')}>Show calculation</button>
+        <button class="primary-button risk-action" type="button" onclick={() => setActiveScreen('planner')}>Fix unsafe plan</button>
+        <button class="secondary-button" type="button" onclick={() => setActiveScreen('proof')}>Show calculation</button>
       </section>
     {:else if active === 'trip'}
       <section class="screen" aria-labelledby="trip-heading">
@@ -315,7 +383,7 @@
         </section>
         <div class="form-actions">
           <button class="primary-button" type="button" onclick={saveTrip}>Save trip</button>
-          <button class="secondary-button" type="button" onclick={() => { editingTripId = null; tripForm = emptyTripForm('booked'); formErrors = {}; active = 'trips'; }}>Cancel</button>
+          <button class="secondary-button" type="button" onclick={() => { editingTripId = null; tripForm = emptyTripForm('booked'); formErrors = {}; setActiveScreen('trips'); }}>Cancel</button>
         </div>
       </section>
     {:else if active === 'trips'}
@@ -407,7 +475,7 @@
             {/each}
           </ul>
         </section>
-        <button class="secondary-button" type="button" onclick={() => (active = 'returns')}>Days returning soon</button>
+        <button class="secondary-button" type="button" onclick={() => setActiveScreen('returns')}>Days returning soon</button>
       </section>
     {:else if active === 'returns'}
       <section class="screen" aria-labelledby="returns-heading">
@@ -451,7 +519,7 @@
           <h2>Export is not live yet</h2>
           <p>Join the list and we will email when PDF export is available.</p>
         </section>
-        <button class="primary-button" type="button" onclick={() => (active = 'waitlist')}>Get PDF export updates</button>
+        <button class="primary-button" type="button" onclick={() => setActiveScreen('waitlist')}>Get PDF export updates</button>
       </section>
     {:else if active === 'privacy'}
       <section class="screen" aria-labelledby="privacy-heading">
@@ -502,7 +570,7 @@
           <span>Email</span>
           <input type="email" placeholder="name@example.com" />
         </label>
-        <button class="primary-button" type="button">Join waitlist</button>
+        <button class="primary-button" type="button" onclick={trackWaitlistSignup}>Join waitlist</button>
         <section class="panel mint">
           <h2>You are on the list</h2>
           <p>We stored your email only.</p>

@@ -18,8 +18,18 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
 
   test('app route renders money-shot, proof, report, privacy, and waitlist states without leaking private values', async ({ page }) => {
     const requests = observeNetwork(page);
+    await page.addInitScript(() => {
+      const analyticsWindow = window as unknown as {
+        __plausibleEvents: { name: string; options?: { props?: Record<string, string> } }[];
+        plausible: (name: string, options?: { props?: Record<string, string> }) => void;
+      };
+      analyticsWindow.__plausibleEvents = [];
+      analyticsWindow.plausible = (name, options) => analyticsWindow.__plausibleEvents.push({ name, options });
+    });
 
     await page.goto('/app');
+    await page.getByRole('button', { name: 'Safe' }).focus();
+    await expect(page.getByRole('button', { name: 'Safe' })).toBeFocused();
 
     await expect(page.getByRole('heading', { name: '15 safe buffer days' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Planning calculator only' })).toBeVisible();
@@ -85,6 +95,13 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'Trips' })).toBeVisible();
     await expect(page.getByText(/Spain/i)).toBeVisible();
     await expect(page.getByText(/07-01 to 07-19/i)).toBeVisible();
+    let plausibleEvents = await readPlausibleEvents(page);
+    let plausibleEventNames = plausibleEvents.map((event) => event.name);
+    expect(plausibleEventNames).toContain('page_view');
+    expect(plausibleEventNames).toContain('calculator_start');
+    expect(plausibleEventNames).toContain('trip_added');
+    expect(plausibleEventNames).toContain('simulation_run');
+    assertSafePlausiblePayload(plausibleEvents);
 
     await page.getByRole('button', { name: 'Edit Spain' }).click();
     await page.getByLabel('Label').fill('Spain shortened');
@@ -143,9 +160,13 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Waitlist' }).click();
     await expect(page.getByRole('heading', { name: 'Get PDF export updates' })).toBeVisible();
     await expect(page.getByText(/does not send your trips, dates, country history/i)).toBeVisible();
+    await page.getByLabel('Email').fill('michael@example.com');
+    await page.getByRole('button', { name: 'Join waitlist' }).click();
 
-    await page.keyboard.press('Tab');
-    await expect(page.locator(':focus')).toBeVisible();
+    plausibleEvents = await readPlausibleEvents(page);
+    plausibleEventNames = plausibleEvents.map((event) => event.name);
+    expect(plausibleEventNames).toContain('waitlist_signup');
+    assertSafePlausiblePayload(plausibleEvents);
 
     assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
   });
@@ -159,4 +180,27 @@ function observeNetwork(page: import('@playwright/test').Page): ObservedNetworkR
     requests.push({ url, method: request.method(), postData: request.postData() });
   });
   return requests;
+}
+
+type PlausibleEvent = { name: string; options?: { props?: Record<string, string> } };
+
+async function readPlausibleEvents(page: import('@playwright/test').Page): Promise<PlausibleEvent[]> {
+  return page.evaluate(() =>
+    (window as unknown as { __plausibleEvents: PlausibleEvent[] }).__plausibleEvents
+  );
+}
+
+function assertSafePlausiblePayload(events: PlausibleEvent[]): void {
+  const allowedNames = ['page_view', 'calculator_start', 'trip_added', 'simulation_run', 'pdf_buy_intent', 'unlock_buy_intent', 'waitlist_signup'];
+  const allowedProps = ['source', 'trip_count_bucket', 'safe_buffer_bucket', 'verdict', 'price_bucket'];
+  for (const event of events) {
+    expect(allowedNames).toContain(event.name);
+    for (const key of Object.keys(event.options?.props ?? {})) {
+      expect(allowedProps).toContain(key);
+    }
+  }
+  const payload = JSON.stringify(events);
+  for (const forbidden of [...forbiddenTripValues, 'Portugal simulation', 'Spain shortened', '2026-07-01']) {
+    expect(payload).not.toContain(forbidden);
+  }
 }

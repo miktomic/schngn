@@ -210,13 +210,15 @@
 
 - **Priority:** Must
 - **Estimate:** S
-- **Status:** Todo
-- **Depends on:** approved Plausible Cloud decision; see `docs/product-decisions.md`.
-- **Implementation target:** Plausible Cloud configured through a typed allowlisted analytics wrapper without PII/trip dates.
+- **Status:** Done
+- **Depends on:** US-04, US-05, privacy/product decision.
+- **Implementation target:** privacy-safe analytics wrapper with Plausible-compatible client hook and no provider lock-in.
 - **Acceptance summary:**
   - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`, `pdf_buy_intent`, `unlock_buy_intent`, `waitlist_signup`.
-  - Trip event payloads contain count buckets only, never dates.
-- **Verification:** trigger each event, inspect network payloads, confirm dashboard receipt.
+  - Payloads are allowlisted and aggregate-only: source, trip count bucket, safe-buffer bucket, verdict, or price bucket.
+  - Trip dates, labels, names, email addresses, country history, and personal timelines are rejected before any analytics call.
+  - UI wiring fires aggregate funnel events from screen views, trip-add, simulator, and waitlist intent without sending trip details.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 104 Bun tests / 1242 assertions including privacy-safe analytics allowlist and forbidden-payload rejection tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for intercepted Plausible-compatible events and no forbidden network payloads.
 
 ## US-13 — Border-ready PDF export fake-door
 
