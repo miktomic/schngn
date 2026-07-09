@@ -6,5 +6,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "types": ["node"]
-  }
+  },
+  "exclude": ["e2e/**", "tests/**", "test-results/**", "playwright-report/**"]
 }

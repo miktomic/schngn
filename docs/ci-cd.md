@@ -71,13 +71,19 @@ Current tests are now a real US-01 correctness gate:
 - engine TypeScript output
 - SvelteKit Cloudflare output under `.svelte-kit/cloudflare`
 
-### Privacy gate
+### App/browser and privacy gates
+
+US-19 adds two app-level gates:
+
+- `bun run test` includes `apps/web/tests/privacy-network.test.ts`, which exercises `apps/web/src/lib/privacy/networkPrivacy.ts` and proves forbidden payload fixtures fail loudly.
+- `bun run test:e2e` runs Playwright mobile Chromium smoke for `/` and `/app`, including proof/report/privacy/waitlist states, keyboard focus reachability, and no forbidden trip/email values in observed network URLs or request bodies.
 
 Before enabling analytics or fake-door flows, CI/manual QA must confirm:
 
 - analytics payloads do not contain trip dates
 - analytics payloads do not contain email/PII unless explicitly part of waitlist flow
 - waitlist endpoint accepts only email, not trips
+- Playwright smoke remains green for the relevant route/state after UI changes
 
 ## Deployment
 

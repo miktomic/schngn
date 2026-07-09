@@ -77,17 +77,17 @@
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-01/US-02/US-03 calculation contract; can begin once app route shape is stable
 - **Why now:** every app card after this needs browser, accessibility, and privacy-network verification. If the harness is missing, “manual QA” becomes folklore.
 - **Implementation target:** Playwright/browser smoke tests, app utility test structure, mobile viewport checks, accessibility/contrast checks, and reusable privacy/network assertions.
 - **Acceptance summary:**
-  - Automated smoke covers `/` and `/app`.
-  - Test command exists for app-level utility/integration coverage.
-  - Privacy test helper can fail if trip dates, email, names, or travel history appear in forbidden network payloads.
-  - Mobile viewport and keyboard-navigation checks are documented and runnable.
-  - CI/local check sequence includes the app test harness without making every run painfully slow.
-- **Verification:** Playwright/browser smoke passes, app utility tests pass, deliberate forbidden-payload fixture fails, `npx -y bun@1.3.14 run check` remains green.
+  - Automated mobile Chromium smoke covers `/` and `/app` via `bun run test:e2e`.
+  - Bun app utility tests cover reusable privacy-network assertions.
+  - Privacy helper fails if trip dates, email, names, labels, or travel history appear in forbidden network URLs/bodies.
+  - E2E smoke covers mobile viewport, keyboard focus reachability, proof/report/privacy/waitlist states, and no forbidden network payloads.
+  - `bun run check` remains fast and includes app utility tests, typecheck, and build; Playwright remains explicit so normal CI/local checks are not painfully slow.
+- **Verification:** `npx -y bun@1.3.14 run check` passed; `npx -y bun@1.3.14 run test:e2e` passed; deliberate forbidden-payload fixtures fail loudly in `apps/web/tests/privacy-network.test.ts`.
 
 ## US-04 — Add / edit / delete a trip
 
@@ -372,26 +372,25 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 
 # Remaining pull order
 
-US-01, US-02, and US-03 are done. Use this order unless a dependency or decision changes:
+US-01, US-02, US-03, and US-19 are done. Use this order unless a dependency or decision changes:
 
-1. US-19 — App test harness and privacy QA infrastructure
-2. US-04 — Trip CRUD
-3. US-05 — Local-only persistence
-4. US-06 — JSON import/export
-5. US-07 — Dashboard money-shot
-6. US-09 — Future-trip simulator
-7. US-08 — Days-coming-back visualization
-8. US-10 — Disclaimers
-9. US-11 — Why-this-number explainer
-10. US-15 — Privacy-friendly analytics
-11. US-13 — PDF fake-door
-12. US-14 — Paid unlock fake-door + pricing A/B
-13. US-18 — Waitlist/email capture
-14. US-16 — SEO landing page
-15. US-12 — Accuracy trust signal
-16. US-17 — Installable PWA/offline
-17. US-20 — Post-deploy smoke tests and privacy-safe operations
-18. US-21 — Canonical `www` redirect and domain hygiene
+1. US-04 — Trip CRUD
+2. US-05 — Local-only persistence
+3. US-06 — JSON export / import
+4. US-07 — Dashboard money-shot
+5. US-09 — Future-trip simulator
+6. US-08 — Days-coming-back visualization
+7. US-10 — Disclaimers
+8. US-11 — Why-this-number explainer
+9. US-15 — Privacy-friendly analytics
+10. US-13 — PDF fake-door
+11. US-14 — Paid unlock fake-door + pricing A/B
+12. US-18 — Waitlist/email capture
+13. US-16 — SEO landing page
+14. US-12 — Accuracy trust signal
+15. US-17 — Installable PWA/offline
+16. US-20 — Post-deploy smoke tests and privacy-safe operations
+17. US-21 — Canonical `www` redirect and domain hygiene
 
 # Suggested GitHub issue labels
 

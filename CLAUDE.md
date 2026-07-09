@@ -213,19 +213,18 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-1. US-19 — App test harness and privacy QA infrastructure.
-2. US-04 — Trip CRUD.
-3. US-05 — Local-only persistence.
-4. US-06 — JSON import/export.
-5. US-07 — Dashboard money-shot.
-6. US-09 — Future-trip simulator.
-7. US-08 — Days-coming-back visualization.
-8. US-10/US-11 — disclaimers and explanation.
-9. US-15/US-13/US-14/US-18 — analytics and validation flows.
-10. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
-11. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
+1. US-04 — Trip CRUD.
+2. US-05 — Local-only persistence.
+3. US-06 — JSON import/export.
+4. US-07 — Dashboard money-shot.
+5. US-09 — Future-trip simulator.
+6. US-08 — Days-coming-back visualization.
+7. US-10/US-11 — disclaimers and explanation.
+8. US-15/US-13/US-14/US-18 — analytics and validation flows.
+9. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
+10. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
 
-US-01/US-02/US-03 are green. Next, build US-19 so every app feature has browser/accessibility/privacy-network checks before real trip data UI work.
+US-01/US-02/US-03 and US-19 are green. Next, build US-04 Trip CRUD on top of the browser/privacy harness before local persistence.
 
 ## Design direction
 
