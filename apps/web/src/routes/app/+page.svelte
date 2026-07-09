@@ -56,6 +56,10 @@
   let pdfIntentMessageVisible = false;
   let unlockIntentMessageVisible = false;
   let unlockPrice = chooseUnlockPriceBucket('eu', 0.34);
+  let waitlistEmail = '';
+  let waitlistConsent = false;
+  let waitlistState: 'idle' | 'submitting' | 'success' | 'error' = 'idle';
+  let waitlistError = '';
   let simulatorForm: ProposedTripInput = {
     label: 'Italy',
     countryCode: 'IT',
@@ -257,6 +261,29 @@
 
   function trackWaitlistSignup(): void {
     trackAnalyticsEvent('waitlist_signup', { source: 'waitlist' });
+  }
+
+  async function submitWaitlist(): Promise<void> {
+    if (!waitlistEmail.trim() || !waitlistConsent || waitlistState === 'submitting') return;
+    waitlistState = 'submitting';
+    waitlistError = '';
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: waitlistEmail.trim(),
+          consent: true,
+          source: 'waitlist'
+        })
+      });
+      if (!response.ok) throw new Error('Waitlist request failed');
+      waitlistState = 'success';
+      trackWaitlistSignup();
+    } catch {
+      waitlistState = 'error';
+      waitlistError = 'Try again. No trip data was sent.';
+    }
   }
 
   function recordPdfBuyIntent(): void {
@@ -608,17 +635,27 @@
         <p class="muted-copy">Email-only capture. SCHNGN does not send your trips, dates, country history, or calculated personal timeline with this request.</p>
         <label class="email-label">
           <span>Email</span>
-          <input type="email" placeholder="name@example.com" />
+          <input bind:value={waitlistEmail} autocomplete="email" placeholder="name@example.com" type="email">
         </label>
-        <button class="primary-button" type="button" onclick={trackWaitlistSignup}>Join waitlist</button>
-        <section class="panel mint">
-          <h2>You are on the list</h2>
-          <p>We stored your email only.</p>
-        </section>
-        <section class="panel risk-panel">
-          <h2>Email could not be saved</h2>
-          <p>Try again. No trip data was sent.</p>
-        </section>
+        <label class="consent-row">
+          <input bind:checked={waitlistConsent} type="checkbox">
+          <span>I agree to receive SCHNGN updates. Store my email only; do not send trip dates or history.</span>
+        </label>
+        <button class="primary-button" disabled={!waitlistEmail.trim() || !waitlistConsent || waitlistState === 'submitting'} onclick={submitWaitlist} type="button">
+          {waitlistState === 'submitting' ? 'Joining…' : 'Join waitlist'}
+        </button>
+        {#if waitlistState === 'success'}
+          <section class="panel mint" aria-live="polite">
+            <h2>You are on the list</h2>
+            <p>We stored your email only.</p>
+          </section>
+        {/if}
+        {#if waitlistState === 'error'}
+          <section class="panel risk-panel" aria-live="polite">
+            <h2>Email could not be saved</h2>
+            <p>{waitlistError}</p>
+          </section>
+        {/if}
       </section>
     {/if}
 
@@ -945,6 +982,21 @@
     display: grid;
     gap: 6px;
     font-weight: 740;
+  }
+
+  .consent-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .consent-row input {
+    min-height: auto;
+    margin-top: 3px;
   }
 
   input {

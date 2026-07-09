@@ -1,14 +1,17 @@
 declare global {
-  interface SCHNGNKVNamespace {
-    get(key: string): Promise<string | null>;
-    put(key: string, value: string, options?: { expirationTtl?: number; expiration?: number; metadata?: unknown }): Promise<void>;
-    delete(key: string): Promise<void>;
+  interface SCHNGND1PreparedStatement {
+    bind(...values: unknown[]): SCHNGND1PreparedStatement;
+    run(): Promise<unknown>;
+  }
+
+  interface SCHNGND1Database {
+    prepare(query: string): SCHNGND1PreparedStatement;
   }
 
   namespace App {
     interface Platform {
       env: {
-        WAITLIST?: SCHNGNKVNamespace;
+        DB?: SCHNGND1Database;
       };
       context: unknown;
       caches: CacheStorage & { default: Cache };

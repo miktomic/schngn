@@ -255,14 +255,17 @@
 
 - **Priority:** Should
 - **Estimate:** S
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** approved Cloudflare D1 waitlist decision and privacy copy; see `docs/product-decisions.md`.
-- **Implementation target:** email capture on landing and fake-door steps using Cloudflare D1.
+- **Implementation target:** email capture on the Waitlist screen with a D1-backed `/api/waitlist` endpoint when the `DB` binding is configured.
 - **Acceptance summary:**
-  - Email field with GDPR consent and privacy note.
-  - Stored in Cloudflare D1 separately from trip data.
-  - Trip dates/history/calculation results are never accepted by the waitlist endpoint.
-- **Verification:** submit → confirmation → appears in provider; consent/privacy link present.
+  - Email field with explicit consent and visible privacy note.
+  - Submit button remains disabled until email + consent are present.
+  - Endpoint accepts only normalized email, consent/version, source, and optional price bucket.
+  - Endpoint rejects missing consent, invalid source, and invalid price bucket values.
+  - Endpoint ignores trip dates/history/calculation payload fields and stores no trip data.
+  - If `DB` is not bound yet, endpoint returns `202` accepted with `stored: false` instead of attempting unsafe storage.
+- **Verification:** `npx -y bun@1.3.14 run test` passed with 114 Bun tests / 1279 assertions including D1 insert-shape, consent-required, invalid-source/bucket rejection, and unbound fallback tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for email-only waitlist submit, consent gating, confirmation, `waitlist_signup`, and no trip-date/label leakage.
 
 ---
 

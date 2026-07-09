@@ -213,11 +213,10 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-1. US-18 — waitlist/email capture for fake-door conversion follow-up.
-2. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
-3. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
+1. US-16/US-12/US-17 — launch, trust signal, PWA/offline.
+2. US-20/US-21 — post-deploy smoke and canonical-domain hygiene.
 
-US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, US-13, and US-14 are green. Next, build the waitlist/email capture flow for fake-door conversion follow-up.
+US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, US-13, US-14, and US-18 are green. Next, build the launch/trust/PWA polish layer.
 
 ## Design direction
 

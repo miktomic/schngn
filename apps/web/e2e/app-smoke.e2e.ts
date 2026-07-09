@@ -18,6 +18,15 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
 
   test('app route renders money-shot, proof, report, privacy, and waitlist states without leaking private values', async ({ page }) => {
     const requests = observeNetwork(page);
+    const waitlistRequests: string[] = [];
+    await page.route('**/api/waitlist', async (route) => {
+      waitlistRequests.push(route.request().postData() ?? '');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, stored: true })
+      });
+    });
     await page.addInitScript(() => {
       const analyticsWindow = window as unknown as {
         __plausibleEvents: { name: string; options?: { props?: Record<string, string> } }[];
@@ -177,15 +186,29 @@ test.describe('SCHNGN app smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Waitlist' }).click();
     await expect(page.getByRole('heading', { name: 'Get PDF export updates' })).toBeVisible();
     await expect(page.getByText(/does not send your trips, dates, country history/i)).toBeVisible();
-    await page.getByLabel('Email').fill('michael@example.com');
+    await page.getByRole('textbox', { name: 'Email' }).fill('michael@example.com');
+    await expect(page.getByRole('button', { name: 'Join waitlist' })).toBeDisabled();
+    await page.getByLabel(/I agree to receive SCHNGN updates/i).check();
     await page.getByRole('button', { name: 'Join waitlist' }).click();
+    await expect(page.getByRole('heading', { name: 'You are on the list' })).toBeVisible();
+    expect(waitlistRequests).toHaveLength(1);
+    expect(JSON.parse(waitlistRequests[0])).toEqual({
+      email: 'michael@example.com',
+      consent: true,
+      source: 'waitlist'
+    });
+    expect(waitlistRequests[0]).not.toContain('2026-10-13');
+    expect(waitlistRequests[0]).not.toContain('Italy booked trip');
 
     plausibleEvents = await readPlausibleEvents(page);
     plausibleEventNames = plausibleEvents.map((event) => event.name);
     expect(plausibleEventNames).toContain('waitlist_signup');
     assertSafePlausiblePayload(plausibleEvents);
 
-    assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
+    assertNoForbiddenNetworkPayloads(
+      requests,
+      forbiddenTripValues.filter((value) => value !== 'michael@example.com')
+    );
   });
 });
 
