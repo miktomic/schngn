@@ -142,12 +142,32 @@ describe('Schengen rolling 180-day engine', () => {
     expect(calculateUsageOnDate(trips, '2026-05-30').daysUsed).toBe(10);
   });
 
-  test('classifies verdict boundaries from the remaining-day buffer', () => {
-    expect(classifyVerdict(8).state).toBe('ok');
-    expect(classifyVerdict(7).state).toBe('close');
-    expect(classifyVerdict(1).state).toBe('close');
-    expect(classifyVerdict(0).state).toBe('over');
-    expect(classifyVerdict(-1).state).toBe('over');
+  test('classifies verdict boundaries from usage, not floored remaining days', () => {
+    expect(classifyVerdict(usageAtDaysUsed(82)).state).toBe('ok');
+    expect(classifyVerdict(usageAtDaysUsed(82)).label).toBe('OK');
+
+    expect(classifyVerdict(usageAtDaysUsed(83)).state).toBe('close');
+    expect(classifyVerdict(usageAtDaysUsed(83)).label).toBe('Cutting it close');
+
+    expect(classifyVerdict(usageAtDaysUsed(89)).state).toBe('close');
+    expect(classifyVerdict(usageAtDaysUsed(89)).label).toBe('Cutting it close');
+
+    expect(classifyVerdict(usageAtDaysUsed(90))).toMatchObject({
+      state: 'close',
+      label: 'At limit',
+      tone: 'warning'
+    });
+
+    expect(classifyVerdict(usageAtDaysUsed(91))).toMatchObject({
+      state: 'over',
+      label: 'Overstay / over limit',
+      tone: 'danger'
+    });
+  });
+
+  test('supports configurable close-buffer thresholds', () => {
+    expect(classifyVerdict(usageAtDaysUsed(75), 14).state).toBe('ok');
+    expect(classifyVerdict(usageAtDaysUsed(75), 15).state).toBe('close');
   });
 
 });
@@ -333,6 +353,16 @@ function generateTrips(seed: number): Trip[] {
   }
 
   return trips;
+}
+
+function usageAtDaysUsed(daysUsed: number) {
+  if (!Number.isInteger(daysUsed) || daysUsed < 1) {
+    throw new RangeError(`daysUsed must be a positive integer, got ${daysUsed}`);
+  }
+
+  const entryDate = '2026-01-01';
+  const exitDate = formatDayNumber(dayNumber(entryDate) + daysUsed - 1);
+  return calculateUsageOnDate([{ entryDate, exitDate, countryCode: 'FR' }], exitDate);
 }
 
 function expectLatestSafeExitBoundary(

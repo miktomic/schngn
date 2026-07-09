@@ -8,7 +8,7 @@
   ];
 
   const usage = calculateUsageOnDate(trips, '2026-10-13');
-  const verdict = classifyVerdict(usage.daysRemaining);
+  const verdict = classifyVerdict(usage);
   const safeExit = latestSafeExitDate(trips.slice(0, 2), '2026-10-01', 'IT');
 </script>
 

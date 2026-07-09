@@ -5,7 +5,7 @@
 
 ## Board policy
 
-- **WIP limit:** one story in `Doing` at a time until US-01 is green. The engine is the load-bearing wall; do not decorate it with UI wallpaper until it stands.
+- **WIP limit:** one story in `Doing` at a time through the correctness/test-harness foundation. The engine is the load-bearing wall; do not decorate it with UI wallpaper until it stands.
 - **Quality gate:** US-01/US-02/US-03 must pass EC-parity + boundary tests before implementation moves into polished dashboard work.
 - **Privacy gate:** any analytics/fake-door work must prove it sends **no trip dates, no PII, no local travel history**.
 - **Definition of done for every card:** acceptance criteria met, relevant automated tests pass, mobile manual QA done, privacy/disclaimer unaffected, analytics verified where relevant.
@@ -63,14 +63,15 @@
 
 - **Priority:** Must
 - **Estimate:** S
-- **Status:** Todo
+- **Status:** Done
 - **Depends on:** US-01
 - **Implementation target:** status classifier with configurable thresholds.
 - **Acceptance summary:**
-  - `OK` when buffer > 7 days.
-  - `Cutting it close` when buffer is 1–7 days.
-  - `Overstay / over limit` when usage exceeds allowance.
-- **Verification:** boundary tests at 82/83/89/90/91 days used.
+  - `OK` when buffer > configured close threshold.
+  - `Cutting it close` when buffer is 1 through threshold.
+  - `At limit` when exactly 90 days are used but allowance is not exceeded.
+  - `Overstay / over limit` only when usage exceeds allowance.
+- **Verification:** boundary tests at 82/83/89/90/91 days used plus configurable close-threshold tests; app shell now calls `classifyVerdict(usage)` so 90 and 91 are distinguishable.
 
 ## US-19 — App test harness and privacy QA infrastructure
 
@@ -371,27 +372,26 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 
 # Remaining pull order
 
-US-01 and US-02 are done. Use this order unless a dependency or decision changes:
+US-01, US-02, and US-03 are done. Use this order unless a dependency or decision changes:
 
-1. US-03 — Verdict flag
-2. US-19 — App test harness and privacy QA infrastructure
-3. US-04 — Trip CRUD
-4. US-05 — Local-only persistence
-5. US-06 — JSON import/export
-6. US-07 — Dashboard money-shot
-7. US-09 — Future-trip simulator
-8. US-08 — Days-coming-back visualization
-9. US-10 — Disclaimers
-10. US-11 — Why-this-number explainer
-11. US-15 — Privacy-friendly analytics
-12. US-13 — PDF fake-door
-13. US-14 — Paid unlock fake-door + pricing A/B
-14. US-18 — Waitlist/email capture
-15. US-16 — SEO landing page
-16. US-12 — Accuracy trust signal
-17. US-17 — Installable PWA/offline
-18. US-20 — Post-deploy smoke tests and privacy-safe operations
-19. US-21 — Canonical `www` redirect and domain hygiene
+1. US-19 — App test harness and privacy QA infrastructure
+2. US-04 — Trip CRUD
+3. US-05 — Local-only persistence
+4. US-06 — JSON import/export
+5. US-07 — Dashboard money-shot
+6. US-09 — Future-trip simulator
+7. US-08 — Days-coming-back visualization
+8. US-10 — Disclaimers
+9. US-11 — Why-this-number explainer
+10. US-15 — Privacy-friendly analytics
+11. US-13 — PDF fake-door
+12. US-14 — Paid unlock fake-door + pricing A/B
+13. US-18 — Waitlist/email capture
+14. US-16 — SEO landing page
+15. US-12 — Accuracy trust signal
+16. US-17 — Installable PWA/offline
+17. US-20 — Post-deploy smoke tests and privacy-safe operations
+18. US-21 — Canonical `www` redirect and domain hygiene
 
 # Suggested GitHub issue labels
 

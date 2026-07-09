@@ -60,6 +60,12 @@ export interface UsageResult {
   countedDays: string[];
 }
 
+export interface VerdictInput {
+  daysRemaining: number;
+  overLimit: boolean;
+  overBy: number;
+}
+
 export interface Verdict {
   state: VerdictState;
   label: string;
@@ -101,16 +107,20 @@ export function calculateUsageOnDate(trips: Trip[], referenceDate: string): Usag
   };
 }
 
-export function classifyVerdict(daysRemaining: number): Verdict {
-  if (daysRemaining > CLOSE_BUFFER_DAYS) {
+export function classifyVerdict(usage: VerdictInput, closeBufferDays = CLOSE_BUFFER_DAYS): Verdict {
+  if (usage.overLimit || usage.overBy > 0) {
+    return { state: 'over', label: 'Overstay / over limit', tone: 'danger' };
+  }
+
+  if (usage.daysRemaining > closeBufferDays) {
     return { state: 'ok', label: 'OK', tone: 'success' };
   }
 
-  if (daysRemaining >= 1) {
-    return { state: 'close', label: 'Cutting it close', tone: 'warning' };
+  if (usage.daysRemaining <= 0) {
+    return { state: 'close', label: 'At limit', tone: 'warning' };
   }
 
-  return { state: 'over', label: 'Overstay / over limit', tone: 'danger' };
+  return { state: 'close', label: 'Cutting it close', tone: 'warning' };
 }
 
 export function latestSafeExitDate(

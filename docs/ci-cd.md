@@ -61,7 +61,7 @@ Current tests are now a real US-01 correctness gate:
 - 50 EC-rule rolling-window fixtures
 - deterministic property checks against an independent day-set oracle
 - golden counted-day scenario
-- verdict boundary classification
+- verdict boundary classification at 82/83/89/90/91 days used, including exact-limit versus over-limit distinction and configurable close threshold
 - latest safe exit date boundary coverage: no prior trips, 89-used one-day remaining, 90-used null, old-days-aging-out, missing country manual Schengen, and non-Schengen target `null`
 
 ### Build gate
