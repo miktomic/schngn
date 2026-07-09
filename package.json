@@ -21,6 +21,7 @@
     "typecheck": "cd apps/web && bun run check",
     "check": "bun run test && bun run typecheck && bun run build",
     "smoke:production": "node scripts/post-deploy-smoke.mjs",
+    "cloudflare:canonical-www": "node scripts/configure-cloudflare-canonical-www.mjs",
     "deploy": "cd apps/web && bun run deploy"
   },
   "devDependencies": {
