@@ -34,6 +34,7 @@
 
 <label class="language-selector">
   <span class="control-label">{label}</span>
+  <span class="language-icon" aria-hidden="true">🌐</span>
   <span class="select-wrap">
     <select aria-label={label} value={locale} disabled={!ready} onchange={switchLocale}>
     {#each SUPPORTED_LOCALES as option}
@@ -47,7 +48,7 @@
   .language-selector {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     min-width: 0;
     color: var(--ink);
     font-size: 0.82rem;
@@ -55,7 +56,18 @@
   }
 
   .control-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
     white-space: nowrap;
+  }
+
+  .language-icon {
+    font-size: 1rem;
+    line-height: 1;
   }
 
   .select-wrap {
@@ -74,8 +86,8 @@
   }
 
   select {
-    min-width: 128px;
-    min-height: 42px;
+    min-width: 108px;
+    min-height: 40px;
     appearance: none;
     border: 1px solid var(--line);
     border-radius: 9px;
@@ -91,10 +103,4 @@
   select:focus-visible { outline: 3px solid var(--safe); outline-offset: 2px; }
   select:disabled { cursor: progress; opacity: 0.72; }
 
-  @media (max-width: 680px) {
-    .language-selector {
-      justify-content: space-between;
-      width: 100%;
-    }
-  }
 </style>

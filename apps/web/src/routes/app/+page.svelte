@@ -1325,7 +1325,7 @@
             <fieldset class="trip-status-options" aria-describedby={formErrors.status ? 'status-error' : undefined}>
               <legend>{deep('tripStatus')}</legend>
               <label class:selected={tripForm.status === 'booked'} class="toggle"><input type="radio" bind:group={tripForm.status} value="booked" /> {deep('booked')}</label>
-              <label class:selected={tripForm.status === 'what-if'} class="toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> {deep('whatIf')}</label>
+              <label class:selected={tripForm.status === 'what-if'} class="toggle what-if-toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> {deep('whatIf')}</label>
             </fieldset>
           {/if}
           {#if formErrors.status}<strong id="status-error" class="field-error">{formErrors.status}</strong>{/if}
@@ -1389,7 +1389,7 @@
           </p>
           <div class="trip-list">
             {#each trips as trip (trip.id)}
-              <article class:booked={trip.status === 'booked'} class:past={trip.status === 'past'}>
+              <article class:booked={trip.status === 'booked'} class:past={trip.status === 'past'} class:whatif={trip.status === 'what-if'}>
                 <span class="state-strip {trip.status}" aria-hidden="true"></span>
                 <div class="trip-copy">
                   <h2>{displayTripName(trip)}</h2>
@@ -2653,6 +2653,12 @@
     color: var(--booked);
   }
 
+  .toggle.what-if-toggle.selected {
+    border-color: var(--whatif);
+    background: var(--whatif-bg);
+    color: var(--whatif);
+  }
+
   .toggle:has(input:focus-visible) { outline: 3px solid var(--safe); outline-offset: 2px; }
   .toggle input {
     position: absolute;
@@ -2724,6 +2730,7 @@
   }
 
   .trip-list article.booked { background: var(--booked-bg); }
+  .trip-list article.whatif { background: var(--whatif-bg); }
   .trip-list article.past { background: var(--surface); }
 
   .trip-copy,
@@ -2755,6 +2762,8 @@
     color: var(--booked);
     font-size: 0.8rem;
   }
+
+  .trip-list article.whatif .trip-copy strong { color: var(--whatif); }
 
   .trip-actions {
     flex: 0 0 auto;

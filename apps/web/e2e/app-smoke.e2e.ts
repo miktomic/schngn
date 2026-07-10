@@ -58,6 +58,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const languageSelector = page.getByRole('combobox', { name: 'Language' });
     await expect(languageSelector).toBeVisible();
     await expect(languageSelector).toBeEnabled();
+    const languageSelectorBox = await languageSelector.boundingBox();
+    expect(languageSelectorBox?.width).toBeLessThanOrEqual(120);
     await languageSelector.selectOption('fr');
     await expect(page).toHaveURL(/\/fr$/);
     await expect(page.getByRole('heading', { name: 'Planifiez vos séjours en Europe sans deviner vos 90 jours.' })).toBeVisible();
@@ -206,6 +208,9 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await form.locator('#trip-exit').fill('2026-07-12');
     await form.locator('#trip-entry-country').selectOption('IT');
     await form.locator('#trip-exit-country').selectOption('AT');
+    await form.locator('.what-if-toggle').click();
+    await expect(form.locator('.what-if-toggle')).toHaveClass(/selected/);
+    await expect(form.locator('.what-if-toggle')).toHaveCSS('background-color', 'rgb(255, 241, 214)');
     await form.getByRole('button', { name: 'Add time outside' }).click();
     await form.locator('[id^="trip-break-left-"]').fill('2026-07-05');
     await form.locator('[id^="trip-break-return-"]').fill('2026-07-08');
@@ -214,6 +219,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await form.getByRole('button', { name: 'Save trip' }).click();
     await expect(page.getByText('Italy → Austria')).toBeVisible();
     await expect(page.getByText(/10 Schengen days · 2 days outside/)).toBeVisible();
+    await expect(page.locator('.trip-list article.whatif')).toHaveCSS('background-color', 'rgb(255, 241, 214)');
 
     const stored = await page.evaluate(() => JSON.parse(window.localStorage.getItem('schngn.trips.v2') ?? '[]'));
     expect(stored).toEqual([
