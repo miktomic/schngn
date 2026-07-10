@@ -346,6 +346,17 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(overviewTimeline).toBeVisible();
     await expect(page.getByText('21 Jan–19 Jul 2026')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Adjust this trip' }).click();
+    const quickAdjuster = page.locator('section[aria-label="Adjust what-if trip"]');
+    await expect(quickAdjuster).toBeVisible();
+    await quickAdjuster.getByRole('button', { name: /Move trip:/ }).press('ArrowRight');
+    const exactDates = quickAdjuster.locator('input[type="date"]');
+    await expect(exactDates.nth(0)).toHaveValue('2026-07-02');
+    await expect(exactDates.nth(1)).toHaveValue('2026-07-20');
+    await expect(page.getByText(/Highest affected-day window shows 51 counted days/)).toBeVisible();
+    await page.getByRole('button', { name: 'Close adjuster' }).click();
+    await expect(quickAdjuster).toHaveCount(0);
+
     await page.getByRole('button', { name: 'Show calculation' }).click();
     await expect(page.getByRole('heading', { name: 'Calculation proof' })).toBeVisible();
     await expect(page.getByText('51 counted days between Jan 21 and Jul 19. That leaves 39 safe buffer days.')).toBeVisible();

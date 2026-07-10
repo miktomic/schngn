@@ -3,12 +3,13 @@
   import { page } from '$app/state';
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
-  import { FactCard, SchngnLogo, StatusChip, TimelineLedger } from '$lib/design';
+  import { FactCard, SchngnLogo, StatusChip, TimelineLedger, WhatIfAdjuster } from '$lib/design';
   import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
   import { createTranslator, intlLocale, localeFromPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
   import { createAppRuntimeUiTranslator, formatLocalizedCount } from '$lib/i18n/appRuntimeUi';
+  import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
   import {
     localizeDashboardState,
     localizePdfState,
@@ -18,6 +19,7 @@
   } from '$lib/i18n/stateUi';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import { buildTripSimulationState, emptyProposedTrip, type ProposedTripInput } from '$lib/simulator/tripSimulator';
+  import { addIsoDays, buildAdjustmentRange, type AdjustmentRange, type DateAdjustment } from '$lib/simulator/whatIfDates';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
   import { FOOTER_DISCLAIMER_COPY, FULL_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '$lib/legal/legalCopy';
@@ -106,6 +108,7 @@
   $: ui = createAppUiTranslator(locale);
   $: deep = createAppDeepUiTranslator(locale);
   $: rt = createAppRuntimeUiTranslator(locale);
+  $: whatIfUi = createWhatIfUiTranslator(locale);
   $: screens = [
     { key: 'dashboard' as const, label: ui('navOverview') },
     { key: 'trips' as const, label: ui('navTrips') },
@@ -143,6 +146,9 @@
   let waitlistError = '';
   let simulationSubmitted = false;
   let simulatorForm: ProposedTripInput = emptySimulationForm();
+  let quickAdjustVisible = false;
+  let quickAdjustSourceId: string | null = null;
+  let quickAdjustRange: AdjustmentRange | null = null;
   let clerkAuth: ClerkBrowserAuth | null = null;
   let accountState: AccountState = 'loading';
   let accountError = '';
@@ -173,7 +179,8 @@
     | 'risk'
     | 'whatif';
   $: dashboardTextClass = dashboardState.statusTone === 'risk' ? 'risk-text' : dashboardState.statusTone === 'close' ? 'close-text' : 'safe-text';
-  $: simulationState = localizeSimulationState(locale, buildTripSimulationState(trips, simulatorForm));
+  $: simulationBaseTrips = quickAdjustSourceId ? trips.filter((trip) => trip.id !== quickAdjustSourceId) : trips;
+  $: simulationState = localizeSimulationState(locale, buildTripSimulationState(simulationBaseTrips, simulatorForm));
   $: tripFormPreviewResult = upsertTrip([], { ...tripForm, id: 'preview' });
   $: tripFormPreview = tripFormPreviewResult.trips[0] ?? null;
   $: tripFormToday = currentLocalIsoDate();
@@ -908,6 +915,52 @@
   function clearSimulation(): void {
     simulatorForm = emptySimulationForm();
     simulationSubmitted = false;
+    quickAdjustSourceId = null;
+    quickAdjustVisible = false;
+    quickAdjustRange = null;
+  }
+
+  function openQuickAdjuster(): void {
+    const target = dashboardState.targetTrip;
+    if (!target) return;
+    const form = tripToForm(target);
+    simulatorForm = {
+      label: form.label || displayRoute(target),
+      entryCountryCode: form.entryCountryCode,
+      exitCountryCode: form.exitCountryCode,
+      entryDate: form.entryDate,
+      exitDate: form.exitDate,
+      outsideBreaks: form.outsideBreaks
+    };
+    quickAdjustSourceId = target.id;
+    quickAdjustRange = buildAdjustmentRange(form.entryDate, form.exitDate);
+    quickAdjustVisible = true;
+    simulationSubmitted = true;
+    trackSimulationRun('dashboard');
+  }
+
+  function closeQuickAdjuster(): void {
+    quickAdjustVisible = false;
+    quickAdjustSourceId = null;
+    quickAdjustRange = null;
+    simulatorForm = emptySimulationForm();
+    simulationSubmitted = false;
+  }
+
+  function adjustQuickTrip(adjustment: DateAdjustment): void {
+    simulatorForm = {
+      ...simulatorForm,
+      entryDate: adjustment.entryDate,
+      exitDate: adjustment.exitDate,
+      outsideBreaks: adjustment.mode === 'move' && adjustment.moveDays !== 0
+        ? simulatorForm.outsideBreaks.map((outsideBreak) => ({
+            ...outsideBreak,
+            leftDate: outsideBreak.leftDate ? addIsoDays(outsideBreak.leftDate, adjustment.moveDays) : '',
+            reentryDate: outsideBreak.reentryDate ? addIsoDays(outsideBreak.reentryDate, adjustment.moveDays) : ''
+          }))
+        : simulatorForm.outsideBreaks
+    };
+    simulationSubmitted = true;
   }
 
   function simulationChanged(): void {
@@ -1202,8 +1255,40 @@
             <p>{dashboardState.whyCopy}</p>
             <p class:micro-risk={dashboardState.statusTone === 'risk'} class:micro-safe={dashboardState.statusTone !== 'risk'}>{dashboardState.actionCopy}</p>
           </section>
+          {#if quickAdjustVisible && quickAdjustRange && simulationState.valid && simulationState.usage && simulationState.simulatedTrip}
+            <section class="quick-adjust-panel" aria-labelledby="quick-adjust-heading">
+              <div class="quick-adjust-heading">
+                <div>
+                  <p>{deep('unsavedWhatIf')}</p>
+                  <h2 id="quick-adjust-heading">{whatIfUi('title')}</h2>
+                </div>
+                <button class="text-button" type="button" onclick={closeQuickAdjuster}>{whatIfUi('close')}</button>
+              </div>
+              <StatusChip tone={simulatorStatusTone} label={simulationState.statusLabel} />
+              <div class="quick-adjust-answer" aria-live="polite" aria-atomic="true">
+                <strong class:quick-risk={simulationState.statusTone === 'risk'}>{simulationState.latestSafeExitLabel}</strong>
+                <span>{simulationState.summaryCopy}</span>
+              </div>
+              <WhatIfAdjuster
+                entryDate={simulatorForm.entryDate}
+                exitDate={simulatorForm.exitDate}
+                range={quickAdjustRange}
+                {locale}
+                onDatesChange={adjustQuickTrip}
+              />
+              <TimelineLedger
+                label={deep('whatIfWindow')}
+                {locale}
+                mode={simulationState.statusTone === 'risk' ? 'risk' : 'planner'}
+                trips={simulationBaseTrips}
+                simulation={simulationState.simulatedTrip}
+                referenceDate={simulationState.usage.referenceDate}
+              />
+            </section>
+          {/if}
           <div class="button-row">
             <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addTrip')}</button>
+            {#if dashboardState.targetTrip && !quickAdjustVisible}<button class="secondary-button what-if-action" type="button" onclick={openQuickAdjuster}>{whatIfUi('adjust')}</button>{/if}
             <button class="secondary-button" type="button" onclick={() => setActiveScreen('proof')}>{ui('showCalculation')}</button>
             <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>{ui('planAnother')}</button>
           </div>
@@ -1562,7 +1647,7 @@
           label={deep('whatIfWindow')}
           {locale}
               mode={simulationState.statusTone === 'risk' ? 'risk' : 'planner'}
-              {trips}
+              trips={simulationBaseTrips}
               simulation={simulationState.simulatedTrip}
               referenceDate={simulationState.usage.referenceDate}
             />
@@ -2274,6 +2359,67 @@
     background: var(--whatif-bg);
   }
 
+  .quick-adjust-panel {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--whatif), var(--line) 30%);
+    border-radius: 12px;
+    background: var(--whatif-bg);
+    padding: 16px;
+  }
+
+  .quick-adjust-heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .quick-adjust-heading p,
+  .quick-adjust-heading h2 {
+    margin: 0;
+  }
+
+  .quick-adjust-heading p {
+    margin-bottom: 3px;
+    color: var(--whatif);
+    font-size: 0.78rem;
+    font-weight: 760;
+  }
+
+  .quick-adjust-heading h2 {
+    font-size: 1.25rem;
+    line-height: 1.25;
+  }
+
+  .quick-adjust-answer {
+    display: grid;
+    grid-template-columns: minmax(140px, auto) 1fr;
+    align-items: baseline;
+    gap: 8px 16px;
+  }
+
+  .quick-adjust-answer strong {
+    color: var(--safe);
+    font-size: 1.35rem;
+    line-height: 1.15;
+  }
+
+  .quick-adjust-answer strong.quick-risk { color: var(--risk); }
+
+  .quick-adjust-answer span {
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .what-if-action {
+    border-color: var(--whatif);
+    background: var(--whatif-bg);
+    color: var(--whatif);
+  }
+
   .paper-panel { background: var(--paper); }
 
   .account-panel {
@@ -2902,6 +3048,7 @@
     .account-choice-grid { grid-template-columns: 1fr; }
     .return-list article { align-items: flex-start; flex-wrap: wrap; }
     .return-list p { width: 100%; max-width: none; }
+    .quick-adjust-answer { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 380px) {
