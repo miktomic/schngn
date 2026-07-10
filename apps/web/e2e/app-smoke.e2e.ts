@@ -475,7 +475,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByText('Trip data is now cleared from this tab.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Export JSON' })).toBeDisabled();
     await page.getByRole('button', { name: 'Trips' }).click();
-    await expect(page.getByRole('heading', { name: 'No trips saved yet' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
 
     const plausibleEvents = await readPlausibleEvents(page);
     const plausibleEventNames = plausibleEvents.map((event) => event.name);
