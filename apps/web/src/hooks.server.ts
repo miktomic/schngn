@@ -7,7 +7,7 @@ import {
   localeFromPath,
   localizedPath,
   stripLocalePrefix
-} from '$lib/i18n';
+} from './lib/i18n';
 
 export const SECURITY_HEADERS = {
   'x-content-type-options': 'nosniff',

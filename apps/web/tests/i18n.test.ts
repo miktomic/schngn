@@ -39,6 +39,14 @@ describe('whole-site localization', () => {
     expect(await reroute({ url: new URL('https://schngn.com/ar/accuracy'), fetch } as never)).toBe('/accuracy');
   });
 
+  test('keeps hooks resolvable before SvelteKit generates path aliases in clean CI', () => {
+    for (const hookPath of ['apps/web/src/hooks.ts', 'apps/web/src/hooks.server.ts']) {
+      const source = readFileSync(hookPath, 'utf8');
+      expect(source).toContain("from './lib/i18n'");
+      expect(source).not.toContain("from '$lib/i18n'");
+    }
+  });
+
   test('ships complete public, core, and deep app catalogs for every locale', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(createTranslator(locale)('landing.primaryAction').trim().length).toBeGreaterThan(0);
