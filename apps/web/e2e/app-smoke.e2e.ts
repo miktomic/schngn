@@ -54,6 +54,14 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
   test('serves localized public routes and RTL app navigation', async ({ page }) => {
     await installFakeClerk(page, null);
+    await page.goto('/');
+    const languageSelector = page.getByRole('combobox', { name: 'Language' });
+    await expect(languageSelector).toBeVisible();
+    await expect(languageSelector).toBeEnabled();
+    await languageSelector.selectOption('fr');
+    await expect(page).toHaveURL(/\/fr$/);
+    await expect(page.getByRole('heading', { name: 'Planifiez vos séjours en Europe sans deviner vos 90 jours.' })).toBeVisible();
+
     await page.goto('/ar');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
