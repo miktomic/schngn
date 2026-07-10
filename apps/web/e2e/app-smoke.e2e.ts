@@ -22,7 +22,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /UK second-home owners and frequent travellers/);
     await expect(page.getByRole('heading', { name: /Plan Europe stays without guessing your 90 days/i })).toBeVisible();
     await expect(page.getByText('For UK second-home owners')).toBeVisible();
-    await expect(page.getByText('Your dates stay in this browser.')).toBeVisible();
+    await expect(page.getByText(/See counted days and your safe-exit date/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'See if your Europe trip fits' })).toHaveAttribute('href', '/app?market=uk');
     await expect(page.getByRole('link', { name: 'Accuracy evidence' })).toHaveAttribute('href', '/accuracy');
     const wordmark = page.locator('header img[src$="/brand/schngn-wordmark.png"]');

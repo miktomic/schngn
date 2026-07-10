@@ -8,21 +8,23 @@ describe('UK second-home landing SEO', () => {
   test('targets the approved UK second-home owner long-tail search intent', () => {
     expect(messagesSource).toContain('Schengen 90/180 calculator for UK second-home owners | SCHNGN');
     expect(messagesSource).toContain(
-      'Plan Europe trips around the Schengen 90/180-day rule with a private calculator built for UK second-home owners and frequent travellers.'
+      'Plan Europe trips around the Schengen 90/180-day rule with a calculator built for UK second-home owners and frequent travellers.'
     );
     expect(messagesSource).toContain('UK second-home owners');
     expect(messagesSource).toContain('Schengen 90/180 calculator');
-    expect(messagesSource).toContain('private calculator');
+    expect(messagesSource).toContain('See which trips count, how many days you used, and the rolling window behind the answer.');
   });
 
   test('keeps landing-page trust copy specific, calm, and not legal-advice shaped', () => {
-    expect(messagesSource).toContain('Your dates stay in this browser.');
+    expect(messagesSource).toContain('See counted days and your safe-exit date.');
     expect(messagesSource).toContain('Not legal advice. Not an EU service.');
     expect(messagesSource).toContain('See if your Europe trip fits');
     expect(messagesSource).toContain('For UK second-home owners');
     expect(pageSource).not.toContain('A privacy-first Schengen 90/180-day calculator and trip planner for frequent travelers');
     expect(pageSource).not.toContain('—');
     expect(pageSource).not.toContain('–');
+    expect(messagesSource).not.toContain('Local & private');
+    expect(messagesSource).not.toContain('Keep travel private');
   });
 
   test('sets share metadata and canonical URL for the public landing page', () => {
