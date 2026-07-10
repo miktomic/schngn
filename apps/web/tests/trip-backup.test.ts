@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { calculateUsageOnDate } from '@schngn/engine';
-import { importTripsFromJson, tripsToBackupJson } from '../src/lib/import-export/tripBackup';
-import { toEngineTrips, type EditableTrip } from '../src/lib/trips/tripCrud';
+import {
+  MAX_TRIP_BACKUP_BYTES,
+  importTripsFromJson,
+  tripsToBackupJson
+} from '../src/lib/import-export/tripBackup';
+import { MAX_TRIP_COUNT, toEngineTrips, type EditableTrip } from '../src/lib/trips/tripCrud';
 
 const unsortedTrips: EditableTrip[] = [
   {
@@ -58,5 +62,62 @@ describe('JSON trip backup and restore', () => {
         })
       )
     ).toEqual({ ok: false, error: 'Trip 1 has an invalid date range.' });
+  });
+
+  test('rejects impossible dates, unsupported countries, and duplicate ids', () => {
+    const backup = (trips: unknown[]) =>
+      JSON.stringify({ schemaVersion: 1, exportedAt: '2026-01-02T03:04:05.000Z', trips });
+
+    expect(importTripsFromJson(backup([{ ...unsortedTrips[0], entryDate: '2026-02-30' }]))).toEqual({
+      ok: false,
+      error: 'Trip 1 has an invalid date range.'
+    });
+    expect(importTripsFromJson(backup([{ ...unsortedTrips[0], countryCode: 'Spain' }]))).toEqual({
+      ok: false,
+      error: 'Trip 1 has an unsupported country.'
+    });
+    expect(importTripsFromJson(backup([unsortedTrips[0], { ...unsortedTrips[0], label: 'Duplicate' }]))).toEqual({
+      ok: false,
+      error: 'Trip 2 duplicates an earlier trip id.'
+    });
+    expect(importTripsFromJson(backup([{ ...unsortedTrips[0], id: 'x'.repeat(129) }]))).toEqual({
+      ok: false,
+      error: 'Trip 1 has invalid fields.'
+    });
+    expect(importTripsFromJson(backup([{ ...unsortedTrips[0], label: 'x'.repeat(81) }]))).toEqual({
+      ok: false,
+      error: 'Trip 1 has invalid fields.'
+    });
+  });
+
+  test('rejects a backup with an invalid export timestamp', () => {
+    expect(importTripsFromJson(JSON.stringify({ schemaVersion: 1, exportedAt: 'not-a-date', trips: [] }))).toEqual({
+      ok: false,
+      error: 'Import file has an invalid export timestamp.'
+    });
+  });
+
+  test('rejects an oversized backup before parsing it', () => {
+    expect(importTripsFromJson(' '.repeat(MAX_TRIP_BACKUP_BYTES + 1))).toEqual({
+      ok: false,
+      error: 'Import file is too large.'
+    });
+  });
+
+  test('rejects a backup above the trip-count limit', () => {
+    const trips = Array.from({ length: MAX_TRIP_COUNT + 1 }, (_, index) => ({
+      ...unsortedTrips[0],
+      id: `trip-${index}`
+    }));
+    const json = JSON.stringify({
+      schemaVersion: 1,
+      exportedAt: '2026-01-02T03:04:05.000Z',
+      trips
+    });
+
+    expect(importTripsFromJson(json)).toEqual({
+      ok: false,
+      error: `Import file contains too many trips (maximum ${MAX_TRIP_COUNT}).`
+    });
   });
 });

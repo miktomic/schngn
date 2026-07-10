@@ -14,7 +14,7 @@
       <mxGeometry x="850" y="40" width="360" height="420" as="geometry" />
     </mxCell>
     <mxCell id="privacy" value="Privacy boundary
-trip dates never leave browser" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff1f2;strokeColor=#e11d48;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+guest local-only; account sync needs consent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff1f2;strokeColor=#e11d48;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="850" y="500" width="360" height="90" as="geometry" />
     </mxCell>
     <mxCell id="repo" value="GitHub repo
@@ -29,8 +29,8 @@ install → test → typecheck → build" style="rounded=1;whiteSpace=wrap;html=
 engine tests + Svelte/TS + build" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="75" y="280" width="240" height="70" as="geometry" />
     </mxCell>
-    <mxCell id="deploy" value="wrangler deploy
-production env secrets" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+    <mxCell id="deploy" value="inactive → migrate → deploy
+ephemeral Clerk bindings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="75" y="375" width="240" height="55" as="geometry" />
     </mxCell>
     <mxCell id="domain" value="schngn.com
@@ -45,12 +45,12 @@ workerd V8 isolate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;st
 SvelteKit/Vite output" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#059669;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="455" y="300" width="155" height="70" as="geometry" />
     </mxCell>
-    <mxCell id="waitlist" value="/api/waitlist
-email-only route" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#059669;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+    <mxCell id="waitlist" value="Worker APIs
+waitlist + authenticated account" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#059669;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="625" y="300" width="135" height="70" as="geometry" />
     </mxCell>
-    <mxCell id="store" value="Optional KV / D1 / provider
-waitlist email only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f3ff;strokeColor=#7c3aed;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+    <mxCell id="store" value="Cloudflare D1
+separate waitlist/account rows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f3ff;strokeColor=#7c3aed;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="520" y="395" width="190" height="55" as="geometry" />
     </mxCell>
     <mxCell id="ui" value="Svelte UI

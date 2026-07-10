@@ -5,6 +5,9 @@
     "checkJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
+    // ClerkJS currently ships declaration-only conflicts through its viem dependency;
+    // application source remains checked by svelte-check.
+    "skipLibCheck": true,
     "types": ["node"]
   },
   "exclude": ["e2e/**", "tests/**", "test-results/**", "playwright-report/**"]

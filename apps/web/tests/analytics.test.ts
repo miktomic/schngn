@@ -4,8 +4,10 @@ import {
   assertSafeAnalyticsEvent,
   buildAnalyticsEvent,
   buildTripCountBucket,
+  trackAnalyticsEvent,
   type AnalyticsEventName
 } from '../src/lib/analytics/privacyAnalytics';
+import { initializePlausibleAnalytics } from '../src/lib/analytics/plausibleClient';
 
 const allowedEvents: AnalyticsEventName[] = [
   'page_view',
@@ -80,6 +82,20 @@ describe('privacy-safe analytics wrapper', () => {
     ).toThrow(/property.*countryCode/i);
   });
 
+  test('runtime-validates every analytics bucket instead of relying on TypeScript types', () => {
+    const unsafeValues = [
+      { source: 'other' },
+      { trip_count_bucket: 'exactly-2' },
+      { safe_buffer_bucket: 'about-a-week' },
+      { verdict: 'approved' },
+      { price_bucket: 'eur_99' }
+    ];
+
+    for (const props of unsafeValues) {
+      expect(() => buildAnalyticsEvent('page_view', props as never)).toThrow(/value.*not allowlisted/i);
+    }
+  });
+
   test('rejects dates, emails, names, labels, and raw travel timeline values in payloads', () => {
     const unsafePayloads = [
       { trip_date: '2026-09-15' },
@@ -93,5 +109,108 @@ describe('privacy-safe analytics wrapper', () => {
     for (const props of unsafePayloads) {
       expect(() => assertSafeAnalyticsEvent('page_view', props as never)).toThrow(/private|not allowed|forbidden/i);
     }
+  });
+
+  test('supports interception while stripping query strings and hashes from Plausible URLs', () => {
+    const calls: { name: string; options?: { props?: Record<string, string>; url?: string } }[] = [];
+    const targetWindow = {
+      location: new URL('https://schngn.com/app?entryDate=2026-09-15#private-trip'),
+      plausible(name: string, options?: { props?: Record<string, string>; url?: string }) {
+        calls.push({ name, options });
+      }
+    } as unknown as Window;
+
+    expect(trackAnalyticsEvent('trip_added', { source: 'trip_form', trip_count_bucket: '2-3' }, targetWindow)).toEqual({
+      name: 'trip_added',
+      props: { source: 'trip_form', trip_count_bucket: '2-3' }
+    });
+    expect(calls).toEqual([
+      {
+        name: 'trip_added',
+        options: {
+          props: { source: 'trip_form', trip_count_bucket: '2-3' },
+          url: 'https://schngn.com/app'
+        }
+      }
+    ]);
+    expect(JSON.stringify(calls)).not.toContain('2026-09-15');
+    expect(JSON.stringify(calls)).not.toContain('private-trip');
+  });
+
+  test('initializes the official Plausible tracker only on the production apex', async () => {
+    let capturedConfig: Record<string, unknown> | undefined;
+    const productionWindow = {
+      location: new URL('https://schngn.com/app')
+    } as unknown as Window;
+
+    expect(
+      await initializePlausibleAnalytics(productionWindow, async () => ({
+        init(config) {
+          capturedConfig = config as unknown as Record<string, unknown>;
+        }
+      }))
+    ).toBe('initialized');
+    expect(capturedConfig).toMatchObject({
+      domain: 'schngn.com',
+      autoCapturePageviews: false,
+      captureOnLocalhost: false,
+      formSubmissions: false,
+      outboundLinks: false,
+      fileDownloads: false,
+      bindToWindow: true
+    });
+    const transformRequest = capturedConfig?.transformRequest as ((payload: Record<string, unknown>) => Record<string, unknown> | null) | undefined;
+    expect(transformRequest).toBeFunction();
+    expect(
+      transformRequest?.({
+        n: 'trip_added',
+        u: 'https://schngn.com/app?entryDate=2026-09-15#private',
+        d: 'untrusted.example',
+        r: 'https://referrer.example/private',
+        p: { source: 'trip_form', trip_count_bucket: '2-3' }
+      })
+    ).toEqual({
+      n: 'trip_added',
+      u: 'https://schngn.com/app',
+      d: 'schngn.com',
+      p: { source: 'trip_form', trip_count_bucket: '2-3' }
+    });
+    expect(transformRequest?.({ n: 'engagement', u: 'https://schngn.com/app', d: 'schngn.com' })).toBeNull();
+    expect(
+      transformRequest?.({
+        n: 'trip_added',
+        u: 'https://schngn.com/app',
+        d: 'schngn.com',
+        p: { source: 'not-allowlisted' }
+      })
+    ).toBeNull();
+
+    let previewInitCalled = false;
+    const previewWindow = { location: new URL('https://preview.schngn.pages.dev/app') } as unknown as Window;
+    expect(
+      await initializePlausibleAnalytics(previewWindow, async () => {
+        previewInitCalled = true;
+        return { init() {} };
+      })
+    ).toBe('disabled');
+    expect(previewInitCalled).toBe(false);
+  });
+
+  test('does not replace an injected Plausible test interceptor', async () => {
+    const intercepted = (() => undefined) as (name: string) => void;
+    const targetWindow = {
+      location: new URL('https://schngn.com/app'),
+      plausible: intercepted
+    } as unknown as Window;
+    let initCalled = false;
+
+    expect(
+      await initializePlausibleAnalytics(targetWindow, async () => {
+        initCalled = true;
+        return { init() {} };
+      })
+    ).toBe('intercepted');
+    expect(initCalled).toBe(false);
+    expect((targetWindow as Window & { plausible?: unknown }).plausible).toBe(intercepted);
   });
 });

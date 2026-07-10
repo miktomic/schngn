@@ -1,18 +1,20 @@
-# Cloudflare + GitHub Secrets Setup
+# Cloudflare, Clerk + GitHub Configuration
 
 Production domain: `https://schngn.com`  
 Worker name: `schngn-web`  
 Wrangler config: `apps/web/wrangler.jsonc`
 
-This project keeps deployment simple for MVP: Cloudflare deployment credentials live in GitHub Actions secrets/variables, not Infisical.
+This project keeps deployment simple: Cloudflare deployment credentials and Clerk runtime bindings live in the GitHub `production` Environment, not Infisical or the repository.
+
+Use this file for credential setup and [`docs/production-readiness.md`](production-readiness.md) for the authoritative release gate and provider verification sequence.
 
 ## Current decision
 
-Use GitHub Environment `production` for deployment credentials.
+Use GitHub Environment `production` for deployment credentials and Clerk configuration.
 
 Why:
 
-- The Cloudflare deploy token is only needed by GitHub Actions.
+- The Cloudflare deploy token and Clerk server secrets are only needed by GitHub Actions/Workers.
 - GitHub Environment secrets are simple and can later get protection rules/approval gates.
 - Infisical remains the upgrade path for centralized rotation/audit or multiple consumers.
 
@@ -23,18 +25,19 @@ Before CI can deploy:
 1. `schngn.com` must be an active Cloudflare zone.
 2. Registrar nameservers must point to Cloudflare.
 3. The repo must have a GitHub Environment named `production`.
-4. The `production` environment must contain Cloudflare deployment credentials.
+4. The `production` environment must contain Cloudflare deployment credentials and all three Clerk bindings.
 5. `apps/web/wrangler.jsonc` must include the custom domain route.
 
 Current route config:
 
 ```jsonc
 "routes": [
-  { "pattern": "schngn.com", "custom_domain": true }
+  { "pattern": "schngn.com", "custom_domain": true },
+  { "pattern": "www.schngn.com", "custom_domain": true }
 ]
 ```
 
-Cloudflare Custom Domains require an exact hostname match. `schngn.com` does not automatically cover `www.schngn.com`. Add `www` later only after deciding whether to redirect it to apex or serve it as a second custom domain.
+Cloudflare Custom Domains require an exact hostname match. The deploy workflow provisions/repairs the `www` DNS record and an HTTP 308 ruleset redirect to the apex.
 
 ## GitHub values to create
 
@@ -50,6 +53,9 @@ Create:
 |---|---|---|
 | `CLOUDFLARE_API_TOKEN` | Environment secret | Cloudflare API token value |
 | `CLOUDFLARE_ACCOUNT_ID` | Environment variable preferred; secret also works | Cloudflare account ID |
+| `PUBLIC_CLERK_PUBLISHABLE_KEY` | Environment variable | Clerk publishable key; intentionally browser-visible |
+| `CLERK_SECRET_KEY` | Environment secret | Clerk server key |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Environment secret | Clerk endpoint signing secret for `/api/webhooks/clerk` |
 
 The workflow accepts account ID from either environment variable or secret:
 
@@ -57,7 +63,7 @@ The workflow accepts account ID from either environment variable or secret:
 CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
-If GitHub UI feels annoying, storing both as **environment secrets** is fine. Account ID is not really secret, but keeping both in one place is acceptable for MVP. We are not building a bank; we are trying not to build a spreadsheet with delusions.
+Keep `PUBLIC_CLERK_PUBLISHABLE_KEY` as a variable because it is part of the browser client configuration. Keep both other Clerk values as secrets. The account feature must not deploy until `CLERK_WEBHOOK_SIGNING_SECRET` has been created from the production Clerk webhook endpoint and added here.
 
 ## Cloudflare API token setup
 
@@ -83,7 +89,10 @@ Use these permissions for the CI deploy token:
 |---|---|---|---|
 | Account | Account Settings | Read | Wrangler/account lookup |
 | Account | Workers Scripts | Edit | Create/update `schngn-web` Worker and static assets |
+| Account | D1 | Edit | Provision the waitlist database and apply migrations |
 | Zone | Workers Routes | Edit | Attach custom domain route `schngn.com` |
+| Zone | DNS | Edit | Create/repair the proxied `www` record |
+| Zone | Rulesets | Edit | Create/repair the canonical HTTP 308 redirect |
 
 Scope resources:
 
@@ -92,14 +101,11 @@ Scope resources:
 | Account resources | Only the account that owns `schngn.com` |
 | Zone resources | Only `schngn.com` zone, if Cloudflare UI allows; otherwise all zones in that account as a fallback |
 
-### Add only when needed
+### Do not add without a feature need
 
 | Permission | Add when |
 |---|---|
-| Account → Workers KV Storage → Edit | We enable KV-backed waitlist storage |
-| Account → D1 → Edit | We choose D1 instead of KV for waitlist |
 | Account → Workers R2 Storage → Edit | Only if we add R2; not needed now |
-| Zone → DNS → Edit | Only if initial custom-domain creation fails because the token cannot create/update DNS records; prefer one-time dashboard setup first |
 
 Do **not** use the global Cloudflare API key.
 
@@ -151,6 +157,9 @@ Add:
 ```text
 CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
+PUBLIC_CLERK_PUBLISHABLE_KEY
+CLERK_SECRET_KEY
+CLERK_WEBHOOK_SIGNING_SECRET
 ```
 
 Optional but recommended:
@@ -158,7 +167,28 @@ Optional but recommended:
 - Add deployment branch rule: `main` only.
 - Later, add required reviewers if deploys should be manually approved.
 
-### 5. Test deploy locally without exposing secrets
+### 5. Configure Clerk production
+
+In the Clerk production instance:
+
+1. Confirm `schngn.com` is the production application domain and the allowed redirect/origin settings match the deployed routes.
+2. Create the endpoint `https://schngn.com/api/webhooks/clerk`.
+3. Subscribe it to `user.deleted`, the lifecycle event handled for D1 cleanup.
+4. Copy the generated signing secret directly into the GitHub `production` Environment as `CLERK_WEBHOOK_SIGNING_SECRET`. Do not paste it into chat, docs, terminal commands, or the repository.
+
+Clerk remains the identity source. Do not create a duplicate D1 user profile merely to mirror email/name fields. D1 application data is keyed by the Clerk user ID derived from the verified server session, never a client-supplied owner.
+
+### 6. Test locally without exposing secrets
+
+For local Clerk development, place development-instance values in ignored `apps/web/.env.local` or `apps/web/.dev.vars`. Use names only matching the production bindings:
+
+```dotenv
+PUBLIC_CLERK_PUBLISHABLE_KEY=replace-with-development-value
+CLERK_SECRET_KEY=replace-with-development-value
+CLERK_WEBHOOK_SIGNING_SECRET=replace-with-development-value
+```
+
+Both `.env*` and `.dev.vars*` are ignored. Never use production keys in a committed example file.
 
 If locally authenticated with `wrangler login`, test:
 
@@ -177,7 +207,7 @@ bun run deploy
 
 Only do real deploys from a clean working tree.
 
-### 6. Test GitHub deploy
+### 7. Test GitHub deploy
 
 Push to `main` after CI is configured.
 
@@ -186,9 +216,17 @@ Expected pipeline:
 ```text
 test-build passes
   ↓
-deploy-production runs on main
+permission-restricted runner file is created from GitHub Clerk values
   ↓
-Wrangler deploys schngn-web
+inactive version upload provisions the D1 binding and required Clerk bindings
+  ↓
+D1 migrations apply
+  ↓
+Wrangler deploys schngn-web to active traffic with the same required bindings
+  ↓
+temporary runner file is removed even if upload/deploy fails
+  ↓
+www DNS/redirect configuration and blocking smoke pass
   ↓
 https://schngn.com serves the app
 ```
@@ -200,6 +238,7 @@ Check:
 ```bash
 curl -I https://schngn.com/
 curl -I https://schngn.com/app
+curl -I https://www.schngn.com/
 ```
 
 Expected:
@@ -207,13 +246,23 @@ Expected:
 - HTTP 200 or appropriate Cloudflare response.
 - TLS certificate valid.
 - `/app` loads the SvelteKit app shell.
+- `www` redirects to the apex with path/query preserved.
+- `/api/waitlist` reports real D1 persistence during production smoke.
+- A guest creates no account trip requests and remains local-only.
+- The automated production smoke confirms anonymous account GET/PUT/DELETE requests return `401 authentication_required` with `cache-control: no-store`.
+- A signed-in user can consent to sync, reload their own data, export it, and delete it.
+- A signed-in user cannot read/write another account by changing request fields; ownership comes from the verified Clerk session.
+- The Clerk deletion webhook is signature-verified and removes the matching D1 account data idempotently.
 
 Browser checks:
 
 - Open `https://schngn.com/`.
 - Open `https://schngn.com/app`.
 - Check browser console for JS errors.
-- Confirm no trip data appears in network payloads once analytics are added.
+- Confirm Plausible aggregate events arrive without trip dates, labels, email, or calculated timelines.
+- Confirm Cloudflare logs contain no trip dates, labels, histories, account email, or Clerk user IDs.
+
+The signed-in checks require a controlled production test account and synthetic trips; they are not performed by the unauthenticated CI smoke. Delete the test account/application rows after verification.
 
 ## Current workflow behavior
 
@@ -225,10 +274,14 @@ Workflow file:
 
 Important details:
 
-- Pull requests run test/typecheck/build only.
-- Pushes to `main` run test/typecheck/build, then deploy.
+- Pull requests run unit/privacy tests, typecheck, build, and Playwright mobile Chromium.
+- Pushes to `main` run the same gates, then an inactive upload with ephemeral Clerk bindings, D1 migrations, active deploy with those bindings, guaranteed temporary-file cleanup, canonical redirect setup, and blocking production smoke.
 - Deploy job is attached to environment `production`.
+- Job scope receives only a non-secret configured/not-configured gate. Cloudflare credential values are exposed only to the upload, migration, deploy, and redirect steps that require them; public production smoke keeps only the non-secret gate and base URL behavior.
+- External actions use audited full commit SHAs with release-version comments, so an upstream moving tag cannot silently change the workflow.
+- Cleanup always removes the fixed `RUNNER_TEMP/schngn-worker-bindings.json` path and does not rely on a previous step output.
 - If Cloudflare credentials are absent, deploy is skipped with a clear message.
+- If Cloudflare deployment is enabled but any required Clerk binding is missing, deployment fails before provisioning.
 
 ## If deploy fails
 
@@ -241,7 +294,12 @@ Common failure modes:
 | Cannot create/update Worker | Token lacks Workers Scripts Edit | Add Account → Workers Scripts → Edit |
 | Cannot attach `schngn.com` | Token lacks Workers Routes Edit or domain is not active zone | Add Zone → Workers Routes → Edit; verify `schngn.com` zone is active |
 | DNS/custom domain creation error | Token/zone cannot create needed DNS/cert resources | Add custom domain once in dashboard or temporarily grant needed DNS permission |
-| KV binding deploy fails later | Token lacks KV permission or namespace ID missing | Add Workers KV Storage Edit and configure namespace |
+| D1 provisioning/migration fails | Token lacks D1 permission or the migration is invalid | Add Account → D1 → Edit; verify locally with `bun run d1:migrate:local` |
+| `www` setup fails | Token lacks DNS/Rulesets permission | Grant zone-scoped DNS and Rulesets Edit, then rerun the idempotent setup script |
+| Production smoke reports `stored=false` | D1 binding/schema is missing | Confirm inactive provisioning and remote migration steps completed before deploy |
+| Missing required Clerk binding | One of the three GitHub production values is absent | Add the named variable/secret; do not weaken `secrets.required` |
+| Clerk webhook returns unauthorized | Wrong endpoint signing secret or unverified request | Recreate/rotate the endpoint secret in Clerk and update only the GitHub environment secret |
+| Signed-in sync returns unauthorized | Clerk domain/session configuration mismatch | Check the production domain, allowed origins/redirects, cookie scope, and Worker secret |
 
 ## Infisical later
 

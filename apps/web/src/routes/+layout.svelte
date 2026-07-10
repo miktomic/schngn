@@ -1,9 +1,19 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { afterNavigate } from '$app/navigation';
+  import { initializePlausibleAnalytics } from '$lib/analytics/plausibleClient';
+  import { trackAnalyticsEvent } from '$lib/analytics/privacyAnalytics';
   import { onMount } from 'svelte';
   import '../app.css';
 
   let { children } = $props();
+
+  if (browser) void initializePlausibleAnalytics(window);
+
+  afterNavigate(({ to }) => {
+    if (to?.url.pathname === '/') trackAnalyticsEvent('page_view', { source: 'landing' });
+    if (to?.url.pathname === '/accuracy') trackAnalyticsEvent('page_view', { source: 'accuracy' });
+  });
 
   onMount(() => {
     if (!browser || !('serviceWorker' in navigator)) return;
@@ -49,15 +59,63 @@
   }
 
   function collectShellUrls(): string[] {
-    const urls = new Set(['/', '/app', '/accuracy', '/manifest.json', '/favicon.svg', location.pathname]);
+    const urls = new Set<string>();
+    const candidates = ['/', '/app', '/accuracy', '/manifest.json', '/favicon.ico', '/favicon.png', location.pathname];
+
+    for (const candidate of candidates) {
+      const url = new URL(candidate, location.origin);
+      if (isSafeShellUrl(url)) urls.add(`${url.pathname}${url.search}`);
+    }
 
     for (const entry of performance.getEntriesByType('resource')) {
       const resource = entry as PerformanceResourceTiming;
       const url = new URL(resource.name);
-      if (url.origin === location.origin) urls.add(`${url.pathname}${url.search}`);
+      if (isSafeShellUrl(url)) urls.add(`${url.pathname}${url.search}`);
     }
 
     return [...urls];
+  }
+
+  function isSafeShellUrl(url: URL): boolean {
+    if (url.origin !== location.origin || url.hash) return false;
+    if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return false;
+
+    const safeNavigationPaths = new Set(['/', '/app', '/accuracy']);
+    const safeStaticPaths = new Set([
+      '/manifest.json',
+      '/favicon.ico',
+      '/favicon.png',
+      '/robots.txt',
+      '/sitemap.xml',
+      '/service-worker.js'
+    ]);
+
+    const isProductionShellAsset =
+      safeNavigationPaths.has(url.pathname) ||
+      safeStaticPaths.has(url.pathname) ||
+      url.pathname.startsWith('/_app/') ||
+      url.pathname.startsWith('/brand/') ||
+      url.pathname.startsWith('/icons/');
+    if (isProductionShellAsset) return url.search === '';
+
+    const isLocalDevelopment = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+    const safeLocalDevPrefixes = [
+      '/@vite/',
+      '/@id/',
+      '/@fs/',
+      '/.svelte-kit/',
+      '/node_modules/.vite/',
+      '/src/'
+    ];
+    const isLocalDevAsset =
+      isLocalDevelopment && safeLocalDevPrefixes.some((prefix) => url.pathname.startsWith(prefix));
+    const hasSafeLocalDevSearch =
+      url.search === '' ||
+      /^\?v=[a-z0-9_-]+$/i.test(url.search) ||
+      /^\?t=\d+$/.test(url.search) ||
+      url.search === '?svelte&type=style&lang.css';
+
+    return isLocalDevAsset && hasSafeLocalDevSearch;
   }
 
   function cacheShellUrls(worker: ServiceWorker, urls: string[]): Promise<void> {

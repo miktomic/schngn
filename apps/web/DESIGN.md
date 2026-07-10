@@ -16,7 +16,8 @@ colors:
   whatif-bg: "#FFF1D6"
   risk: "#A8322A"
   risk-bg: "#FDE8E4"
-  star-gold: "#C8A74E"
+  brand-blue: "#02338B"
+  brand-yellow: "#FFD400"
 typography:
   display:
     fontFamily: "Source Sans 3, ui-sans-serif, system-ui, sans-serif"
@@ -111,7 +112,7 @@ The interface should keep the verdict dominant and the proof inspectable. Defaul
 **Key Characteristics:**
 
 - Paper-and-ink surface language.
-- EU-stars-inspired Schengen constellation mark.
+- Approved cobalt SCHNGN wordmark with euro-and-stars mark and calendar detail.
 - Plain-language verdicts with visible calculation evidence.
 - Semantic state colors for safe, booked, what-if, and risk.
 - Monospace only for dates, ratios, ticks, and ledger annotations.
@@ -124,7 +125,7 @@ The palette is warm-neutral paper with dark green-black ink and restrained seman
 ### Primary
 
 - **Ink** (`#10231F`): Primary text, wordmark, high-emphasis CTA backgrounds, and proof-ledger strokes. Use it when the interface needs authority.
-- **Star Gold** (`#C8A74E`): Logo-only star accent for the EU-stars-inspired mark. Do not use it as a status color or generic decoration.
+- **Brand Blue** (`#02338B`) and **Brand Yellow** (`#FFD400`): colors sampled from the approved supplied artwork. Keep them inside the logo assets unless a later palette decision explicitly promotes them into interface tokens.
 - **Safe Green** (`#0F6B4F`): Safe verdicts, local/private status, positive count states, and return-day indicators.
 
 ### Secondary
@@ -223,19 +224,20 @@ SCHNGN is flat by default. Depth comes from paper layers, borders, spacing, and 
 
 ### Logo / Mark
 
-The preferred logo direction is an **EU-stars-inspired Schengen constellation** paired with the SCHNGN wordmark.
+The production identity is the supplied cobalt **SCHNGN wordmark** with the euro-and-stars glyph and calendar detail.
 
-- Use a ring, arc, or partial orbit of small star points to evoke Europe and the Schengen zone.
-- Integrate the star structure with the product's core mental model: a rolling 180-day window, timeline frame, or day-count orbit.
-- Use Ink for the wordmark and Star Gold only for the stars or a tiny accent.
-- The mark must work in one color, at 32px, and as a PWA icon.
-- It must not copy the official EU flag: no cobalt rectangle, no exact institutional emblem lockup, no official-looking seal, and no implication that SCHNGN is an EU service.
+- Canonical wordmark: `static/brand/schngn-wordmark.png`.
+- Browser favicon: `static/favicon.png` and `static/favicon.ico`.
+- Install icons: `static/icons/`, with separate `any` and `maskable` manifest entries.
+- Use the shared `SchngnLogo.svelte` component instead of recreating the wordmark with CSS or text.
+- Keep the supplied geometry, gradients, colors, and calendar detail intact. Derivatives may only crop, resize, normalize the background, or change file format.
+- The identity is a private product mark. It must never be presented as an EU seal, certification, or endorsement.
 
 ### Navigation
 
-- **Style:** Minimal top bar with SCHNGN wordmark, EU-stars-inspired mark, and local/private status. Avoid a full marketing nav inside the app shell.
+- **Style:** Minimal top bar with the approved SCHNGN wordmark and local/private status. Avoid a full marketing nav inside the app shell.
 - **Mobile:** Keep header compact. The answer card must appear without a long preamble.
-- **Brand:** Use the Schengen constellation mark plus SCHNGN wordmark once the mark is finalized.
+- **Brand:** Use the approved shared wordmark component at its documented responsive size.
 
 ### Rolling Window Timeline
 
@@ -269,7 +271,7 @@ The answer card is the money-shot component.
 - **Do** use amber for what-if and blue for booked trips.
 - **Do** keep risk panels specific: days over, cause, and first fix.
 - **Do** preserve the Tufte evidence-ledger feeling in explanation and report surfaces.
-- **Do** use the EU-stars-inspired Schengen constellation mark as the preferred logo direction, then manually refine the wordmark later.
+- **Do** use the supplied production wordmark and euro-star favicon derivatives without redrawing them.
 - **Do** label committed travel as "Booked trip counted" or "Booked, counted" where space is tight.
 
 ### Don't:

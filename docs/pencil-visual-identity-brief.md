@@ -1,5 +1,7 @@
 # SCHNGN visual identity and design system brief
 
+> Historical identity brief. DEC-11 superseded its logo exploration on 2026-07-10 with the supplied production wordmark and euro-star favicon artwork.
+
 ## Objective
 
 Use Pencil to define the SCHNGN visual identity before building every product screen. The user likes the existing `tufte-evidence-ledger` direction. Preserve its evidence-rich trust while making the system warm enough for consumer mobile use.

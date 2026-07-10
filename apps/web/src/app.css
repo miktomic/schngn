@@ -21,6 +21,7 @@
   --ink: #10231f;
   --muted: #4f5f59;
   --line: #c8d1c8;
+  --control-line: #718079;
   --safe: #0f6b4f;
   --safe-bg: #dff1e9;
   --booked: #1f5f9f;
@@ -29,7 +30,6 @@
   --whatif-bg: #fff1d6;
   --risk: #a8322a;
   --risk-bg: #fde8e4;
-  --star-gold: #c8a74e;
   --past: #636963;
 }
 
@@ -41,11 +41,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    linear-gradient(90deg, rgb(16 35 31 / 0.025) 1px, transparent 1px),
-    linear-gradient(180deg, rgb(16 35 31 / 0.025) 1px, transparent 1px),
-    var(--paper);
-  background-size: 32px 32px;
+  background: var(--paper);
 }
 
 * {
@@ -61,6 +57,7 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 a {
@@ -70,6 +67,23 @@ a {
 :focus-visible {
   outline: 3px solid var(--safe);
   outline-offset: 3px;
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 ::selection {

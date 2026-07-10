@@ -1,7 +1,7 @@
 # SCHNGN MVP Implementation Kanban
 
 > Source: Schengen Tracker MVP Product Backlog pasted into Hermes on 2026-07-08.
-> Scope: **Option B Web/PWA MVP** — no login, local-only storage, provably-correct engine, free calculator + fake-door paid unlock.
+> Scope: **Option B Web/PWA** — the original no-login/local-only MVP is complete; optional Clerk accounts and authenticated sync are an explicit approved scope change.
 
 ## Board policy
 
@@ -103,7 +103,7 @@
   - Edit/delete re-sorts list and recalculates immediately.
 - **Verification:** `npx -y bun@1.3.14 run check` passed with 75 Bun tests / 1124 assertions; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium add/edit/delete/validation and privacy-network coverage.
 
-## US-05 — Local-only persistence, no account
+## US-05 — Guest local-only persistence, original no-account scope
 
 - **Priority:** Must
 - **Estimate:** M
@@ -263,7 +263,7 @@
   - Submit button remains disabled until email + consent are present.
   - Endpoint accepts only normalized email, consent/version, source, and optional price bucket.
   - Endpoint rejects missing consent, invalid source, and invalid price bucket values.
-  - Endpoint ignores trip dates/history/calculation payload fields and stores no trip data.
+  - Endpoint rejects unknown fields, including trip dates/history/calculation payload fields, and stores no trip data.
   - If `DB` is not bound yet, endpoint returns `202` accepted with `stored: false` instead of attempting unsafe storage.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 114 Bun tests / 1279 assertions including D1 insert-shape, consent-required, invalid-source/bucket rejection, and unbound fallback tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for email-only waitlist submit, consent gating, confirmation, `waitlist_signup`, and no trip-date/label leakage.
 
@@ -293,7 +293,7 @@
 - **Depends on:** US-01 EC-parity suite, approved public `/accuracy` page decision, and official-source references; see `docs/product-decisions.md`.
 - **Implementation target:** trust claim and `/accuracy` validation evidence page.
 - **Acceptance summary:**
-  - “Validated against the European Commission official short-stay calculator” with link.
+  - Transparent evidence wording for deterministic rule fixtures, boundary cases, and the independent oracle, with a separate link to the European Commission calculator for comparison.
   - Public `/accuracy` page with curated test cases.
   - No unsafe “certified,” “approved,” or guaranteed-entry language except explicit non-endorsement copy.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 120 Bun tests / 1310 assertions including `/accuracy` source tests for official-source framing, curated cases, landing evidence link, and unsafe-language rejection; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for `/accuracy`, the EC calculator link, safe trust copy, and no forbidden network payloads.
@@ -320,7 +320,8 @@
 - **Implementation target:** repeatable production smoke script/checklist and privacy-safe operational monitoring using Cloudflare logs/smoke tests first.
 - **Acceptance summary:**
   - `bun run smoke:production` verifies `https://schngn.com/`, `/app`, `/accuracy`, `/manifest.json`, `/service-worker.js`, `/robots.txt`, and `/sitemap.xml` return healthy responses.
-  - Smoke script submits only a generated `smoke+...@schngn.invalid` waitlist email request and rejects trip-date/history fields in the smoke payload.
+  - Smoke script submits only the deterministic `production-smoke@schngn.invalid` waitlist email request and rejects trip-date/history fields in the smoke payload.
+  - Smoke script verifies anonymous account GET/empty-trip PUT/DELETE requests return `401 authentication_required` with no-store caching; signed-in account sync remains a controlled manual production check.
   - GitHub Actions runs production smoke checks after successful Cloudflare deploy.
   - Post-deploy runbook covers privacy-safe payload inspection, no-Sentry MVP operations, Cloudflare logs, failure handling, rollback notes, and `www` DNS warning behavior.
 - **Verification:** `npx -y bun@1.3.14 test apps/web/tests/post-deploy-smoke.test.ts` passed; `node scripts/post-deploy-smoke.mjs` passed against production with 8 checks and 1 known `www.schngn.com` DNS warning.
@@ -354,22 +355,44 @@ These decisions were approved on 2026-07-09 and recorded in `docs/product-decisi
 - **Production error monitoring:** no Sentry for MVP launch; use Cloudflare logs + smoke tests first.
 - **`www` domain policy:** redirect `www.schngn.com` to `https://schngn.com`.
 - **Ad test angle:** UK second-home owners and frequent EU travelers post-Brexit.
+- **Optional accounts:** Clerk for identity, with explicitly consented authenticated D1 sync keyed by the verified Clerk user ID.
 
 ---
 
-# Done
+# Current state
 
-No implementation cards are done yet. Product decision cards were completed in the Hermes Kanban board and recorded above / in `docs/product-decisions.md`. Correctly boring distinction: decisions are not shipped product.
+The original MVP implementation cards above have shipped code and automated coverage. Production-readiness hardening is tracked separately because a green feature card is not proof that provider configuration, live telemetry, or every adversarial input is safe.
 
 ---
 
-# Won't in MVP — scope guardrail
+# Optional accounts and authenticated sync — approved scope change
+
+## US-22 — Optional Clerk account and consented trip sync
+
+- **Priority:** Must for the account expansion; does not block guest calculator use
+- **Estimate:** L
+- **Status:** In progress
+- **Depends on:** US-04, US-05, US-06, US-19, DEC-10
+- **Implementation target:** optional Clerk authentication plus Cloudflare D1 storage for users who sign up and explicitly consent to sync.
+- **Acceptance summary:**
+  - The app remains fully usable without signup; guest trips remain local-only and never enter a server request.
+  - Signup/sign-in does not upload existing local trips until the signed-in user gives explicit consent.
+  - Clerk is the identity source of truth; D1 application data is keyed by the server-verified Clerk user ID.
+  - No endpoint accepts a client-supplied owner. Every account read/write/export/deletion is scoped from the verified session.
+  - Account storage and the email-only waitlist use separate tables and consent purposes.
+  - Signed-in users can export and delete their application data; a verified Clerk deletion webhook provides cleanup fallback.
+  - Sign-out isolates or removes synchronized local cache data on shared devices.
+  - No trip dates, history, labels, calculated timelines, Clerk user IDs, or email enter analytics or operational logs.
+- **Release gate:** repository tests must prove authorization isolation, no-consent/no-upload behavior, guest network silence, strict schemas, webhook verification/idempotency, export/deletion ownership, migration safety, and browser privacy behavior. Live production also requires Clerk domain/redirect configuration and a verified webhook signing secret.
+
+---
+
+# Still excluded — scope guardrail
 
 These are explicitly excluded from MVP. Do not pull them into active work unless the validation gate changes the strategy.
 
 | Item | Why deferred |
 |---|---|
-| User accounts / login / cloud sync | Adds GDPR, backend, support burden before validation |
 | Native iOS / Android apps | Store cut, review delays, high maintenance; reward for validation |
 | Email / flight / calendar parsing | High complexity, privacy risk, breakage risk |
 | AI-generated legal explanations | Liability risk; copy must be fixed and human-reviewed |
@@ -380,24 +403,16 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 
 ---
 
-# Remaining pull order
+# Production hardening pull order
 
-US-01, US-02, US-03, US-19, US-04, US-05, and US-06 are done. Use this order unless a dependency or decision changes:
+1. Result integrity: controlled country input, empty first-run state, semantically validated local data, and simulations that protect future booked trips.
+2. Truthful evidence UI: data-driven timeline, proof, risk, and returning-days states.
+3. Live validation plumbing: Plausible loader plus D1 schema/binding/migration and strict email-only requests.
+4. Release gates: Playwright, accessibility, privacy payload, type, build, and post-deploy storage checks in CI.
+5. Account expansion: optional Clerk authentication, explicit sync consent, server-derived ownership, D1 data isolation, export/deletion, and lifecycle webhook cleanup.
+6. External closeout: provider account setup, least-privilege credentials, migration application, `www` verification, Clerk domain/webhook verification, and a live privacy audit.
 
-1. US-07 — Dashboard money-shot
-2. US-09 — Future-trip simulator
-3. US-08 — Days-coming-back visualization
-4. US-10 — Disclaimers
-5. US-11 — Plain-language explanations
-6. US-15 — Privacy-safe analytics
-7. US-13 — PDF/export fake-door
-8. US-14 — Paid unlock fake-door
-9. US-18 — Waitlist / email capture
-10. US-16 — Public `/accuracy` page
-11. US-12 — PWA/offline install
-12. US-17 — Launch landing page / SEO
-13. US-20 — Post-deploy production smoke
-14. US-21 — `www` redirect to apex
+The authoritative operational checklist is `docs/production-readiness.md`.
 
 # Suggested GitHub issue labels
 

@@ -114,25 +114,25 @@
       <rect class="box ci" x="68" y="104" width="240" height="64" /><text x="88" y="130">GitHub repo</text><text class="small" x="88" y="150">miktomic/schngn</text>
       <rect class="box ci" x="68" y="204" width="240" height="74" /><text x="88" y="230">Node 24 + Bun 1.3.14</text><text class="small" x="88" y="250">install → test → typecheck → build</text>
       <rect class="box ci" x="68" y="312" width="240" height="74" /><text x="88" y="338">Correctness gates</text><text class="small" x="88" y="358">engine tests + Svelte/TS + build</text>
-      <rect class="box ci" x="68" y="404" width="240" height="54" /><text x="88" y="428">wrangler deploy</text><text class="small" x="88" y="448">production env secrets</text>
+      <rect class="box ci" x="68" y="404" width="240" height="54" /><text x="88" y="428">inactive → migrate → deploy</text><text class="small" x="88" y="448">ephemeral Clerk bindings</text>
 
       <rect class="box cf" x="466" y="104" width="260" height="64" /><text x="486" y="130">schngn.com</text><text class="small" x="486" y="150">custom domain</text>
       <rect class="box cf" x="466" y="204" width="260" height="74" /><text x="486" y="230">Worker: schngn-web</text><text class="small" x="486" y="250">workerd V8 isolate; not Node/Bun</text>
       <rect class="box cf" x="450" y="318" width="166" height="74" /><text x="470" y="344">Static Assets</text><text class="small" x="470" y="364">SvelteKit/Vite output</text>
-      <rect class="box cf" x="632" y="318" width="128" height="74" /><text x="650" y="344">/api/waitlist</text><text class="small" x="650" y="364">email only</text>
-      <rect class="box data" x="540" y="424" width="210" height="54" /><text x="560" y="448">Optional KV / D1</text><text class="small" x="560" y="466">waitlist email only</text>
+      <rect class="box cf" x="632" y="318" width="128" height="74" /><text x="650" y="344">Worker APIs</text><text class="small" x="650" y="364">waitlist + account</text>
+      <rect class="box data" x="540" y="424" width="210" height="54" /><text x="560" y="448">Cloudflare D1</text><text class="small" x="560" y="466">separate waitlist/account rows</text>
 
       <rect class="box browser" x="900" y="104" width="240" height="74" /><text x="920" y="130">Svelte UI</text><text class="small" x="920" y="150">landing + app shell</text>
       <rect class="box browser" x="900" y="218" width="240" height="74" /><text x="920" y="244">@schngn/engine</text><text class="small" x="920" y="264">pure TS 90/180 calculator</text>
       <rect class="box data" x="884" y="328" width="140" height="74" /><text x="902" y="354">Local storage</text><text class="small" x="902" y="374">trip dates + scenarios</text>
       <rect class="box browser" x="1044" y="328" width="126" height="74" /><text x="1060" y="354">Import/export</text><text class="small" x="1060" y="374">local JSON files</text>
-      <rect class="box privacy" x="850" y="522" width="338" height="72" /><text x="872" y="548">Privacy boundary</text><text class="small" x="872" y="568">no server-side trip persistence</text>
+      <rect class="box privacy" x="850" y="522" width="338" height="72" /><text x="872" y="548">Privacy boundary</text><text class="small" x="872" y="568">guest local-only; account sync needs consent</text>
     </svg>
   </main>
 
   <section class="cards">
     <article class="card"><h2>Safety-critical core</h2><p>The 90/180 calculation engine is isolated in <code>packages/engine</code> and must be tested before UI polish outruns correctness.</p></article>
-    <article class="card"><h2>Privacy boundary</h2><p>Trip dates and scenarios stay in browser storage. The server path is email-only waitlist/fake-door validation.</p></article>
+    <article class="card"><h2>Privacy boundary</h2><p>Guest trips stay in browser storage. Optional Clerk accounts sync to separate D1 rows only after explicit consent; trip data never enters analytics or logs.</p></article>
     <article class="card"><h2>Runtime boundary</h2><p>Bun and Node 24 are tooling. Production is Cloudflare <code>workerd</code> plus static assets; deployed code avoids Bun-native APIs.</p></article>
   </section>
 </body>

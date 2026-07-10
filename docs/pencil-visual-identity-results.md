@@ -1,5 +1,7 @@
 # SCHNGN Pencil visual identity results
 
+> Historical design provenance. DEC-11 superseded the constellation-mark direction on 2026-07-10 with the supplied production wordmark and euro-star favicon artwork.
+
 Generated with Pencil CLI 0.2.8 using the Codex agent/model path (`gpt-5.5`) on 2026-07-09.
 
 ## Artifacts

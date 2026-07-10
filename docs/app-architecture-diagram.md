@@ -1,14 +1,14 @@
 # SCHNGN App Architecture Diagram
 
-This diagram captures the current SCHNGN MVP architecture: local-first browser app, pure calculation engine, tiny Cloudflare Worker surface, and GitHub Actions deployment pipeline.
+This diagram captures SCHNGN’s local-first browser app, optional Clerk accounts, consented authenticated D1 sync, pure calculation engine, and GitHub Actions deployment pipeline.
 
 ```mermaid
 flowchart TB
   subgraph CI["CI/CD — GitHub Actions"]
     Repo["GitHub repo\nmiktomic/schngn"]
     Toolchain["Node 24 + Bun 1.3.14\ninstall → test → typecheck → build"]
-    Gates["Correctness gates\nengine tests + Svelte/TS check + Cloudflare build"]
-    Deploy["wrangler deploy\nGitHub production env secrets"]
+    Gates["Release gates\nunit + privacy + browser + typecheck + build"]
+    Deploy["inactive upload → migrate → active deploy\nephemeral Clerk bindings"]
     Repo --> Toolchain --> Gates --> Deploy
   end
 
@@ -16,12 +16,18 @@ flowchart TB
     Domain["schngn.com\ncustom domain"]
     Worker["Worker: schngn-web\nworkerd V8 isolate"]
     Assets["Workers Static Assets\nSvelteKit output"]
-    Waitlist["/api/waitlist\nemail-only dynamic route"]
-    Store[("Optional KV / D1 / provider\nwaitlist email only")]
+    Waitlist["/api/waitlist\nseparate email-only route"]
+    AccountApi["/api/account + /trips\nauthenticated sync/export/deletion"]
+    Webhook["/api/webhooks/clerk\nsigned lifecycle cleanup"]
+    Store[("Cloudflare D1\nseparate waitlist + account tables")]
     Domain --> Worker
     Worker --> Assets
     Worker --> Waitlist
-    Waitlist -. future binding .-> Store
+    Worker --> AccountApi
+    Worker --> Webhook
+    Waitlist --> Store
+    AccountApi --> Store
+    Webhook --> Store
   end
 
   subgraph Browser["Traveler browser / PWA"]
@@ -29,15 +35,23 @@ flowchart TB
     Engine["@schngn/engine\npure TypeScript 90/180 calculator"]
     Local[("Local Storage / IndexedDB\ntrip dates + scenarios")]
     Export["JSON import/export\nlocal files only"]
+    Consent["Optional signup +\nexplicit sync consent"]
     UI --> Engine
     UI <--> Local
     UI --> Export
+    UI --> Consent
   end
+
+  Clerk["Clerk\nidentity + verified sessions"]
 
   Deploy --> Worker
   Assets --> UI
   UI -- "explicit waitlist signup: email only" --> Waitlist
-  Local -. "trip dates never leave browser" .-> Privacy["Privacy boundary\nno server-side trip persistence"]
+  Consent --> Clerk
+  Clerk --> AccountApi
+  Clerk --> Webhook
+  Consent -- "signed-in trip sync" --> AccountApi
+  Local -. "guest trips never leave browser" .-> Privacy["Privacy boundary\nno anonymous trip persistence\nno trip analytics/logging"]
   Privacy -. blocks .-> Waitlist
 
   classDef ci fill:#eff6ff,stroke:#2563eb,color:#0f172a
@@ -46,8 +60,8 @@ flowchart TB
   classDef data fill:#f5f3ff,stroke:#7c3aed,color:#0f172a
   classDef privacy fill:#fff1f2,stroke:#e11d48,color:#0f172a
   class Repo,Toolchain,Gates,Deploy ci
-  class Domain,Worker,Assets,Waitlist edge
-  class UI,Engine,Export browser
+  class Domain,Worker,Assets,Waitlist,AccountApi,Webhook,Clerk edge
+  class UI,Engine,Export,Consent browser
   class Local,Store data
   class Privacy privacy
 
@@ -57,7 +71,7 @@ flowchart TB
 
 ### 1. Trip data is local-first by design
 
-Trip dates, scenarios, and calculated personal travel timelines stay in the traveler’s browser storage. The browser may use Local Storage or IndexedDB, but the architectural rule is the same: **no trip history is sent to Cloudflare, analytics, or any server endpoint**.
+Guest trip dates, scenarios, and calculated personal travel timelines stay in browser storage. Optional signup does not change that boundary until the signed-in traveler gives explicit sync consent. Even then, trip data is limited to the authenticated account API and never enters analytics or logs.
 
 ### 2. The Schengen engine is isolated from UI and infrastructure
 
@@ -65,28 +79,27 @@ Trip dates, scenarios, and calculated personal travel timelines stay in the trav
 
 That package must stay free of browser APIs, Cloudflare APIs, network calls, filesystem access, Bun-native APIs, and UI code. This keeps the safety-critical part testable and boring. Boring is a feature when border control is involved.
 
-### 3. Cloudflare serves the app, but does not own trip data
+### 3. Cloudflare serves the app and stores only consented account data
 
 Production runs at `https://schngn.com` on Cloudflare Workers + Workers Static Assets:
 
 - `schngn-web` is the Worker name.
 - Static assets are the SvelteKit/Vite output.
 - `workerd` is the production runtime, not Node and not Bun.
-- The current dynamic Worker surface is intentionally tiny: `/api/waitlist`.
+- The dynamic Worker surface remains narrow: separate `/api/waitlist`, authenticated `/api/account` and `/api/account/trips`, and signed `/api/webhooks/clerk` routes.
+- Account rows are keyed by the Clerk user ID derived from the verified session; client-supplied ownership is ignored/rejected.
 
 ### 4. `/api/waitlist` is email-only
 
 The waitlist route may accept an email address for validation/fake-door demand testing. It must not accept trip dates, travel history, names, passport details, residence status, or legal-context payloads.
 
-Storage for waitlist email is optional/future:
+Cloudflare D1 is the approved waitlist store. The endpoint accepts a strict email/consent/source payload and does not accept trip fields. D1 provisioning and migration application are explicit deployment prerequisites, while the calculator remains functional without server storage.
 
-- Cloudflare KV, or
-- Cloudflare D1, or
-- a separate provider.
+### 5. Optional account sync is consented and reversible
 
-No waitlist storage is required for the core local calculator.
+Clerk is the identity source of truth. A guest remains local-only. A signed-in user must explicitly opt in before local trips are uploaded. D1 waitlist and account records remain separate. Account storage includes authenticated export and deletion, plus signature-verified Clerk lifecycle cleanup; no trip data is allowed in analytics or logs.
 
-### 5. CI/CD gates deployment on correctness and build health
+### 6. CI/CD gates deployment on correctness and build health
 
 GitHub Actions uses:
 
@@ -100,31 +113,37 @@ Pipeline shape:
 2. `bun run test`
 3. `bun run typecheck`
 4. `bun run build`
-5. deploy on `main` through the `production` GitHub Environment
+5. `bun run test:e2e`
+6. deploy on `main` through the `production` GitHub Environment
 
-### 6. Secrets stay in GitHub Environment, not the repo
+### 7. Secrets stay in GitHub Environment, not the repo
 
 Cloudflare credentials are injected only during the production deploy job:
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 
+Clerk configuration uses:
+
+- variable `PUBLIC_CLERK_PUBLISHABLE_KEY`
+- secrets `CLERK_SECRET_KEY` and `CLERK_WEBHOOK_SIGNING_SECRET`
+
+The production workflow writes runtime bindings to a permission-restricted temporary runner file, uses it for inactive upload and gated active deploy, and deletes it even when a step fails.
+
 These values must never be committed, printed in logs, or copied into docs.
 
-### 7. Current architectural gaps to close before launch
+### 8. External production closeout
 
-- Expand `packages/engine` to the full EC-parity fixture/property/golden-master suite from US-01.
-- Add actual local trip CRUD + persistence in `apps/web`.
-- Add JSON import/export.
-- Add privacy-safe analytics only after payload inspection.
-- Decide whether `www.schngn.com` redirects to apex.
-- Choose KV/D1/provider only if/when waitlist capture becomes real.
+The remaining environment-owned work is explicit: configure the Clerk production domain/webhook, provision/apply D1, register `schngn.com` in Plausible, configure least-privilege Cloudflare/GitHub credentials, and verify the canonical `www` redirect after deployment. See `docs/production-readiness.md`.
 
 ## Source files represented
 
 - `packages/engine/`
 - `apps/web/`
 - `apps/web/src/routes/api/waitlist/+server.ts`
+- `apps/web/src/routes/api/account/+server.ts`
+- `apps/web/src/routes/api/account/trips/+server.ts`
+- `apps/web/src/routes/api/webhooks/clerk/+server.ts`
 - `apps/web/wrangler.jsonc`
 - `.github/workflows/ci.yml`
 - `docs/architecture.md`

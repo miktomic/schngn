@@ -2,7 +2,7 @@
 
 ## Purpose
 
-SCHNGN is a local-first Schengen 90/180-day tracker and planner. The MVP optimizes for trust, correctness, privacy, and fast validation of willingness to pay.
+SCHNGN is a local-first Schengen 90/180-day tracker and planner. Anonymous use remains local-only. Optional Clerk accounts add explicitly consented D1 sync for repeat visits without weakening the guest privacy boundary.
 
 ## Runtime model
 
@@ -35,17 +35,22 @@ For SCHNGN this is fine, because the app is deliberately local-first:
 │   - JS/CSS/PWA manifest                                                   │
 │                                                                           │
 │ _worker.js                                                                │
-│   - /api/waitlist only, unless we intentionally add dynamic routes         │
-│   - no Schengen trip data                                                 │
+│   - /api/waitlist: separate email-only consent flow                       │
+│   - authenticated sync/export/deletion routes                             │
+│   - verifies Clerk session; derives owner server-side                     │
+│                                                                           │
+│ Cloudflare D1                                                            │
+│   - waitlist table remains separate                                       │
+│   - consented account rows keyed by verified Clerk user ID                │
 └───────────────────────────────────┬──────────────────────────────────────┘
                                     │
                                     ▼
 ┌──────────────────────────── USER BROWSER ────────────────────────────────┐
 │ Svelte UI                                                                 │
 │ @schngn/engine pure calculation logic                                     │
-│ browser storage for trips                                                 │
-│ service worker/offline support later                                      │
-│ all Schengen trip data stays here                                         │
+│ browser storage for guest trips and signed-in working cache               │
+│ service worker/offline app shell                                           │
+│ guest data stays here; signed-in sync requires explicit consent           │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -85,22 +90,49 @@ Responsibilities:
 - Local trip storage and import/export.
 - Dashboard, simulator, and days-coming-back views.
 - Privacy-safe analytics hooks.
-- Waitlist/fake-door endpoints.
+- D1-backed waitlist endpoint and fake-door flows.
+- Optional Clerk authentication and authenticated D1 sync.
+- Account-data export and deletion flows.
+- Aggregate-only Plausible event adapter.
 
 Constraints:
 
-- Trip dates stay client-side.
-- Network payloads must not contain trip dates or full travel history.
-- Server endpoints are only for non-trip data such as waitlist email.
+- Guest trip dates stay client-side and never enter an anonymous endpoint.
+- Signed-in trips may enter D1 only after explicit consent.
+- Every account query derives its owner from the verified Clerk session; no client-supplied owner is trusted.
+- There is no trip data in analytics or logs.
+
+### Clerk and authenticated account routes
+
+Clerk is the identity source of truth. D1 stores application data keyed by the verified Clerk user ID; it does not duplicate email, name, password, OAuth profile, or other Clerk-owned identity data without a specific product need.
+
+Authenticated routes are responsible for:
+
+- verifying the Clerk session on every request;
+- recording explicit sync consent before the first upload;
+- validating and scoping all reads/writes to the server-derived user ID;
+- exporting the signed-in user’s application data;
+- deleting account data on user request, with a verified Clerk lifecycle webhook as cleanup fallback.
+
+The production route surface is `/api/account/trips` for authenticated trip sync/export, `/api/account` for account-data deletion, and `/api/webhooks/clerk` for signed lifecycle cleanup.
+
+A verified Clerk `user.deleted` event writes a one-way SHA-256 digest tombstone before deleting
+the trip snapshot in the same ordered D1 batch. The marker blocks stale-session and webhook-race
+writes for 30 days, which exceeds the expected token, retry, and in-flight request windows. Active
+markers make account reads/writes return a generic gone response; expired markers are ignored and
+opportunistically purged. The user-facing “delete saved trips” action deletes only the snapshot and
+does not tombstone a still-existing Clerk account.
+
+Sign-out must not expose a previous user’s synchronized cache on a shared device. The account store and waitlist remain separate; put plainly, the waitlist remains separate, and no trip data may enter analytics or operational logs.
 
 ### `/api/waitlist`
 
-The only current dynamic Worker route.
+The separate public email-capture route.
 
 Responsibilities:
 
 - Validate email.
-- Store email in Cloudflare KV/D1 or an external provider once configured.
+- Store email in the approved Cloudflare D1 database once configured.
 - Return an honest success/queued response.
 
 Constraints:
@@ -112,10 +144,12 @@ Constraints:
 
 | Data | Location | Leaves browser? | Notes |
 |---|---|---:|---|
-| Trip dates | Browser storage | No | Core privacy promise |
+| Guest trip dates | Browser storage | No | No account or server fallback |
+| Signed-in trip dates/settings | Browser cache + Cloudflare D1 | Only after explicit consent | D1 rows keyed by verified Clerk user ID |
+| Identity/session | Clerk | Yes, on optional signup/sign-in | Clerk remains identity source of truth |
 | Calculation results | Browser memory/UI | No by default | May be shown/exported locally |
-| Analytics | Provider | Yes, aggregate only | No dates, no PII |
-| Waitlist email | KV/D1/provider | Yes | Separate from trip storage |
+| Analytics | Plausible Cloud | Yes, aggregate only | Allowlisted buckets only; no trip data or PII |
+| Waitlist email | Separate Cloudflare D1 table | Yes, on explicit consent | Waitlist remains separate from account storage |
 | Fake-door buy intent | Analytics/provider | Yes, event only | No trip details |
 
 ## Deployment target
@@ -126,32 +160,34 @@ Use `@sveltejs/adapter-cloudflare`, not the deprecated Workers-specific adapter.
 
 The app builds with SvelteKit/Vite and deploys through Wrangler to Cloudflare Workers Static Assets. Static routes/assets should bypass Worker invocation where possible; dynamic routes are intentionally tiny.
 
-The Wrangler config maps the Worker to the apex custom domain with:
+The Wrangler config maps the Worker to the apex and `www` custom domains. A post-deploy Cloudflare script ensures `www` resolves and redirects canonically to the apex:
 
 ```jsonc
 "routes": [
-  { "pattern": "schngn.com", "custom_domain": true }
+  { "pattern": "schngn.com", "custom_domain": true },
+  { "pattern": "www.schngn.com", "custom_domain": true }
 ]
 ```
 
-Do not add `www.schngn.com` until the DNS/redirect decision is made. If `www` is enabled later, it should either redirect canonically to `https://schngn.com` or be explicitly configured as a second custom domain.
-
 ## Architecture decisions
 
-1. **Local-first before accounts.** Avoids GDPR/backend/support burden before validation.
+1. **Local-first remains the guest default.** Signup and sync are optional; anonymous trips never leave the browser.
 2. **Pure engine package.** Keeps correctness separate from UI and deployment details.
 3. **Bun for speed, not runtime coupling.** Bun is a toolchain choice; deployed code must remain Worker/browser compatible.
-4. **SvelteKit on Cloudflare.** Good fit for mostly-static PWA with one or two tiny dynamic routes.
+4. **SvelteKit on Cloudflare.** Good fit for the PWA and a small authenticated Worker API surface.
 5. **Fake-door monetization before building paid features.** Validate willingness to pay before building expensive surfaces.
+6. **Clerk identity, D1 application data.** Do not build a second identity store; associate consented account data with the server-verified Clerk user ID.
+7. **Deletion and export are part of storage.** Authenticated sync is incomplete until users can retrieve and delete their data.
 
 ## Current implementation status
 
-Created skeleton:
+Implemented:
 
-- `packages/engine/src/index.ts`
-- `packages/engine/tests/engine.test.ts`
-- `apps/web/`
-- `.github/workflows/ci.yml`
-- Cloudflare `wrangler.jsonc`
+- Pure TypeScript engine with deterministic fixtures, boundary cases, a golden scenario, and independent-oracle property checks.
+- Local trip CRUD, semantic validation, persistence, and JSON backup/restore.
+- Dashboard, planner, proof, returning-days, report fake door, waitlist, and privacy surfaces.
+- Installable offline PWA shell.
+- Aggregate-only analytics adapter and D1 waitlist route.
+- Unit, type, build, browser, privacy-network, and post-deploy smoke gates.
 
-The engine currently has a small initial test suite. It is not yet the full EC-parity suite from US-01; that is the next serious implementation step.
+The checked-in suite verifies the published 90/180-day rule semantics. It does not claim captured output parity with the European Commission calculator until provenance-backed official outputs are added. Optional accounts are the explicit DEC-10/US-22 scope expansion. External Clerk/D1/Plausible/Cloudflare configuration is tracked in `docs/production-readiness.md`.

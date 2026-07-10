@@ -1,4 +1,5 @@
 import type { Trip } from '@schngn/engine';
+import { isSupportedCountryCode, normalizeCountryCode } from './countries';
 
 export type TripStatus = 'past' | 'booked' | 'what-if';
 
@@ -16,7 +17,13 @@ export interface TripFormInput {
   status: TripStatus;
 }
 
-export type TripValidationErrors = Partial<Record<'entryDate' | 'exitDate' | 'status', string>>;
+export const MAX_TRIP_COUNT = 500;
+export const MAX_TRIP_ID_LENGTH = 128;
+export const MAX_TRIP_LABEL_LENGTH = 80;
+
+export type TripValidationErrors = Partial<
+  Record<'tripCount' | 'id' | 'label' | 'countryCode' | 'entryDate' | 'exitDate' | 'status', string>
+>;
 
 export interface UpsertTripResult {
   trips: EditableTrip[];
@@ -27,18 +34,40 @@ const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 export function validateTripInput(input: TripFormInput): TripValidationErrors {
   const errors: TripValidationErrors = {};
+  const countryCode = normalizeCountryCode(input.countryCode);
+  const label = typeof input.label === 'string' ? input.label.trim() : '';
 
-  if (!isIsoDate(input.entryDate)) {
+  if (input.id !== undefined && !isValidTripId(input.id)) {
+    errors.id = 'Trip id is invalid.';
+  }
+
+  if (label && codePointLength(label) > MAX_TRIP_LABEL_LENGTH) {
+    errors.label = `Keep the trip label to ${MAX_TRIP_LABEL_LENGTH} characters or fewer.`;
+  } else if (label && /[\u0000-\u001f\u007f]/u.test(label)) {
+    errors.label = 'Use a single-line trip label without control characters.';
+  }
+
+  if (countryCode && !isSupportedCountryCode(countryCode)) {
+    errors.countryCode = 'Choose a supported country or leave it blank for a manual Schengen trip.';
+  }
+
+  if (!input.entryDate) {
     errors.entryDate = 'Entry date is required.';
+  } else if (!isRealIsoDate(input.entryDate)) {
+    errors.entryDate = 'Enter a real entry date.';
   }
 
-  if (!isIsoDate(input.exitDate)) {
+  if (!input.exitDate) {
     errors.exitDate = 'Exit date is required.';
+  } else if (!isRealIsoDate(input.exitDate)) {
+    errors.exitDate = 'Enter a real exit date.';
   }
 
-  if (errors.entryDate || errors.exitDate) return errors;
+  if (!isTripStatus(input.status)) {
+    errors.status = 'Choose past, booked, or what-if.';
+  }
 
-  if (dateToDayNumber(input.exitDate) < dateToDayNumber(input.entryDate)) {
+  if (!errors.entryDate && !errors.exitDate && dateToDayNumber(input.exitDate) < dateToDayNumber(input.entryDate)) {
     errors.exitDate = 'Exit date cannot be before entry date.';
   }
 
@@ -52,8 +81,14 @@ export function upsertTrip(existingTrips: EditableTrip[], input: TripFormInput):
   }
 
   const normalizedTrip = normalizeTripInput(input);
-  const replaced = existingTrips.some((trip) => trip.id === normalizedTrip.id);
-  const trips = replaced
+  const replacesExistingTrip = existingTrips.some((trip) => trip.id === normalizedTrip.id);
+  if (!replacesExistingTrip && existingTrips.length >= MAX_TRIP_COUNT) {
+    return {
+      trips: sortTrips(existingTrips),
+      errors: { tripCount: `You can store up to ${MAX_TRIP_COUNT} trips on this device.` }
+    };
+  }
+  const trips = replacesExistingTrip
     ? existingTrips.map((trip) => (trip.id === normalizedTrip.id ? normalizedTrip : trip))
     : [...existingTrips, normalizedTrip];
 
@@ -110,7 +145,7 @@ export function tripToForm(trip: EditableTrip): TripFormInput {
 function normalizeTripInput(input: TripFormInput): EditableTrip {
   const countryCode = normalizeCountryCode(input.countryCode);
   const label = normalizeLabel(input.label, countryCode);
-  const id = input.id || makeTripId({ ...input, label, countryCode });
+  const id = input.id?.trim() || makeTripId({ ...input, label, countryCode });
 
   return {
     id,
@@ -120,11 +155,6 @@ function normalizeTripInput(input: TripFormInput): EditableTrip {
     exitDate: input.exitDate,
     status: input.status
   };
-}
-
-function normalizeCountryCode(countryCode: string | undefined): string | undefined {
-  const normalized = countryCode?.trim().toUpperCase();
-  return normalized ? normalized : undefined;
 }
 
 function normalizeLabel(label: string | undefined, countryCode: string | undefined): string {
@@ -139,10 +169,27 @@ function makeTripId(input: Pick<TripFormInput, 'entryDate' | 'exitDate'> & { lab
   return `trip-${raw.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
 }
 
-function isIsoDate(value: string): boolean {
+export function isRealIsoDate(value: string): boolean {
   if (!isoDatePattern.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+export function isTripStatus(value: unknown): value is TripStatus {
+  return value === 'past' || value === 'booked' || value === 'what-if';
+}
+
+export function isValidTripId(value: string): boolean {
+  const normalized = value.trim();
+  return (
+    normalized.length > 0 &&
+    normalized.length <= MAX_TRIP_ID_LENGTH &&
+    /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/u.test(normalized)
+  );
+}
+
+function codePointLength(value: string): number {
+  return [...value].length;
 }
 
 function dateToDayNumber(value: string): number {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SchngnMark } from '$lib/design';
+  import { SchngnLogo } from '$lib/design';
 
   const officialCalculatorUrl = 'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en';
   const cases = [
@@ -26,27 +26,33 @@
   <title>Accuracy evidence for the Schengen 90/180 calculator | SCHNGN</title>
   <meta
     name="description"
-    content="How SCHNGN validates Schengen 90/180-day calculations against official-rule fixtures and the European Commission short-stay calculator."
+    content="How SCHNGN tests Schengen 90/180-day calculations with deterministic rule fixtures, boundary cases, and an independent day-set oracle."
   />
   <link rel="canonical" href="https://schngn.com/accuracy" />
   <meta property="og:url" content="https://schngn.com/accuracy" />
   <meta property="og:title" content="Accuracy evidence for the Schengen 90/180 calculator | SCHNGN" />
   <meta property="og:description" content="Official-source framing and curated edge cases for SCHNGN's 90/180-day calculator." />
+  <meta property="og:image" content="https://schngn.com/brand/schngn-social.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="SCHNGN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />
+  <meta name="twitter:image:alt" content="SCHNGN" />
 </svelte:head>
 
 <main class="accuracy-page">
   <header class="topbar" aria-label="SCHNGN accuracy header">
     <a class="brand" href="/" aria-label="SCHNGN home">
-      <SchngnMark />
-      <span>SCHNGN</span>
+      <SchngnLogo alt="" />
     </a>
     <a class="toplink" href="/app">Open calculator</a>
   </header>
 
   <section class="hero" aria-labelledby="accuracy-title">
-    <p class="kicker">Validated against official-rule fixtures</p>
+    <p class="kicker">Transparent calculation tests</p>
     <h1 id="accuracy-title">Accuracy evidence</h1>
-    <p class="lede">Validated against the European Commission official short-stay calculator and a fixture suite for the Schengen 90/180-day rule.</p>
+    <p class="lede">Tested with 50 deterministic rule fixtures, boundary cases, and an independent day-set oracle for the published Schengen 90/180-day calculation method.</p>
     <div class="actions">
       <a class="primary" href={officialCalculatorUrl} target="_blank" rel="noreferrer">European Commission short-stay calculator</a>
       <a class="secondary" href="/app">Open calculator</a>
@@ -55,7 +61,7 @@
 
   <section class="notice" aria-label="Scope and limitations">
     <strong>SCHNGN is not certified, approved, or guaranteed by the EU</strong>
-    <p>It is a planning calculator with transparent test coverage. It is not legal advice and does not guarantee entry.</p>
+    <p>The European Commission calculator is linked for independent comparison. SCHNGN's checked-in suite currently verifies published rule semantics; it does not claim captured output parity with the official calculator. It is not legal advice and does not guarantee entry.</p>
   </section>
 
   <section class="case-grid" aria-label="Curated accuracy cases">
@@ -99,11 +105,6 @@
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    color: var(--ink);
-    font-size: 1.15rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
   }
 
   .toplink,
@@ -121,7 +122,11 @@
   }
 
   .toplink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     padding: 10px 14px;
+    white-space: nowrap;
   }
 
   .hero {

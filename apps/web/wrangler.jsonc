@@ -4,6 +4,13 @@
   "main": ".svelte-kit/cloudflare/_worker.js",
   "compatibility_date": "2026-07-08",
   "compatibility_flags": ["nodejs_als"],
+  "secrets": {
+    "required": [
+      "PUBLIC_CLERK_PUBLISHABLE_KEY",
+      "CLERK_SECRET_KEY",
+      "CLERK_WEBHOOK_SIGNING_SECRET"
+    ]
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare"
@@ -14,8 +21,11 @@
   "routes": [
     { "pattern": "schngn.com", "custom_domain": true },
     { "pattern": "www.schngn.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "migrations_dir": "migrations"
+    }
   ]
-  // Waitlist storage, pick one when enabling real capture:
-  // "kv_namespaces": [{ "binding": "WAITLIST", "id": "xxxx" }]
-  // or: "d1_databases": [{ "binding": "DB", "database_name": "schngn_waitlist", "database_id": "xxxx" }]
 }

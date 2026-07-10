@@ -9,9 +9,15 @@
     "preview": "wrangler dev .svelte-kit/cloudflare/_worker.js --assets .svelte-kit/cloudflare",
     "deploy": "vite build && wrangler deploy",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test:e2e": "playwright test --config playwright.config.ts"
+    "test:e2e": "playwright test --config playwright.config.ts",
+    "d1:migrate:local": "wrangler d1 migrations apply DB --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "provision:production": "wrangler versions upload"
   },
   "dependencies": {
+    "@clerk/backend": "^3.11.2",
+    "@clerk/clerk-js": "^6.25.1",
+    "@plausible-analytics/tracker": "^0.4.4",
     "@schngn/engine": "workspace:*",
     "@sveltejs/adapter-cloudflare": "^7.2.2",
     "@sveltejs/kit": "^2.48.0",

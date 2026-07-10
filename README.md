@@ -2,7 +2,7 @@
 
 SCHNGN is a privacy-first Schengen 90/180-day tracker and trip planner.
 
-The MVP is a mobile-first web/PWA: no account, local-only trip storage, a provably-correct calculation engine, and fake-door monetization hooks for validation.
+SCHNGN is a mobile-first web/PWA with a heavily tested pure calculation engine. Guests use it without an account and keep trips local-only; optional Clerk accounts can explicitly sync trips for repeat visits and cross-device use.
 
 ## Current architecture
 
@@ -12,8 +12,10 @@ The MVP is a mobile-first web/PWA: no account, local-only trip storage, a provab
 - **Production runtime:** Cloudflare Workers / `workerd` V8 isolates
 - **Static hosting:** Cloudflare Workers Static Assets
 - **Core logic:** `@schngn/engine`, pure TypeScript with no runtime dependencies
-- **Trip data:** browser-local only; no trip dates leave the device
-- **Server data:** waitlist email only, via `/api/waitlist` when a Cloudflare KV/D1/provider is configured
+- **Trip data:** guest trips are browser-local only; signed-in trips enter D1 only after explicit sync consent
+- **Identity:** optional Clerk signup; Clerk is the identity source and application rows are keyed by verified Clerk user ID
+- **Server data:** authenticated account trips/settings plus a separate email-only waitlist, both in Cloudflare D1
+- **Analytics:** aggregate-only events through the allowlisted Plausible adapter; never trip dates or email
 
 Read:
 
@@ -30,8 +32,8 @@ Install Node 24+ and Bun 1.3.14. If Bun is not installed globally, use `npx bun@
 
 ```bash
 bun install
-bun run test
-bun run build
+bun run check
+bun run test:e2e
 bun run dev
 ```
 
@@ -39,8 +41,8 @@ If using the temporary `npx` path:
 
 ```bash
 npx -y bun@1.3.14 install
-npx -y bun@1.3.14 run test
-npx -y bun@1.3.14 run build
+npx -y bun@1.3.14 run check
+npx -y bun@1.3.14 run test:e2e
 ```
 
 ## Workspace layout
@@ -54,6 +56,11 @@ apps/web/         SvelteKit web/PWA shell for Cloudflare Workers
 ## Non-negotiables
 
 1. Calculation correctness gates deployment.
-2. Trip data stays client-side.
-3. Analytics must never include trip dates or PII.
+2. Guest trips stay client-side; signed-in sync is optional and consented.
+3. Analytics and logs must never include trip dates or PII.
 4. Legal/edge-case disclaimers stay visible and boring. Boring is good here.
+5. Account ownership comes from the verified Clerk session, never a client-provided user ID.
+
+## Launch status
+
+The original local-first application, offline shell, privacy gates, and Cloudflare deployment path are implemented. Optional accounts and authenticated sync are an explicit scope expansion with separate consent, account-data export, and deletion gates. Production launch still requires the external Clerk/Cloudflare/Plausible checklist in [`docs/production-readiness.md`](docs/production-readiness.md); no provider credentials belong in this repository.

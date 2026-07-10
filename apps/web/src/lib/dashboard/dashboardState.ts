@@ -1,7 +1,11 @@
 import {
+  addDays,
   calculateUsageOnDate,
   classifyVerdict,
+  countsForShortStay,
+  formatISODate,
   latestSafeExitDate,
+  parseISODate,
   type UsageResult,
 } from "@schngn/engine";
 import { type EditableTrip, sortTrips, toEngineTrips } from "../trips/tripCrud";
@@ -27,9 +31,10 @@ export function buildDashboardState(
   referenceDate?: string
 ): DashboardState {
   const sortedTrips = sortTrips(trips);
-  const targetTrip = chooseTargetTrip(sortedTrips);
+  const earliestConflict = findEarliestPlannedConflict(sortedTrips);
+  const targetTrip = earliestConflict?.trip ?? chooseTargetTrip(sortedTrips);
   const effectiveReferenceDate =
-    referenceDate ?? targetTrip?.exitDate ?? todayISODate();
+    referenceDate ?? earliestConflict?.date ?? targetTrip?.exitDate ?? todayISODate();
   const usage = calculateUsageOnDate(
     toEngineTrips(sortedTrips),
     effectiveReferenceDate
@@ -57,6 +62,34 @@ export function buildDashboardState(
     whyCopy: formatWhyCopy(usage, targetName, targetTrip),
     windowLabel: formatWindowLabel(usage.windowStart, usage.windowEnd),
   };
+}
+
+function findEarliestPlannedConflict(
+  trips: EditableTrip[]
+): { date: string; trip: EditableTrip } | null {
+  const checkpoints = new Map<string, EditableTrip>();
+  const plannedTrips = trips
+    .filter((trip) => trip.status === "booked" || trip.status === "what-if")
+    .filter((trip) => countsForShortStay(trip));
+
+  for (const trip of plannedTrips) {
+    const exit = parseISODate(trip.exitDate);
+    for (
+      let current = parseISODate(trip.entryDate);
+      current.getTime() <= exit.getTime();
+      current = addDays(current, 1)
+    ) {
+      const date = formatISODate(current);
+      if (!checkpoints.has(date)) checkpoints.set(date, trip);
+    }
+  }
+
+  const engineTrips = toEngineTrips(trips);
+  for (const [date, trip] of [...checkpoints.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+    if (calculateUsageOnDate(engineTrips, date).overLimit) return { date, trip };
+  }
+
+  return null;
 }
 
 function chooseTargetTrip(trips: EditableTrip[]): EditableTrip | null {

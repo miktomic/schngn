@@ -71,4 +71,49 @@ describe('future trip simulator', () => {
     expect(state.statusLabel).toBe('Add dates to simulate');
     expect(state.errors.exitDate).toBe('Exit date cannot be before entry date.');
   });
+
+  test('rejects a country name instead of treating it as a non-Schengen trip', () => {
+    const state = buildTripSimulationState(savedTrips, {
+      label: 'Spain',
+      countryCode: 'Spain',
+      entryDate: '2026-10-13',
+      exitDate: '2026-10-20'
+    });
+
+    expect(state.valid).toBe(false);
+    expect(state.errors.countryCode).toBe(
+      'Choose a supported country or leave it blank for a manual Schengen trip.'
+    );
+  });
+
+  test('marks a proposal risky when it would break a later booked trip', () => {
+    const laterBooking: EditableTrip = {
+      id: 'later-germany',
+      label: 'Germany booking',
+      countryCode: 'DE',
+      entryDate: '2026-03-04',
+      exitDate: '2026-04-02',
+      status: 'booked'
+    };
+
+    const state = buildTripSimulationState([laterBooking], {
+      label: 'Spain proposal',
+      countryCode: 'ES',
+      entryDate: '2026-01-01',
+      exitDate: '2026-03-03'
+    });
+
+    expect(state.valid).toBe(true);
+    expect(state.statusTone).toBe('risk');
+    expect(state.daysUsedLabel).toBe('91 / 90');
+    expect(state.conflict).toEqual({
+      date: '2026-04-01',
+      tripId: 'later-germany',
+      tripLabel: 'Germany booking',
+      tripStatus: 'booked'
+    });
+    expect(state.summaryCopy).toContain('Germany booking would reach 91 / 90 on Apr 1');
+    expect(state.firstFixCopy).toContain('shorten Spain proposal to Mar 1');
+    expect(state.firstFixCopy).toContain('protect Germany booking');
+  });
 });

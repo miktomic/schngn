@@ -1,7 +1,7 @@
 # SCHNGN Product Decisions
 
-> Last updated: 2026-07-09
-> Scope: MVP validation for SCHNGN — privacy-first Schengen 90/180-day PWA.
+> Last updated: 2026-07-10
+> Scope: original MVP validation plus the approved optional-account scope change for SCHNGN.
 
 This file records product, privacy, infrastructure, and launch decisions that unblock the MVP Kanban board. It is intentionally concise: durable decisions, rationale, and implementation constraints. Not a graveyard for every passing thought with a hat.
 
@@ -18,6 +18,8 @@ This file records product, privacy, infrastructure, and launch decisions that un
 | DEC-07 | No Sentry for MVP launch; use Cloudflare logs + smoke tests first | Approved | US-20 |
 | DEC-08 | Redirect `www.schngn.com` to `https://schngn.com` | Approved | US-21 |
 | DEC-09 | First ad/landing angle: UK second-home owners and frequent EU travelers post-Brexit | Approved | US-16 |
+| DEC-10 | Optional Clerk accounts with consented, authenticated D1 trip sync | Approved scope change | US-22 |
+| DEC-11 | Use the supplied cobalt SCHNGN wordmark and euro-star mark as the production identity | Approved | Production brand surfaces |
 
 ## DEC-01 — Analytics provider
 
@@ -73,7 +75,7 @@ This file records product, privacy, infrastructure, and launch decisions that un
 
 **Decision:** Use **Cloudflare D1** for MVP waitlist/email capture.
 
-**Store only:**
+**Store only in the waitlist store:**
 
 - email
 - `created_at`
@@ -89,8 +91,8 @@ This file records product, privacy, infrastructure, and launch decisions that un
 
 **Implementation constraints:**
 
-- Never store trip dates, travel history, or calculated results server-side.
-- Keep waitlist data separate from local trip storage.
+- Never store trip dates, travel history, or calculated results in the waitlist flow.
+- Keep waitlist data separate from both guest storage and authenticated account storage.
 - Consent/privacy copy must be visible at capture point.
 
 ## DEC-04 — Legal/disclaimer copy
@@ -122,20 +124,21 @@ This file records product, privacy, infrastructure, and launch decisions that un
 **Implementation constraints:**
 
 - Do not imply EU endorsement or certification.
-- “Validated against” is allowed only after the EC-parity suite exists.
+- “Validated against the European Commission calculator” is allowed only after captured official-calculator outputs and their provenance are checked into the parity suite.
+- Until then, describe the actual evidence precisely: deterministic rule fixtures, boundary cases, and an independent day-set oracle.
 
 ## DEC-06 — Public validation page
 
-**Decision:** Include a public `/accuracy` validation page in MVP after US-01 is robust.
+**Decision:** Include a public `/accuracy` evidence page in MVP after US-01 is robust.
 
 **Content direction:**
 
 - Curated public test cases from the EC-parity suite.
 - Clear method and limitations.
 - Link to official EC calculator.
-- Use careful language: “validated against,” not “certified,” “approved,” or “guaranteed.”
+- Use careful language that distinguishes published-rule verification from direct official-calculator output parity.
 
-**Implementation constraint:** Do not publish the trust claim before US-01 has the robust fixture suite.
+**Implementation constraint:** Do not claim direct EC-calculator parity before provenance-backed official outputs exist in the repository.
 
 ## DEC-07 — Production error monitoring
 
@@ -178,6 +181,55 @@ Use first:
 - Less noisy than remote-worker positioning, which drifts into tax/visa/legal complexity.
 
 **Implementation direction:** Landing page copy and SEO should target UK 90/180, second homes, frequent France/Spain/Italy travel, and booking confidence.
+
+## DEC-10 — Optional accounts and authenticated sync
+
+**Decision:** Add optional Clerk signup for repeat visits. Guest trips remain local-only. A signed-in user may explicitly consent to sync validated trip data and application settings to Cloudflare D1.
+
+This is an approved **scope change** after the original no-account MVP cards. It does not retroactively weaken the local-only guarantees verified by US-05.
+
+**Identity and ownership:**
+
+- Clerk is the identity source of truth for sessions, email, login methods, and identity lifecycle.
+- D1 application rows are keyed by the server-verified Clerk user ID.
+- Every account read, write, export, and deletion derives the owner from the verified Clerk session. Never accept a client-supplied owner.
+- Do not duplicate Clerk profile fields in D1 without a concrete application requirement.
+
+**Consent and guest behavior:**
+
+- Signup is optional; the calculator remains usable without an account.
+- Guest trips never leave browser storage and have no server fallback.
+- Signing in does not automatically upload existing local trips. Show a separate, explicit consent action before the first sync.
+- Waitlist consent and account-sync consent are separate purposes and separate records.
+
+**Lifecycle requirements:**
+
+- Provide an authenticated export of the user’s application data.
+- Provide account-data deletion; a verified Clerk deletion webhook is a cleanup fallback for D1 rows.
+- A verified `user.deleted` webhook must atomically install a 30-day replay guard before deleting
+  the snapshot. Store only a one-way SHA-256 digest of the Clerk user ID in that guard, ignore and
+  opportunistically purge expired markers, and never use the user-facing “delete saved trips” action
+  to tombstone an account that still exists in Clerk.
+- Clear or isolate synchronized browser caches on sign-out so a later user on a shared device cannot read the prior account’s trips.
+- Do not send trip dates, histories, labels, calculated timelines, Clerk user IDs, or account email to Plausible or operational logs.
+
+**Infrastructure:**
+
+- GitHub production variable: `PUBLIC_CLERK_PUBLISHABLE_KEY`.
+- GitHub production secrets: `CLERK_SECRET_KEY` and `CLERK_WEBHOOK_SIGNING_SECRET`.
+- Runtime secrets are uploaded through a permission-restricted ephemeral runner file with `wrangler versions upload --secrets-file`; no key value is committed or printed.
+
+## DEC-11 — Production brand identity
+
+**Decision:** Use the supplied cobalt SCHNGN wordmark with its euro-and-stars glyph and calendar detail as the production wordmark. Use the supplied square euro-and-stars artwork as the source for browser and install icons.
+
+**Implementation constraints:**
+
+- The canonical web wordmark is `apps/web/static/brand/schngn-wordmark.png` and is rendered through `SchngnLogo.svelte`.
+- Browser, Apple touch, and PWA icons are deterministic crops and resizes of the supplied square artwork. The manifest uses separate `any` and `maskable` entries.
+- Do not redraw, auto-trace, or reinterpret the supplied geometry. Background cleanup, cropping, resizing, and format conversion are allowed.
+- The interface's semantic safe/booked/what-if/risk palette remains unchanged. Brand blue and yellow remain inside the artwork until a separate palette decision is approved.
+- The mark must never imply EU certification, ownership, or endorsement.
 
 ## Board state
 

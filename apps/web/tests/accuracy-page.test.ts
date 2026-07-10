@@ -5,11 +5,14 @@ const accuracyPath = 'apps/web/src/routes/accuracy/+page.svelte';
 const landingSource = readFileSync('apps/web/src/routes/+page.svelte', 'utf8');
 
 describe('public accuracy trust signal', () => {
-  test('publishes a public accuracy page with official-source framing', () => {
+  test('publishes transparent test evidence without claiming unrecorded EC parity', () => {
     expect(existsSync(accuracyPath)).toBe(true);
     const source = readFileSync(accuracyPath, 'utf8');
 
-    expect(source).toContain('Validated against the European Commission official short-stay calculator');
+    expect(source).toContain('Tested with 50 deterministic rule fixtures');
+    expect(source).toContain('independent day-set oracle');
+    expect(source).toContain('does not claim captured output parity with the official calculator');
+    expect(source).not.toContain('Validated against the European Commission');
     expect(source).toContain('https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en');
     expect(source).toContain('Inclusive entry and exit days');
     expect(source).toContain('Rolling 180-day window');
@@ -29,7 +32,13 @@ describe('public accuracy trust signal', () => {
   });
 
   test('links the landing page to the accuracy evidence', () => {
-    expect(landingSource).toContain('Validated against official-rule fixtures');
+    expect(landingSource).toContain('Tested with 50 rule fixtures and an independent oracle');
     expect(landingSource).toContain('href="/accuracy"');
+  });
+
+  test('uses the production brand card for social sharing', () => {
+    const source = readFileSync(accuracyPath, 'utf8');
+    expect(source).toContain('<meta property="og:image" content="https://schngn.com/brand/schngn-social.png" />');
+    expect(source).toContain('<meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />');
   });
 });

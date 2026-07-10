@@ -30,7 +30,16 @@ describe('UK second-home landing SEO', () => {
     expect(pageSource).not.toContain('www.schngn.com');
     expect(pageSource).toContain('property="og:title"');
     expect(pageSource).toContain('property="og:description"');
+    expect(pageSource).toContain('<meta property="og:image" content="https://schngn.com/brand/schngn-social.png" />');
+    expect(pageSource).toContain('<meta property="og:image:width" content="1200" />');
+    expect(pageSource).toContain('<meta property="og:image:height" content="630" />');
+    expect(pageSource).toContain('<meta property="og:image:alt" content="SCHNGN" />');
     expect(pageSource).toContain('name="twitter:card"');
     expect(pageSource).toContain('name="twitter:title"');
+    expect(pageSource).toContain('<meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />');
+  });
+
+  test('routes the UK-targeted landing audience into GBP pricing', () => {
+    expect(pageSource.match(/href="\/app\?market=uk"/g)).toHaveLength(3);
   });
 });

@@ -21,6 +21,9 @@
     "typecheck": "cd apps/web && bun run check",
     "check": "bun run test && bun run typecheck && bun run build",
     "smoke:production": "node scripts/post-deploy-smoke.mjs",
+    "d1:migrate:local": "cd apps/web && bun run d1:migrate:local",
+    "d1:migrate:remote": "cd apps/web && bun run d1:migrate:remote",
+    "cloudflare:provision": "cd apps/web && bun run provision:production",
     "cloudflare:canonical-www": "node scripts/configure-cloudflare-canonical-www.mjs",
     "deploy": "cd apps/web && bun run deploy"
   },

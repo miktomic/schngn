@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SchngnMark } from '$lib/design';
+  import { SchngnLogo } from '$lib/design';
 </script>
 
 <svelte:head>
@@ -15,21 +15,26 @@
     property="og:description"
     content="A private Schengen 90/180 calculator for UK second-home owners planning Europe stays."
   />
+  <meta property="og:image" content="https://schngn.com/brand/schngn-social.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="SCHNGN" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Schengen 90/180 calculator for UK second-home owners | SCHNGN" />
   <meta
     name="twitter:description"
     content="Check whether your next Europe stay fits the Schengen 90/180-day rule. Your dates stay in this browser."
   />
+  <meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />
+  <meta name="twitter:image:alt" content="SCHNGN" />
 </svelte:head>
 
 <main class="landing">
   <header class="topbar" aria-label="SCHNGN landing header">
     <a class="brand" href="/" aria-label="SCHNGN home">
-      <SchngnMark />
-      <span>SCHNGN</span>
+      <SchngnLogo alt="" />
     </a>
-    <a class="toplink" href="/app">Open calculator</a>
+    <a class="toplink" href="/app?market=uk">Open calculator</a>
   </header>
 
   <section class="hero" aria-labelledby="hero-title">
@@ -40,10 +45,10 @@
         A private Schengen 90/180 calculator for frequent Europe trips, family visits, and second-home planning.
       </p>
       <div class="actions" aria-label="Landing page actions">
-        <a class="primary" href="/app">See if your Europe trip fits</a>
-        <a class="secondary" href="/app">Open calculator</a>
+        <a class="primary" href="/app?market=uk">See if your Europe trip fits</a>
+        <a class="secondary" href="/app?market=uk">Open calculator</a>
       </div>
-      <p class="trust-line">Your dates stay in this browser. Validated against official-rule fixtures. Not legal advice. Not an EU service.</p>
+      <p class="trust-line">Your dates stay in this browser. Tested with 50 rule fixtures and an independent oracle. Not legal advice. Not an EU service.</p>
       <a class="evidence-link" href="/accuracy">Accuracy evidence</a>
     </div>
 
@@ -128,11 +133,6 @@
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    color: var(--ink);
-    font-size: 1.15rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
   }
 
   .toplink,
@@ -143,10 +143,14 @@
   }
 
   .toplink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     border: 1px solid var(--line);
     background: var(--surface);
     color: var(--ink);
     padding: 10px 14px;
+    white-space: nowrap;
   }
 
   .hero {

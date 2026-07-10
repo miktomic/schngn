@@ -9,6 +9,7 @@ import {
   validateTripInput,
   type EditableTrip
 } from '../src/lib/trips/tripCrud';
+import { SUPPORTED_COUNTRY_OPTIONS } from '../src/lib/trips/countries';
 
 const france: EditableTrip = {
   id: 'france',
@@ -40,6 +41,75 @@ describe('trip CRUD model', () => {
     expect(validateTripInput({ label: 'Bad', countryCode: 'IT', entryDate: '2026-10-14', exitDate: '2026-10-13', status: 'booked' })).toEqual({
       exitDate: 'Exit date cannot be before entry date.'
     });
+  });
+
+  test('rejects country names, typos, and unknown codes instead of silently excluding them', () => {
+    const base = { label: 'Spain', entryDate: '2026-07-01', exitDate: '2026-07-19', status: 'booked' as const };
+
+    expect(validateTripInput({ ...base, countryCode: 'Spain' })).toEqual({
+      countryCode: 'Choose a supported country or leave it blank for a manual Schengen trip.'
+    });
+    expect(validateTripInput({ ...base, countryCode: 'SP' })).toEqual({
+      countryCode: 'Choose a supported country or leave it blank for a manual Schengen trip.'
+    });
+    expect(validateTripInput({ ...base, countryCode: 'XX' })).toEqual({
+      countryCode: 'Choose a supported country or leave it blank for a manual Schengen trip.'
+    });
+  });
+
+  test('accepts supported country codes and blank manual-Schengen input', () => {
+    const base = { label: '', entryDate: '2026-07-01', exitDate: '2026-07-19', status: 'booked' as const };
+
+    expect(validateTripInput({ ...base, countryCode: ' es ' })).toEqual({});
+    expect(validateTripInput({ ...base, countryCode: 'IE' })).toEqual({});
+    expect(validateTripInput({ ...base, countryCode: '' })).toEqual({});
+    expect(SUPPORTED_COUNTRY_OPTIONS.some((country) => country.code === 'ES' && country.countsForShortStay)).toBe(true);
+    expect(SUPPORTED_COUNTRY_OPTIONS.some((country) => country.code === 'IE' && !country.countsForShortStay)).toBe(true);
+  });
+
+  test('rejects impossible calendar dates and invalid runtime statuses', () => {
+    expect(
+      validateTripInput({
+        label: 'Impossible',
+        countryCode: 'FR',
+        entryDate: '2026-02-30',
+        exitDate: '2026-03-01',
+        status: 'booked'
+      })
+    ).toEqual({ entryDate: 'Enter a real entry date.' });
+
+    expect(
+      validateTripInput({
+        label: 'Invalid status',
+        countryCode: 'FR',
+        entryDate: '2026-03-01',
+        exitDate: '2026-03-02',
+        status: 'confirmed' as EditableTrip['status']
+      })
+    ).toEqual({ status: 'Choose past, booked, or what-if.' });
+  });
+
+  test('trims labels, accepts emoji within the limit, and rejects oversized labels', () => {
+    const emojiLabel = `  ${'🧳'.repeat(40)}  `;
+    const accepted = upsertTrip([], {
+      label: emojiLabel,
+      countryCode: 'ES',
+      entryDate: '2026-07-01',
+      exitDate: '2026-07-02',
+      status: 'booked'
+    });
+
+    expect(accepted.errors).toEqual({});
+    expect(accepted.trips[0]?.label).toBe('🧳'.repeat(40));
+    expect(
+      validateTripInput({
+        label: 'a'.repeat(81),
+        countryCode: 'ES',
+        entryDate: '2026-07-01',
+        exitDate: '2026-07-02',
+        status: 'booked'
+      })
+    ).toEqual({ label: 'Keep the trip label to 80 characters or fewer.' });
   });
 
   test('adds trips with normalized optional label/country and sorts by entry date', () => {

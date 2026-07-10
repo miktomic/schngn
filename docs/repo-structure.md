@@ -14,10 +14,15 @@ schngn/
 │       │   ├── routes/
 │       │   │   ├── +page.svelte              # SEO landing
 │       │   │   ├── app/+page.svelte          # calculator shell
-│       │   │   └── api/waitlist/+server.ts   # Worker route
+│       │   │   ├── api/waitlist/+server.ts   # separate email-only Worker route
+│       │   │   ├── api/account/              # authenticated account-data deletion route
+│       │   │   ├── api/account/trips/        # authenticated trip sync/export route
+│       │   │   └── api/webhooks/clerk/       # signed identity lifecycle cleanup
 │       │   ├── app.css
 │       │   └── app.html
-│       ├── static/
+│       ├── migrations/                     # separate D1 waitlist and authenticated account schemas
+│       ├── static/                         # PWA manifest, worker, favicon/icons, brand/social assets, SEO files
+│       ├── e2e/                            # Playwright mobile browser coverage
 │       ├── svelte.config.js
 │       ├── vite.config.ts
 │       ├── wrangler.jsonc
@@ -43,7 +48,10 @@ schngn/
 | `bun run test:engine` | `bun test packages/engine/tests` | Run engine tests only |
 | `bun run typecheck` | `cd apps/web && bun run check` | Run Svelte/TypeScript checks |
 | `bun run build` | engine build + web build | Build deployable app |
-| `bun run check` | test + typecheck + build | Local CI equivalent |
+| `bun run check` | test + typecheck + build | Core release gate; pair with `test:e2e` |
+| `bun run test:e2e` | Playwright mobile Chromium | Critical browser/privacy/offline gate |
+| `bun run d1:migrate:local` | Wrangler D1 local migrations | Verify waitlist schema locally |
+| `bun run d1:migrate:remote` | Wrangler D1 remote migrations | Production migration step after inactive provisioning |
 | `bun run deploy` | `cd apps/web && bun run deploy` | Build and deploy through Wrangler |
 
 ## Package rules
@@ -70,14 +78,18 @@ Allowed:
 
 - Svelte UI.
 - Browser local storage / IndexedDB.
-- PWA/service worker later.
+- PWA/service worker and offline shell.
 - Privacy-safe analytics wrappers.
 - Tiny Worker endpoints for waitlist/fake-door flows.
+- Optional Clerk authentication.
+- D1-backed sync for signed-in users after explicit consent.
+- Authenticated account-data export and deletion.
 
 Forbidden:
 
-- Sending trip dates to analytics or server endpoints.
-- Server-side Schengen trip persistence.
+- Sending trip dates to analytics, logs, the waitlist, or anonymous endpoints.
+- Server-side trip persistence for guests or before explicit consent.
+- Accepting an account owner from the client instead of deriving the Clerk user ID from the verified session.
 - Legal advice generation.
 
 ## Build pipeline
@@ -100,6 +112,7 @@ Preferred:
 ```bash
 bun install
 bun run check
+bun run test:e2e
 bun run dev
 ```
 
@@ -108,18 +121,25 @@ Temporary no-global-Bun path:
 ```bash
 npx -y bun@1.3.14 install
 npx -y bun@1.3.14 run check
+npx -y bun@1.3.14 run test:e2e
 ```
 
 The US-01 engine gate is now in place: `packages/engine/tests/engine.test.ts` loads `packages/engine/tests/fixtures/ec/rolling-180-fixtures.json` and adds property/golden tests.
 
-## Next structure to add
+## Current web library structure
 
-When implementing the remaining backlog, add:
+The MVP uses feature-oriented libraries rather than the older planned `data/`, `stores/`, and generic `components/` folders:
 
 ```text
-apps/web/src/lib/data/          # local storage repository
-apps/web/src/lib/stores/        # trip/result stores
-apps/web/src/lib/components/    # money-shot UI components
+apps/web/src/lib/trips/         # validation, CRUD, and local storage repository
+apps/web/src/lib/dashboard/     # answer-first dashboard state
+apps/web/src/lib/simulator/     # non-mutating future-trip planning
+apps/web/src/lib/returns/       # days-coming-back forecast
+apps/web/src/lib/explanation/   # calculation proof state
+apps/web/src/lib/design/        # shared product UI components
 apps/web/src/lib/analytics/     # privacy-safe event wrapper
 apps/web/src/lib/import-export/ # JSON import/export
+apps/web/src/lib/fake-door/     # paid-intent state and events
+apps/web/src/lib/auth/          # Clerk client/session integration
+apps/web/src/lib/account/       # consented authenticated sync and account lifecycle helpers
 ```

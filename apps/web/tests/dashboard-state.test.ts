@@ -103,6 +103,41 @@ describe("dashboard money-shot state", () => {
     expect(state.actionCopy).toContain("shorten or move Italy");
   });
 
+  test("surfaces the earliest unsafe commitment even when a much later trip is safe", () => {
+    const state = buildDashboardState([
+      {
+        entryDate: "2026-01-01",
+        exitDate: "2026-03-31",
+        id: "past-90",
+        label: "Prior Schengen",
+        status: "past",
+      },
+      {
+        countryCode: "IT",
+        entryDate: "2026-06-29",
+        exitDate: "2026-06-29",
+        id: "unsafe-italy",
+        label: "Earlier Italy booking",
+        status: "booked",
+      },
+      {
+        countryCode: "PT",
+        entryDate: "2026-12-01",
+        exitDate: "2026-12-05",
+        id: "safe-portugal",
+        label: "Later Portugal booking",
+        status: "booked",
+      },
+    ]);
+
+    expect(state.targetTrip?.id).toBe("unsafe-italy");
+    expect(state.referenceDate).toBe("2026-06-29");
+    expect(state.statusTone).toBe("risk");
+    expect(state.statusLabel).toBe("Earlier Italy booking needs changes");
+    expect(state.daysUsedLabel).toBe("91 / 90");
+    expect(state.heroMetric).toBe("1 day over limit");
+  });
+
   test("uses imported/saved trip data rather than fixed Italy copy", () => {
     const state = buildDashboardState([
       {
