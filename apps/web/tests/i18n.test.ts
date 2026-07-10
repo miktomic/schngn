@@ -12,6 +12,9 @@ import {
 } from '../src/lib/i18n';
 import { createAppUiTranslator } from '../src/lib/i18n/appUi';
 import { appDeepCatalogLengths, createAppDeepUiTranslator } from '../src/lib/i18n/appDeepUi';
+import { appRuntimeCatalogLengths, createAppRuntimeUiTranslator } from '../src/lib/i18n/appRuntimeUi';
+import { localizeDashboardState, stateCatalogKeyCount } from '../src/lib/i18n/stateUi';
+import { buildDashboardState } from '../src/lib/dashboard/dashboardState';
 import { createTranslator } from '../src/lib/i18n';
 
 describe('whole-site localization', () => {
@@ -54,9 +57,30 @@ describe('whole-site localization', () => {
       expect(createAppUiTranslator(locale)('navOverview').trim().length).toBeGreaterThan(0);
       expect(createAppUiTranslator(locale)('accountReady').trim().length).toBeGreaterThan(0);
       expect(createAppDeepUiTranslator(locale)('waitlistTitle').trim().length).toBeGreaterThan(0);
+      expect(createAppRuntimeUiTranslator(locale)('browserData').trim().length).toBeGreaterThan(0);
+      expect(createAppRuntimeUiTranslator(locale)('waitlistConsent').trim().length).toBeGreaterThan(0);
     }
     expect(new Set(Object.values(appDeepCatalogLengths())).size).toBe(1);
     expect(appDeepCatalogLengths().en).toBeGreaterThan(80);
+    expect(new Set(Object.values(appRuntimeCatalogLengths())).size).toBe(1);
+    expect(appRuntimeCatalogLengths().en).toBeGreaterThan(90);
+    expect(new Set(Object.values(stateCatalogKeyCount())).size).toBe(1);
+  });
+
+  test('localizes calculated state labels and dates instead of leaking English formatting', () => {
+    const raw = buildDashboardState([]);
+    expect(localizeDashboardState('fr', raw).statusLabel).toBe('Ajouter un voyage');
+    expect(localizeDashboardState('ar', raw).statusLabel).toBe('إضافة رحلة');
+    expect(createAppRuntimeUiTranslator('de')('checkingSignIn')).toBe('Anmeldung wird geprüft…');
+    expect(createAppRuntimeUiTranslator('he')('needPlanningPower')).toContain('תכנון');
+  });
+
+  test('keeps app copy behind translators except reviewed English legal content', () => {
+    const source = readFileSync('apps/web/src/routes/app/+page.svelte', 'utf8');
+    for (const literal of ['Checking sign-in…', 'Need more planning power?', 'No days return during this forecast', 'Browser trip data', 'Analytics never include trip dates']) {
+      expect(source).not.toContain(`>${literal}<`);
+    }
+    expect(source).toContain("t('common.reviewedEnglishNotice')");
   });
 
   test('keeps localized navigation offline-safe and declares language alternates', () => {

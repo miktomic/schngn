@@ -2,7 +2,7 @@
   import { page } from '$app/state';
   import { SchngnLogo } from '$lib/design';
   import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
-  import { createTranslator, localeFromPath, localizedPath, type Locale } from '$lib/i18n';
+  import { createTranslator, formatDate, localeFromPath, localizedPath, type Locale } from '$lib/i18n';
 
   let locale = $derived(localeFromPath(page.url.pathname));
   let t = $derived(createTranslator(locale));
@@ -81,7 +81,7 @@
       <dl>
         <div>
           <dt>{t('landing.mustExit')}</dt>
-          <dd>Oct 13</dd>
+          <dd>{formatDate(locale, '2026-10-13', { day: 'numeric', month: 'short' })}</dd>
         </div>
         <div>
           <dt>{t('landing.daysUsed')}</dt>

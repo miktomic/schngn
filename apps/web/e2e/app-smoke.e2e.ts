@@ -74,8 +74,12 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'he');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByRole('button', { name: 'תכנון', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'אפשר להזמין?' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'צריכים אפשרויות תכנון נוספות?' })).toBeVisible();
     await page.reload();
     await expect(page.getByRole('button', { name: 'תכנון', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.getByRole('button', { name: 'חשבון', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'להמשיך להשתמש ב־SCHNGN ללא חשבון' })).toBeVisible();
 
     await page.goto('/tr/accuracy');
     await expect(page.locator('html')).toHaveAttribute('lang', 'tr');

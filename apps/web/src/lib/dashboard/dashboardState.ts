@@ -16,6 +16,7 @@ export interface DashboardState {
   daysUsedLabel: string;
   heroMetric: string;
   latestSafeExitLabel: string;
+  latestSafeExitDate: string | null;
   referenceDate: string;
   statusLabel: string;
   statusTone: DashboardStatusTone;
@@ -53,6 +54,7 @@ export function buildDashboardState(
       : targetTrip
         ? "No safe stay"
         : "Add dates",
+    latestSafeExitDate: latestSafeExit,
     referenceDate: effectiveReferenceDate,
     statusLabel: formatStatusLabel(statusTone, targetName, targetTrip),
     statusTone,

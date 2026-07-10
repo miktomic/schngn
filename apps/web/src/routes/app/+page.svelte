@@ -8,6 +8,14 @@
   import { createTranslator, intlLocale, localeFromPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
+  import { createAppRuntimeUiTranslator, formatLocalizedCount } from '$lib/i18n/appRuntimeUi';
+  import {
+    localizeDashboardState,
+    localizePdfState,
+    localizeReturningForecast,
+    localizeSimulationState,
+    localizeUnlockState
+  } from '$lib/i18n/stateUi';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import { buildTripSimulationState, emptyProposedTrip, type ProposedTripInput } from '$lib/simulator/tripSimulator';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
@@ -35,7 +43,6 @@
     currentLocalIsoDate,
     deleteTripById,
     emptyTripForm,
-    formatTripRange,
     MAX_TRIP_COUNT,
     MAX_TRIP_LABEL_LENGTH,
     MAX_OUTSIDE_BREAKS,
@@ -98,6 +105,7 @@
   $: t = createTranslator(locale);
   $: ui = createAppUiTranslator(locale);
   $: deep = createAppDeepUiTranslator(locale);
+  $: rt = createAppRuntimeUiTranslator(locale);
   $: screens = [
     { key: 'dashboard' as const, label: ui('navOverview') },
     { key: 'trips' as const, label: ui('navTrips') },
@@ -159,13 +167,13 @@
   let accountSignOutInProgress = false;
 
   $: visibleScreens = screens.filter((screen) => !screen.requiresTrips || trips.length > 0);
-  $: dashboardState = buildDashboardState(trips);
+  $: dashboardState = localizeDashboardState(locale, buildDashboardState(trips));
   $: dashboardStatusTone = (dashboardState.statusTone === 'risk' ? 'risk' : dashboardState.statusTone === 'close' ? 'whatif' : 'safe') as
     | 'safe'
     | 'risk'
     | 'whatif';
   $: dashboardTextClass = dashboardState.statusTone === 'risk' ? 'risk-text' : dashboardState.statusTone === 'close' ? 'close-text' : 'safe-text';
-  $: simulationState = buildTripSimulationState(trips, simulatorForm);
+  $: simulationState = localizeSimulationState(locale, buildTripSimulationState(trips, simulatorForm));
   $: tripFormPreviewResult = upsertTrip([], { ...tripForm, id: 'preview' });
   $: tripFormPreview = tripFormPreviewResult.trips[0] ?? null;
   $: tripFormToday = currentLocalIsoDate();
@@ -182,14 +190,15 @@
     | 'safe'
     | 'risk'
     | 'whatif';
-  $: returningForecast = buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 30 });
+  $: returningForecast = localizeReturningForecast(locale, buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 30 }));
   $: explanationState = buildExplanationState(trips, dashboardState.referenceDate);
-  $: pdfFakeDoorState = buildPdfReportFakeDoorState(pdfIntentMessageVisible);
-  $: unlockFakeDoorState = buildUnlockFakeDoorState(unlockPrice, unlockIntentMessageVisible);
+  $: pdfFakeDoorState = localizePdfState(locale, buildPdfReportFakeDoorState(pdfIntentMessageVisible));
+  $: unlockFakeDoorState = localizeUnlockState(locale, buildUnlockFakeDoorState(unlockPrice, unlockIntentMessageVisible), unlockPrice.label);
   $: pendingDeleteTrip = trips.find((trip) => trip.id === pendingDeleteTripId) ?? null;
   $: accountSignedIn = clerkAuth?.available === true && clerkAuth.isSignedIn && clerkAuth.userId !== null;
   $: accountEmail = clerkAuth?.available === true ? clerkAuth.email : null;
   $: accountStatusLabel = accountHeaderLabel(accountState, accountSignedIn);
+  $: localizedStorageWarning = storageWarning ? (locale === 'en' ? storageWarning : rt('accountGenericError')) : '';
 
   onMount(() => {
     const result = loadTripsFromStorage(window.localStorage);
@@ -263,7 +272,7 @@
         });
       } catch {
         accountState = 'unavailable';
-        accountError = 'Account updates could not be monitored safely. Local-only mode is still available.';
+        accountError = rt('accountGenericError');
         return;
       }
     }
@@ -278,7 +287,7 @@
     if (!context) {
       if (isCurrentAccountIdentity(identity)) {
         accountState = 'error';
-        accountError = 'Your account session could not be verified. Retry or sign in again; local trips are unchanged.';
+        accountError = rt('sessionExpired');
       }
       return;
     }
@@ -287,9 +296,7 @@
     if (!isCurrentAccountIdentity(context)) return;
     if (result.ok === false) {
       accountState = 'error';
-      accountError = result.code === 'unauthorized'
-        ? 'Your session expired. Sign in again to access account trips.'
-        : 'Account trips could not be reached. Your local trips are unchanged.';
+      accountError = result.code === 'unauthorized' ? rt('sessionExpired') : rt('accountGenericError');
       return;
     }
 
@@ -303,12 +310,12 @@
       storageSource,
       hasLocalMutations: hasLocalTripMutations
     })) {
-      applyCloudSnapshot(result.snapshot, context.userId, 'Restored the account copy because this browser had no complete saved snapshot.');
+      applyCloudSnapshot(result.snapshot, context.userId, rt('syncedCopy'));
       return;
     }
     if (!localTripsDurable && result.snapshot.revision > 0) {
       accountState = 'conflict';
-      accountError = 'This browser could not provide a reliable saved trip copy. Choose the account copy to recover it, or explicitly replace the account only if this tab is correct.';
+      accountError = rt('conflictError');
       return;
     }
     const reconciliation = decideAccountReconciliation({
@@ -323,11 +330,11 @@
       return;
     }
     if (reconciliation.action === 'load_cloud') {
-      applyCloudSnapshot(result.snapshot, context.userId, 'Loaded your saved account trips on this device.');
+      applyCloudSnapshot(result.snapshot, context.userId, rt('syncedCopy'));
       return;
     }
     if (reconciliation.action === 'push_local') {
-      await enqueueAccountWrite(trips, result.snapshot.revision, 'Offline changes are now synced.', localTripsDurable);
+      await enqueueAccountWrite(trips, result.snapshot.revision, ui('synced'), localTripsDurable);
       return;
     }
     if (reconciliation.action === 'synced') {
@@ -337,7 +344,7 @@
     }
 
     accountState = 'conflict';
-    accountError = 'This browser and your account both contain changes. Choose which copy to keep; SCHNGN will not overwrite either automatically.';
+    accountError = rt('conflictError');
   }
 
   function queueAccountSync(nextTrips: EditableTrip[], localPersisted: boolean): void {
@@ -363,7 +370,7 @@
         if (!context) {
           if (isCurrentAccountIdentity(identity)) {
             accountState = 'error';
-            accountError = 'Your account session could not be verified. Local trips are unchanged.';
+            accountError = rt('sessionExpired');
           }
           return false;
         }
@@ -378,7 +385,7 @@
       .catch(() => {
         if (isCurrentAccountIdentity(identity)) {
           accountState = 'error';
-          accountError = 'Trips remain saved on this device, but account sync could not finish.';
+          accountError = rt('syncFailed');
         }
         return false;
       });
@@ -409,9 +416,7 @@
       accountSnapshot = result.snapshot;
       if (!localPersisted || !recordSyncedSnapshot(result.snapshot, context.userId)) {
         accountState = 'error';
-        accountError = localPersisted
-          ? 'Account trips were saved, but sync status could not be stored safely in this browser.'
-          : 'Account trips were saved, but this browser did not persist the matching local copy. Reload to restore the account copy.';
+        accountError = rt('accountGenericError');
         return false;
       }
       accountState = pendingAccountWrites > 0 ? 'syncing' : 'synced';
@@ -422,14 +427,12 @@
       accountSnapshot = result.snapshot;
       accountConflictEpoch += 1;
       accountState = 'conflict';
-      accountError = 'Another device changed these account trips first. Choose the account copy or replace it with this device.';
+      accountError = rt('conflictError');
       return false;
     }
 
     accountState = 'error';
-    accountError = result.code === 'unauthorized'
-      ? 'Your session expired. Sign in again before syncing.'
-      : 'Trips remain saved on this device, but account sync could not finish. Retry when you are online.';
+    accountError = result.code === 'unauthorized' ? rt('sessionExpired') : rt('syncFailed');
     return false;
   }
 
@@ -450,7 +453,7 @@
     accountSnapshot = snapshot;
     if (!persisted || !recordSyncedSnapshot(snapshot, userId)) {
       accountState = 'error';
-      accountError = 'Account trips are available in this tab, but could not be stored safely in this browser.';
+      accountError = rt('accountGenericError');
       return;
     }
     hasLocalTripMutations = false;
@@ -464,7 +467,7 @@
     const saved = await enqueueAccountWrite(
       trips,
       accountSnapshot.revision,
-      `${trips.length} ${pluralize('trip', trips.length)} now ${trips.length === 1 ? 'syncs' : 'sync'} with your account.`
+      ui('synced')
     );
     if (saved) accountConsent = false;
   }
@@ -472,12 +475,12 @@
   function useAccountTrips(): void {
     const identity = captureAccountIdentity();
     if (!identity) return;
-    applyCloudSnapshot(accountSnapshot, identity.userId, 'This device now uses the account copy.');
+    applyCloudSnapshot(accountSnapshot, identity.userId, rt('useAccountCopy'));
   }
 
   async function replaceAccountTrips(): Promise<void> {
     if (accountSnapshot.revision === 0 && !accountConsent) return;
-    const saved = await enqueueAccountWrite(trips, accountSnapshot.revision, 'The account copy now matches this device.');
+    const saved = await enqueueAccountWrite(trips, accountSnapshot.revision, rt('replaceAccountCopy'));
     if (saved) accountConsent = false;
   }
 
@@ -498,7 +501,7 @@
       pendingAccountWrites = Math.max(0, pendingAccountWrites - 1);
       if (isCurrentAccountIdentity(identity)) {
         accountState = 'error';
-        accountError = 'Your account session could not be verified. No account data was deleted.';
+        accountError = rt('sessionExpired');
       }
       return;
     }
@@ -509,9 +512,7 @@
     if (!isCurrentAccountIdentity(context)) return;
     if (result.ok === false) {
       accountState = 'error';
-      accountError = result.code === 'unauthorized'
-        ? 'Your session expired. Sign in again before deleting account data.'
-        : 'Cloud trip data could not be deleted. Nothing was changed on this device.';
+      accountError = result.code === 'unauthorized' ? rt('sessionExpired') : rt('accountGenericError');
       return;
     }
 
@@ -521,7 +522,7 @@
     accountConsent = false;
     accountState = 'offer_sync';
     accountError = '';
-    accountNotice = 'Cloud trip data was deleted. Trips on this browser remain local-only.';
+    accountNotice = rt('cloudDeleted');
   }
 
   async function startAccountSignUp(): Promise<void> {
@@ -530,7 +531,7 @@
     try {
       await auth.redirectToSignUp({ redirectUrl: accountReturnUrl() });
     } catch {
-      accountError = 'The secure sign-up page could not be opened. Try again.';
+      accountError = rt('securePageError');
     }
   }
 
@@ -540,7 +541,7 @@
     try {
       await auth.redirectToSignIn({ redirectUrl: accountReturnUrl() });
     } catch {
-      accountError = 'The secure sign-in page could not be opened. Try again.';
+      accountError = rt('securePageError');
     }
   }
 
@@ -550,7 +551,7 @@
     try {
       await auth.redirectToUserProfile();
     } catch {
-      accountError = 'The secure account portal could not be opened. Try again.';
+      accountError = rt('securePageError');
     }
   }
 
@@ -582,17 +583,13 @@
       accountSignOutInProgress = false;
       pendingAccountWrites = Math.max(0, pendingAccountWrites - 1);
       accountState = 'error';
-      accountError = clearBrowser
-        ? 'Trips were cleared from this browser, but sign-out did not complete. Try signing out again before sharing this device.'
-        : 'Sign-out did not complete. Your trips and account session are unchanged.';
+      accountError = rt('accountGenericError');
       return;
     }
     accountSignOutInProgress = false;
     pendingAccountWrites = Math.max(0, pendingAccountWrites - 1);
     await synchronizeClerkIdentity();
-    accountNotice = clearBrowser
-      ? 'Signed out and cleared trip data from this browser.'
-      : 'Signed out. Trips remain on this browser unless you clear them.';
+    accountNotice = clearBrowser ? rt('signedOutCleared') : rt('signedOut');
   }
 
   function clearBrowserTripsBeforeSignOut(): boolean {
@@ -737,7 +734,7 @@
 
   function saveTrip(confirmOutsideWindow = false): void {
     const result = upsertTrip(trips, { ...tripForm, id: editingTripId ?? tripForm.id });
-    formErrors = result.errors;
+    formErrors = localizeValidationErrors(result.errors);
     if (Object.keys(result.errors).length > 0) {
       outsideWindowConfirmationVisible = false;
       return;
@@ -807,7 +804,7 @@
     link.download = `schngn-trips-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
-    importMessage = 'Exported a private JSON backup containing your trip dates.';
+    importMessage = rt('exported');
     importError = '';
   }
 
@@ -818,7 +815,7 @@
 
     if (file.size > MAX_TRIP_BACKUP_BYTES) {
       input.value = '';
-      importError = 'Import file is too large.';
+      importError = rt('importTooLarge');
       importMessage = '';
       return;
     }
@@ -826,7 +823,7 @@
     const result = importTripsFromJson(await file.text());
     input.value = '';
     if (result.ok === false) {
-      importError = result.error;
+      importError = rt('accountGenericError');
       importMessage = '';
       return;
     }
@@ -834,8 +831,8 @@
     const persisted = persistTrips(result.trips);
     importError = '';
     importMessage = persisted
-      ? `Imported ${result.trips.length} ${pluralize('trip', result.trips.length)}. The calculation has been refreshed on this device.`
-      : `Imported ${result.trips.length} ${pluralize('trip', result.trips.length)} into this tab, but browser storage failed.`;
+      ? rt('imported', { count: tripCount(result.trips.length) })
+      : rt('importedTemporary', { count: tripCount(result.trips.length) });
   }
 
   function requestClearLocalTrips(): void {
@@ -878,11 +875,11 @@
     storageSource = 'empty';
     if (browser && accountSignedIn && accountSnapshot.revision > 0) {
       accountState = 'paused';
-      accountNotice = 'Local trips were cleared. Your account copy is unchanged; choose which copy to keep before sync resumes.';
+      accountNotice = rt('conflictError');
     }
     clearConfirmationVisible = false;
     pendingDeleteTripId = null;
-    importMessage = 'Trip data is now cleared from this tab.';
+    importMessage = rt('cleared');
     importError = '';
     setActiveScreen('privacy');
   }
@@ -891,6 +888,16 @@
     if (status === 'past') return deep('pastTrip');
     if (status === 'booked') return deep('booked');
     return deep('whatIf');
+  }
+
+  function localizeValidationErrors(errors: TripValidationErrors): TripValidationErrors {
+    if (locale === 'en') return errors;
+    const message = deep('fixFields');
+    return Object.fromEntries(Object.entries(errors).map(([key, value]) => [key,
+      key === 'breakFields' && value && typeof value === 'object'
+        ? Object.fromEntries(Object.entries(value).map(([id, fields]) => [id, Object.fromEntries(Object.keys(fields as object).map((field) => [field, message]))]))
+        : message
+    ])) as TripValidationErrors;
   }
 
   function runSimulation(): void {
@@ -1003,17 +1010,15 @@
       }
     } catch {
       waitlistState = 'error';
-      waitlistError = 'The request could not reach SCHNGN. Check your connection and try again; your email was not confirmed as saved.';
+      waitlistError = rt('waitlistNetwork');
     }
   }
 
   function waitlistRecoveryCopy(status: number): string {
-    if (status === 400) return 'Check the email address and consent, then try again.';
-    if (status === 413) return 'The request was rejected as too large. Reload this page and try again.';
-    if (status === 415) return 'The service could not read the request. Reload this page and try again.';
-    if (status === 429) return 'Too many attempts were made. Wait a few minutes, then try again.';
-    if (status >= 500) return 'The waitlist service is temporarily unavailable. Try again later; your email was not confirmed as saved.';
-    return 'The email could not be saved. Review the form and try again.';
+    if (status === 400) return rt('waitlistInvalid');
+    if (status === 429) return rt('waitlistRate');
+    if (status >= 500) return rt('waitlistUnavailable');
+    return rt('waitlistFailed');
   }
 
   function recordPdfBuyIntent(): void {
@@ -1065,7 +1070,12 @@
   }
 
   function pluralize(word: string, count: number): string {
+    if (word === 'trip' || word === 'day') return formatLocalizedCount(locale, count, word).label;
     return count === 1 ? word : `${word}s`;
+  }
+
+  function tripCount(count: number): string {
+    return formatLocalizedCount(locale, count, 'trip').text;
   }
 
   function accountHeaderLabel(state: AccountState, signedIn: boolean): string {
@@ -1080,7 +1090,7 @@
   }
 
   function formatAccountUpdatedAt(value: string | null): string {
-    if (!value) return 'Not synced yet';
+    if (!value) return rt('notSynced');
     return new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
@@ -1133,7 +1143,7 @@
     {#if storageWarning}
       <aside class="storage-alert" aria-live="polite">
         <strong>{ui('storageAttention')}</strong>
-        <span>{storageWarning}</span>
+        <span>{localizedStorageWarning}</span>
       </aside>
     {/if}
 
@@ -1206,7 +1216,7 @@
           <h1 id="trip-heading" class="screen-title">{editingTripId ? deep('editStay') : deep('addStay')}</h1>
         </div>
         <p class="intro-copy">{deep('tripIntro')}</p>
-        <form class="trip-form" aria-label="Trip form" novalidate onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
+        <form class="trip-form" aria-label={rt('tripFormAria')} novalidate onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
           <label for="trip-label">
             <span>{deep('tripLabel')} <small>{deep('optional')}</small></span>
           </label>
@@ -1218,7 +1228,7 @@
             aria-describedby={formErrors.label ? 'trip-label-help trip-label-error' : 'trip-label-help'}
             aria-invalid={formErrors.label ? 'true' : undefined}
           />
-          <small id="trip-label-help">Up to {MAX_TRIP_LABEL_LENGTH} characters. If blank, the entry and exit countries become the label.</small>
+          <small id="trip-label-help">{rt('labelHelp', { max: MAX_TRIP_LABEL_LENGTH })}</small>
           {#if formErrors.label}<strong id="trip-label-error" class="field-error">{formErrors.label}</strong>{/if}
 
           <div class="date-fields">
@@ -1293,7 +1303,7 @@
             {#each tripForm.outsideBreaks as outsideBreak, index (outsideBreak.id)}
               <fieldset class="outside-break" aria-labelledby={`trip-break-${outsideBreak.id}-legend`}>
                 <div class="outside-break-title">
-                  <legend id={`trip-break-${outsideBreak.id}-legend`}>Outside-Schengen break {index + 1}</legend>
+                  <legend id={`trip-break-${outsideBreak.id}-legend`}>{rt('outsideBreak', { number: index + 1 })}</legend>
                   <button type="button" class="text-button delete" onclick={() => removeTripOutsideBreak(outsideBreak.id)}>{deep('removeBreak')}</button>
                 </div>
                 <div class="date-fields">
@@ -1311,7 +1321,7 @@
               </fieldset>
             {/each}
             {#if tripForm.outsideBreaks.length > 0 && tripForm.outsideBreaks.length < MAX_OUTSIDE_BREAKS}
-              <button class="secondary-button add-break-button" type="button" onclick={addTripOutsideBreak}>+ Add another outside-Schengen break</button>
+              <button class="secondary-button add-break-button" type="button" onclick={addTripOutsideBreak}>{rt('addAnotherBreak')}</button>
             {/if}
             {#if formErrors.outsideBreaks}<strong class="field-error">{formErrors.outsideBreaks}</strong>{/if}
           </section>
@@ -1332,7 +1342,7 @@
           {#if tripFormPreview}
             <section class="trip-form-summary" aria-live="polite">
               <strong>{displayRoute(tripFormPreview)}</strong>
-              <span>{formatTripRange({ entryDate: tripEntryDate(tripFormPreview), exitDate: tripExitDate(tripFormPreview) })} · {countTripSchengenDays(tripFormPreview)} Schengen {pluralize('day', countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${countTripOutsideDays(tripFormPreview)} ${pluralize('day', countTripOutsideDays(tripFormPreview))} outside` : ''}</span>
+              <span>{formatDateRange(tripEntryDate(tripFormPreview), tripExitDate(tripFormPreview))} · {countTripSchengenDays(tripFormPreview)} {rt('schengen')} {pluralize('day', countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${countTripOutsideDays(tripFormPreview)} ${pluralize('day', countTripOutsideDays(tripFormPreview))} ${rt('outside')}` : ''}</span>
             </section>
           {/if}
           <div class="trip-form-timeline">
@@ -1347,7 +1357,7 @@
           {#if outsideWindowConfirmationVisible}
             <section class="outside-window-confirmation" role="alert" aria-labelledby="outside-window-heading">
               <h2 id="outside-window-heading">{deep('outsideWindow')}</h2>
-              <p>It ended before {formatDate(tripFormWindowStartDate)}, so it will not change today’s day allocation. You can still keep it in your history.</p>
+              <p>{rt('endedBefore', { date: formatDate(tripFormWindowStartDate) })}</p>
               <div class="button-row compact-actions">
                 <button class="primary-button" type="button" onclick={() => saveTrip(true)}>{deep('saveAnyway')}</button>
                 <button class="secondary-button" type="button" onclick={() => { outsideWindowConfirmationVisible = false; }}>{deep('keepEditing')}</button>
@@ -1385,7 +1395,7 @@
           </section>
         {:else}
           <p class="list-summary">
-            {trips.length} {pluralize('trip', trips.length)} stored on this device{accountState === 'synced' || accountState === 'syncing' ? ' and synced to your account.' : '.'}
+            {rt('storedSummary', { count: tripCount(trips.length), synced: accountState === 'synced' || accountState === 'syncing' ? rt('syncedSuffix') : '.' })}
           </p>
           <div class="trip-list">
             {#each trips as trip (trip.id)}
@@ -1394,7 +1404,7 @@
                 <div class="trip-copy">
                   <h2>{displayTripName(trip)}</h2>
                   {#if trip.label}<p class="trip-route">{displayRoute(trip)}</p>{/if}
-                  <p>{formatTripRange({ entryDate: tripEntryDate(trip), exitDate: tripExitDate(trip) })} · {countTripSchengenDays(trip)} Schengen {pluralize('day', countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${countTripOutsideDays(trip)} ${pluralize('day', countTripOutsideDays(trip))} outside` : ''}</p>
+                  <p>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))} · {countTripSchengenDays(trip)} {rt('schengen')} {pluralize('day', countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${countTripOutsideDays(trip)} ${pluralize('day', countTripOutsideDays(trip))} ${rt('outside')}` : ''}</p>
                   <strong>{statusLabel(trip.status)}</strong>
                 </div>
                 <div class="trip-actions">
@@ -1405,8 +1415,8 @@
               {#if pendingDeleteTrip?.id === trip.id}
                 <section class="confirm-panel" aria-live="polite" aria-labelledby={`delete-${trip.id}-heading`}>
                   <div>
-                    <h2 id={`delete-${trip.id}-heading`}>Delete {displayTripName(trip)}?</h2>
-                    <p>This removes it from this browser and recalculates every result.</p>
+                    <h2 id={`delete-${trip.id}-heading`}>{rt('deleteNamed', { name: displayTripName(trip) })}</h2>
+                    <p>{rt('removeRecalculate')}</p>
                   </div>
                   <div class="button-row">
                     <button class="danger-button" type="button" onclick={deletePendingTrip}>{deep('deleteTrip')}</button>
@@ -1417,7 +1427,7 @@
             {/each}
           </div>
           {#if trips.length >= MAX_TRIP_COUNT}
-            <p class="storage-warning">This device has reached the {MAX_TRIP_COUNT}-trip limit. Export a backup before removing older entries.</p>
+            <p class="storage-warning">{rt('limitReached', { max: MAX_TRIP_COUNT })}</p>
           {/if}
         {/if}
       </section>
@@ -1428,7 +1438,7 @@
           <h1 id="planner-heading" class="screen-title">{deep('canBook')}</h1>
         </div>
         <p class="intro-copy">{deep('plannerIntro')}</p>
-        <form class="trip-form" aria-label="Future trip simulator" novalidate onsubmit={(event) => { event.preventDefault(); runSimulation(); }}>
+        <form class="trip-form" aria-label={rt('futureSimulatorAria')} novalidate onsubmit={(event) => { event.preventDefault(); runSimulation(); }}>
           <label for="simulation-label"><span>{deep('simulationLabel')} <small>{deep('optional')}</small></span></label>
           <input
             id="simulation-label"
@@ -1507,7 +1517,7 @@
             {#each simulatorForm.outsideBreaks as outsideBreak, index (outsideBreak.id)}
               <fieldset class="outside-break">
                 <div class="outside-break-title">
-                  <legend>Outside-Schengen break {index + 1}</legend>
+                  <legend>{rt('outsideBreak', { number: index + 1 })}</legend>
                   <button type="button" class="text-button delete" onclick={() => removeSimulationOutsideBreak(outsideBreak.id)}>{deep('removeBreak')}</button>
                 </div>
                 <div class="date-fields">
@@ -1525,7 +1535,7 @@
               </fieldset>
             {/each}
             {#if simulatorForm.outsideBreaks.length > 0 && simulatorForm.outsideBreaks.length < MAX_OUTSIDE_BREAKS}
-              <button class="secondary-button add-break-button" type="button" onclick={addSimulationOutsideBreak}>+ Add another outside-Schengen break</button>
+              <button class="secondary-button add-break-button" type="button" onclick={addSimulationOutsideBreak}>{rt('addAnotherBreak')}</button>
             {/if}
           </section>
           <div class="form-actions">
@@ -1565,15 +1575,15 @@
         {/if}
 
         <section class="panel whatif-panel">
-          <h2>Need more planning power?</h2>
+          <h2>{rt('needPlanningPower')}</h2>
           <p>{unlockFakeDoorState.helperCopy}</p>
           <button class="secondary-button" type="button" onclick={recordUnlockBuyIntent}>{unlockFakeDoorState.buttonLabel}</button>
         </section>
         {#if unlockFakeDoorState.showIntentMessage}
           <section class="panel mint" aria-live="polite">
-            <h2>Unlock request noted</h2>
+            <h2>{rt('unlockNoted')}</h2>
             <p>{unlockFakeDoorState.messageCopy}</p>
-            <p class="micro-safe">No payment was taken. No trip dates or planner timeline were sent.</p>
+            <p class="micro-safe">{rt('noPaymentPlanner')}</p>
           </section>
         {/if}
       </section>
@@ -1606,7 +1616,7 @@
           {:else}
             <section class="empty-state compact-empty">
               <h2>{deep('noCounted')}</h2>
-              <p>Your saved trips fall outside the active window or use countries that do not count toward the Schengen short-stay allowance.</p>
+              <p>{rt('noCountedCopy')}</p>
             </section>
           {/each}
         </div>
@@ -1621,10 +1631,10 @@
     {:else if active === 'returns'}
       <section class="screen" aria-labelledby="returns-heading">
         <div class="section-heading">
-          <p>Allowance forecast from {formatDate(dashboardState.referenceDate)}</p>
+          <p>{rt('allowanceFrom', { date: formatDate(dashboardState.referenceDate) })}</p>
           <h1 id="returns-heading" class="screen-title">{returningForecast.summaryLabel}</h1>
         </div>
-        <p class="window-label">{returningForecast.currentUsedLabel} on {formatDate(dashboardState.referenceDate)}</p>
+        <p class="window-label">{rt('usedOn', { used: returningForecast.currentUsedLabel, date: formatDate(dashboardState.referenceDate) })}</p>
         <TimelineLedger
           label={deep('returnsForecast')}
           {locale}
@@ -1636,7 +1646,7 @@
         />
         <section class="panel mint">
           <h2>{returningForecast.nextReturnLabel}</h2>
-          <p>Each listed day is a counted Schengen presence day aging out of the inclusive 180-day window. New travel can still use the returned allowance.</p>
+          <p>{rt('returnExplain')}</p>
         </section>
         <div class="return-list">
           {#each returningForecast.rows as row}
@@ -1647,8 +1657,8 @@
             </article>
           {:else}
             <section class="empty-state compact-empty">
-              <h2>No days return during this forecast</h2>
-              <p>No counted Schengen presence day leaves the window in the next {returningForecast.horizonDays} days.</p>
+              <h2>{rt('noReturnTitle')}</h2>
+              <p>{rt('noReturnCopy', { days: returningForecast.horizonDays })}</p>
             </section>
           {/each}
         </div>
@@ -1674,12 +1684,12 @@
         </section>
         {#if pdfFakeDoorState.showIntentMessage}
           <section class="panel mint" aria-live="polite">
-            <h2>Early-access request noted</h2>
+            <h2>{rt('requestNoted')}</h2>
             <p>{pdfFakeDoorState.messageCopy}</p>
-            <p class="micro-safe">No payment was taken. No trip dates or report content were sent.</p>
+            <p class="micro-safe">{rt('noPaymentReport')}</p>
           </section>
         {/if}
-        <button class="secondary-button" type="button" onclick={() => setActiveScreen('waitlist')}>Join PDF export list</button>
+        <button class="secondary-button" type="button" onclick={() => setActiveScreen('waitlist')}>{rt('joinPdf')}</button>
       </section>
     {:else if active === 'privacy'}
       <section class="screen" aria-labelledby="privacy-heading">
@@ -1701,11 +1711,11 @@
             <div class="account-heading-row">
               <div>
                 <p class="eyebrow">{ui('navAccount')}</p>
-                <h2 id="account-heading">Checking sign-in…</h2>
+                <h2 id="account-heading">{rt('checkingSignIn')}</h2>
               </div>
               <span class="account-state-badge neutral">{deep('loading')}</span>
             </div>
-            <p>Trips remain available from this browser while account status loads.</p>
+            <p>{rt('accountLoadingCopy')}</p>
           {:else if accountState === 'unavailable'}
             <div class="account-heading-row">
               <div>
@@ -1714,16 +1724,16 @@
               </div>
               <span class="account-state-badge neutral">{deep('localOnly')}</span>
             </div>
-            <p>Sign-in is unavailable in this build. The calculator still works and keeps trips in this browser.</p>
+            <p>{rt('signInUnavailable')}</p>
           {:else if accountState === 'guest'}
             <div class="account-heading-row">
               <div>
                 <p class="eyebrow">{ui('navAccount')}</p>
-                <h2 id="account-heading">Keep using SCHNGN without an account</h2>
+                <h2 id="account-heading">{rt('guestTitle')}</h2>
               </div>
               <span class="account-state-badge neutral">{deep('localOnly')}</span>
             </div>
-            <p>Signing up is optional. Clerk handles account identity. Until you sign in and explicitly turn on sync, no trip dates are sent to SCHNGN's database.</p>
+            <p>{rt('guestCopy')}</p>
             <div class="button-row account-actions">
               <button class="primary-button" type="button" onclick={startAccountSignUp}>{deep('signUp')}</button>
               <button class="secondary-button" type="button" onclick={startAccountSignIn}>{deep('signIn')}</button>
@@ -1731,69 +1741,69 @@
           {:else if accountState === 'offer_sync'}
             <div class="account-heading-row">
               <div>
-                <p class="eyebrow">Signed in{accountEmail ? ` as ${accountEmail}` : ''}</p>
-                <h2 id="account-heading">Choose whether to sync</h2>
+                <p class="eyebrow">{accountEmail ? rt('signedInAs', { email: accountEmail }) : rt('signedIn')}</p>
+                <h2 id="account-heading">{rt('chooseSync')}</h2>
               </div>
-              <span class="account-state-badge neutral">Not syncing</span>
+              <span class="account-state-badge neutral">{rt('notSyncing')}</span>
             </div>
-            <p>Your account is ready, but no trip snapshot has been stored. Local-only remains the default until you consent below.</p>
+            <p>{rt('chooseSyncCopy')}</p>
             <label class="consent-row account-consent" for="account-sync-consent">
               <input id="account-sync-consent" bind:checked={accountConsent} type="checkbox" />
-              <span><strong>Allow SCHNGN to store my saved trips for account sync.</strong> This sends the labels, countries, dates, and statuses for {trips.length} {pluralize('trip', trips.length)} to SCHNGN's Cloudflare D1 database.</span>
+              <span><strong>{rt('consentSync')}</strong> {rt('consentDetails', { count: tripCount(trips.length) })}</span>
             </label>
             <button
               class="primary-button"
               type="button"
               disabled={!accountConsent}
               onclick={enableAccountSync}
-            >Sync {trips.length} {pluralize('trip', trips.length)}</button>
+            >{rt('syncCount', { count: tripCount(trips.length) })}</button>
           {:else if accountState === 'synced' || accountState === 'syncing'}
             <div class="account-heading-row">
               <div>
-                <p class="eyebrow">Signed in{accountEmail ? ` as ${accountEmail}` : ''}</p>
-                <h2 id="account-heading">Trips are saved for repeat visits</h2>
+                <p class="eyebrow">{accountEmail ? rt('signedInAs', { email: accountEmail }) : rt('signedIn')}</p>
+                <h2 id="account-heading">{rt('savedRepeat')}</h2>
               </div>
-              <span class="account-state-badge safe">{accountState === 'syncing' ? 'Syncing…' : 'Synced'}</span>
+              <span class="account-state-badge safe">{accountState === 'syncing' ? ui('syncing') : ui('synced')}</span>
             </div>
-            <p>Changes save in this browser first, then sync to your account. The calculation still runs on this device.</p>
+            <p>{rt('syncedCopy')}</p>
             <dl class="account-facts">
-              <div><dt>Account copy</dt><dd>{accountSnapshot.trips.length} {pluralize('trip', accountSnapshot.trips.length)}</dd></div>
-              <div><dt>Last saved</dt><dd>{formatAccountUpdatedAt(accountSnapshot.updatedAt)}</dd></div>
+              <div><dt>{rt('accountCopy')}</dt><dd>{tripCount(accountSnapshot.trips.length)}</dd></div>
+              <div><dt>{rt('lastSaved')}</dt><dd>{formatAccountUpdatedAt(accountSnapshot.updatedAt)}</dd></div>
             </dl>
           {:else if accountState === 'conflict' || accountState === 'paused'}
             <div class="account-heading-row">
               <div>
-                <p class="eyebrow">Signed in{accountEmail ? ` as ${accountEmail}` : ''}</p>
-                <h2 id="account-heading">Choose which trip copy to keep</h2>
+                <p class="eyebrow">{accountEmail ? rt('signedInAs', { email: accountEmail }) : rt('signedIn')}</p>
+                <h2 id="account-heading">{rt('chooseCopy')}</h2>
               </div>
-              <span class="account-state-badge attention">Review needed</span>
+              <span class="account-state-badge attention">{rt('reviewNeeded')}</span>
             </div>
-            <p>Your account has {accountSnapshot.trips.length} {pluralize('trip', accountSnapshot.trips.length)} and this browser has {trips.length}. Nothing will be overwritten until you choose.</p>
+            <p>{rt('conflictCopy', { account: tripCount(accountSnapshot.trips.length), local: tripCount(trips.length) })}</p>
             {#if accountSnapshot.revision === 0}
               <label class="consent-row account-consent" for="account-conflict-sync-consent">
                 <input id="account-conflict-sync-consent" bind:checked={accountConsent} type="checkbox" />
-                <span><strong>Allow SCHNGN to store this browser's saved trips for account sync.</strong> This sends the labels, countries, dates, and statuses for {trips.length} {pluralize('trip', trips.length)} to SCHNGN's Cloudflare D1 database. These trips may come from a previously signed-in account on this device.</span>
+                <span><strong>{rt('consentSync')}</strong> {rt('consentDetails', { count: tripCount(trips.length) })}</span>
               </label>
             {/if}
             <div class="account-choice-grid">
               <button class="secondary-button account-choice" type="button" onclick={useAccountTrips}>
-                <strong>Use account trips</strong>
-                <span>Replace this browser's copy with the saved account copy.</span>
+                <strong>{rt('useAccount')}</strong>
+                <span>{rt('useAccountCopy')}</span>
               </button>
               <button class="secondary-button account-choice" type="button" disabled={accountSnapshot.revision === 0 && !accountConsent} onclick={replaceAccountTrips}>
-                <strong>Replace account with this device</strong>
-                <span>Keep this browser's copy and overwrite the account copy.</span>
+                <strong>{rt('replaceAccount')}</strong>
+                <span>{rt('replaceAccountCopy')}</span>
               </button>
             </div>
           {:else}
             <div class="account-heading-row">
               <div>
-                <p class="eyebrow">Signed in{accountEmail ? ` as ${accountEmail}` : ''}</p>
-                <h2 id="account-heading">Account sync needs attention</h2>
+                <p class="eyebrow">{accountEmail ? rt('signedInAs', { email: accountEmail }) : rt('signedIn')}</p>
+                <h2 id="account-heading">{rt('syncAttention')}</h2>
               </div>
-              <span class="account-state-badge attention">Sync paused</span>
+              <span class="account-state-badge attention">{ui('syncPaused')}</span>
             </div>
-            <p>Your trips remain on this browser. Retry when your connection and account session are available.</p>
+            <p>{rt('retryCopy')}</p>
             <button class="primary-button" type="button" onclick={retryAccountSync}>{deep('retrySync')}</button>
           {/if}
 
@@ -1806,9 +1816,9 @@
             <div class="button-row account-actions">
               <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={manageClerkAccount}>{deep('manageAccount')}</button>
               <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={signOutAccount}>{deep('signOut')}</button>
-              <button class="danger-outline" type="button" disabled={accountState === 'syncing'} onclick={() => (signOutClearConfirmationVisible = true)}>Sign out & clear this browser</button>
+              <button class="danger-outline" type="button" disabled={accountState === 'syncing'} onclick={() => (signOutClearConfirmationVisible = true)}>{rt('signOutClear')}</button>
               {#if accountSnapshot.revision > 0}
-                <button class="danger-outline" type="button" disabled={accountState === 'syncing'} onclick={() => (accountDeleteConfirmationVisible = true)}>Delete saved account trips</button>
+                <button class="danger-outline" type="button" disabled={accountState === 'syncing'} onclick={() => (accountDeleteConfirmationVisible = true)}>{rt('deleteSaved')}</button>
               {/if}
             </div>
           {/if}
@@ -1816,12 +1826,12 @@
           {#if signOutClearConfirmationVisible && accountSignedIn}
             <section class="confirm-panel account-delete-confirm" aria-live="polite" aria-labelledby="sign-out-clear-heading">
               <div>
-                <h2 id="sign-out-clear-heading">Sign out and clear this browser?</h2>
-                <p>This removes {trips.length} local {pluralize('trip', trips.length)} before signing out. The account copy stays saved. Export first if you need an independent backup.</p>
+                <h2 id="sign-out-clear-heading">{rt('signOutClearTitle')}</h2>
+                <p>{rt('signOutClearCopy', { count: tripCount(trips.length) })}</p>
               </div>
               <div class="button-row">
-                <button class="danger-button" type="button" onclick={signOutAndClearAccount}>Sign out & clear trips</button>
-                <button class="secondary-button" type="button" onclick={() => (signOutClearConfirmationVisible = false)}>Keep this browser signed in</button>
+                <button class="danger-button" type="button" onclick={signOutAndClearAccount}>{rt('signOutClearAction')}</button>
+                <button class="secondary-button" type="button" onclick={() => (signOutClearConfirmationVisible = false)}>{rt('keepSignedIn')}</button>
               </div>
             </section>
           {/if}
@@ -1829,74 +1839,74 @@
           {#if accountDeleteConfirmationVisible && accountSignedIn && accountSnapshot.revision > 0}
             <section class="confirm-panel account-delete-confirm" aria-live="polite" aria-labelledby="delete-account-trips-heading">
               <div>
-                <h2 id="delete-account-trips-heading">Delete trips saved to this account?</h2>
-                <p>This removes the account copy from active SCHNGN storage immediately. Cloudflare backup and Time Travel copies expire under the configured provider retention policy. The {trips.length} {pluralize('trip', trips.length)} in this browser remain here.</p>
+                <h2 id="delete-account-trips-heading">{rt('deleteAccountTitle')}</h2>
+                <p>{rt('deleteAccountCopy', { count: tripCount(trips.length) })}</p>
               </div>
               <div class="button-row">
-                <button class="danger-button" type="button" onclick={removeCloudAccountData}>Delete account trips</button>
-                <button class="secondary-button" type="button" onclick={() => (accountDeleteConfirmationVisible = false)}>Keep account trips</button>
+                <button class="danger-button" type="button" onclick={removeCloudAccountData}>{rt('deleteAccountAction')}</button>
+                <button class="secondary-button" type="button" onclick={() => (accountDeleteConfirmationVisible = false)}>{rt('keepAccount')}</button>
               </div>
             </section>
           {/if}
 
           {#if accountSignedIn}
-            <p class="account-footnote">Manage account opens Clerk's secure account portal. Deleting the Clerk account also requests removal of its active SCHNGN trip data; a deletion guard is retained for 30 days to block late writes. Ordinary sign-out keeps this browser's trips, while the shared-device action clears them first.</p>
+            <p class="account-footnote">{rt('accountFootnote')}</p>
           {/if}
         </section>
 
         <section class="panel paper-panel" aria-labelledby="browser-data-heading">
           <div class="account-heading-row">
             <div>
-              <p class="eyebrow">This device</p>
-              <h2 id="browser-data-heading">Browser trip data</h2>
+              <p class="eyebrow">{rt('thisDevice')}</p>
+              <h2 id="browser-data-heading">{rt('browserData')}</h2>
             </div>
             <span class="account-state-badge safe">{deep('availableOffline')}</span>
           </div>
-          <p>{accountState === 'synced' || accountState === 'syncing' ? 'A local copy keeps the calculator fast and available. Export a private backup whenever you want an independent copy.' : 'Trips, dates, and calculated timelines stay in this browser unless you explicitly turn on account sync or export a JSON file.'}</p>
-          <p>Export before clearing browser data. Import the file later to restore trips manually.</p>
+          <p>{accountState === 'synced' || accountState === 'syncing' ? rt('localSyncedCopy') : rt('localOnlyCopy')}</p>
+          <p>{rt('exportBeforeClear')}</p>
           {#if importError}
             <p class="storage-warning">{importError}</p>
           {:else if importMessage}
             <p class="micro-safe">{importMessage}</p>
           {:else if storageSource === 'storage'}
-            <p class="micro-safe">Loaded from this browser's local storage.</p>
+            <p class="micro-safe">{rt('loadedLocal')}</p>
           {:else}
-            <p class="micro-safe">No trip data is stored on this browser yet.</p>
+            <p class="micro-safe">{rt('noLocal')}</p>
           {/if}
         </section>
         <div class="button-row">
           <button class="secondary-button" type="button" onclick={exportTrips} disabled={trips.length === 0}>{deep('exportJson')}</button>
           <button class="secondary-button" type="button" onclick={() => importInput.click()} aria-controls="trip-import-file">{deep('importJson')}</button>
-          <input bind:this={importInput} id="trip-import-file" class="visually-hidden" aria-label="Import JSON file" type="file" accept="application/json,.json" onchange={importTrips} />
+          <input bind:this={importInput} id="trip-import-file" class="visually-hidden" aria-label={rt('importAria')} type="file" accept="application/json,.json" onchange={importTrips} />
           <button class="danger-outline" type="button" onclick={requestClearLocalTrips} disabled={trips.length === 0 || pendingAccountWrites > 0 || accountState === 'loading' || accountState === 'syncing' || accountDeleteInProgress}>{deep('clearLocal')}</button>
         </div>
         {#if clearConfirmationVisible}
           <section class="confirm-panel" aria-live="polite" aria-labelledby="clear-heading">
             <div>
-              <h2 id="clear-heading">Clear all local trip data?</h2>
-              <p>This removes {trips.length} {pluralize('trip', trips.length)} from this browser. {accountSignedIn && accountSnapshot.revision > 0 ? 'The account copy stays saved and sync pauses until you choose which copy to keep.' : 'Export first if you may need them later.'}</p>
+              <h2 id="clear-heading">{rt('clearTitle')}</h2>
+              <p>{accountSignedIn && accountSnapshot.revision > 0 ? rt('clearCopyAccount', { count: tripCount(trips.length) }) : rt('clearCopyLocal', { count: tripCount(trips.length) })}</p>
             </div>
             <div class="button-row">
-              <button class="danger-button" type="button" onclick={clearLocalTrips}>Clear this browser</button>
-              <button class="secondary-button" type="button" onclick={() => (clearConfirmationVisible = false)}>Keep my trips</button>
+              <button class="danger-button" type="button" onclick={clearLocalTrips}>{rt('clearBrowser')}</button>
+              <button class="secondary-button" type="button" onclick={() => (clearConfirmationVisible = false)}>{rt('keepTrips')}</button>
             </div>
           </section>
         {/if}
         <section class="panel paper-panel">
-          <h2>Official sources</h2>
-          <p>SCHNGN is not an EU service and does not imply official endorsement. Check official guidance before booking or travelling.</p>
+          <h2>{rt('officialSources')}</h2>
+          <p>{rt('officialCopy')}</p>
           <div class="official-links stacked">
             {#each OFFICIAL_SOURCE_LINKS as source}<a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>{/each}
           </div>
         </section>
         <section class="panel paper-panel">
-          <h2>Analytics never include trip dates</h2>
-          <p>Allowed events use aggregate buckets only. They do not include trip dates, country history, calculated personal timelines, account IDs, or email addresses. Waitlist email storage is separate from account trip sync.</p>
+          <h2>{rt('analyticsTitle')}</h2>
+          <p>{rt('analyticsCopy')}</p>
         </section>
       </section>
     {:else if active === 'waitlist'}
       <section class="screen narrow-screen" aria-labelledby="waitlist-heading">
-        <button class="text-button" type="button" onclick={() => setActiveScreen('report')}>← Back to report</button>
+        <button class="text-button" type="button" onclick={() => setActiveScreen('report')}>{rt('backReport')}</button>
         <div class="brand report-brand"><SchngnLogo small /></div>
         <h1 id="waitlist-heading" class="screen-title">{deep('waitlistTitle')}</h1>
         <p class="intro-copy">{deep('waitlistIntro')}</p>
@@ -1905,7 +1915,7 @@
           <input id="waitlist-email" bind:value={waitlistEmail} autocomplete="email" maxlength="254" placeholder="name@example.com" type="email" required />
           <label class="consent-row" for="waitlist-consent">
             <input id="waitlist-consent" bind:checked={waitlistConsent} type="checkbox" required />
-            <span>I agree to receive SCHNGN updates. Store my email only; do not send trip dates or history.</span>
+            <span>{rt('waitlistConsent')}</span>
           </label>
           <button class="primary-button" disabled={!waitlistEmail.trim() || !waitlistConsent || waitlistState === 'submitting' || waitlistState === 'stored'} type="submit">
             {waitlistState === 'submitting' ? deep('joining') : waitlistState === 'error' || waitlistState === 'not_configured' ? deep('tryAgain') : waitlistState === 'stored' ? deep('joined') : deep('join')}
@@ -1915,8 +1925,8 @@
           <section class="panel mint" aria-live="polite"><h2>{deep('onList')}</h2><p>{deep('emailSaved')}</p></section>
         {:else if waitlistState === 'not_configured'}
           <section class="panel whatif-panel" aria-live="polite">
-            <h2>Email was not confirmed as saved</h2>
-            <p>The waitlist storage is not configured. Your email remains in the form so you can retry after configuration is available.</p>
+            <h2>{rt('emailNotConfirmed')}</h2>
+            <p>{rt('waitlistUnconfigured')}</p>
           </section>
         {:else if waitlistState === 'error'}
           <section class="panel risk-panel" aria-live="polite"><h2>{deep('notSaved')}</h2><p>{waitlistError}</p></section>
@@ -1924,7 +1934,7 @@
       </section>
     {/if}
 
-    <aside class="legal-footer" aria-label="Planning disclaimer"><p>{FOOTER_DISCLAIMER_COPY}</p></aside>
+    <aside class="legal-footer" aria-label={rt('disclaimerAria')}><p>{FOOTER_DISCLAIMER_COPY}</p></aside>
   </section>
 </main>
 

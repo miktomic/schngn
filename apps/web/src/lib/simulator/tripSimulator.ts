@@ -45,6 +45,7 @@ export interface TripSimulationState {
   errors: TripValidationErrors;
   firstFixCopy: string;
   latestSafeExitLabel: string;
+  latestSafeExitDate: string | null;
   maxStayLabel: string;
   simulatedTrip: EditableTrip | null;
   statusLabel: string;
@@ -109,6 +110,7 @@ export function buildTripSimulationState(
     errors: {},
     firstFixCopy: formatFirstFixCopy(tone, latestSafeExit, targetName, conflict),
     latestSafeExitLabel: latestSafeExit ? formatShortDate(latestSafeExit) : 'No safe stay',
+    latestSafeExitDate: latestSafeExit,
     maxStayLabel: formatMaxStayLabel(simulatedTrip, latestSafeExit),
     simulatedTrip,
     statusLabel: formatStatusLabel(tone, targetName),
@@ -126,6 +128,7 @@ function emptySimulation(errors: TripValidationErrors): TripSimulationState {
     errors,
     firstFixCopy: 'Enter valid Schengen stay details to simulate this trip.',
     latestSafeExitLabel: 'Add dates',
+    latestSafeExitDate: null,
     maxStayLabel: 'Add dates',
     simulatedTrip: null,
     statusLabel: 'Add dates to simulate',
