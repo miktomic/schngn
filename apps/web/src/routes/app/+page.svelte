@@ -10,6 +10,7 @@
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
   import { createAppRuntimeUiTranslator, formatLocalizedCount } from '$lib/i18n/appRuntimeUi';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
+  import { createTripOnboardingTranslator } from '$lib/i18n/tripOnboardingUi';
   import {
     localizeDashboardState,
     localizePdfState,
@@ -109,6 +110,7 @@
   $: deep = createAppDeepUiTranslator(locale);
   $: rt = createAppRuntimeUiTranslator(locale);
   $: whatIfUi = createWhatIfUiTranslator(locale);
+  $: tripOnboarding = createTripOnboardingTranslator(locale);
   $: legal = localizedLegalCopy(locale);
   $: officialSourceLinks = localizedOfficialSourceLinks(locale);
   $: screens = [
@@ -1226,16 +1228,19 @@
             <p>{ui('readingLocal')}</p>
           </div>
         {:else if trips.length === 0}
-          <StatusChip tone="safe" label={ui('noTripData')} />
-          <h1 id="overview-heading" class="screen-title">{ui('startDates')}</h1>
-          <p class="intro-copy">{ui('emptyCopy')}</p>
-          <section class="panel mint" aria-labelledby="first-step-heading">
+          <StatusChip tone="safe" label={tripOnboarding('step')} />
+          <h1 id="overview-heading" class="screen-title">{tripOnboarding('title')}</h1>
+          <p class="intro-copy">{tripOnboarding('copy')}</p>
+          <section class="panel mint onboarding-steps" aria-labelledby="first-step-heading">
             <h2 id="first-step-heading">{ui('firstResult')}</h2>
-            <p>{ui('firstResultCopy')}</p>
+            <ol>
+              <li>{tripOnboarding('pastAction')}</li>
+              <li>{tripOnboarding('bookedAction')}</li>
+            </ol>
           </section>
           <div class="button-row">
             <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
-            <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>{ui('tryWhatIf')}</button>
+            <button class="text-button" type="button" onclick={() => setActiveScreen('planner')}>{tripOnboarding('noHistory')}</button>
           </div>
         {:else}
           <StatusChip tone={dashboardStatusTone} label={dashboardState.statusLabel} />
@@ -1472,11 +1477,16 @@
         </div>
         {#if trips.length === 0}
           <section class="empty-state" aria-labelledby="empty-trips-heading">
-            <h2 id="empty-trips-heading">{deep('noTrips')}</h2>
-            <p>{deep('noTripsCopy')}</p>
+            <p class="onboarding-kicker">{tripOnboarding('step')}</p>
+            <h2 id="empty-trips-heading">{tripOnboarding('title')}</h2>
+            <p>{tripOnboarding('copy')}</p>
+            <ol class="onboarding-list">
+              <li>{tripOnboarding('pastAction')}</li>
+              <li>{tripOnboarding('bookedAction')}</li>
+            </ol>
             <div class="button-row">
               <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
-              <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>{deep('openPlanner')}</button>
+              <button class="text-button" type="button" onclick={() => setActiveScreen('planner')}>{tripOnboarding('noHistory')}</button>
             </div>
           </section>
         {:else}
@@ -1516,6 +1526,19 @@
             <p class="storage-warning">{rt('limitReached', { max: MAX_TRIP_COUNT })}</p>
           {/if}
         {/if}
+        <section class="trips-timeline" aria-labelledby="trips-timeline-heading">
+          <div>
+            <h2 id="trips-timeline-heading">{tripOnboarding('timelineTitle')}</h2>
+            <p>{tripOnboarding('timelineHelp')}</p>
+          </div>
+          <TimelineLedger
+            label={ui('rollingWindow')}
+            {locale}
+            mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
+            {trips}
+            referenceDate={dashboardState.referenceDate}
+          />
+        </section>
       </section>
     {:else if active === 'planner'}
       <section class="screen" aria-labelledby="planner-heading">
@@ -2889,6 +2912,44 @@
   .trip-list article.booked { background: var(--booked-bg); }
   .trip-list article.whatif { background: var(--whatif-bg); }
   .trip-list article.past { background: var(--surface); }
+
+  .onboarding-steps ol,
+  .onboarding-list {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding-inline-start: 24px;
+  }
+
+  .onboarding-steps li::marker,
+  .onboarding-list li::marker {
+    color: var(--safe);
+    font-weight: 800;
+  }
+
+  .onboarding-kicker {
+    margin: 0;
+    color: var(--safe);
+    font-weight: 750;
+  }
+
+  .trips-timeline {
+    display: grid;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .trips-timeline h2,
+  .trips-timeline p {
+    margin: 0;
+  }
+
+  .trips-timeline p {
+    margin-top: 4px;
+    color: var(--muted);
+  }
 
   .trip-copy,
   .ledger article > div {

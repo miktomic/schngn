@@ -1,6 +1,6 @@
 const SCHNGN_CACHE_PREFIX = 'schngn-';
-const SCHNGN_STATIC_CACHE = 'schngn-static-v6';
-const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v6';
+const SCHNGN_STATIC_CACHE = 'schngn-static-v7';
+const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v7';
 
 const SAFE_NAVIGATION_PATHS = new Set(['/', '/app', '/accuracy']);
 const LOCALE_PREFIXES = ['fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar'];

@@ -323,6 +323,8 @@ describe('installable offline PWA shell', () => {
         'schngn-runtime-v5',
         'schngn-static-v6',
         'schngn-runtime-v6',
+        'schngn-static-v7',
+        'schngn-runtime-v7',
         'other-origin-tool-cache'
       ]
     });
@@ -339,9 +341,11 @@ describe('installable offline PWA shell', () => {
       'schngn-runtime-v1',
       'schngn-runtime-v2',
       'schngn-runtime-v5',
+      'schngn-runtime-v6',
       'schngn-static-v1',
       'schngn-static-v2',
-      'schngn-static-v5'
+      'schngn-static-v5',
+      'schngn-static-v6'
     ]);
     expect(harness.claimed).toBe(true);
   });

@@ -14,6 +14,7 @@ import { createAppUiTranslator } from '../src/lib/i18n/appUi';
 import { appDeepCatalogLengths, createAppDeepUiTranslator } from '../src/lib/i18n/appDeepUi';
 import { appRuntimeCatalogLengths, createAppRuntimeUiTranslator } from '../src/lib/i18n/appRuntimeUi';
 import { createWhatIfUiTranslator, whatIfCatalogLengths } from '../src/lib/i18n/whatIfUi';
+import { createTripOnboardingTranslator, tripOnboardingCatalogLengths } from '../src/lib/i18n/tripOnboardingUi';
 import { localizeDashboardState, stateCatalogKeyCount } from '../src/lib/i18n/stateUi';
 import { buildDashboardState } from '../src/lib/dashboard/dashboardState';
 import { createTranslator } from '../src/lib/i18n';
@@ -61,6 +62,7 @@ describe('whole-site localization', () => {
       expect(createAppRuntimeUiTranslator(locale)('browserData').trim().length).toBeGreaterThan(0);
       expect(createAppRuntimeUiTranslator(locale)('waitlistConsent').trim().length).toBeGreaterThan(0);
       expect(createWhatIfUiTranslator(locale)('adjust').trim().length).toBeGreaterThan(0);
+      expect(createTripOnboardingTranslator(locale)('title').trim().length).toBeGreaterThan(0);
     }
     expect(new Set(Object.values(appDeepCatalogLengths())).size).toBe(1);
     expect(appDeepCatalogLengths().en).toBeGreaterThan(80);
@@ -68,6 +70,7 @@ describe('whole-site localization', () => {
     expect(appRuntimeCatalogLengths().en).toBeGreaterThan(90);
     expect(new Set(Object.values(stateCatalogKeyCount())).size).toBe(1);
     expect(new Set(Object.values(whatIfCatalogLengths())).size).toBe(1);
+    expect(new Set(Object.values(tripOnboardingCatalogLengths())).size).toBe(1);
   });
 
   test('localizes calculated state labels and dates instead of leaking English formatting', () => {

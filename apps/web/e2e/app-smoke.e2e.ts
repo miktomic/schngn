@@ -100,8 +100,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       window.sessionStorage.setItem('schngn.e2e.initialized', 'true');
     });
     await page.goto('/app');
-    await expect(page.getByRole('heading', { name: 'Start with your travel dates' })).toBeVisible();
-    await expect(page.getByText(/no example itinerary can affect your result/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(page.getByText('Add trips you already completed')).toBeVisible();
     await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.json');
     await expect(page.locator('link[rel="icon"][href$="/favicon.png"]')).toHaveAttribute('sizes', '64x64');
     await expect(page.locator('link[rel="apple-touch-icon"][href$="/icons/apple-touch-icon.png"]')).toHaveAttribute('sizes', '180x180');
@@ -113,6 +113,9 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(offlineReady).toBe(true);
 
     await page.getByRole('button', { name: 'Dismiss' }).click();
+    await page.getByRole('button', { name: 'Trips', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
+    await expect(page.getByRole('img', { name: /0 counted days in this inclusive 180-day window/i })).toBeVisible();
     await page.getByRole('button', { name: 'Add your first trip' }).click();
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await tripForm.getByLabel(/Trip label/).fill('Offline Spain stay');
@@ -302,7 +305,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const overviewButton = page.getByRole('button', { name: 'Overview' });
     await overviewButton.focus();
     await expect(overviewButton).toBeFocused();
-    await expect(page.getByRole('heading', { name: 'Start with your travel dates' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Proof' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Unlock full trip planner — £9' })).toHaveCount(0);
 
