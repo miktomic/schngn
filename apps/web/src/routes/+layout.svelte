@@ -3,6 +3,7 @@
   import { afterNavigate } from '$app/navigation';
   import { initializePlausibleAnalytics } from '$lib/analytics/plausibleClient';
   import { trackAnalyticsEvent } from '$lib/analytics/privacyAnalytics';
+  import { isLocalizedNavigationPath, stripLocalePrefix } from '$lib/i18n';
   import { onMount } from 'svelte';
   import '../app.css';
 
@@ -11,8 +12,9 @@
   if (browser) void initializePlausibleAnalytics(window);
 
   afterNavigate(({ to }) => {
-    if (to?.url.pathname === '/') trackAnalyticsEvent('page_view', { source: 'landing' });
-    if (to?.url.pathname === '/accuracy') trackAnalyticsEvent('page_view', { source: 'accuracy' });
+    const pathname = to ? stripLocalePrefix(to.url.pathname) : '';
+    if (pathname === '/') trackAnalyticsEvent('page_view', { source: 'landing' });
+    if (pathname === '/accuracy') trackAnalyticsEvent('page_view', { source: 'accuracy' });
   });
 
   onMount(() => {
@@ -80,7 +82,6 @@
     if (url.origin !== location.origin || url.hash) return false;
     if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return false;
 
-    const safeNavigationPaths = new Set(['/', '/app', '/accuracy']);
     const safeStaticPaths = new Set([
       '/manifest.json',
       '/favicon.ico',
@@ -91,7 +92,7 @@
     ]);
 
     const isProductionShellAsset =
-      safeNavigationPaths.has(url.pathname) ||
+      isLocalizedNavigationPath(url.pathname) ||
       safeStaticPaths.has(url.pathname) ||
       url.pathname.startsWith('/_app/') ||
       url.pathname.startsWith('/brand/') ||

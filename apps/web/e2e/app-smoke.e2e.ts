@@ -52,6 +52,27 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
   });
 
+  test('serves localized public routes and RTL app navigation', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.goto('/ar');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.getByRole('heading', { name: 'خطط لإقامتك في أوروبا من دون تخمين أيامك التسعين.' })).toBeVisible();
+    await expect(page.locator('header.topbar').getByRole('link', { name: 'فتح الحاسبة', exact: true })).toHaveAttribute('href', '/ar/app?market=uk');
+
+    await page.goto('/he/app?section=planner');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'he');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.getByRole('button', { name: 'תכנון', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'תכנון', exact: true })).toHaveAttribute('aria-current', 'page');
+
+    await page.goto('/tr/accuracy');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'tr');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+    await expect(page.getByRole('heading', { name: 'Doğruluk kanıtı' })).toBeVisible();
+  });
+
   test('installed PWA shell reloads locally saved trips offline', async ({ page, context }) => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => {

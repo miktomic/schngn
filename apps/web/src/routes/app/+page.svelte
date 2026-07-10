@@ -1,8 +1,13 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { page } from '$app/state';
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
   import { FactCard, SchngnLogo, StatusChip, TimelineLedger } from '$lib/design';
+  import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
+  import { createTranslator, intlLocale, localeFromPath } from '$lib/i18n';
+  import { createAppUiTranslator } from '$lib/i18n/appUi';
+  import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import { buildTripSimulationState, emptyProposedTrip, type ProposedTripInput } from '$lib/simulator/tripSimulator';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
@@ -89,15 +94,19 @@
   type AccountIdentity = { userId: string; sessionId: string; epoch: number };
   type AccountRequestContext = AccountIdentity & { token: string };
 
-  const screens: { key: NavScreen; label: string; requiresTrips?: boolean }[] = [
-    { key: 'dashboard', label: 'Overview' },
-    { key: 'trips', label: 'Trips' },
-    { key: 'planner', label: 'Planner' },
-    { key: 'proof', label: 'Proof', requiresTrips: true },
-    { key: 'returns', label: 'Returns', requiresTrips: true },
-    { key: 'report', label: 'Report', requiresTrips: true },
-    { key: 'privacy', label: 'Account' }
-  ];
+  $: locale = localeFromPath(page.url.pathname);
+  $: t = createTranslator(locale);
+  $: ui = createAppUiTranslator(locale);
+  $: deep = createAppDeepUiTranslator(locale);
+  $: screens = [
+    { key: 'dashboard' as const, label: ui('navOverview') },
+    { key: 'trips' as const, label: ui('navTrips') },
+    { key: 'planner' as const, label: ui('navPlanner') },
+    { key: 'proof' as const, label: ui('navProof'), requiresTrips: true },
+    { key: 'returns' as const, label: ui('navReturns'), requiresTrips: true },
+    { key: 'report' as const, label: ui('navReport'), requiresTrips: true },
+    { key: 'privacy' as const, label: ui('navAccount') }
+  ] satisfies { key: NavScreen; label: string; requiresTrips?: boolean }[];
 
   let active: ScreenKey = 'dashboard';
   let hasLoadedTrips = false;
@@ -879,9 +888,9 @@
   }
 
   function statusLabel(status: EditableTrip['status']): string {
-    if (status === 'past') return 'Past, counted';
-    if (status === 'booked') return 'Booked, counted';
-    return 'What-if';
+    if (status === 'past') return deep('pastTrip');
+    if (status === 'booked') return deep('booked');
+    return deep('whatIf');
   }
 
   function runSimulation(): void {
@@ -928,15 +937,18 @@
   }
 
   function countryName(code: string | undefined): string | null {
-    return SCHENGEN_COUNTRY_OPTIONS.find((country) => country.code === code)?.name ?? null;
+    if (!code) return null;
+    return new Intl.DisplayNames([intlLocale(locale)], { type: 'region' }).of(code)
+      ?? SCHENGEN_COUNTRY_OPTIONS.find((country) => country.code === code)?.name
+      ?? null;
   }
 
   function displayRoute(trip: EditableTrip): string {
     const entry = countryName(trip.entryCountryCode);
     const exit = countryName(trip.exitCountryCode);
     if (entry && exit) return `${entry} → ${exit}`;
-    if (entry) return `Entered via ${entry}`;
-    if (exit) return `Left via ${exit}`;
+    if (entry) return `${deep('enteredVia')} ${entry}`;
+    if (exit) return `${deep('leftVia')} ${exit}`;
     return tripRouteLabel(trip);
   }
 
@@ -1034,7 +1046,7 @@
   }
 
   function formatDate(isoDate: string): string {
-    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(
+    return new Intl.DateTimeFormat(intlLocale(locale), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(
       new Date(`${isoDate}T00:00:00.000Z`)
     );
   }
@@ -1043,7 +1055,7 @@
     const start = new Date(`${startDate}T00:00:00.000Z`);
     const end = new Date(`${endDate}T00:00:00.000Z`);
     const sameYear = start.getUTCFullYear() === end.getUTCFullYear();
-    const startLabel = new Intl.DateTimeFormat('en-GB', {
+    const startLabel = new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       ...(sameYear ? {} : { year: 'numeric' }),
@@ -1057,19 +1069,19 @@
   }
 
   function accountHeaderLabel(state: AccountState, signedIn: boolean): string {
-    if (state === 'loading') return 'Account…';
-    if (state === 'unavailable') return 'Local only';
-    if (!signedIn || state === 'guest') return 'Sign in';
-    if (state === 'syncing') return 'Syncing…';
-    if (state === 'synced') return 'Synced';
-    if (state === 'error') return 'Sync paused';
-    if (state === 'conflict' || state === 'paused') return 'Review sync';
-    return 'Account ready';
+    if (state === 'loading') return ui('accountLoading');
+    if (state === 'unavailable') return ui('localOnly');
+    if (!signedIn || state === 'guest') return ui('signIn');
+    if (state === 'syncing') return ui('syncing');
+    if (state === 'synced') return ui('synced');
+    if (state === 'error') return ui('syncPaused');
+    if (state === 'conflict' || state === 'paused') return ui('reviewSync');
+    return ui('accountReady');
   }
 
   function formatAccountUpdatedAt(value: string | null): string {
     if (!value) return 'Not synced yet';
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -1080,8 +1092,8 @@
 </script>
 
 <svelte:head>
-  <title>SCHNGN app — private Schengen planner</title>
-  <meta name="description" content="Calculate Schengen 90/180-day plans locally, with optional consented account sync." />
+  <title>{ui('headTitle')}</title>
+  <meta name="description" content={ui('headDescription')} />
 </svelte:head>
 
 <main class="app-shell">
@@ -1090,19 +1102,22 @@
       <div class="brand" id="app-title">
         <SchngnLogo />
       </div>
-      <button
+      <div class="app-header-actions">
+        <LanguageSelector label={t('common.language')} {locale} url={page.url} />
+        <button
         class:attention={accountState === 'conflict' || accountState === 'paused' || accountState === 'error'}
         class:synced={accountState === 'synced' || accountState === 'syncing'}
         class="account-chip"
         type="button"
-        aria-label={`Open Account — ${accountStatusLabel}`}
+        aria-label={`${ui('openAccount')} — ${accountStatusLabel}`}
         onclick={() => setActiveScreen('privacy')}
       >
         <span aria-hidden="true"></span>{accountStatusLabel}
-      </button>
+        </button>
+      </div>
     </header>
 
-    <nav class="screen-tabs" aria-label="App sections">
+    <nav class="screen-tabs" aria-label={ui('appSections')}>
       {#each visibleScreens as screen}
         <button
           type="button"
@@ -1117,7 +1132,7 @@
 
     {#if storageWarning}
       <aside class="storage-alert" aria-live="polite">
-        <strong>Browser storage needs attention</strong>
+        <strong>{ui('storageAttention')}</strong>
         <span>{storageWarning}</span>
       </aside>
     {/if}
@@ -1125,15 +1140,16 @@
     {#if disclaimerNoticeVisible}
       <aside class="disclaimer-notice" aria-labelledby="disclaimer-heading">
         <div>
-          <h2 id="disclaimer-heading">Planning calculator only</h2>
+          <h2 id="disclaimer-heading">{ui('planningOnly')}</h2>
           <p>{FULL_DISCLAIMER_COPY}</p>
-          <div class="official-links" aria-label="Official source links">
+          {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
+          <div class="official-links" aria-label={ui('officialSources')}>
             {#each OFFICIAL_SOURCE_LINKS as source}
               <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
             {/each}
           </div>
         </div>
-        <button class="secondary-button compact" type="button" onclick={() => (disclaimerNoticeVisible = false)}>Dismiss</button>
+        <button class="secondary-button compact" type="button" onclick={() => (disclaimerNoticeVisible = false)}>{ui('dismiss')}</button>
       </aside>
     {/if}
 
@@ -1142,62 +1158,63 @@
         {#if !hasLoadedTrips}
           <div class="loading-state" aria-live="polite">
             <span class="loading-line" aria-hidden="true"></span>
-            <h1 id="overview-heading" class="screen-title">Loading your trips…</h1>
-            <p>Reading local data from this browser.</p>
+            <h1 id="overview-heading" class="screen-title">{ui('loadingTrips')}</h1>
+            <p>{ui('readingLocal')}</p>
           </div>
         {:else if trips.length === 0}
-          <StatusChip tone="safe" label="No trip data stored" />
-          <h1 id="overview-heading" class="screen-title">Start with your travel dates</h1>
-          <p class="intro-copy">Add past and booked stays to get a real 90/180-day answer. SCHNGN starts empty, so no example itinerary can affect your result.</p>
+          <StatusChip tone="safe" label={ui('noTripData')} />
+          <h1 id="overview-heading" class="screen-title">{ui('startDates')}</h1>
+          <p class="intro-copy">{ui('emptyCopy')}</p>
           <section class="panel mint" aria-labelledby="first-step-heading">
-            <h2 id="first-step-heading">Your first useful result</h2>
-            <p>Add entry and exit dates for one stay. Both days count. Your dates remain in this browser.</p>
+            <h2 id="first-step-heading">{ui('firstResult')}</h2>
+            <p>{ui('firstResultCopy')}</p>
           </section>
           <div class="button-row">
-            <button class="primary-button" type="button" onclick={startAddTrip}>Add your first trip</button>
-            <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>Try a what-if plan</button>
+            <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
+            <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>{ui('tryWhatIf')}</button>
           </div>
         {:else}
           <StatusChip tone={dashboardStatusTone} label={dashboardState.statusLabel} />
           <h1 id="overview-heading" class={`verdict ${dashboardTextClass}`}>{dashboardState.heroMetric}</h1>
           <div class="facts two">
-            <FactCard label="Latest safe exit" value={dashboardState.latestSafeExitLabel} />
-            <FactCard label="Days used" value={dashboardState.daysUsedLabel} tone={dashboardState.statusTone === 'risk' ? 'ink' : 'safe'} />
+            <FactCard label={ui('latestSafeExit')} value={dashboardState.latestSafeExitLabel} />
+            <FactCard label={ui('daysUsed')} value={dashboardState.daysUsedLabel} tone={dashboardState.statusTone === 'risk' ? 'ink' : 'safe'} />
           </div>
           <TimelineLedger
-            label="Rolling 180-day window"
+            label={ui('rollingWindow')}
+            {locale}
             mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
             {trips}
             referenceDate={dashboardState.referenceDate}
           />
           <section class:risk-panel={dashboardState.statusTone === 'risk'} class:mint={dashboardState.statusTone !== 'risk'} class="panel" aria-labelledby="why-heading">
-            <h2 id="why-heading">{dashboardState.statusTone === 'risk' ? 'What needs attention' : 'Why this answer'}</h2>
+            <h2 id="why-heading">{dashboardState.statusTone === 'risk' ? ui('needsAttention') : ui('whyAnswer')}</h2>
             <p>{dashboardState.whyCopy}</p>
             <p class:micro-risk={dashboardState.statusTone === 'risk'} class:micro-safe={dashboardState.statusTone !== 'risk'}>{dashboardState.actionCopy}</p>
           </section>
           <div class="button-row">
-            <button class="primary-button" type="button" onclick={startAddTrip}>Add trip</button>
-            <button class="secondary-button" type="button" onclick={() => setActiveScreen('proof')}>Show calculation</button>
-            <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>Plan another trip</button>
+            <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addTrip')}</button>
+            <button class="secondary-button" type="button" onclick={() => setActiveScreen('proof')}>{ui('showCalculation')}</button>
+            <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>{ui('planAnother')}</button>
           </div>
         {/if}
       </section>
     {:else if active === 'trip'}
       <section class="screen" aria-labelledby="trip-heading">
         <div class="section-heading">
-          <p>Trips</p>
-          <h1 id="trip-heading" class="screen-title">{editingTripId ? 'Edit Schengen stay' : 'Add a Schengen stay'}</h1>
+          <p>{ui('navTrips')}</p>
+          <h1 id="trip-heading" class="screen-title">{editingTripId ? deep('editStay') : deep('addStay')}</h1>
         </div>
-        <p class="intro-copy">Enter when you crossed into and out of the Schengen Area. Travel between Schengen countries is one stay.</p>
+        <p class="intro-copy">{deep('tripIntro')}</p>
         <form class="trip-form" aria-label="Trip form" novalidate onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
           <label for="trip-label">
-            <span>Trip label <small>Optional</small></span>
+            <span>{deep('tripLabel')} <small>{deep('optional')}</small></span>
           </label>
           <input
             id="trip-label"
             bind:value={tripForm.label}
             maxlength={MAX_TRIP_LABEL_LENGTH}
-            placeholder="Summer trip"
+            placeholder={deep('summerTrip')}
             aria-describedby={formErrors.label ? 'trip-label-help trip-label-error' : 'trip-label-help'}
             aria-invalid={formErrors.label ? 'true' : undefined}
           />
@@ -1206,7 +1223,7 @@
 
           <div class="date-fields">
             <div class="field-group">
-              <label for="trip-entry"><span>Entered Schengen</span></label>
+              <label for="trip-entry"><span>{deep('entered')}</span></label>
               <input
                 id="trip-entry"
                 type="date"
@@ -1214,11 +1231,11 @@
                 aria-describedby={formErrors.entryDate ? 'entry-help entry-error' : 'entry-help'}
                 aria-invalid={formErrors.entryDate ? 'true' : undefined}
               />
-              <small id="entry-help">The entry day counts.</small>
+              <small id="entry-help">{deep('entryCounts')}</small>
               {#if formErrors.entryDate}<strong id="entry-error" class="field-error">{formErrors.entryDate}</strong>{/if}
             </div>
             <div class="field-group">
-              <label for="trip-exit"><span>Left Schengen</span></label>
+              <label for="trip-exit"><span>{deep('left')}</span></label>
               <input
                 id="trip-exit"
                 type="date"
@@ -1227,14 +1244,14 @@
                 aria-describedby={formErrors.exitDate ? 'exit-help exit-error' : 'exit-help'}
                 aria-invalid={formErrors.exitDate ? 'true' : undefined}
               />
-              <small id="exit-help">The exit day counts. Same-day stays are valid.</small>
+              <small id="exit-help">{deep('exitCounts')}</small>
               {#if formErrors.exitDate}<strong id="exit-error" class="field-error">{formErrors.exitDate}</strong>{/if}
             </div>
           </div>
 
           <div class="date-fields optional-border-fields">
             <div class="field-group">
-              <label for="trip-entry-country"><span>Entered via <small>Optional</small></span></label>
+              <label for="trip-entry-country"><span>{deep('enteredVia')} <small>{deep('optional')}</small></span></label>
               <select
                 id="trip-entry-country"
                 value={tripForm.entryCountryCode}
@@ -1242,51 +1259,51 @@
                 aria-describedby={formErrors.entryCountryCode ? 'trip-border-help trip-entry-country-error' : 'trip-border-help'}
                 aria-invalid={formErrors.entryCountryCode ? 'true' : undefined}
               >
-                <option value="">Choose if useful</option>
-                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+                <option value="">{deep('chooseUseful')}</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
               </select>
               {#if formErrors.entryCountryCode}<strong id="trip-entry-country-error" class="field-error">{formErrors.entryCountryCode}</strong>{/if}
             </div>
             <div class="field-group">
-              <label for="trip-exit-country"><span>Left via <small>Optional</small></span></label>
+              <label for="trip-exit-country"><span>{deep('leftVia')} <small>{deep('optional')}</small></span></label>
               <select
                 id="trip-exit-country"
                 bind:value={tripForm.exitCountryCode}
                 aria-describedby={formErrors.exitCountryCode ? 'trip-border-help trip-exit-country-error' : 'trip-border-help'}
                 aria-invalid={formErrors.exitCountryCode ? 'true' : undefined}
               >
-                <option value="">Choose if useful</option>
-                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+                <option value="">{deep('chooseUseful')}</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
               </select>
               {#if formErrors.exitCountryCode}<strong id="trip-exit-country-error" class="field-error">{formErrors.exitCountryCode}</strong>{/if}
             </div>
           </div>
-          <small id="trip-border-help">Optional — these countries provide context but do not affect the calculation.</small>
+          <small id="trip-border-help">{deep('borderContext')}</small>
 
           <section class="outside-breaks" aria-labelledby="trip-breaks-heading">
             <div class="outside-breaks-heading">
               <div>
-                <h2 id="trip-breaks-heading">Time outside Schengen</h2>
-                <p>Add a break only if you left the Schengen Area and later returned during this trip.</p>
+                <h2 id="trip-breaks-heading">{deep('outsideTime')}</h2>
+                <p>{deep('outsideTripHelp')}</p>
               </div>
               {#if tripForm.outsideBreaks.length === 0}
-                <button class="secondary-button compact-button" type="button" onclick={addTripOutsideBreak}>Add time outside</button>
+                <button class="secondary-button compact-button" type="button" onclick={addTripOutsideBreak}>{deep('addOutside')}</button>
               {/if}
             </div>
             {#each tripForm.outsideBreaks as outsideBreak, index (outsideBreak.id)}
               <fieldset class="outside-break" aria-labelledby={`trip-break-${outsideBreak.id}-legend`}>
                 <div class="outside-break-title">
                   <legend id={`trip-break-${outsideBreak.id}-legend`}>Outside-Schengen break {index + 1}</legend>
-                  <button type="button" class="text-button delete" onclick={() => removeTripOutsideBreak(outsideBreak.id)}>Remove break</button>
+                  <button type="button" class="text-button delete" onclick={() => removeTripOutsideBreak(outsideBreak.id)}>{deep('removeBreak')}</button>
                 </div>
                 <div class="date-fields">
                   <div class="field-group">
-                    <label for={`trip-break-left-${outsideBreak.id}`}><span>Left Schengen</span></label>
+                    <label for={`trip-break-left-${outsideBreak.id}`}><span>{deep('left')}</span></label>
                     <input id={`trip-break-left-${outsideBreak.id}`} type="date" bind:value={outsideBreak.leftDate} aria-invalid={formErrors.breakFields?.[outsideBreak.id]?.leftDate ? 'true' : undefined} />
                     {#if formErrors.breakFields?.[outsideBreak.id]?.leftDate}<strong class="field-error">{formErrors.breakFields[outsideBreak.id].leftDate}</strong>{/if}
                   </div>
                   <div class="field-group">
-                    <label for={`trip-break-return-${outsideBreak.id}`}><span>Re-entered Schengen</span></label>
+                    <label for={`trip-break-return-${outsideBreak.id}`}><span>{deep('reentered')}</span></label>
                     <input id={`trip-break-return-${outsideBreak.id}`} type="date" bind:value={outsideBreak.reentryDate} aria-invalid={formErrors.breakFields?.[outsideBreak.id]?.reentryDate ? 'true' : undefined} />
                     {#if formErrors.breakFields?.[outsideBreak.id]?.reentryDate}<strong class="field-error">{formErrors.breakFields[outsideBreak.id].reentryDate}</strong>{/if}
                   </div>
@@ -1301,14 +1318,14 @@
 
           {#if tripFormIsPast}
             <section class="inferred-trip-status" aria-live="polite">
-              <strong>Past trip</strong>
-              <span>The final exit is before today, so this trip will be counted as past automatically.</span>
+              <strong>{deep('pastTrip')}</strong>
+              <span>{deep('pastAuto')}</span>
             </section>
           {:else}
             <fieldset class="trip-status-options" aria-describedby={formErrors.status ? 'status-error' : undefined}>
-              <legend>Trip status</legend>
-              <label class:selected={tripForm.status === 'booked'} class="toggle"><input type="radio" bind:group={tripForm.status} value="booked" /> Booked</label>
-              <label class:selected={tripForm.status === 'what-if'} class="toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> What-if</label>
+              <legend>{deep('tripStatus')}</legend>
+              <label class:selected={tripForm.status === 'booked'} class="toggle"><input type="radio" bind:group={tripForm.status} value="booked" /> {deep('booked')}</label>
+              <label class:selected={tripForm.status === 'what-if'} class="toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> {deep('whatIf')}</label>
             </fieldset>
           {/if}
           {#if formErrors.status}<strong id="status-error" class="field-error">{formErrors.status}</strong>{/if}
@@ -1320,7 +1337,8 @@
           {/if}
           <div class="trip-form-timeline">
             <TimelineLedger
-              label="Your 180-day allocation"
+              label={deep('allocation')}
+              {locale}
               mode="planner"
               trips={tripFormTimelineTrips}
               referenceDate={tripFormTimelineReferenceDate}
@@ -1328,11 +1346,11 @@
           </div>
           {#if outsideWindowConfirmationVisible}
             <section class="outside-window-confirmation" role="alert" aria-labelledby="outside-window-heading">
-              <h2 id="outside-window-heading">This trip is outside today’s 180-day window</h2>
+              <h2 id="outside-window-heading">{deep('outsideWindow')}</h2>
               <p>It ended before {formatDate(tripFormWindowStartDate)}, so it will not change today’s day allocation. You can still keep it in your history.</p>
               <div class="button-row compact-actions">
-                <button class="primary-button" type="button" onclick={() => saveTrip(true)}>Save anyway</button>
-                <button class="secondary-button" type="button" onclick={() => { outsideWindowConfirmationVisible = false; }}>Keep editing</button>
+                <button class="primary-button" type="button" onclick={() => saveTrip(true)}>{deep('saveAnyway')}</button>
+                <button class="secondary-button" type="button" onclick={() => { outsideWindowConfirmationVisible = false; }}>{deep('keepEditing')}</button>
               </div>
             </section>
           {/if}
@@ -1341,8 +1359,8 @@
           {/if}
           {#if !outsideWindowConfirmationVisible}
             <div class="form-actions">
-              <button class="primary-button" type="submit">Save trip</button>
-              <button class="secondary-button" type="button" onclick={cancelTripForm}>Cancel</button>
+              <button class="primary-button" type="submit">{deep('saveTrip')}</button>
+              <button class="secondary-button" type="button" onclick={cancelTripForm}>{deep('cancel')}</button>
             </div>
           {/if}
         </form>
@@ -1351,18 +1369,18 @@
       <section class="screen" aria-labelledby="trips-heading">
         <div class="section-heading with-action">
           <div>
-            <p>{accountState === 'synced' || accountState === 'syncing' ? 'Account-synced trip history' : 'Trip history on this device'}</p>
-            <h1 id="trips-heading" class="screen-title">Trips</h1>
+            <p>{accountState === 'synced' || accountState === 'syncing' ? deep('syncedHistory') : deep('deviceHistory')}</p>
+            <h1 id="trips-heading" class="screen-title">{ui('navTrips')}</h1>
           </div>
-          <button class="primary-button" type="button" onclick={startAddTrip} disabled={trips.length >= MAX_TRIP_COUNT}>Add trip</button>
+          <button class="primary-button" type="button" onclick={startAddTrip} disabled={trips.length >= MAX_TRIP_COUNT}>{ui('addTrip')}</button>
         </div>
         {#if trips.length === 0}
           <section class="empty-state" aria-labelledby="empty-trips-heading">
-            <h2 id="empty-trips-heading">No trips saved yet</h2>
-            <p>Add past and booked travel to calculate your real rolling window, or use Planner for an unsaved what-if.</p>
+            <h2 id="empty-trips-heading">{deep('noTrips')}</h2>
+            <p>{deep('noTripsCopy')}</p>
             <div class="button-row">
-              <button class="primary-button" type="button" onclick={startAddTrip}>Add your first trip</button>
-              <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>Open planner</button>
+              <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
+              <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>{deep('openPlanner')}</button>
             </div>
           </section>
         {:else}
@@ -1380,8 +1398,8 @@
                   <strong>{statusLabel(trip.status)}</strong>
                 </div>
                 <div class="trip-actions">
-                  <button type="button" aria-label={`Edit ${displayTripName(trip)}`} onclick={() => startEditTrip(trip)}>Edit</button>
-                  <button class="delete" type="button" aria-label={`Delete ${displayTripName(trip)}`} onclick={() => requestDeleteTrip(trip.id)}>Delete</button>
+                  <button type="button" aria-label={`${deep('edit')} ${displayTripName(trip)}`} onclick={() => startEditTrip(trip)}>{deep('edit')}</button>
+                  <button class="delete" type="button" aria-label={`${deep('delete')} ${displayTripName(trip)}`} onclick={() => requestDeleteTrip(trip.id)}>{deep('delete')}</button>
                 </div>
               </article>
               {#if pendingDeleteTrip?.id === trip.id}
@@ -1391,8 +1409,8 @@
                     <p>This removes it from this browser and recalculates every result.</p>
                   </div>
                   <div class="button-row">
-                    <button class="danger-button" type="button" onclick={deletePendingTrip}>Delete trip</button>
-                    <button class="secondary-button" type="button" onclick={() => (pendingDeleteTripId = null)}>Keep trip</button>
+                    <button class="danger-button" type="button" onclick={deletePendingTrip}>{deep('deleteTrip')}</button>
+                    <button class="secondary-button" type="button" onclick={() => (pendingDeleteTripId = null)}>{deep('keepTrip')}</button>
                   </div>
                 </section>
               {/if}
@@ -1406,17 +1424,17 @@
     {:else if active === 'planner'}
       <section class="screen" aria-labelledby="planner-heading">
         <div class="section-heading">
-          <p>Unsaved what-if</p>
-          <h1 id="planner-heading" class="screen-title">Can I book this?</h1>
+          <p>{deep('unsavedWhatIf')}</p>
+          <h1 id="planner-heading" class="screen-title">{deep('canBook')}</h1>
         </div>
-        <p class="intro-copy">Test a possible stay against the trips on this device. The simulation is separate from your saved trips.</p>
+        <p class="intro-copy">{deep('plannerIntro')}</p>
         <form class="trip-form" aria-label="Future trip simulator" novalidate onsubmit={(event) => { event.preventDefault(); runSimulation(); }}>
-          <label for="simulation-label"><span>Simulation label <small>Optional</small></span></label>
+          <label for="simulation-label"><span>{deep('simulationLabel')} <small>{deep('optional')}</small></span></label>
           <input
             id="simulation-label"
             bind:value={simulatorForm.label}
             maxlength={MAX_TRIP_LABEL_LENGTH}
-            placeholder="Spring in Portugal"
+            placeholder={deep('springPortugal')}
             oninput={simulationChanged}
             aria-describedby={simulationSubmitted && simulationState.errors.label ? 'simulation-label-error' : undefined}
             aria-invalid={simulationSubmitted && simulationState.errors.label ? 'true' : undefined}
@@ -1427,7 +1445,7 @@
 
           <div class="date-fields">
             <div class="field-group">
-              <label for="simulation-entry"><span>Entered Schengen</span></label>
+              <label for="simulation-entry"><span>{deep('entered')}</span></label>
               <input
                 id="simulation-entry"
                 type="date"
@@ -1441,7 +1459,7 @@
               {/if}
             </div>
             <div class="field-group">
-              <label for="simulation-exit"><span>Left Schengen</span></label>
+              <label for="simulation-exit"><span>{deep('left')}</span></label>
               <input
                 id="simulation-exit"
                 type="date"
@@ -1458,48 +1476,48 @@
 
           <div class="date-fields optional-border-fields">
             <div class="field-group">
-              <label for="simulation-entry-country"><span>Entered via <small>Optional</small></span></label>
+              <label for="simulation-entry-country"><span>{deep('enteredVia')} <small>{deep('optional')}</small></span></label>
               <select id="simulation-entry-country" bind:value={simulatorForm.entryCountryCode} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.entryCountryCode ? 'true' : undefined}>
-                <option value="">Choose if useful</option>
-                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+                <option value="">{deep('chooseUseful')}</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
               </select>
               {#if simulationSubmitted && simulationState.errors.entryCountryCode}<strong class="field-error">{simulationState.errors.entryCountryCode}</strong>{/if}
             </div>
             <div class="field-group">
-              <label for="simulation-exit-country"><span>Left via <small>Optional</small></span></label>
+              <label for="simulation-exit-country"><span>{deep('leftVia')} <small>{deep('optional')}</small></span></label>
               <select id="simulation-exit-country" bind:value={simulatorForm.exitCountryCode} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.exitCountryCode ? 'true' : undefined}>
-                <option value="">Choose if useful</option>
-                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+                <option value="">{deep('chooseUseful')}</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
               </select>
               {#if simulationSubmitted && simulationState.errors.exitCountryCode}<strong class="field-error">{simulationState.errors.exitCountryCode}</strong>{/if}
             </div>
           </div>
-          <small>Optional — these countries provide context but do not affect the calculation.</small>
+          <small>{deep('borderContext')}</small>
 
           <section class="outside-breaks" aria-labelledby="simulation-breaks-heading">
             <div class="outside-breaks-heading">
               <div>
-                <h2 id="simulation-breaks-heading">Time outside Schengen</h2>
-                <p>Add a break if this plan leaves Schengen and later returns.</p>
+                <h2 id="simulation-breaks-heading">{deep('outsideTime')}</h2>
+                <p>{deep('outsidePlanHelp')}</p>
               </div>
               {#if simulatorForm.outsideBreaks.length === 0}
-                <button class="secondary-button compact-button" type="button" onclick={addSimulationOutsideBreak}>Add time outside</button>
+                <button class="secondary-button compact-button" type="button" onclick={addSimulationOutsideBreak}>{deep('addOutside')}</button>
               {/if}
             </div>
             {#each simulatorForm.outsideBreaks as outsideBreak, index (outsideBreak.id)}
               <fieldset class="outside-break">
                 <div class="outside-break-title">
                   <legend>Outside-Schengen break {index + 1}</legend>
-                  <button type="button" class="text-button delete" onclick={() => removeSimulationOutsideBreak(outsideBreak.id)}>Remove break</button>
+                  <button type="button" class="text-button delete" onclick={() => removeSimulationOutsideBreak(outsideBreak.id)}>{deep('removeBreak')}</button>
                 </div>
                 <div class="date-fields">
                   <div class="field-group">
-                    <label for={`simulation-break-left-${outsideBreak.id}`}><span>Left Schengen</span></label>
+                    <label for={`simulation-break-left-${outsideBreak.id}`}><span>{deep('left')}</span></label>
                     <input id={`simulation-break-left-${outsideBreak.id}`} type="date" bind:value={outsideBreak.leftDate} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.leftDate ? 'true' : undefined} />
                     {#if simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.leftDate}<strong class="field-error">{simulationState.errors.breakFields[outsideBreak.id].leftDate}</strong>{/if}
                   </div>
                   <div class="field-group">
-                    <label for={`simulation-break-return-${outsideBreak.id}`}><span>Re-entered Schengen</span></label>
+                    <label for={`simulation-break-return-${outsideBreak.id}`}><span>{deep('reentered')}</span></label>
                     <input id={`simulation-break-return-${outsideBreak.id}`} type="date" bind:value={outsideBreak.reentryDate} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.reentryDate ? 'true' : undefined} />
                     {#if simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.reentryDate}<strong class="field-error">{simulationState.errors.breakFields[outsideBreak.id].reentryDate}</strong>{/if}
                   </div>
@@ -1511,8 +1529,8 @@
             {/if}
           </section>
           <div class="form-actions">
-            <button class="primary-button" type="submit">Check this plan</button>
-            <button class="secondary-button" type="button" onclick={clearSimulation}>Clear</button>
+            <button class="primary-button" type="submit">{deep('checkPlan')}</button>
+            <button class="secondary-button" type="button" onclick={clearSimulation}>{deep('clear')}</button>
           </div>
         </form>
 
@@ -1523,15 +1541,16 @@
               {simulationState.latestSafeExitLabel}
             </h2>
             <div class="facts two">
-              <FactCard label="Simulated days used" value={simulationState.daysUsedLabel} tone={simulationState.statusTone === 'risk' ? 'ink' : 'safe'} />
-              <FactCard label="Max additional days" value={simulationState.maxStayLabel} />
+              <FactCard label={deep('simulatedUsed')} value={simulationState.daysUsedLabel} tone={simulationState.statusTone === 'risk' ? 'ink' : 'safe'} />
+              <FactCard label={deep('maxAdditional')} value={simulationState.maxStayLabel} />
             </div>
             <section class:mint={simulationState.statusTone !== 'risk'} class:risk-panel={simulationState.statusTone === 'risk'} class="panel">
               <p>{simulationState.summaryCopy}</p>
               <p class:micro-risk={simulationState.statusTone === 'risk'} class:micro-safe={simulationState.statusTone !== 'risk'}>{simulationState.firstFixCopy}</p>
             </section>
-            <TimelineLedger
-              label="What-if rolling window"
+        <TimelineLedger
+          label={deep('whatIfWindow')}
+          {locale}
               mode={simulationState.statusTone === 'risk' ? 'risk' : 'planner'}
               {trips}
               simulation={simulationState.simulatedTrip}
@@ -1540,8 +1559,8 @@
           </section>
         {:else if simulationSubmitted}
           <section class="panel risk-panel" aria-live="polite">
-            <h2>Add valid dates</h2>
-            <p>Fix the highlighted fields, then check this plan again.</p>
+            <h2>{deep('validDates')}</h2>
+            <p>{deep('fixFields')}</p>
           </section>
         {/if}
 
@@ -1561,19 +1580,20 @@
     {:else if active === 'proof'}
       <section class="screen" id="proof" aria-labelledby="proof-heading">
         <div class="section-heading">
-          <p>Inspectable evidence</p>
-          <h1 id="proof-heading" class="screen-title">Calculation proof</h1>
+          <p>{deep('proofEyebrow')}</p>
+          <h1 id="proof-heading" class="screen-title">{deep('proofTitle')}</h1>
         </div>
-        <section class="panel mint" aria-labelledby="explanation-heading">
+        {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
+        <section class="panel mint" aria-labelledby="explanation-heading" lang="en" dir="ltr">
           <h2 id="explanation-heading">{explanationState.heading}</h2>
           <p>{explanationState.summary}</p>
           <p class="micro-safe">{explanationState.verdictLine}</p>
         </section>
         <div>
-          <p class="window-label">Active inclusive 180-day window</p>
+          <p class="window-label">{deep('activeWindow')}</p>
           <p class="mono-range">{formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</p>
         </div>
-        <TimelineLedger label="Counted-day evidence" mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'} {trips} referenceDate={dashboardState.referenceDate} />
+        <TimelineLedger label={deep('countedEvidence')} {locale} mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'} {trips} referenceDate={dashboardState.referenceDate} />
         <div class="ledger">
           {#each explanationState.countedTripRows as row}
             <article>
@@ -1585,18 +1605,18 @@
             </article>
           {:else}
             <section class="empty-state compact-empty">
-              <h2>No counted stays in this window</h2>
+              <h2>{deep('noCounted')}</h2>
               <p>Your saved trips fall outside the active window or use countries that do not count toward the Schengen short-stay allowance.</p>
             </section>
           {/each}
         </div>
-        <section class="panel paper-panel">
-          <h2>Rules used</h2>
+        <section class="panel paper-panel" lang="en" dir="ltr">
+          <h2>{deep('rulesUsed')}</h2>
           <ul class="rule-list">
             {#each explanationState.ruleBullets as bullet}<li>{bullet}</li>{/each}
           </ul>
         </section>
-        <button class="secondary-button" type="button" onclick={() => setActiveScreen('returns')}>See when days return</button>
+        <button class="secondary-button" type="button" onclick={() => setActiveScreen('returns')}>{deep('seeReturns')}</button>
       </section>
     {:else if active === 'returns'}
       <section class="screen" aria-labelledby="returns-heading">
@@ -1606,7 +1626,8 @@
         </div>
         <p class="window-label">{returningForecast.currentUsedLabel} on {formatDate(dashboardState.referenceDate)}</p>
         <TimelineLedger
-          label="Returning-days forecast"
+          label={deep('returnsForecast')}
+          {locale}
           mode="returns"
           {trips}
           referenceDate={dashboardState.referenceDate}
@@ -1635,10 +1656,11 @@
     {:else if active === 'report'}
       <section class="screen" aria-labelledby="report-heading">
         <div class="section-heading">
-          <p>Calculation summary</p>
-          <h1 id="report-heading" class="screen-title">Border-ready report</h1>
+          <p>{deep('reportEyebrow')}</p>
+          <h1 id="report-heading" class="screen-title">{deep('reportTitle')}</h1>
         </div>
-        <article class="report-preview" aria-label="Border-ready report">
+        {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
+        <article class="report-preview" aria-label={deep('reportTitle')} lang="en" dir="ltr">
           <div class="brand report-brand"><SchngnLogo small /></div>
           <h2>{dashboardState.statusLabel} · {dashboardState.heroMetric}</h2>
           <p class="mono-range">{dashboardState.daysUsedLabel} days used · {formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</p>
@@ -1662,9 +1684,10 @@
     {:else if active === 'privacy'}
       <section class="screen" aria-labelledby="privacy-heading">
         <div class="section-heading">
-          <p>Optional account, private by default</p>
-          <h1 id="privacy-heading" class="screen-title">Account & data</h1>
+          <p>{deep('accountEyebrow')}</p>
+          <h1 id="privacy-heading" class="screen-title">{deep('accountTitle')}</h1>
         </div>
+        {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
 
         <section
           class:mint={accountState === 'synced'}
@@ -1677,33 +1700,33 @@
           {#if accountState === 'loading'}
             <div class="account-heading-row">
               <div>
-                <p class="eyebrow">Account</p>
+                <p class="eyebrow">{ui('navAccount')}</p>
                 <h2 id="account-heading">Checking sign-in…</h2>
               </div>
-              <span class="account-state-badge neutral">Loading</span>
+              <span class="account-state-badge neutral">{deep('loading')}</span>
             </div>
             <p>Trips remain available from this browser while account status loads.</p>
           {:else if accountState === 'unavailable'}
             <div class="account-heading-row">
               <div>
-                <p class="eyebrow">Account</p>
-                <h2 id="account-heading">Local mode is ready</h2>
+                <p class="eyebrow">{ui('navAccount')}</p>
+                <h2 id="account-heading">{deep('localMode')}</h2>
               </div>
-              <span class="account-state-badge neutral">Local only</span>
+              <span class="account-state-badge neutral">{deep('localOnly')}</span>
             </div>
             <p>Sign-in is unavailable in this build. The calculator still works and keeps trips in this browser.</p>
           {:else if accountState === 'guest'}
             <div class="account-heading-row">
               <div>
-                <p class="eyebrow">Account</p>
+                <p class="eyebrow">{ui('navAccount')}</p>
                 <h2 id="account-heading">Keep using SCHNGN without an account</h2>
               </div>
-              <span class="account-state-badge neutral">Local only</span>
+              <span class="account-state-badge neutral">{deep('localOnly')}</span>
             </div>
             <p>Signing up is optional. Clerk handles account identity. Until you sign in and explicitly turn on sync, no trip dates are sent to SCHNGN's database.</p>
             <div class="button-row account-actions">
-              <button class="primary-button" type="button" onclick={startAccountSignUp}>Sign up</button>
-              <button class="secondary-button" type="button" onclick={startAccountSignIn}>Sign in</button>
+              <button class="primary-button" type="button" onclick={startAccountSignUp}>{deep('signUp')}</button>
+              <button class="secondary-button" type="button" onclick={startAccountSignIn}>{deep('signIn')}</button>
             </div>
           {:else if accountState === 'offer_sync'}
             <div class="account-heading-row">
@@ -1771,7 +1794,7 @@
               <span class="account-state-badge attention">Sync paused</span>
             </div>
             <p>Your trips remain on this browser. Retry when your connection and account session are available.</p>
-            <button class="primary-button" type="button" onclick={retryAccountSync}>Retry account sync</button>
+            <button class="primary-button" type="button" onclick={retryAccountSync}>{deep('retrySync')}</button>
           {/if}
 
           <div class="account-messages" aria-live="polite" aria-atomic="true">
@@ -1781,8 +1804,8 @@
 
           {#if accountSignedIn}
             <div class="button-row account-actions">
-              <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={manageClerkAccount}>Manage account</button>
-              <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={signOutAccount}>Sign out</button>
+              <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={manageClerkAccount}>{deep('manageAccount')}</button>
+              <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={signOutAccount}>{deep('signOut')}</button>
               <button class="danger-outline" type="button" disabled={accountState === 'syncing'} onclick={() => (signOutClearConfirmationVisible = true)}>Sign out & clear this browser</button>
               {#if accountSnapshot.revision > 0}
                 <button class="danger-outline" type="button" disabled={accountState === 'syncing'} onclick={() => (accountDeleteConfirmationVisible = true)}>Delete saved account trips</button>
@@ -1827,7 +1850,7 @@
               <p class="eyebrow">This device</p>
               <h2 id="browser-data-heading">Browser trip data</h2>
             </div>
-            <span class="account-state-badge safe">Available offline</span>
+            <span class="account-state-badge safe">{deep('availableOffline')}</span>
           </div>
           <p>{accountState === 'synced' || accountState === 'syncing' ? 'A local copy keeps the calculator fast and available. Export a private backup whenever you want an independent copy.' : 'Trips, dates, and calculated timelines stay in this browser unless you explicitly turn on account sync or export a JSON file.'}</p>
           <p>Export before clearing browser data. Import the file later to restore trips manually.</p>
@@ -1842,10 +1865,10 @@
           {/if}
         </section>
         <div class="button-row">
-          <button class="secondary-button" type="button" onclick={exportTrips} disabled={trips.length === 0}>Export JSON</button>
-          <button class="secondary-button" type="button" onclick={() => importInput.click()} aria-controls="trip-import-file">Import JSON</button>
+          <button class="secondary-button" type="button" onclick={exportTrips} disabled={trips.length === 0}>{deep('exportJson')}</button>
+          <button class="secondary-button" type="button" onclick={() => importInput.click()} aria-controls="trip-import-file">{deep('importJson')}</button>
           <input bind:this={importInput} id="trip-import-file" class="visually-hidden" aria-label="Import JSON file" type="file" accept="application/json,.json" onchange={importTrips} />
-          <button class="danger-outline" type="button" onclick={requestClearLocalTrips} disabled={trips.length === 0 || pendingAccountWrites > 0 || accountState === 'loading' || accountState === 'syncing' || accountDeleteInProgress}>Clear local data</button>
+          <button class="danger-outline" type="button" onclick={requestClearLocalTrips} disabled={trips.length === 0 || pendingAccountWrites > 0 || accountState === 'loading' || accountState === 'syncing' || accountDeleteInProgress}>{deep('clearLocal')}</button>
         </div>
         {#if clearConfirmationVisible}
           <section class="confirm-panel" aria-live="polite" aria-labelledby="clear-heading">
@@ -1875,28 +1898,28 @@
       <section class="screen narrow-screen" aria-labelledby="waitlist-heading">
         <button class="text-button" type="button" onclick={() => setActiveScreen('report')}>← Back to report</button>
         <div class="brand report-brand"><SchngnLogo small /></div>
-        <h1 id="waitlist-heading" class="screen-title">Get PDF export updates</h1>
-        <p class="intro-copy">Email-only capture. SCHNGN does not send your trips, dates, country history, or calculated personal timeline with this request.</p>
+        <h1 id="waitlist-heading" class="screen-title">{deep('waitlistTitle')}</h1>
+        <p class="intro-copy">{deep('waitlistIntro')}</p>
         <form class="trip-form" onsubmit={(event) => { event.preventDefault(); submitWaitlist(); }}>
-          <label for="waitlist-email"><span>Email</span></label>
+          <label for="waitlist-email"><span>{deep('email')}</span></label>
           <input id="waitlist-email" bind:value={waitlistEmail} autocomplete="email" maxlength="254" placeholder="name@example.com" type="email" required />
           <label class="consent-row" for="waitlist-consent">
             <input id="waitlist-consent" bind:checked={waitlistConsent} type="checkbox" required />
             <span>I agree to receive SCHNGN updates. Store my email only; do not send trip dates or history.</span>
           </label>
           <button class="primary-button" disabled={!waitlistEmail.trim() || !waitlistConsent || waitlistState === 'submitting' || waitlistState === 'stored'} type="submit">
-            {waitlistState === 'submitting' ? 'Joining…' : waitlistState === 'error' || waitlistState === 'not_configured' ? 'Try again' : waitlistState === 'stored' ? 'Joined' : 'Join waitlist'}
+            {waitlistState === 'submitting' ? deep('joining') : waitlistState === 'error' || waitlistState === 'not_configured' ? deep('tryAgain') : waitlistState === 'stored' ? deep('joined') : deep('join')}
           </button>
         </form>
         {#if waitlistState === 'stored'}
-          <section class="panel mint" aria-live="polite"><h2>You are on the list</h2><p>Your email was stored. No trip data was sent.</p></section>
+          <section class="panel mint" aria-live="polite"><h2>{deep('onList')}</h2><p>{deep('emailSaved')}</p></section>
         {:else if waitlistState === 'not_configured'}
           <section class="panel whatif-panel" aria-live="polite">
             <h2>Email was not confirmed as saved</h2>
             <p>The waitlist storage is not configured. Your email remains in the form so you can retry after configuration is available.</p>
           </section>
         {:else if waitlistState === 'error'}
-          <section class="panel risk-panel" aria-live="polite"><h2>Email could not be saved</h2><p>{waitlistError}</p></section>
+          <section class="panel risk-panel" aria-live="polite"><h2>{deep('notSaved')}</h2><p>{waitlistError}</p></section>
         {/if}
       </section>
     {/if}
@@ -1936,6 +1959,14 @@
     gap: 12px;
     padding: 16px 20px;
     border-bottom: 1px solid var(--line);
+  }
+
+  .app-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 0;
   }
 
   .brand {
@@ -2075,6 +2106,10 @@
     color: var(--muted);
     line-height: 1.45;
     text-wrap: pretty;
+  }
+
+  .translation-note {
+    font-size: 0.82rem;
   }
 
   .official-links {
@@ -2832,7 +2867,8 @@
   @media (max-width: 640px) {
     .app-shell { padding: 0; }
     .workspace { min-height: 100svh; border-width: 0; border-radius: 0; }
-    .app-header { padding: 14px 16px; }
+    .app-header { align-items: flex-start; flex-direction: column; padding: 14px 16px; }
+    .app-header-actions { width: 100%; flex-wrap: wrap; justify-content: space-between; }
     .screen { padding: 24px 16px 32px; }
     .screen-title { font-size: 2rem; }
     .verdict { font-size: 2.6rem; }

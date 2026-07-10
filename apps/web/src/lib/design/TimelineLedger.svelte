@@ -7,6 +7,7 @@
     type SchengenStay
   } from '@schngn/engine';
   import type { EditableTrip } from '$lib/trips/tripCrud';
+  import { intlLocale, type Locale } from '$lib/i18n';
 
   type TimelineMode = 'safe' | 'risk' | 'planner' | 'returns';
   type SegmentKind = 'past' | 'booked' | 'whatif' | 'risk' | 'return' | 'empty';
@@ -30,6 +31,7 @@
   interface TimelineProps {
     horizonDays?: number;
     label: string;
+    locale?: Locale;
     mode: TimelineMode;
     referenceDate: string;
     returnDates?: string[];
@@ -40,6 +42,7 @@
   let {
     horizonDays = 30,
     label,
+    locale = 'en',
     mode,
     referenceDate,
     returnDates = [],
@@ -57,14 +60,19 @@
   }));
   let visibleKinds = $derived(new Set(model.segments.map((segment) => segment.kind)));
 
-  const legendItems: { kind: SegmentKind; label: string }[] = [
-    { kind: 'past', label: 'Past trip' },
-    { kind: 'booked', label: 'Booked trip' },
-    { kind: 'whatif', label: 'What-if trip' },
-    { kind: 'risk', label: 'Over the limit' },
-    { kind: 'return', label: 'Day returned' },
-    { kind: 'empty', label: 'Not counted' }
-  ];
+  const legendCatalog: Record<Locale, string[]> = {
+    en: ['Past trip', 'Booked trip', 'What-if trip', 'Over the limit', 'Day returned', 'Not counted'],
+    fr: ['Voyage passé', 'Voyage réservé', 'Simulation', 'Limite dépassée', 'Jour récupéré', 'Non compté'],
+    de: ['Vergangene Reise', 'Gebuchte Reise', 'Was-wäre-wenn', 'Über dem Limit', 'Tag zurück', 'Nicht gezählt'],
+    es: ['Viaje pasado', 'Viaje reservado', 'Simulación', 'Sobre el límite', 'Día recuperado', 'No contado'],
+    it: ['Viaggio passato', 'Viaggio prenotato', 'Simulazione', 'Oltre il limite', 'Giorno recuperato', 'Non conteggiato'],
+    ru: ['Прошлая поездка', 'Забронированная поездка', 'Сценарий', 'Сверх лимита', 'День возвращён', 'Не учитывается'],
+    tr: ['Geçmiş seyahat', 'Rezerve seyahat', 'Senaryo', 'Sınırın üzerinde', 'Gün geri döndü', 'Sayılmadı'],
+    he: ['נסיעה קודמת', 'נסיעה מוזמנת', 'תרחיש', 'מעל למגבלה', 'יום חזר', 'לא נספר'],
+    ar: ['رحلة سابقة', 'رحلة محجوزة', 'سيناريو', 'فوق الحد', 'يوم مستعاد', 'غير محسوب']
+  };
+  const timelineAriaLabel: Record<Locale, string> = { en:'Timeline legend',fr:'Légende de la chronologie',de:'Zeitachsenlegende',es:'Leyenda de la cronología',it:'Legenda della cronologia',ru:'Легенда шкалы времени',tr:'Zaman çizelgesi açıklaması',he:'מקרא ציר הזמן',ar:'مفتاح المخطط الزمني' };
+  let legendItems = $derived((['past', 'booked', 'whatif', 'risk', 'return', 'empty'] as SegmentKind[]).map((kind, index) => ({ kind, label: legendCatalog[locale][index] })));
 
   function buildTimelineModel(input: Omit<TimelineProps, 'label'>): TimelineModel {
     if (input.mode === 'returns') return buildReturnsTimeline(input);
@@ -94,18 +102,14 @@
 
     const days = isoDateRange(startDate, endDate);
     const segments = groupDays(days, (day) => kindByDate.get(day) ?? 'empty');
-    const tripWord = usage.daysUsed === 1 ? 'day' : 'days';
-    const allowanceCopy = usage.overLimit
-      ? `${usage.overBy} ${usage.overBy === 1 ? 'day is' : 'days are'} over the 90-day limit.`
-      : `${usage.daysRemaining} safe buffer ${usage.daysRemaining === 1 ? 'day remains' : 'days remain'}.`;
 
     return {
       dayCount: days.length,
       endDate,
-      rangeLabel: formatDateRange(startDate, endDate),
+      rangeLabel: formatDateRange(startDate, endDate, input.locale ?? 'en'),
       segments,
       startDate,
-      summary: `${usage.daysUsed} counted ${tripWord} in this inclusive 180-day window. ${allowanceCopy}`
+      summary: rollingSummary(input.locale ?? 'en', usage.daysUsed, usage.daysRemaining, usage.overBy)
     };
   }
 
@@ -120,13 +124,41 @@
     return {
       dayCount: days.length,
       endDate,
-      rangeLabel: formatDateRange(startDate, endDate),
+      rangeLabel: formatDateRange(startDate, endDate, input.locale ?? 'en'),
       segments,
       startDate,
-      summary: returned > 0
-        ? `${returned} counted ${returned === 1 ? 'day returns' : 'days return'} to the allowance during this ${days.length}-day forecast.`
-        : `No counted days return to the allowance during this ${days.length}-day forecast.`
+      summary: returnsSummary(input.locale ?? 'en', returned, days.length)
     };
+  }
+
+  function rollingSummary(summaryLocale: Locale, used: number, remaining: number, overBy: number): string {
+    const values: Record<Locale, string> = {
+      en: `${used} counted ${used === 1 ? 'day' : 'days'} in this inclusive 180-day window. ${overBy > 0 ? `${overBy} ${overBy === 1 ? 'day is' : 'days are'} over the 90-day limit.` : `${remaining} safe buffer ${remaining === 1 ? 'day remains' : 'days remain'}.`}`,
+      fr: `${used} ${used === 1 ? 'jour compté' : 'jours comptés'} dans cette fenêtre inclusive de 180 jours. ${overBy > 0 ? `${overBy} au-delà de la limite de 90 jours.` : `${remaining} ${remaining === 1 ? 'jour de marge sûre restant' : 'jours de marge sûre restants'}.`}`,
+      de: `${used} ${used === 1 ? 'gezählter Tag' : 'gezählte Tage'} in diesem inklusiven 180-Tage-Fenster. ${overBy > 0 ? `${overBy} über dem 90-Tage-Limit.` : `${remaining} ${remaining === 1 ? 'sicherer Puffertag verbleibt' : 'sichere Puffertage verbleiben'}.`}`,
+      es: `${used} ${used === 1 ? 'día contado' : 'días contados'} en esta ventana inclusiva de 180 días. ${overBy > 0 ? `${overBy} por encima del límite de 90 días.` : `Quedan ${remaining} ${remaining === 1 ? 'día de margen seguro' : 'días de margen seguro'}.`}`,
+      it: `${used} ${used === 1 ? 'giorno conteggiato' : 'giorni conteggiati'} nella finestra inclusiva di 180 giorni. ${overBy > 0 ? `${overBy} oltre il limite di 90 giorni.` : `Restano ${remaining} ${remaining === 1 ? 'giorno di margine sicuro' : 'giorni di margine sicuro'}.`}`,
+      ru: `${used} ${used === 1 ? 'учтённый день' : 'учтённых дней'} в этом 180-дневном окне. ${overBy > 0 ? `Превышение лимита 90 дней: ${overBy}.` : `Безопасный запас: ${remaining} дн.`}`,
+      tr: `Bu 180 günlük pencerede ${used} gün sayıldı. ${overBy > 0 ? `90 günlük sınır ${overBy} gün aşıldı.` : `${remaining} güvenli tampon gün kaldı.`}`,
+      he: `${used} ימים נספרו בחלון הכולל של 180 יום. ${overBy > 0 ? `חריגה של ${overBy} ימים ממגבלת 90 הימים.` : `נותרו ${remaining} ימי מרווח בטוח.`}`,
+      ar: `احتُسب ${used} يومًا في نافذة 180 يومًا الشاملة. ${overBy > 0 ? `تجاوز حد 90 يومًا بمقدار ${overBy}.` : `يتبقى هامش آمن قدره ${remaining} يومًا.`}`
+    };
+    return values[summaryLocale];
+  }
+
+  function returnsSummary(summaryLocale: Locale, returned: number, forecastDays: number): string {
+    const values: Record<Locale, string> = {
+      en: returned > 0 ? `${returned} counted ${returned === 1 ? 'day returns' : 'days return'} to the allowance during this ${forecastDays}-day forecast.` : `No counted days return to the allowance during this ${forecastDays}-day forecast.`,
+      fr: returned > 0 ? `${returned} ${returned === 1 ? 'jour revient' : 'jours reviennent'} pendant cette prévision de ${forecastDays} jours.` : `Aucun jour ne revient pendant cette prévision de ${forecastDays} jours.`,
+      de: returned > 0 ? `${returned} ${returned === 1 ? 'Tag kehrt' : 'Tage kehren'} in dieser ${forecastDays}-Tage-Prognose zurück.` : `In dieser ${forecastDays}-Tage-Prognose kehren keine Tage zurück.`,
+      es: returned > 0 ? `${returned} ${returned === 1 ? 'día vuelve' : 'días vuelven'} durante esta previsión de ${forecastDays} días.` : `No vuelve ningún día durante esta previsión de ${forecastDays} días.`,
+      it: returned > 0 ? `${returned} ${returned === 1 ? 'giorno torna' : 'giorni tornano'} nella previsione di ${forecastDays} giorni.` : `Nessun giorno torna nella previsione di ${forecastDays} giorni.`,
+      ru: returned > 0 ? `За прогнозные ${forecastDays} дней вернётся дней: ${returned}.` : `За прогнозные ${forecastDays} дней учтённые дни не вернутся.`,
+      tr: returned > 0 ? `${forecastDays} günlük tahminde ${returned} gün geri döner.` : `${forecastDays} günlük tahminde sayılan gün geri dönmez.`,
+      he: returned > 0 ? `${returned} ימים חוזרים במהלך תחזית של ${forecastDays} יום.` : `לא חוזרים ימים במהלך תחזית של ${forecastDays} יום.`,
+      ar: returned > 0 ? `يعود ${returned} يومًا خلال توقع ${forecastDays} يومًا.` : `لا تعود أيام خلال توقع ${forecastDays} يومًا.`
+    };
+    return values[summaryLocale];
   }
 
   function addTripDays(
@@ -185,11 +217,11 @@
     return segments;
   }
 
-  function formatDateRange(startDate: string, endDate: string): string {
+  function formatDateRange(startDate: string, endDate: string, rangeLocale: Locale = locale): string {
     const start = parseISODate(startDate);
     const end = parseISODate(endDate);
     if (startDate === endDate) {
-      return new Intl.DateTimeFormat('en-GB', {
+      return new Intl.DateTimeFormat(intlLocale(rangeLocale), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -198,13 +230,13 @@
     }
     const startYear = start.getUTCFullYear();
     const endYear = end.getUTCFullYear();
-    const startLabel = new Intl.DateTimeFormat('en-GB', {
+    const startLabel = new Intl.DateTimeFormat(intlLocale(rangeLocale), {
       day: 'numeric',
       month: 'short',
       ...(startYear !== endYear ? { year: 'numeric' as const } : {}),
       timeZone: 'UTC'
     }).format(start);
-    const endLabel = new Intl.DateTimeFormat('en-GB', {
+    const endLabel = new Intl.DateTimeFormat(intlLocale(rangeLocale), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -243,7 +275,7 @@
     <span>{formatDateRange(model.endDate, model.endDate)}</span>
   </div>
   <p class="timeline-summary">{model.summary}</p>
-  <ul class="timeline-legend" aria-label="Timeline legend">
+  <ul class="timeline-legend" aria-label={timelineAriaLabel[locale]}>
     {#each legendItems as item}
       {#if visibleKinds.has(item.kind)}
         <li><span class={item.kind}></span>{item.label}</li>

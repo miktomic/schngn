@@ -1,8 +1,9 @@
 const SCHNGN_CACHE_PREFIX = 'schngn-';
-const SCHNGN_STATIC_CACHE = 'schngn-static-v4';
-const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v4';
+const SCHNGN_STATIC_CACHE = 'schngn-static-v5';
+const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v5';
 
 const SAFE_NAVIGATION_PATHS = new Set(['/', '/app', '/accuracy']);
+const LOCALE_PREFIXES = ['fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar'];
 const SAFE_STATIC_PATHS = new Set([
   '/manifest.json',
   '/favicon.ico',
@@ -21,7 +22,7 @@ const SAFE_LOCAL_DEV_STATIC_PREFIXES = [
   '/src/'
 ];
 
-const APP_SHELL_URLS = [
+const BASE_APP_SHELL_URLS = [
   '/',
   '/app',
   '/accuracy',
@@ -36,13 +37,26 @@ const APP_SHELL_URLS = [
   '/icons/icon-maskable-192.png',
   '/icons/icon-maskable-512.png'
 ];
+const APP_SHELL_URLS = [
+  ...BASE_APP_SHELL_URLS,
+  ...LOCALE_PREFIXES.flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`])
+];
 
 function isApiPath(pathname) {
   return pathname === '/api' || pathname.startsWith('/api/');
 }
 
 function isSafeNavigationPath(pathname) {
-  return SAFE_NAVIGATION_PATHS.has(pathname);
+  if (SAFE_NAVIGATION_PATHS.has(pathname)) return true;
+  const segments = pathname.split('/').filter(Boolean);
+  if (!LOCALE_PREFIXES.includes(segments[0])) return false;
+  const basePath = segments.length === 1 ? '/' : `/${segments.slice(1).join('/')}`;
+  return SAFE_NAVIGATION_PATHS.has(basePath);
+}
+
+function localizedAppPath(pathname) {
+  const locale = pathname.split('/').filter(Boolean)[0];
+  return LOCALE_PREFIXES.includes(locale) ? `/${locale}/app` : '/app';
 }
 
 function isSafeStaticPath(pathname) {
@@ -190,7 +204,7 @@ self.addEventListener('fetch', (event) => {
       .catch(async () => {
         const cached = await caches.match(request);
         if (cached) return cached;
-        if (request.mode === 'navigate') return (await caches.match('/app')) ?? Response.error();
+        if (request.mode === 'navigate') return (await caches.match(localizedAppPath(url.pathname))) ?? (await caches.match('/app')) ?? Response.error();
         return Response.error();
       })
   );

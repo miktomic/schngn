@@ -248,6 +248,19 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - D1 migration `0004_reset_account_trip_snapshots_v2.sql` clears pre-launch snapshots and recreates the constrained schema-two table without deleting Clerk accounts.
 - Country metadata and full travel histories remain prohibited from analytics and logs.
 
+## DEC-13 — Whole-site localization and reviewed-copy boundary
+
+**Decision:** Support English, French, German, Spanish, Italian, Russian, Turkish, Hebrew, and Arabic across the public site and calculator. English uses the existing unprefixed routes; other languages use a locale prefix such as `/fr/app`. Hebrew and Arabic render right-to-left.
+
+**Implementation constraints:**
+
+- Locale selection lives in the URL and a non-sensitive preference cookie. It is never added to trip snapshots or analytics payloads.
+- Locale switching preserves the current page, app section query, and other safe URL context.
+- Dates use locale-aware `Intl` formatting. ISO trip dates and engine inputs remain unchanged.
+- Localized routes are included in canonical/alternate metadata, the sitemap, and the offline navigation allowlist.
+- Approved legal, safety, and rule-explanation copy remains in reviewed English until human-reviewed translations are supplied. Non-English pages label this fallback explicitly; generated legal explanations remain forbidden.
+- Hebrew and Arabic use semantic RTL document direction while ISO values, email addresses, and other inherently left-to-right data retain appropriate directionality.
+
 ## Board state
 
 The corresponding Hermes Kanban decision cards on board `schngn` were completed on 2026-07-09 with comments and structured metadata.

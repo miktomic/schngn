@@ -1,37 +1,51 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import { SchngnLogo } from '$lib/design';
+  import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
+  import { createTranslator, localeFromPath, localizedPath, type Locale } from '$lib/i18n';
 
   const officialCalculatorUrl = 'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en';
+  let locale = $derived(localeFromPath(page.url.pathname));
+  let t = $derived(createTranslator(locale));
+  const english = createTranslator('en');
+  let homePath = $derived(localizedPath('/', locale));
+  let appPath = $derived(localizedPath('/app', locale));
+  let accuracyPath = $derived(localizedPath('/accuracy', locale));
+  let canonicalUrl = $derived(`https://schngn.com${accuracyPath}`);
   const cases = [
     {
-      title: 'Inclusive entry and exit days',
-      detail: 'A same-day Schengen stay counts as one physical day. A 10-calendar-day stay counts 10 days, not 9 nights.'
+      title: english('accuracy.caseInclusiveTitle'),
+      detail: english('accuracy.caseInclusiveCopy')
     },
     {
-      title: 'Rolling 180-day window',
-      detail: 'The calculation looks back 180 calendar days including the reference date, then counts only Schengen short-stay days inside that window.'
+      title: english('accuracy.caseWindowTitle'),
+      detail: english('accuracy.caseWindowCopy')
     },
     {
-      title: 'Overlapping trips are de-duplicated',
-      detail: 'Two imported or edited trips that cover the same physical day do not double-count that day.'
+      title: english('accuracy.caseOverlapTitle'),
+      detail: english('accuracy.caseOverlapCopy')
     },
     {
-      title: 'Non-Schengen days excluded',
-      detail: 'Ireland, Cyprus, the UK, and the US are excluded from Schengen short-stay counting, while non-EU Schengen states are included.'
+      title: english('accuracy.caseExcludedTitle'),
+      detail: english('accuracy.caseExcludedCopy')
     }
   ];
 </script>
 
 <svelte:head>
-  <title>Accuracy evidence for the Schengen 90/180 calculator | SCHNGN</title>
+  <title>{t('accuracy.title')}</title>
   <meta
     name="description"
-    content="How SCHNGN tests Schengen 90/180-day calculations with deterministic rule fixtures, boundary cases, and an independent day-set oracle."
+    content={t('accuracy.description')}
   />
-  <link rel="canonical" href="https://schngn.com/accuracy" />
-  <meta property="og:url" content="https://schngn.com/accuracy" />
-  <meta property="og:title" content="Accuracy evidence for the Schengen 90/180 calculator | SCHNGN" />
-  <meta property="og:description" content="Official-source framing and curated edge cases for SCHNGN's 90/180-day calculator." />
+  <link rel="canonical" href={canonicalUrl} />
+  {#each ['en', 'fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar'] as alternateLocale}
+    <link rel="alternate" hreflang={alternateLocale} href={`https://schngn.com${localizedPath('/accuracy', alternateLocale as Locale)}`} />
+  {/each}
+  <link rel="alternate" hreflang="x-default" href="https://schngn.com/accuracy" />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:title" content={t('accuracy.title')} />
+  <meta property="og:description" content={t('accuracy.ogDescription')} />
   <meta property="og:image" content="https://schngn.com/brand/schngn-social.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -42,29 +56,33 @@
 </svelte:head>
 
 <main class="accuracy-page">
-  <header class="topbar" aria-label="SCHNGN accuracy header">
-    <a class="brand" href="/" aria-label="SCHNGN home">
+  <header class="topbar" aria-label={t('accuracy.header')}>
+    <a class="brand" href={homePath} aria-label={t('common.home')}>
       <SchngnLogo alt="" />
     </a>
-    <a class="toplink" href="/app">Open calculator</a>
+    <div class="topbar-actions">
+      <LanguageSelector label={t('common.language')} {locale} url={page.url} />
+      <a class="toplink" href={appPath}>{t('common.openCalculator')}</a>
+    </div>
   </header>
 
   <section class="hero" aria-labelledby="accuracy-title">
-    <p class="kicker">Transparent calculation tests</p>
-    <h1 id="accuracy-title">Accuracy evidence</h1>
-    <p class="lede">Tested with 50 deterministic rule fixtures, boundary cases, and an independent day-set oracle for the published Schengen 90/180-day calculation method.</p>
+    <p class="kicker">{t('accuracy.kicker')}</p>
+    <h1 id="accuracy-title">{t('accuracy.hero')}</h1>
+    <p class="lede">{t('accuracy.lede')}</p>
     <div class="actions">
-      <a class="primary" href={officialCalculatorUrl} target="_blank" rel="noreferrer">European Commission short-stay calculator</a>
-      <a class="secondary" href="/app">Open calculator</a>
+      <a class="primary" href={officialCalculatorUrl} target="_blank" rel="noreferrer">{t('accuracy.officialCalculator')}</a>
+      <a class="secondary" href={appPath}>{t('common.openCalculator')}</a>
     </div>
   </section>
 
-  <section class="notice" aria-label="Scope and limitations">
+  {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
+  <section class="notice" aria-label={t('accuracy.scope')} lang="en" dir="ltr">
     <strong>SCHNGN is not certified, approved, or guaranteed by the EU</strong>
     <p>The European Commission calculator is linked for independent comparison. SCHNGN's checked-in suite currently verifies published rule semantics; it does not claim captured output parity with the official calculator. It is not legal advice and does not guarantee entry.</p>
   </section>
 
-  <section class="case-grid" aria-label="Curated accuracy cases">
+  <section class="case-grid" aria-label={t('accuracy.cases')} lang="en" dir="ltr">
     {#each cases as testCase}
       <article>
         <h2>{testCase.title}</h2>
@@ -94,6 +112,14 @@
     justify-content: space-between;
     min-height: 64px;
     gap: 16px;
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 0;
   }
 
   .brand,
@@ -185,6 +211,14 @@
     background: var(--surface);
   }
 
+  .translation-note {
+    max-width: 1120px;
+    margin: 0 auto 12px;
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.4;
+  }
+
   .notice {
     border-radius: 16px;
     padding: 18px 20px;
@@ -227,6 +261,17 @@
   }
 
   @media (max-width: 760px) {
+    .topbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .topbar-actions {
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
     .case-grid {
       grid-template-columns: 1fr;
     }

@@ -319,8 +319,8 @@ describe('installable offline PWA shell', () => {
         'schngn-runtime-v1',
         'schngn-static-v2',
         'schngn-runtime-v2',
-        'schngn-static-v4',
-        'schngn-runtime-v4',
+        'schngn-static-v5',
+        'schngn-runtime-v5',
         'other-origin-tool-cache'
       ]
     });

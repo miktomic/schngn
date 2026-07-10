@@ -1,71 +1,90 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import { SchngnLogo } from '$lib/design';
+  import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
+  import { createTranslator, localeFromPath, localizedPath, type Locale } from '$lib/i18n';
+
+  let locale = $derived(localeFromPath(page.url.pathname));
+  let t = $derived(createTranslator(locale));
+  const english = createTranslator('en');
+  let homePath = $derived(localizedPath('/', locale));
+  let appPath = $derived(`${localizedPath('/app', locale)}?market=uk`);
+  let accuracyPath = $derived(localizedPath('/accuracy', locale));
+  let canonicalUrl = $derived(`https://schngn.com${homePath}`);
 </script>
 
 <svelte:head>
-  <title>Schengen 90/180 calculator for UK second-home owners | SCHNGN</title>
+  <title>{t('landing.title')}</title>
   <meta
     name="description"
-    content="Plan Europe trips around the Schengen 90/180-day rule with a private calculator built for UK second-home owners and frequent travellers."
+    content={t('landing.description')}
   />
-  <link rel="canonical" href="https://schngn.com/" />
-  <meta property="og:url" content="https://schngn.com/" />
-  <meta property="og:title" content="Schengen 90/180 calculator for UK second-home owners | SCHNGN" />
+  <link rel="canonical" href={canonicalUrl} />
+  {#each ['en', 'fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar'] as alternateLocale}
+    <link rel="alternate" hreflang={alternateLocale} href={`https://schngn.com${localizedPath('/', alternateLocale as Locale)}`} />
+  {/each}
+  <link rel="alternate" hreflang="x-default" href="https://schngn.com/" />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:title" content={t('landing.title')} />
   <meta
     property="og:description"
-    content="A private Schengen 90/180 calculator for UK second-home owners planning Europe stays."
+    content={t('landing.ogDescription')}
   />
   <meta property="og:image" content="https://schngn.com/brand/schngn-social.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="SCHNGN" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Schengen 90/180 calculator for UK second-home owners | SCHNGN" />
+  <meta name="twitter:title" content={t('landing.title')} />
   <meta
     name="twitter:description"
-    content="Check whether your next Europe stay fits the Schengen 90/180-day rule. Your dates stay in this browser."
+    content={t('landing.twitterDescription')}
   />
   <meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />
   <meta name="twitter:image:alt" content="SCHNGN" />
 </svelte:head>
 
 <main class="landing">
-  <header class="topbar" aria-label="SCHNGN landing header">
-    <a class="brand" href="/" aria-label="SCHNGN home">
+  <header class="topbar" aria-label={t('landing.header')}>
+    <a class="brand" href={homePath} aria-label={t('common.home')}>
       <SchngnLogo alt="" />
     </a>
-    <a class="toplink" href="/app?market=uk">Open calculator</a>
+    <div class="topbar-actions">
+      <LanguageSelector label={t('common.language')} {locale} url={page.url} />
+      <a class="toplink" href={appPath}>{t('common.openCalculator')}</a>
+    </div>
   </header>
 
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <p class="kicker">For UK second-home owners</p>
-      <h1 id="hero-title">Plan Europe stays without guessing your 90 days.</h1>
+      <p class="kicker">{t('landing.kicker')}</p>
+      <h1 id="hero-title">{t('landing.hero')}</h1>
       <p class="lede">
-        A private Schengen 90/180 calculator for frequent Europe trips, family visits, and second-home planning.
+        {t('landing.lede')}
       </p>
-      <div class="actions" aria-label="Landing page actions">
-        <a class="primary" href="/app?market=uk">See if your Europe trip fits</a>
-        <a class="secondary" href="/app?market=uk">Open calculator</a>
+      <div class="actions" aria-label={t('landing.actions')}>
+        <a class="primary" href={appPath}>{t('landing.primaryAction')}</a>
+        <a class="secondary" href={appPath}>{t('common.openCalculator')}</a>
       </div>
-      <p class="trust-line">Your dates stay in this browser. Tested with 50 rule fixtures and an independent oracle. Not legal advice. Not an EU service.</p>
-      <a class="evidence-link" href="/accuracy">Accuracy evidence</a>
+      <p class="trust-line" lang="en" dir="ltr">{english('landing.trust')}</p>
+      {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
+      <a class="evidence-link" href={accuracyPath}>{t('landing.evidence')}</a>
     </div>
 
-    <aside class="answer-card" aria-label="Example safe answer">
+    <aside class="answer-card" aria-label={t('landing.exampleAnswer')}>
       <div class="mini-header">
         <span class="mini-brand">SCHNGN</span>
-        <span class="privacy">Local & private</span>
+        <span class="privacy">{t('landing.localPrivate')}</span>
       </div>
-      <span class="chip safe">France fits</span>
-      <strong>15 safe buffer days</strong>
+      <span class="chip safe">{t('landing.franceFits')}</span>
+      <strong>{t('landing.safeBuffer')}</strong>
       <dl>
         <div>
-          <dt>Must exit by</dt>
+          <dt>{t('landing.mustExit')}</dt>
           <dd>Oct 13</dd>
         </div>
         <div>
-          <dt>Days used</dt>
+          <dt>{t('landing.daysUsed')}</dt>
           <dd>75 / 90</dd>
         </div>
       </dl>
@@ -75,29 +94,29 @@
         <span class="whatif"></span>
         <span class="safe-segment"></span>
       </div>
-      <p>France, Spain, Italy, and Greece are counted inside the active 180-day window.</p>
+      <p>{t('landing.exampleCounted')}</p>
     </aside>
   </section>
 
-  <section class="audience" aria-label="Who SCHNGN is for">
+  <section class="audience" aria-label={t('landing.audience')}>
     <div>
-      <h2>Built for the second-home pattern.</h2>
+      <h2>{t('landing.audienceTitle')}</h2>
       <p>
-        Multiple short stays, family calendars, ferry bookings, and old entry dates make mental math fragile. SCHNGN turns those dates into one answer and a proof trail.
+        {t('landing.audienceCopy')}
       </p>
     </div>
-    <ul aria-label="Second-home planning benefits">
+    <ul aria-label={t('landing.benefits')}>
       <li>
-        <strong>Check before booking</strong>
-        <span>Try a future stay without changing saved trips.</span>
+        <strong>{t('landing.checkTitle')}</strong>
+        <span>{t('landing.checkCopy')}</span>
       </li>
       <li>
-        <strong>See days coming back</strong>
-        <span>Understand when old Schengen days leave the 180-day window.</span>
+        <strong>{t('landing.returnTitle')}</strong>
+        <span>{t('landing.returnCopy')}</span>
       </li>
       <li>
-        <strong>Keep travel private</strong>
-        <span>Trips live in browser storage unless you export JSON yourself.</span>
+        <strong>{t('landing.privateTitle')}</strong>
+        <span>{t('landing.privateCopy')}</span>
       </li>
     </ul>
   </section>
@@ -122,6 +141,14 @@
     justify-content: space-between;
     min-height: 64px;
     gap: 16px;
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 0;
   }
 
   .brand,
@@ -219,6 +246,14 @@
     color: var(--muted);
     font-size: 0.96rem;
     line-height: 1.45;
+  }
+
+  .translation-note {
+    max-width: 520px;
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.4;
   }
 
   .evidence-link {
@@ -390,6 +425,17 @@
   }
 
   @media (max-width: 840px) {
+    .topbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .topbar-actions {
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
     .hero,
     .audience {
       grid-template-columns: 1fr;
