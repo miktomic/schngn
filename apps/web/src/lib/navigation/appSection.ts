@@ -2,7 +2,6 @@ export type AppSection =
   | 'dashboard'
   | 'trip'
   | 'trips'
-  | 'planner'
   | 'proof'
   | 'returns'
   | 'report'
@@ -13,7 +12,6 @@ const APP_SECTIONS = new Set<AppSection>([
   'dashboard',
   'trip',
   'trips',
-  'planner',
   'proof',
   'returns',
   'report',
@@ -25,6 +23,7 @@ const TRIP_DEPENDENT_SECTIONS = new Set<AppSection>(['proof', 'returns', 'report
 
 export function appSectionFromUrl(url: URL): AppSection {
   const section = url.searchParams.get('section');
+  if (section === 'planner') return 'trips';
   return section && APP_SECTIONS.has(section as AppSection) ? (section as AppSection) : 'dashboard';
 }
 

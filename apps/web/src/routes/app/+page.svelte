@@ -115,8 +115,7 @@
   $: officialSourceLinks = localizedOfficialSourceLinks(locale);
   $: screens = [
     { key: 'dashboard' as const, label: ui('navOverview') },
-    { key: 'trips' as const, label: ui('navTrips') },
-    { key: 'planner' as const, label: ui('navPlanner') },
+    { key: 'trips' as const, label: tripOnboarding('nav') },
     { key: 'proof' as const, label: ui('navProof'), requiresTrips: true },
     { key: 'returns' as const, label: ui('navReturns'), requiresTrips: true },
     { key: 'report' as const, label: ui('navReport'), requiresTrips: true },
@@ -149,6 +148,8 @@
   let waitlistState: WaitlistState = 'idle';
   let waitlistError = '';
   let simulationSubmitted = false;
+  let simulationSaveNotice = '';
+  let simulationOutsideWindowConfirmationVisible = false;
   let simulatorForm: ProposedTripInput = emptySimulationForm();
   let quickAdjustVisible = false;
   let quickAdjustSourceId: string | null = null;
@@ -197,6 +198,7 @@
   $: tripFormWindowStartDate = rollingWindowStartDate(tripFormToday);
   $: resolvedTripFormStatus = statusForTripDates(tripForm.status, tripForm.exitDate);
   $: tripFormIsPast = resolvedTripFormStatus === 'past';
+  $: simulationSaveStatus = statusForTripDates('booked', simulatorForm.exitDate);
   $: simulatorStatusTone = (simulationState.statusTone === 'risk' ? 'risk' : simulationState.statusTone === 'close' ? 'whatif' : 'safe') as
     | 'safe'
     | 'risk'
@@ -912,6 +914,8 @@
   }
 
   function runSimulation(): void {
+    simulationSaveNotice = '';
+    simulationOutsideWindowConfirmationVisible = false;
     simulationSubmitted = true;
     if (simulationState.valid) trackSimulationRun('planner');
   }
@@ -919,6 +923,8 @@
   function clearSimulation(): void {
     simulatorForm = emptySimulationForm();
     simulationSubmitted = false;
+    simulationSaveNotice = '';
+    simulationOutsideWindowConfirmationVisible = false;
     quickAdjustSourceId = null;
     quickAdjustVisible = false;
     quickAdjustRange = null;
@@ -927,6 +933,8 @@
   function openQuickAdjuster(): void {
     const target = dashboardState.targetTrip;
     if (!target) return;
+    simulationSaveNotice = '';
+    simulationOutsideWindowConfirmationVisible = false;
     const form = tripToForm(target);
     simulatorForm = {
       label: form.label || displayRoute(target),
@@ -949,9 +957,13 @@
     quickAdjustRange = null;
     simulatorForm = emptySimulationForm();
     simulationSubmitted = false;
+    simulationSaveNotice = '';
+    simulationOutsideWindowConfirmationVisible = false;
   }
 
   function adjustQuickTrip(adjustment: DateAdjustment): void {
+    simulationSaveNotice = '';
+    simulationOutsideWindowConfirmationVisible = false;
     simulatorForm = {
       ...simulatorForm,
       entryDate: adjustment.entryDate,
@@ -969,6 +981,64 @@
 
   function simulationChanged(): void {
     simulationSubmitted = false;
+    simulationSaveNotice = '';
+    simulationOutsideWindowConfirmationVisible = false;
+  }
+
+  function openCombinedPlanner(): void {
+    setActiveScreen('trips');
+    if (!browser) return;
+    window.requestAnimationFrame(() => {
+      document.getElementById('planner')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  function continueSimulation(): void {
+    simulationSubmitted = false;
+    simulationSaveNotice = '';
+    simulationOutsideWindowConfirmationVisible = false;
+    if (!browser) return;
+    window.requestAnimationFrame(() => {
+      document.getElementById('simulation-entry')?.focus();
+    });
+  }
+
+  function saveSimulationAsBooked(confirmOutsideWindow = false): void {
+    if (!simulationState.valid || !simulationState.simulatedTrip) return;
+    const savedStatus = simulationSaveStatus;
+    const result = upsertTrip(trips, {
+      ...simulatorForm,
+      id: quickAdjustSourceId ?? undefined,
+      status: savedStatus
+    });
+    if (Object.keys(result.errors).length > 0) return;
+
+    if (
+      !confirmOutsideWindow &&
+      quickAdjustSourceId === null &&
+      isTripBeforeRollingWindow(simulationState.simulatedTrip, tripFormToday)
+    ) {
+      simulationOutsideWindowConfirmationVisible = true;
+      return;
+    }
+
+    const wasAdding = quickAdjustSourceId === null;
+    const persisted = persistTrips(result.trips);
+    if (wasAdding) {
+      trackAnalyticsEvent('trip_added', {
+        source: 'planner',
+        trip_count_bucket: buildTripCountBucket(result.trips.length)
+      });
+    }
+    simulatorForm = emptySimulationForm();
+    simulationSubmitted = false;
+    simulationOutsideWindowConfirmationVisible = false;
+    quickAdjustSourceId = null;
+    quickAdjustVisible = false;
+    quickAdjustRange = null;
+    simulationSaveNotice = persisted
+      ? tripOnboarding(savedStatus === 'past' ? 'savedPast' : 'savedBooked')
+      : rt('importedTemporary', { count: tripCount(result.trips.length) });
   }
 
   function emptySimulationForm(): ProposedTripInput {
@@ -1103,7 +1173,6 @@
     if (screen === 'report') return 'report';
     if (screen === 'waitlist') return 'waitlist';
     if (screen === 'privacy') return 'privacy';
-    if (screen === 'planner') return 'planner';
     return 'app';
   }
 
@@ -1240,7 +1309,7 @@
           </section>
           <div class="button-row">
             <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
-            <button class="text-button" type="button" onclick={() => setActiveScreen('planner')}>{tripOnboarding('noHistory')}</button>
+            <button class="text-button" type="button" onclick={openCombinedPlanner}>{tripOnboarding('noHistory')}</button>
           </div>
         {:else}
           <StatusChip tone={dashboardStatusTone} label={dashboardState.statusLabel} />
@@ -1296,7 +1365,7 @@
             <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addTrip')}</button>
             {#if dashboardState.targetTrip && !quickAdjustVisible}<button class="secondary-button what-if-action" type="button" onclick={openQuickAdjuster}>{whatIfUi('adjust')}</button>{/if}
             <button class="secondary-button" type="button" onclick={() => setActiveScreen('proof')}>{ui('showCalculation')}</button>
-            <button class="secondary-button" type="button" onclick={() => setActiveScreen('planner')}>{ui('planAnother')}</button>
+            <button class="secondary-button" type="button" onclick={openCombinedPlanner}>{ui('planAnother')}</button>
           </div>
         {/if}
       </section>
@@ -1471,7 +1540,7 @@
         <div class="section-heading with-action">
           <div>
             <p>{accountState === 'synced' || accountState === 'syncing' ? deep('syncedHistory') : deep('deviceHistory')}</p>
-            <h1 id="trips-heading" class="screen-title">{ui('navTrips')}</h1>
+            <h1 id="trips-heading" class="screen-title">{tripOnboarding('nav')}</h1>
           </div>
           <button class="primary-button" type="button" onclick={startAddTrip} disabled={trips.length >= MAX_TRIP_COUNT}>{ui('addTrip')}</button>
         </div>
@@ -1486,7 +1555,7 @@
             </ol>
             <div class="button-row">
               <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
-              <button class="text-button" type="button" onclick={() => setActiveScreen('planner')}>{tripOnboarding('noHistory')}</button>
+              <button class="text-button" type="button" onclick={openCombinedPlanner}>{tripOnboarding('noHistory')}</button>
             </div>
           </section>
         {:else}
@@ -1539,12 +1608,10 @@
             referenceDate={dashboardState.referenceDate}
           />
         </section>
-      </section>
-    {:else if active === 'planner'}
-      <section class="screen" aria-labelledby="planner-heading">
+        <section class="combined-planner" id="planner" aria-labelledby="planner-heading">
         <div class="section-heading">
           <p>{deep('unsavedWhatIf')}</p>
-          <h1 id="planner-heading" class="screen-title">{deep('canBook')}</h1>
+          <h2 id="planner-heading" class="combined-section-title">{tripOnboarding('plannerTitle')}</h2>
         </div>
         <p class="intro-copy">{deep('plannerIntro')}</p>
         <form class="trip-form" aria-label={rt('futureSimulatorAria')} novalidate onsubmit={(event) => { event.preventDefault(); runSimulation(); }}>
@@ -1653,6 +1720,12 @@
           </div>
         </form>
 
+        {#if simulationSaveNotice}
+          <section class="panel mint" aria-live="polite">
+            <p class="micro-safe">{simulationSaveNotice}</p>
+          </section>
+        {/if}
+
         {#if simulationSubmitted && simulationState.valid && simulationState.usage}
           <section class="simulation-result" aria-live="polite" aria-labelledby="simulation-result-heading">
             <StatusChip tone={simulatorStatusTone} label={simulationState.statusLabel} />
@@ -1667,14 +1740,35 @@
               <p>{simulationState.summaryCopy}</p>
               <p class:micro-risk={simulationState.statusTone === 'risk'} class:micro-safe={simulationState.statusTone !== 'risk'}>{simulationState.firstFixCopy}</p>
             </section>
-        <TimelineLedger
-          label={deep('whatIfWindow')}
-          {locale}
+            <TimelineLedger
+              label={deep('whatIfWindow')}
+              {locale}
               mode={simulationState.statusTone === 'risk' ? 'risk' : 'planner'}
               trips={simulationBaseTrips}
               simulation={simulationState.simulatedTrip}
               referenceDate={simulationState.usage.referenceDate}
             />
+            {#if simulationOutsideWindowConfirmationVisible}
+              <section class="outside-window-confirmation" role="alert" aria-labelledby="simulation-outside-window-heading">
+                <h2 id="simulation-outside-window-heading">{deep('outsideWindow')}</h2>
+                <p>{rt('endedBefore', { date: formatDate(tripFormWindowStartDate) })}</p>
+                <div class="button-row compact-actions">
+                  <button class="primary-button" type="button" onclick={() => saveSimulationAsBooked(true)}>{deep('saveAnyway')}</button>
+                  <button class="secondary-button" type="button" onclick={() => { simulationOutsideWindowConfirmationVisible = false; }}>{deep('keepEditing')}</button>
+                </div>
+              </section>
+            {:else}
+              <div class="simulation-save-actions">
+                <button
+                  class:primary-button={simulationState.statusTone === 'safe'}
+                  class:secondary-button={simulationState.statusTone !== 'safe'}
+                  type="button"
+                  onclick={() => saveSimulationAsBooked()}
+                  disabled={quickAdjustSourceId === null && trips.length >= MAX_TRIP_COUNT}
+                >{tripOnboarding(simulationSaveStatus === 'past' ? 'savePast' : 'saveBooked')}</button>
+                <button class="secondary-button" type="button" onclick={continueSimulation}>{tripOnboarding('keepExperimenting')}</button>
+              </div>
+            {/if}
           </section>
         {:else if simulationSubmitted}
           <section class="panel risk-panel" aria-live="polite">
@@ -1695,6 +1789,7 @@
             <p class="micro-safe">{rt('noPaymentPlanner')}</p>
           </section>
         {/if}
+        </section>
       </section>
     {:else if active === 'proof'}
       <section class="screen" id="proof" aria-labelledby="proof-heading">
@@ -2951,6 +3046,30 @@
     color: var(--muted);
   }
 
+  .combined-planner {
+    display: grid;
+    gap: 16px;
+    scroll-margin-top: 16px;
+    margin-top: 30px;
+    border-top: 2px solid var(--whatif);
+    padding-top: 26px;
+  }
+
+  .combined-section-title {
+    margin: 0;
+    color: var(--whatif);
+    font-size: 1.65rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .simulation-save-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .trip-copy,
   .ledger article > div {
     min-width: 0;
@@ -3111,6 +3230,7 @@
     .return-list article { align-items: flex-start; flex-wrap: wrap; }
     .return-list p { width: 100%; max-width: none; }
     .quick-adjust-answer { grid-template-columns: 1fr; }
+    .simulation-save-actions { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 380px) {

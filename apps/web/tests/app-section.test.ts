@@ -8,7 +8,7 @@ import {
 
 describe('app section URLs', () => {
   test('restores a valid section and ignores unknown values', () => {
-    expect(appSectionFromUrl(new URL('https://schngn.com/app?section=planner'))).toBe('planner');
+    expect(appSectionFromUrl(new URL('https://schngn.com/app?section=planner'))).toBe('trips');
     expect(appSectionFromUrl(new URL('https://schngn.com/app?section=unknown'))).toBe('dashboard');
     expect(appSectionFromUrl(new URL('https://schngn.com/app'))).toBe('dashboard');
   });
@@ -21,7 +21,7 @@ describe('app section URLs', () => {
   });
 
   test('keeps trip-dependent sections unreachable until trips exist', () => {
-    const alwaysAvailable: AppSection[] = ['dashboard', 'trip', 'trips', 'planner', 'privacy', 'waitlist'];
+    const alwaysAvailable: AppSection[] = ['dashboard', 'trip', 'trips', 'privacy', 'waitlist'];
     for (const section of alwaysAvailable) expect(isAppSectionAvailable(section, false)).toBe(true);
 
     for (const section of ['proof', 'returns', 'report'] as const) {
