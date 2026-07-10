@@ -1,12 +1,19 @@
 import { describe, expect, test } from 'bun:test';
-import { FULL_DISCLAIMER_COPY, FOOTER_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '../src/lib/legal/legalCopy';
+import { OFFICIAL_SOURCE_LINKS, localizedLegalCopy, localizedOfficialSourceLinks } from '../src/lib/legal/legalCopy';
+import { SUPPORTED_LOCALES } from '../src/lib/i18n';
 
 describe('fixed legal/disclaimer copy', () => {
   test('uses the approved fixed planning-aid copy without runtime legal advice language', () => {
-    expect(FULL_DISCLAIMER_COPY).toContain('SCHNGN is a planning calculator, not legal advice and not a guarantee of entry.');
-    expect(FULL_DISCLAIMER_COPY).toContain('residence permits, long-stay or national visas, bilateral waiver agreements');
-    expect(FULL_DISCLAIMER_COPY).toContain('Always verify with official sources before booking or travelling.');
-    expect(FOOTER_DISCLAIMER_COPY).toBe('Planning aid only. Not legal advice or a guarantee of entry. Verify with official sources.');
+    const english = localizedLegalCopy('en');
+    expect(english.full).toContain('SCHNGN is a planning calculator, not legal advice and not a guarantee of entry.');
+    expect(english.full).toContain('residence permits, long-stay or national visas, bilateral waiver agreements');
+    expect(english.full).toContain('Always verify with official sources before booking or travelling.');
+    expect(english.footer).toBe('Planning aid only. Not legal advice or a guarantee of entry. Verify with official sources.');
+    expect(localizedLegalCopy('he').full).toContain('ולא ייעוץ משפטי או הבטחה לכניסה');
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(localizedLegalCopy(locale).full.trim().length).toBeGreaterThan(80);
+      expect(localizedLegalCopy(locale).footer.trim().length).toBeGreaterThan(30);
+    }
   });
 
   test('keeps official source links explicit and non-endorsement-safe', () => {
@@ -18,5 +25,13 @@ describe('fixed legal/disclaimer copy', () => {
       { label: 'Entry/Exit System information', href: 'https://travel-europe.europa.eu/en/ees' },
       { label: 'ETIAS information', href: 'https://travel-europe.europa.eu/en/etias' }
     ]);
+    expect(localizedOfficialSourceLinks('he').map((source) => source.label)).toEqual([
+      'מחשבון השהייה הקצרה של הנציבות האירופית',
+      'מידע על מערכת הכניסה והיציאה',
+      'מידע על ETIAS'
+    ]);
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(localizedOfficialSourceLinks(locale)).toHaveLength(3);
+    }
   });
 });

@@ -22,7 +22,7 @@
   import { addIsoDays, buildAdjustmentRange, type AdjustmentRange, type DateAdjustment } from '$lib/simulator/whatIfDates';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
-  import { FOOTER_DISCLAIMER_COPY, FULL_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '$lib/legal/legalCopy';
+  import { localizedLegalCopy, localizedOfficialSourceLinks } from '$lib/legal/legalCopy';
   import { buildPdfBuyIntentEvent, buildPdfReportFakeDoorState } from '$lib/fake-door/pdfReportFakeDoor';
   import {
     buildUnlockBuyIntentEvent,
@@ -109,6 +109,8 @@
   $: deep = createAppDeepUiTranslator(locale);
   $: rt = createAppRuntimeUiTranslator(locale);
   $: whatIfUi = createWhatIfUiTranslator(locale);
+  $: legal = localizedLegalCopy(locale);
+  $: officialSourceLinks = localizedOfficialSourceLinks(locale);
   $: screens = [
     { key: 'dashboard' as const, label: ui('navOverview') },
     { key: 'trips' as const, label: ui('navTrips') },
@@ -1204,10 +1206,9 @@
       <aside class="disclaimer-notice" aria-labelledby="disclaimer-heading">
         <div>
           <h2 id="disclaimer-heading">{ui('planningOnly')}</h2>
-          <p>{FULL_DISCLAIMER_COPY}</p>
-          {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
+          <p>{legal.full}</p>
           <div class="official-links" aria-label={ui('officialSources')}>
-            {#each OFFICIAL_SOURCE_LINKS as source}
+            {#each officialSourceLinks as source}
               <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
             {/each}
           </div>
@@ -1760,7 +1761,7 @@
           <h2>{dashboardState.statusLabel} · {dashboardState.heroMetric}</h2>
           <p class="mono-range">{dashboardState.daysUsedLabel} days used · {formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</p>
           <p>{explanationState.summary}</p>
-          <p>{FOOTER_DISCLAIMER_COPY}</p>
+          <p>{legal.footer}</p>
         </article>
         <section class="panel whatif-panel">
           <h2>{pdfFakeDoorState.messageTitle}</h2>
@@ -1981,7 +1982,7 @@
           <h2>{rt('officialSources')}</h2>
           <p>{rt('officialCopy')}</p>
           <div class="official-links stacked">
-            {#each OFFICIAL_SOURCE_LINKS as source}<a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>{/each}
+            {#each officialSourceLinks as source}<a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>{/each}
           </div>
         </section>
         <section class="panel paper-panel">
@@ -2019,7 +2020,7 @@
       </section>
     {/if}
 
-    <aside class="legal-footer" aria-label={rt('disclaimerAria')}><p>{FOOTER_DISCLAIMER_COPY}</p></aside>
+    <aside class="legal-footer" aria-label={rt('disclaimerAria')}><p>{legal.footer}</p></aside>
   </section>
 </main>
 

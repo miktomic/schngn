@@ -102,4 +102,11 @@ describe('whole-site localization', () => {
       expect(config).toContain(`'${locale}'`);
     }
   });
+
+  test('passes the active locale into generated timeline copy and isolates RTL date ranges', () => {
+    const timeline = readFileSync('apps/web/src/lib/design/TimelineLedger.svelte', 'utf8');
+    expect(timeline).toContain('horizonDays,\n    locale,\n    mode');
+    expect(timeline).toContain('dateRangeLabel[locale]');
+    expect(timeline).toContain('<bdi>{model.rangeLabel}</bdi>');
+  });
 });

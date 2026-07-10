@@ -52,6 +52,7 @@
 
   let model = $derived(buildTimelineModel({
     horizonDays,
+    locale,
     mode,
     referenceDate,
     returnDates,
@@ -72,6 +73,7 @@
     ar: ['رحلة سابقة', 'رحلة محجوزة', 'سيناريو', 'فوق الحد', 'يوم مستعاد', 'غير محسوب']
   };
   const timelineAriaLabel: Record<Locale, string> = { en:'Timeline legend',fr:'Légende de la chronologie',de:'Zeitachsenlegende',es:'Leyenda de la cronología',it:'Legenda della cronologia',ru:'Легенда шкалы времени',tr:'Zaman çizelgesi açıklaması',he:'מקרא ציר הזמן',ar:'مفتاح المخطط الزمني' };
+  const dateRangeLabel: Record<Locale, string> = { en:'Date range',fr:'Plage de dates',de:'Datumsbereich',es:'Intervalo de fechas',it:'Intervallo di date',ru:'Диапазон дат',tr:'Tarih aralığı',he:'טווח תאריכים',ar:'نطاق التاريخ' };
   let legendItems = $derived((['past', 'booked', 'whatif', 'risk', 'return', 'empty'] as SegmentKind[]).map((kind, index) => ({ kind, label: legendCatalog[locale][index] })));
 
   function buildTimelineModel(input: Omit<TimelineProps, 'label'>): TimelineModel {
@@ -254,13 +256,13 @@
 <section class="timeline-card" aria-labelledby="timeline-heading">
   <div class="timeline-head">
     <h2 id="timeline-heading">{label}</h2>
-    <span>{model.rangeLabel}</span>
+    <bdi>{model.rangeLabel}</bdi>
   </div>
   <div
     class="timeline-rail"
     style={`--timeline-days: ${model.dayCount}`}
     role="img"
-    aria-label={`${label}. ${model.summary} Date range ${model.rangeLabel}.`}
+    aria-label={`${label}. ${model.summary} ${dateRangeLabel[locale]} ${model.rangeLabel}.`}
   >
     {#each model.segments as segment, index (`${segment.startDate}-${segment.kind}-${index}`)}
       <span
@@ -271,8 +273,8 @@
     {/each}
   </div>
   <div class="timeline-ticks" aria-hidden="true">
-    <span>{formatDateRange(model.startDate, model.startDate)}</span>
-    <span>{formatDateRange(model.endDate, model.endDate)}</span>
+    <bdi>{formatDateRange(model.startDate, model.startDate)}</bdi>
+    <bdi>{formatDateRange(model.endDate, model.endDate)}</bdi>
   </div>
   <p class="timeline-summary">{model.summary}</p>
   <ul class="timeline-legend" aria-label={timelineAriaLabel[locale]}>
@@ -315,7 +317,7 @@
     overflow-wrap: anywhere;
   }
 
-  .timeline-head > span,
+  .timeline-head > bdi,
   .timeline-ticks {
     color: var(--muted);
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -323,7 +325,7 @@
     font-weight: 650;
   }
 
-  .timeline-head > span {
+  .timeline-head > bdi {
     flex: 0 1 auto;
     text-align: end;
   }
@@ -400,7 +402,7 @@
       gap: 4px;
     }
 
-    .timeline-head > span {
+    .timeline-head > bdi {
       text-align: start;
     }
   }
