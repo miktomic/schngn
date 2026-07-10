@@ -3,6 +3,8 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { createCspDirectives } from './csp.config.js';
 
 const development = process.env.NODE_ENV === 'development';
+const localizedPrerenderEntries = ['fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar']
+  .flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`]);
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -18,6 +20,9 @@ const config = {
       // Dynamic pages receive nonces; prerendered pages receive build-time hashes.
       mode: 'auto',
       directives: createCspDirectives({ development })
+    },
+    prerender: {
+      entries: ['*', ...localizedPrerenderEntries]
     }
   }
 };

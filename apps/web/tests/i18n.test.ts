@@ -89,8 +89,17 @@ describe('whole-site localization', () => {
   test('keeps localized navigation offline-safe and declares language alternates', () => {
     const worker = readFileSync('apps/web/static/service-worker.js', 'utf8');
     const landing = readFileSync('apps/web/src/routes/+page.svelte', 'utf8');
+    const selector = readFileSync('apps/web/src/lib/i18n/LanguageSelector.svelte', 'utf8');
+    const config = readFileSync('apps/web/svelte.config.js', 'utf8');
+    const accuracyRoute = readFileSync('apps/web/src/routes/accuracy/+page.ts', 'utf8');
     expect(worker).toContain("'he', 'ar'");
     expect(worker).toContain('localizedAppPath');
     expect(landing).toContain('hreflang="x-default"');
+    expect(selector).toContain('window.location.assign');
+    expect(config).toContain('localizedPrerenderEntries');
+    expect(accuracyRoute).toContain('prerender = true');
+    for (const locale of SUPPORTED_LOCALES.filter((candidate) => candidate !== 'en')) {
+      expect(config).toContain(`'${locale}'`);
+    }
   });
 });

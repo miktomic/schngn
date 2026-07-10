@@ -76,10 +76,15 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('button', { name: 'תכנון', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: 'אפשר להזמין?' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'צריכים אפשרויות תכנון נוספות?' })).toBeVisible();
+    const appLanguageSelector = page.getByRole('combobox', { name: 'שפה' });
+    await appLanguageSelector.selectOption('fr');
+    await expect(page).toHaveURL(/\/fr\/app\?section=planner$/);
+    await expect(page.getByRole('button', { name: 'Planifier', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Puis-je réserver ?' })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('button', { name: 'תכנון', exact: true })).toHaveAttribute('aria-current', 'page');
-    await page.getByRole('button', { name: 'חשבון', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'להמשיך להשתמש ב־SCHNGN ללא חשבון' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Planifier', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.getByRole('button', { name: 'Compte', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Continuer sans compte' })).toBeVisible();
 
     await page.goto('/tr/accuracy');
     await expect(page.locator('html')).toHaveAttribute('lang', 'tr');
