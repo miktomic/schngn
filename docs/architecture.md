@@ -65,7 +65,8 @@ Responsibilities:
 - Rolling 180-day usage calculation.
 - Inclusive entry/exit-day counting.
 - Overlap and adjacent-trip de-duplication.
-- Exclusion/inclusion policy for short-stay country counting.
+- Counting explicit continuous Schengen stay ranges; the engine has no country-classification branch.
+- De-duplicating overlapping stay ranges while preserving full calendar-day gaps outside Schengen.
 - Latest safe exit date calculation.
 - Verdict classification.
 
@@ -78,6 +79,8 @@ Constraints:
 - Must be testable in isolation.
 
 This is the safety-critical package. CI must fail if its tests fail.
+
+The web trip model is a traveler-facing journey with optional entry/exit country context and one or more `stays`. Outside-Schengen breaks are stored as gaps between those stays. Before calculation, the web layer flattens journeys to pure `{ entryDate, exitDate }` ranges. This keeps route labels out of the mathematical contract.
 
 ### `apps/web`
 

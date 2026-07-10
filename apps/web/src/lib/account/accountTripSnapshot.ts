@@ -5,8 +5,8 @@ import {
 } from '../import-export/tripBackup';
 import type { EditableTrip } from '../trips/tripCrud';
 
-export const ACCOUNT_TRIP_SNAPSHOT_SCHEMA_VERSION = 1;
-export const ACCOUNT_SYNC_CONSENT_VERSION = 'account-sync-v1';
+export const ACCOUNT_TRIP_SNAPSHOT_SCHEMA_VERSION = 2;
+export const ACCOUNT_SYNC_CONSENT_VERSION = 'account-sync-v2';
 export const MAX_ACCOUNT_SYNC_BODY_BYTES = MAX_TRIP_BACKUP_BYTES;
 
 export interface AccountTripSnapshot {

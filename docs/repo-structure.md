@@ -106,6 +106,9 @@ Toolchain:
 
 - Node 24+ for Node-based tooling.
 - Bun 1.3.14 for package install, scripts, tests, and builds.
+- TypeScript 7 for the pure engine compiler and root CLI.
+- The web workspace remains on TypeScript 6 for `svelte-check` until TypeScript 7 exposes the
+  programmatic API required by Svelte tooling.
 
 Preferred:
 

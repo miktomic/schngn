@@ -1,5 +1,5 @@
-import { addDays, calculateUsageOnDate, countsForShortStay, formatISODate, parseISODate } from '@schngn/engine';
-import { sortTrips, toEngineTrips, type EditableTrip } from '../trips/tripCrud';
+import { addDays, calculateUsageOnDate, formatISODate, parseISODate } from '@schngn/engine';
+import { sortTrips, toEngineTrips, tripRouteLabel, type EditableTrip } from '../trips/tripCrud';
 
 export interface ReturningDaysForecastOptions {
   referenceDate: string;
@@ -74,14 +74,13 @@ function sourceLabelsByCountedDay(trips: EditableTrip[], countedDays: Set<string
   const sources = new Map<string, string>();
 
   for (const trip of trips) {
-    if (!countsForShortStay(trip)) continue;
-    const entry = parseISODate(trip.entryDate);
-    const exit = parseISODate(trip.exitDate);
-
-    for (let current = entry; current.getTime() <= exit.getTime(); current = addDays(current, 1)) {
-      const iso = formatISODate(current);
-      if (!countedDays.has(iso) || sources.has(iso)) continue;
-      sources.set(iso, `${trip.label ?? trip.countryCode ?? 'Schengen trip'} ${formatShortDate(iso)} leaves the window`);
+    for (const stay of trip.stays) {
+      const exit = parseISODate(stay.exitDate);
+      for (let current = parseISODate(stay.entryDate); current <= exit; current = addDays(current, 1)) {
+        const iso = formatISODate(current);
+        if (!countedDays.has(iso) || sources.has(iso)) continue;
+        sources.set(iso, `${trip.label ?? tripRouteLabel(trip)} ${formatShortDate(iso)} leaves the window`);
+      }
     }
   }
 

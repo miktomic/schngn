@@ -23,6 +23,9 @@ Toolchain policy:
 
 - Node is pinned to `24` through `.node-version` and `.nvmrc` for Node-based tooling.
 - Bun is pinned to `1.3.14` through `.bun-version` and the root `packageManager` field.
+- The engine build uses the TypeScript 7 native compiler. The Svelte typecheck temporarily uses
+  TypeScript 6 because TypeScript 7.0 does not expose the programmatic API required by
+  `svelte-check`.
 - Production is still Cloudflare Workers / `workerd`, not Node.
 
 ```text
@@ -63,15 +66,14 @@ Current tests are a real published-rule correctness gate:
 - inclusive entry/exit day counting
 - overlapping and duplicate trip de-duplication
 - inclusive rolling 180-day look-back
-- explicit Schengen country-code allowlist
-- Ireland/Cyprus and other non-Schengen country exclusion
-- Iceland/Norway/Liechtenstein/Switzerland inclusion
-- Bulgaria/Romania MVP baseline inclusion
+- explicit Schengen stay-range inputs with country classification outside the engine
+- outside-Schengen gaps preserved when a multi-country journey is flattened
+- country-annotated source fixtures adapted to explicit counted ranges before the engine call
 - 50 EC-rule rolling-window fixtures
 - deterministic property checks against an independent day-set oracle
 - golden counted-day scenario
 - verdict boundary classification at 82/83/89/90/91 days used, including exact-limit versus over-limit distinction and configurable close threshold
-- latest safe exit date boundary coverage: no prior trips, 89-used one-day remaining, 90-used null, old-days-aging-out, missing country manual Schengen, and non-Schengen target `null`
+- latest safe exit date boundary coverage: no prior stays, 89-used one-day remaining, 90-used null, and old days aging out
 
 ### Build gate
 
@@ -84,7 +86,7 @@ Current tests are a real published-rule correctness gate:
 
 US-19 adds two app-level gates, both required by CI:
 
-- `bun run test` includes privacy-network rejection, empty/corrupt/unavailable storage, semantic import validation, controlled countries, dashboard and future-commitment conflicts, dynamic proof/return state, runtime analytics allowlists, strict email-only waitlist parsing, authenticated account isolation/consent/export/deletion/webhook checks, D1 migration/config checks, security headers, PWA/offline behavior, SEO, and truthful accuracy evidence.
+- `bun run test` includes privacy-network rejection, empty/corrupt/unavailable storage, schema-two multi-stay import validation, optional Schengen border countries, outside-break calculation, dashboard and future-commitment conflicts, dynamic proof/return state, runtime analytics allowlists, strict email-only waitlist parsing, authenticated account isolation/consent/export/deletion/webhook checks, D1 migration/config checks, security headers, PWA/offline behavior, SEO, and truthful accuracy evidence.
 - `bun run test:e2e` runs Playwright mobile Chromium smoke for `/`, `/accuracy`, and `/app`, including UK second-home landing title/meta/hero/CTA coverage, accuracy-page title/official-source/case/non-endorsement coverage, US-17 service-worker install/control plus offline `/app` reload coverage, proof/report/privacy/waitlist states, US-04 add/edit/delete/validation behavior, US-05 reload persistence, US-06 JSON export/import/malformed-import behavior, US-07 dynamic latest-safe-exit display, US-09 future-trip simulator safe/unsafe behavior with non-mutating saved trips, US-08 dynamic days-coming-back forecast rows, US-10/US-11 disclaimer/explanation/official-link coverage, US-15 Plausible-compatible event interception with no trip-date/label/email leakage, US-13 PDF fake-door CTA/no-charge/intent coverage, US-14 paid unlock CTA/no-charge/intent coverage, US-18 waitlist email-only POST/consent/confirmation coverage, keyboard focus reachability, and privacy-network assertions.
 
 Before enabling analytics or fake-door flows, CI/manual QA must confirm:

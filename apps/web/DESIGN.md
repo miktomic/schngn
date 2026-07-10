@@ -222,6 +222,15 @@ SCHNGN is flat by default. Depth comes from paper layers, borders, spacing, and 
 - **Focus:** 3px outline or double-border treatment using safe green or ink. Do not rely on placeholder text as a label.
 - **Error / Disabled:** Risk text and border for errors, muted ink and paper background for disabled.
 
+### Schengen Stay Form
+
+- Lead with `Entered Schengen` and `Left Schengen`; these dates determine the continuous outer journey.
+- `Entered via` and `Left via` are optional context fields and must explicitly say they do not affect the calculation.
+- Keep `Time outside Schengen` collapsed by default. Add breaks inline, never in a modal or wizard.
+- Each break asks `Left Schengen` and `Re-entered Schengen`; require at least one full calendar day outside.
+- Show an immediate ledger summary such as `Italy → Austria · 10 Schengen days · 2 days outside` before save.
+- Do not ask users to list every Schengen country visited.
+
 ### Logo / Mark
 
 The production identity is the supplied cobalt **SCHNGN wordmark** with the euro-and-stars glyph and calendar detail.

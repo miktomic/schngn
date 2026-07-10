@@ -17,7 +17,8 @@ The release is blocked unless all three commands pass. The checks cover engine a
 Manual browser verification must also confirm:
 
 - a new browser starts with no fictional trips or verdict;
-- unsupported country text is rejected rather than silently excluded;
+- optional entry/exit countries accept only current Schengen choices and never alter the count;
+- a trip that leaves and re-enters Schengen shows the correct counted days and visible timeline gap;
 - a what-if trip cannot make a later booked trip unsafe without warning;
 - timeline, proof, risk, and returning-day dates match the entered itinerary;
 - keyboard focus reaches every action, visible controls meet the 44px project target, and 200% zoom does not hide content;
@@ -27,6 +28,7 @@ Manual browser verification must also confirm:
 - the waitlist request contains only email, consent, source, and an optional approved price bucket.
 - a guest remains local-only and emits no account trip request;
 - signup/sign-in alone does not upload local trips; a signed-in user must give explicit sync consent;
+- version-one local storage and backups are intentionally unsupported; the schema-two D1 migration clears any pre-launch account snapshots while preserving Clerk accounts;
 - account requests contain no client-controlled owner and authorization-isolation tests prove one user cannot access another user’s rows;
 - account export and deletion operate only on the verified signed-in user;
 - account, webhook, and operational logs contain no trip dates, labels, history, email, or Clerk user ID.

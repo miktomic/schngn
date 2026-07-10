@@ -1,6 +1,6 @@
 const SCHNGN_CACHE_PREFIX = 'schngn-';
-const SCHNGN_STATIC_CACHE = 'schngn-static-v3';
-const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v3';
+const SCHNGN_STATIC_CACHE = 'schngn-static-v4';
+const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v4';
 
 const SAFE_NAVIGATION_PATHS = new Set(['/', '/app', '/accuracy']);
 const SAFE_STATIC_PATHS = new Set([

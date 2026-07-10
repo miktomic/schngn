@@ -9,6 +9,7 @@ import {
 } from '../src/lib/trips/tripStorage';
 import type { EditableTrip } from '../src/lib/trips/tripCrud';
 import { MAX_TRIP_COUNT } from '../src/lib/trips/tripCrud';
+import { makeTrip } from './trip-fixtures';
 
 class MemoryStorage implements TripStorageLike {
   private values = new Map<string, string>();
@@ -26,14 +27,7 @@ class MemoryStorage implements TripStorageLike {
   }
 }
 
-const spain: EditableTrip = {
-  id: 'spain',
-  label: 'Spain',
-  countryCode: 'ES',
-  entryDate: '2026-07-01',
-  exitDate: '2026-07-19',
-  status: 'booked'
-};
+const spain: EditableTrip = makeTrip('spain', 'Spain', '2026-07-01', '2026-07-19', 'booked', 'ES');
 
 describe('local-only trip storage repository', () => {
   test('loads an empty trip list when storage is empty', () => {
@@ -72,10 +66,10 @@ describe('local-only trip storage repository', () => {
 
   test('rejects semantically invalid stored dates, statuses, countries, and duplicate ids', () => {
     const invalidPayloads = [
-      [{ ...spain, entryDate: '2026-02-30' }],
-      [{ ...spain, exitDate: '2026-06-30' }],
+      [{ ...spain, stays: [{ entryDate: '2026-02-30', exitDate: '2026-07-19' }] }],
+      [{ ...spain, stays: [{ entryDate: '2026-07-01', exitDate: '2026-06-30' }] }],
       [{ ...spain, status: 'confirmed' }],
-      [{ ...spain, countryCode: 'Spain' }],
+      [{ ...spain, entryCountryCode: 'Spain' }],
       [{ ...spain, id: 'x'.repeat(129) }],
       [{ ...spain, label: 'x'.repeat(81) }],
       [spain, { ...spain, label: 'Duplicate' }]

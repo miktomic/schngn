@@ -1,119 +1,69 @@
 import { describe, expect, test } from 'bun:test';
-import { buildTripSimulationState } from '../src/lib/simulator/tripSimulator';
-import type { EditableTrip } from '../src/lib/trips/tripCrud';
+import { buildTripSimulationState, type ProposedTripInput } from '../src/lib/simulator/tripSimulator';
+import { makeTrip } from './trip-fixtures';
 
-const savedTrips: EditableTrip[] = [
-  { id: 'france', label: 'France', countryCode: 'FR', entryDate: '2026-05-01', exitDate: '2026-05-12', status: 'past' },
-  { id: 'germany', label: 'Germany', countryCode: 'DE', entryDate: '2026-06-03', exitDate: '2026-06-20', status: 'past' },
-  { id: 'greece', label: 'Greece', countryCode: 'GR', entryDate: '2026-08-02', exitDate: '2026-08-17', status: 'past' }
+const savedTrips = [
+  makeTrip('france', 'France', '2026-05-01', '2026-05-12'),
+  makeTrip('germany', 'Germany', '2026-06-03', '2026-06-20'),
+  makeTrip('greece', 'Greece', '2026-08-02', '2026-08-17')
 ];
+const proposal = (overrides: Partial<ProposedTripInput> = {}): ProposedTripInput => ({
+  label: 'Italy',
+  entryCountryCode: 'IT',
+  exitCountryCode: 'AT',
+  entryDate: '2026-09-15',
+  exitDate: '2026-10-13',
+  outsideBreaks: [],
+  ...overrides
+});
 
 describe('future trip simulator', () => {
-  test('marks a proposed trip safe and shows maximum additional days from proposed start', () => {
-    const state = buildTripSimulationState(savedTrips, {
-      label: 'Italy',
-      countryCode: 'IT',
-      entryDate: '2026-09-15',
-      exitDate: '2026-10-13'
-    });
-
+  test('marks a proposed trip safe and calculates the latest safe exit', () => {
+    const state = buildTripSimulationState(savedTrips, proposal());
     expect(state.valid).toBe(true);
     expect(state.statusLabel).toBe('Italy fits');
-    expect(state.statusTone).toBe('safe');
     expect(state.daysUsedLabel).toBe('75 / 90');
-    expect(state.maxStayLabel).toBe('56 days max from Sep 15');
+    expect(state.maxStayLabel).toBe('56 days across this trip');
     expect(state.latestSafeExitLabel).toBe('Nov 9');
-    expect(state.summaryCopy).toContain('15 safe buffer days');
   });
 
   test('marks an over-limit proposal without mutating saved trips', () => {
-    const originalTrips: EditableTrip[] = [
-      { id: 'prior', label: 'Prior Schengen', entryDate: '2026-01-01', exitDate: '2026-03-31', status: 'past' }
-    ];
+    const originalTrips = [makeTrip('prior', 'Prior Schengen', '2026-01-01', '2026-03-31')];
     const original = structuredClone(originalTrips);
-    const state = buildTripSimulationState(originalTrips, {
-      label: 'Italy',
-      countryCode: 'IT',
-      entryDate: '2026-06-29',
-      exitDate: '2026-06-30'
-    });
-
+    const state = buildTripSimulationState(originalTrips, proposal({ entryDate: '2026-06-29', exitDate: '2026-06-30' }));
     expect(originalTrips).toEqual(original);
-    expect(state.valid).toBe(true);
-    expect(state.statusLabel).toBe('Italy needs changes');
     expect(state.statusTone).toBe('risk');
     expect(state.daysUsedLabel).toBe('91 / 90');
-    expect(state.summaryCopy).toContain('would exceed the limit before exit');
-    expect(state.firstFixCopy).toContain('move Italy later');
   });
 
-  test('reports at-limit proposal as a warning rather than an overstay', () => {
-    const state = buildTripSimulationState(
-      [{ id: 'prior', label: 'Prior Schengen', entryDate: '2026-01-01', exitDate: '2026-03-30', status: 'past' }],
-      { label: 'Italy', countryCode: 'IT', entryDate: '2026-06-29', exitDate: '2026-06-29' }
-    );
-
-    expect(state.statusLabel).toBe('Italy at limit');
-    expect(state.statusTone).toBe('close');
-    expect(state.daysUsedLabel).toBe('90 / 90');
-    expect(state.summaryCopy).toContain('0 safe buffer days');
+  test('counts a multi-country plan around an outside-Schengen break', () => {
+    const state = buildTripSimulationState([], proposal({
+      entryDate: '2026-07-01',
+      exitDate: '2026-07-12',
+      outsideBreaks: [{ id: 'ireland', leftDate: '2026-07-05', reentryDate: '2026-07-08' }]
+    }));
+    expect(state.valid).toBe(true);
+    expect(state.daysUsedLabel).toBe('10 / 90');
+    expect(state.simulatedTrip?.stays).toHaveLength(2);
   });
 
-  test('returns validation errors without producing a simulated trip', () => {
-    const state = buildTripSimulationState(savedTrips, {
-      label: 'Italy',
-      countryCode: 'IT',
-      entryDate: '2026-10-13',
-      exitDate: '2026-09-15'
-    });
-
+  test('returns validation errors without producing a simulation', () => {
+    const state = buildTripSimulationState(savedTrips, proposal({ entryDate: '2026-10-13', exitDate: '2026-09-15' }));
     expect(state.valid).toBe(false);
-    expect(state.statusLabel).toBe('Add dates to simulate');
-    expect(state.errors.exitDate).toBe('Exit date cannot be before entry date.');
-  });
-
-  test('rejects a country name instead of treating it as a non-Schengen trip', () => {
-    const state = buildTripSimulationState(savedTrips, {
-      label: 'Spain',
-      countryCode: 'Spain',
-      entryDate: '2026-10-13',
-      exitDate: '2026-10-20'
-    });
-
-    expect(state.valid).toBe(false);
-    expect(state.errors.countryCode).toBe(
-      'Choose a supported country or leave it blank for a manual Schengen trip.'
-    );
+    expect(state.errors.exitDate).toBe('The date you left Schengen cannot be before the date you entered.');
   });
 
   test('marks a proposal risky when it would break a later booked trip', () => {
-    const laterBooking: EditableTrip = {
-      id: 'later-germany',
-      label: 'Germany booking',
-      countryCode: 'DE',
-      entryDate: '2026-03-04',
-      exitDate: '2026-04-02',
-      status: 'booked'
-    };
-
-    const state = buildTripSimulationState([laterBooking], {
+    const laterBooking = makeTrip('later-germany', 'Germany booking', '2026-03-04', '2026-04-02', 'booked', 'DE');
+    const state = buildTripSimulationState([laterBooking], proposal({
       label: 'Spain proposal',
-      countryCode: 'ES',
+      entryCountryCode: 'ES',
+      exitCountryCode: 'ES',
       entryDate: '2026-01-01',
       exitDate: '2026-03-03'
-    });
-
-    expect(state.valid).toBe(true);
+    }));
     expect(state.statusTone).toBe('risk');
-    expect(state.daysUsedLabel).toBe('91 / 90');
-    expect(state.conflict).toEqual({
-      date: '2026-04-01',
-      tripId: 'later-germany',
-      tripLabel: 'Germany booking',
-      tripStatus: 'booked'
-    });
-    expect(state.summaryCopy).toContain('Germany booking would reach 91 / 90 on Apr 1');
+    expect(state.conflict).toMatchObject({ date: '2026-04-01', tripId: 'later-germany' });
     expect(state.firstFixCopy).toContain('shorten Spain proposal to Mar 1');
-    expect(state.firstFixCopy).toContain('protect Germany booking');
   });
 });

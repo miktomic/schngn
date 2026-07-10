@@ -231,6 +231,20 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - The interface's semantic safe/booked/what-if/risk palette remains unchanged. Brand blue and yellow remain inside the artwork until a separate palette decision is approved.
 - The mark must never imply EU certification, ownership, or endorsement.
 
+## DEC-12 — Trips are journeys made of Schengen stays
+
+**Decision:** Ask for the first entry into and final exit from the Schengen Area, not one destination country. Optional entry and exit countries provide recall/report context but never affect the calculation. A journey that temporarily leaves Schengen contains multiple counted stay ranges separated by full calendar-day gaps outside Schengen.
+
+**Implementation constraints:**
+
+- The engine accepts explicit `{ entryDate, exitDate }` Schengen stay ranges only.
+- Entry and exit boundary days count inclusively; overlapping ranges are de-duplicated.
+- The web layer validates optional entry/exit countries against the current Schengen list.
+- The form progressively reveals inline outside-Schengen breaks and summarizes counted versus outside days.
+- Local storage, backups, and account snapshots use schema version 2. Version-one data is intentionally unsupported because no legacy-data commitment exists.
+- D1 migration `0004_reset_account_trip_snapshots_v2.sql` clears pre-launch snapshots and recreates the constrained schema-two table without deleting Clerk accounts.
+- Country metadata and full travel histories remain prohibited from analytics and logs.
+
 ## Board state
 
 The corresponding Hermes Kanban decision cards on board `schngn` were completed on 2026-07-09 with comments and structured metadata.

@@ -1,148 +1,110 @@
 import { describe, expect, test } from 'bun:test';
 import { calculateUsageOnDate } from '@schngn/engine';
 import {
+  countTripOutsideDays,
+  countTripSchengenDays,
   deleteTripById,
   inclusiveTripDays,
   sortTrips,
   toEngineTrips,
+  tripToForm,
   upsertTrip,
   validateTripInput,
-  type EditableTrip
+  type EditableTrip,
+  type TripFormInput
 } from '../src/lib/trips/tripCrud';
-import { SUPPORTED_COUNTRY_OPTIONS } from '../src/lib/trips/countries';
+import { SCHENGEN_COUNTRY_OPTIONS } from '../src/lib/trips/countries';
+import { makeTrip } from './trip-fixtures';
 
-const france: EditableTrip = {
-  id: 'france',
-  label: 'France',
-  countryCode: 'FR',
-  entryDate: '2026-05-01',
-  exitDate: '2026-05-12',
-  status: 'past'
-};
+const france = makeTrip('france', 'France', '2026-05-01', '2026-05-12', 'past', 'FR');
+const italy = makeTrip('italy', 'Italy', '2026-09-15', '2026-10-13', 'booked', 'IT');
 
-const italy: EditableTrip = {
-  id: 'italy',
-  label: 'Italy',
-  countryCode: 'IT',
-  entryDate: '2026-09-15',
-  exitDate: '2026-10-13',
-  status: 'booked'
-};
+function form(overrides: Partial<TripFormInput> = {}): TripFormInput {
+  return {
+    label: '',
+    entryCountryCode: '',
+    exitCountryCode: '',
+    entryDate: '2026-07-01',
+    exitDate: '2026-07-12',
+    outsideBreaks: [],
+    status: 'booked',
+    ...overrides
+  };
+}
 
 describe('trip CRUD model', () => {
-  test('accepts equal entry/exit as a one-day trip', () => {
-    const input = { label: '', countryCode: '', entryDate: '2026-10-13', exitDate: '2026-10-13', status: 'what-if' as const };
-
+  test('accepts equal entry and exit as a one-day Schengen stay', () => {
+    const input = form({ entryDate: '2026-10-13', exitDate: '2026-10-13', status: 'what-if' });
     expect(validateTripInput(input)).toEqual({});
     expect(inclusiveTripDays(input)).toBe(1);
   });
 
-  test('rejects exit date before entry date inline', () => {
-    expect(validateTripInput({ label: 'Bad', countryCode: 'IT', entryDate: '2026-10-14', exitDate: '2026-10-13', status: 'booked' })).toEqual({
-      exitDate: 'Exit date cannot be before entry date.'
+  test('rejects the final exit before the first entry', () => {
+    expect(validateTripInput(form({ entryDate: '2026-10-14', exitDate: '2026-10-13' }))).toEqual({
+      exitDate: 'The date you left Schengen cannot be before the date you entered.'
     });
   });
 
-  test('rejects country names, typos, and unknown codes instead of silently excluding them', () => {
-    const base = { label: 'Spain', entryDate: '2026-07-01', exitDate: '2026-07-19', status: 'booked' as const };
-
-    expect(validateTripInput({ ...base, countryCode: 'Spain' })).toEqual({
-      countryCode: 'Choose a supported country or leave it blank for a manual Schengen trip.'
+  test('accepts only optional Schengen border countries', () => {
+    expect(validateTripInput(form({ entryCountryCode: ' it ', exitCountryCode: 'AT' }))).toEqual({});
+    expect(validateTripInput(form({ entryCountryCode: 'IE' }))).toEqual({
+      entryCountryCode: 'Choose a Schengen country or leave this optional field blank.'
     });
-    expect(validateTripInput({ ...base, countryCode: 'SP' })).toEqual({
-      countryCode: 'Choose a supported country or leave it blank for a manual Schengen trip.'
-    });
-    expect(validateTripInput({ ...base, countryCode: 'XX' })).toEqual({
-      countryCode: 'Choose a supported country or leave it blank for a manual Schengen trip.'
-    });
+    expect(SCHENGEN_COUNTRY_OPTIONS.some((country) => country.code === 'IT')).toBe(true);
+    expect(SCHENGEN_COUNTRY_OPTIONS.some((country) => country.code === 'IE')).toBe(false);
   });
 
-  test('accepts supported country codes and blank manual-Schengen input', () => {
-    const base = { label: '', entryDate: '2026-07-01', exitDate: '2026-07-19', status: 'booked' as const };
-
-    expect(validateTripInput({ ...base, countryCode: ' es ' })).toEqual({});
-    expect(validateTripInput({ ...base, countryCode: 'IE' })).toEqual({});
-    expect(validateTripInput({ ...base, countryCode: '' })).toEqual({});
-    expect(SUPPORTED_COUNTRY_OPTIONS.some((country) => country.code === 'ES' && country.countsForShortStay)).toBe(true);
-    expect(SUPPORTED_COUNTRY_OPTIONS.some((country) => country.code === 'IE' && !country.countsForShortStay)).toBe(true);
-  });
-
-  test('rejects impossible calendar dates and invalid runtime statuses', () => {
-    expect(
-      validateTripInput({
-        label: 'Impossible',
-        countryCode: 'FR',
-        entryDate: '2026-02-30',
-        exitDate: '2026-03-01',
-        status: 'booked'
-      })
-    ).toEqual({ entryDate: 'Enter a real entry date.' });
-
-    expect(
-      validateTripInput({
-        label: 'Invalid status',
-        countryCode: 'FR',
-        entryDate: '2026-03-01',
-        exitDate: '2026-03-02',
-        status: 'confirmed' as EditableTrip['status']
-      })
-    ).toEqual({ status: 'Choose past, booked, or what-if.' });
-  });
-
-  test('trims labels, accepts emoji within the limit, and rejects oversized labels', () => {
-    const emojiLabel = `  ${'🧳'.repeat(40)}  `;
-    const accepted = upsertTrip([], {
-      label: emojiLabel,
-      countryCode: 'ES',
-      entryDate: '2026-07-01',
-      exitDate: '2026-07-02',
-      status: 'booked'
-    });
-
-    expect(accepted.errors).toEqual({});
-    expect(accepted.trips[0]?.label).toBe('🧳'.repeat(40));
-    expect(
-      validateTripInput({
-        label: 'a'.repeat(81),
-        countryCode: 'ES',
-        entryDate: '2026-07-01',
-        exitDate: '2026-07-02',
-        status: 'booked'
-      })
-    ).toEqual({ label: 'Keep the trip label to 80 characters or fewer.' });
-  });
-
-  test('adds trips with normalized optional label/country and sorts by entry date', () => {
-    const result = upsertTrip([italy], {
-      label: '  ',
-      countryCode: ' gr ',
-      entryDate: '2026-08-03',
-      exitDate: '2026-08-18',
-      status: 'booked'
-    });
+  test('turns an outside-Schengen break into two counted stays', () => {
+    const result = upsertTrip([], form({
+      label: 'Italy to Austria',
+      entryCountryCode: 'IT',
+      exitCountryCode: 'AT',
+      outsideBreaks: [{ id: 'ireland', leftDate: '2026-07-05', reentryDate: '2026-07-08' }]
+    }));
 
     expect(result.errors).toEqual({});
-    expect(result.trips.map((trip) => trip.countryCode)).toEqual(['GR', 'IT']);
-    expect(result.trips[0]?.label).toBe('GR trip');
+    expect(result.trips[0]).toMatchObject({
+      entryCountryCode: 'IT',
+      exitCountryCode: 'AT',
+      stays: [
+        { entryDate: '2026-07-01', exitDate: '2026-07-05' },
+        { entryDate: '2026-07-08', exitDate: '2026-07-12' }
+      ]
+    });
+    expect(countTripSchengenDays(result.trips[0])).toBe(10);
+    expect(countTripOutsideDays(result.trips[0])).toBe(2);
+    expect(calculateUsageOnDate(toEngineTrips(result.trips), '2026-07-12').daysUsed).toBe(10);
+    expect(tripToForm(result.trips[0]).outsideBreaks).toEqual([
+      { id: 'break-1', leftDate: '2026-07-05', reentryDate: '2026-07-08' }
+    ]);
   });
 
-  test('edits existing trips, re-sorts, and recalculates through the engine contract', () => {
-    const result = upsertTrip([france, italy], {
+  test('requires a full calendar day outside and rejects overlapping breaks', () => {
+    expect(validateTripInput(form({ outsideBreaks: [{ id: 'short', leftDate: '2026-07-05', reentryDate: '2026-07-06' }] }))).toMatchObject({
+      breakFields: { short: { reentryDate: 'A break must include at least one full calendar day outside Schengen.' } }
+    });
+    expect(validateTripInput(form({ outsideBreaks: [
+      { id: 'one', leftDate: '2026-07-03', reentryDate: '2026-07-07' },
+      { id: 'two', leftDate: '2026-07-05', reentryDate: '2026-07-09' }
+    ] }))).toMatchObject({ breakFields: { two: { leftDate: 'Outside-Schengen breaks cannot overlap.' } } });
+  });
+
+  test('trims optional labels and rejects impossible dates, statuses, and oversized labels', () => {
+    expect(validateTripInput(form({ entryDate: '2026-02-30' }))).toEqual({ entryDate: 'Enter a real entered-Schengen date.' });
+    expect(validateTripInput(form({ status: 'confirmed' as EditableTrip['status'] }))).toEqual({ status: 'Choose past, booked, or what-if.' });
+    expect(validateTripInput(form({ label: 'a'.repeat(81) }))).toEqual({ label: 'Keep the trip label to 80 characters or fewer.' });
+    expect(upsertTrip([], form({ label: '  Summer trip  ' })).trips[0].label).toBe('Summer trip');
+  });
+
+  test('edits, sorts, deletes, and recalculates through the engine contract', () => {
+    const result = upsertTrip([france, italy], form({
       id: 'italy',
       label: 'Italy shortened',
-      countryCode: 'IT',
       entryDate: '2026-04-20',
-      exitDate: '2026-04-20',
-      status: 'booked'
-    });
-
-    expect(result.errors).toEqual({});
+      exitDate: '2026-04-20'
+    }));
     expect(result.trips.map((trip) => trip.id)).toEqual(['italy', 'france']);
-    expect(result.trips[0]?.label).toBe('Italy shortened');
     expect(calculateUsageOnDate(toEngineTrips(result.trips), '2026-10-13').daysUsed).toBe(13);
-  });
-
-  test('deletes a trip and leaves remaining trips sorted', () => {
     expect(deleteTripById(sortTrips([italy, france]), 'france')).toEqual([italy]);
   });
 });

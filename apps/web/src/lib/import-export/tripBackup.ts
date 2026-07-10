@@ -1,13 +1,15 @@
 import {
   isTripStatus,
+  isRealIsoDate,
+  isValidTripId,
   MAX_TRIP_COUNT,
   sortTrips,
-  validateTripInput,
+  validateEditableTrip,
   type EditableTrip
 } from '../trips/tripCrud';
-import { normalizeCountryCode } from '../trips/countries';
+import { isSupportedCountryCode, normalizeCountryCode } from '../trips/countries';
 
-export const SCHNGN_BACKUP_SCHEMA_VERSION = 1;
+export const SCHNGN_BACKUP_SCHEMA_VERSION = 2;
 export const MAX_TRIP_BACKUP_BYTES = 1_000_000;
 
 export interface TripBackupFile {
@@ -81,9 +83,9 @@ function copyTripForBackup(trip: EditableTrip): EditableTrip {
   return {
     id: trip.id,
     label: trip.label,
-    countryCode: trip.countryCode,
-    entryDate: trip.entryDate,
-    exitDate: trip.exitDate,
+    entryCountryCode: trip.entryCountryCode,
+    exitCountryCode: trip.exitCountryCode,
+    stays: trip.stays.map((stay) => ({ ...stay })),
     status: trip.status
   };
 }
@@ -105,12 +107,10 @@ function parseBackupTrip(value: unknown, ordinal: number): { ok: true; trip: Edi
 
   const candidate = value as Partial<Record<keyof EditableTrip, unknown>>;
   const id = readRequiredString(candidate.id);
-  const label = readRequiredString(candidate.label);
-  const entryDate = readRequiredString(candidate.entryDate);
-  const exitDate = readRequiredString(candidate.exitDate);
+  const label = readOptionalString(candidate.label);
   const status = candidate.status;
 
-  if (!id || !label || !entryDate || !exitDate) {
+  if (!id || !isValidTripId(id) || !Array.isArray(candidate.stays) || candidate.stays.length === 0) {
     return { ok: false, error: `Trip ${ordinal} is missing required fields.` };
   }
 
@@ -118,30 +118,27 @@ function parseBackupTrip(value: unknown, ordinal: number): { ok: true; trip: Edi
     return { ok: false, error: `Trip ${ordinal} has an invalid status.` };
   }
 
-  let countryCode: string | undefined;
-  if (candidate.countryCode !== undefined && candidate.countryCode !== null) {
-    if (typeof candidate.countryCode !== 'string') {
-      return { ok: false, error: `Trip ${ordinal} has an unsupported country.` };
-    }
-    countryCode = normalizeCountryCode(candidate.countryCode);
+  const entryCountryCode = parseOptionalCountry(candidate.entryCountryCode);
+  const exitCountryCode = parseOptionalCountry(candidate.exitCountryCode);
+  if (entryCountryCode === null || exitCountryCode === null) {
+    return { ok: false, error: `Trip ${ordinal} has an unsupported border country.` };
+  }
+
+  const stays = candidate.stays.map(parseBackupStay);
+  if (stays.some((stay) => stay === null)) {
+    return { ok: false, error: `Trip ${ordinal} has an invalid Schengen stay.` };
   }
 
   const trip: EditableTrip = {
     id,
     label,
-    countryCode,
-    entryDate,
-    exitDate,
+    entryCountryCode,
+    exitCountryCode,
+    stays: stays as EditableTrip['stays'],
     status
   };
 
-  const errors = validateTripInput(trip);
-  if (errors.countryCode) {
-    return { ok: false, error: `Trip ${ordinal} has an unsupported country.` };
-  }
-  if (errors.entryDate || errors.exitDate) {
-    return { ok: false, error: `Trip ${ordinal} has an invalid date range.` };
-  }
+  const errors = validateEditableTrip(trip);
   if (Object.keys(errors).length > 0) {
     return { ok: false, error: `Trip ${ordinal} has invalid fields.` };
   }
@@ -149,9 +146,31 @@ function parseBackupTrip(value: unknown, ordinal: number): { ok: true; trip: Edi
   return { ok: true, trip };
 }
 
+function parseBackupStay(value: unknown): EditableTrip['stays'][number] | null {
+  if (!value || typeof value !== 'object') return null;
+  const stay = value as { entryDate?: unknown; exitDate?: unknown };
+  const entryDate = readRequiredString(stay.entryDate);
+  const exitDate = readRequiredString(stay.exitDate);
+  if (!entryDate || !exitDate || !isRealIsoDate(entryDate) || !isRealIsoDate(exitDate) || exitDate < entryDate) return null;
+  return { entryDate, exitDate };
+}
+
+function parseOptionalCountry(value: unknown): string | undefined | null {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string') return null;
+  const normalized = normalizeCountryCode(value);
+  return normalized && isSupportedCountryCode(normalized) ? normalized : null;
+}
+
 function readRequiredString(value: unknown): string | null {
   if (typeof value !== 'string' || !value.trim()) return null;
   return value.trim();
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string') return undefined;
+  return value.trim() || undefined;
 }
 
 function isValidExportTimestamp(value: string): boolean {

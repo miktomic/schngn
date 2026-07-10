@@ -84,12 +84,12 @@ export function buildPausedAccountSyncMetadata(userId: string, snapshot: Account
 }
 
 export function fingerprintTrips(trips: EditableTrip[]): string {
-  const canonical = sortTrips(trips).map(({ id, label, countryCode, entryDate, exitDate, status }) => [
+  const canonical = sortTrips(trips).map(({ id, label, entryCountryCode, exitCountryCode, stays, status }) => [
     id,
     label,
-    countryCode ?? '',
-    entryDate,
-    exitDate,
+    entryCountryCode ?? '',
+    exitCountryCode ?? '',
+    stays.map(({ entryDate, exitDate }) => [entryDate, exitDate]),
     status
   ]);
   const value = JSON.stringify(canonical);

@@ -1,20 +1,18 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  SCHENGEN_SHORT_STAY_COUNTRY_CODES,
   calculateUsageOnDate,
   classifyVerdict,
-  countsForShortStay,
-  isSchengenShortStayCountryCode,
   isTripSafeForEveryDay,
   latestSafeExitDate,
   type Trip
 } from '../src/index';
 
+interface SourceFixtureTrip extends Trip { countryCode?: string }
 interface UsageFixture {
   id: string;
   description: string;
   referenceDate: string;
-  trips: Trip[];
+  trips: SourceFixtureTrip[];
   expected: {
     windowStart: string;
     windowEnd: string;
@@ -24,10 +22,6 @@ interface UsageFixture {
     overBy: number;
   };
 }
-
-const fixtures = (await Bun.file(
-  new URL('./fixtures/ec/rolling-180-fixtures.json', import.meta.url)
-).json()) as UsageFixture[];
 
 const TEST_SCHENGEN_COUNTRY_CODES = new Set([
   'AT',
@@ -61,12 +55,22 @@ const TEST_SCHENGEN_COUNTRY_CODES = new Set([
   'CH'
 ]);
 
+const sourceFixtures = (await Bun.file(
+  new URL('./fixtures/ec/rolling-180-fixtures.json', import.meta.url)
+).json()) as UsageFixture[];
+const fixtures = sourceFixtures.map((fixture) => ({
+  ...fixture,
+  trips: fixture.trips
+    .filter((trip) => !trip.countryCode || TEST_SCHENGEN_COUNTRY_CODES.has(trip.countryCode))
+    .map(({ entryDate, exitDate, label }) => ({ entryDate, exitDate, label }))
+}));
+
 const MS_PER_DAY = 86_400_000;
 
 describe('Schengen rolling 180-day engine', () => {
   test('counts entry and exit day, including a same-day trip as one day', () => {
     const trips: Trip[] = [
-      { entryDate: '2026-05-01', exitDate: '2026-05-01', countryCode: 'FR' }
+      { entryDate: '2026-05-01', exitDate: '2026-05-01' }
     ];
 
     expect(calculateUsageOnDate(trips, '2026-05-01').daysUsed).toBe(1);
@@ -74,8 +78,8 @@ describe('Schengen rolling 180-day engine', () => {
 
   test('de-duplicates overlapping trips instead of double-counting physical days', () => {
     const trips: Trip[] = [
-      { entryDate: '2026-05-01', exitDate: '2026-05-05', countryCode: 'FR' },
-      { entryDate: '2026-05-03', exitDate: '2026-05-07', countryCode: 'DE' }
+      { entryDate: '2026-05-01', exitDate: '2026-05-05' },
+      { entryDate: '2026-05-03', exitDate: '2026-05-07' }
     ];
 
     expect(calculateUsageOnDate(trips, '2026-05-07').daysUsed).toBe(7);
@@ -83,63 +87,25 @@ describe('Schengen rolling 180-day engine', () => {
 
   test('uses an inclusive 180-day look-back window ending on the reference date', () => {
     const trips: Trip[] = [
-      { entryDate: '2026-01-01', exitDate: '2026-01-10', countryCode: 'ES' }
+      { entryDate: '2026-01-01', exitDate: '2026-01-10' }
     ];
 
     expect(calculateUsageOnDate(trips, '2026-06-29').daysUsed).toBe(10);
     expect(calculateUsageOnDate(trips, '2026-06-30').daysUsed).toBe(9);
   });
 
-  test('classifies country codes explicitly instead of counting every unknown country as Schengen', () => {
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toHaveLength(29);
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toContain('FR');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toContain('BG');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toContain('RO');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toContain('IS');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toContain('NO');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toContain('LI');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).toContain('CH');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).not.toContain('IE');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).not.toContain('CY');
-    expect(SCHENGEN_SHORT_STAY_COUNTRY_CODES).not.toContain('GB');
-
-    expect(isSchengenShortStayCountryCode('fr')).toBe(true);
-    expect(isSchengenShortStayCountryCode('IE')).toBe(false);
-    expect(isSchengenShortStayCountryCode('CY')).toBe(false);
-    expect(isSchengenShortStayCountryCode('GB')).toBe(false);
-    expect(isSchengenShortStayCountryCode('US')).toBe(false);
-    expect(isSchengenShortStayCountryCode('XX')).toBe(false);
-
-    expect(countsForShortStay({ entryDate: '2026-05-01', exitDate: '2026-05-02' })).toBe(true);
-    expect(
-      countsForShortStay({ entryDate: '2026-05-01', exitDate: '2026-05-02', countryCode: 'CH' })
-    ).toBe(true);
-    expect(
-      countsForShortStay({ entryDate: '2026-05-01', exitDate: '2026-05-02', countryCode: 'GB' })
-    ).toBe(false);
-  });
-
-  test('validates invalid date ranges even for excluded or non-Schengen trips', () => {
+  test('validates invalid Schengen stay ranges', () => {
     expect(() =>
-      calculateUsageOnDate([{ entryDate: '2026-05-10', exitDate: '2026-05-01', countryCode: 'IE' }], '2026-05-10')
-    ).toThrow(RangeError);
-
-    expect(() =>
-      calculateUsageOnDate([{ entryDate: '2026-05-10', exitDate: '2026-05-01', countryCode: 'GB' }], '2026-05-10')
+      calculateUsageOnDate([{ entryDate: '2026-05-10', exitDate: '2026-05-01' }], '2026-05-10')
     ).toThrow(RangeError);
   });
 
-  test('excludes Ireland/Cyprus/other non-Schengen countries and includes non-EU Schengen countries', () => {
-    const trips: Trip[] = [
-      { entryDate: '2026-05-01', exitDate: '2026-05-05', countryCode: 'IE' },
-      { entryDate: '2026-05-06', exitDate: '2026-05-10', countryCode: 'CY' },
-      { entryDate: '2026-05-11', exitDate: '2026-05-15', countryCode: 'GB' },
-      { entryDate: '2026-05-16', exitDate: '2026-05-20', countryCode: 'US' },
-      { entryDate: '2026-05-21', exitDate: '2026-05-25', countryCode: 'CH' },
-      { entryDate: '2026-05-26', exitDate: '2026-05-30', countryCode: 'NO' }
+  test('counts only explicit Schengen stay ranges and preserves gaps outside Schengen', () => {
+    const stays: Trip[] = [
+      { entryDate: '2026-05-01', exitDate: '2026-05-05' },
+      { entryDate: '2026-05-08', exitDate: '2026-05-12' }
     ];
-
-    expect(calculateUsageOnDate(trips, '2026-05-30').daysUsed).toBe(10);
+    expect(calculateUsageOnDate(stays, '2026-05-12').daysUsed).toBe(10);
   });
 
   test('classifies verdict boundaries from usage, not floored remaining days', () => {
@@ -174,41 +140,35 @@ describe('Schengen rolling 180-day engine', () => {
 
 describe('latest safe exit date calculation', () => {
   test('returns the 90th day for a new Schengen stay and proves the next day overstays', () => {
-    expectLatestSafeExitBoundary([], '2026-10-01', 'IT', '2026-12-29');
+    expectLatestSafeExitBoundary([], '2026-10-01', '2026-12-29');
   });
 
   test('returns the only safe entry day when 89 days are already used', () => {
     const existingTrips: Trip[] = [
-      { entryDate: '2026-01-01', exitDate: '2026-03-30', countryCode: 'FR' }
+      { entryDate: '2026-01-01', exitDate: '2026-03-30' }
     ];
 
-    expectLatestSafeExitBoundary(existingTrips, '2026-04-01', 'IT', '2026-04-01');
+    expectLatestSafeExitBoundary(existingTrips, '2026-04-01', '2026-04-01');
   });
 
   test('returns null when the entry day itself would exceed the allowance', () => {
     const existingTrips: Trip[] = [
-      { entryDate: '2026-01-01', exitDate: '2026-03-31', countryCode: 'FR' }
+      { entryDate: '2026-01-01', exitDate: '2026-03-31' }
     ];
 
-    expect(latestSafeExitDate(existingTrips, '2026-04-01', 'IT')).toBeNull();
+    expect(latestSafeExitDate(existingTrips, '2026-04-01')).toBeNull();
   });
 
   test('accounts for old days aging out of the rolling window during a continuous stay', () => {
     const existingTrips: Trip[] = [
-      { entryDate: '2026-01-01', exitDate: '2026-03-30', countryCode: 'FR' }
+      { entryDate: '2026-01-01', exitDate: '2026-03-30' }
     ];
 
-    expectLatestSafeExitBoundary(existingTrips, '2026-06-30', 'IT', '2026-09-27');
+    expectLatestSafeExitBoundary(existingTrips, '2026-06-30', '2026-09-27');
   });
 
-  test('treats missing country as a manual Schengen trip by default', () => {
-    expectLatestSafeExitBoundary([], '2026-10-01', undefined, '2026-12-29');
-  });
-
-  test('returns null for non-Schengen target countries because Schengen safe exit is not applicable', () => {
-    expect(latestSafeExitDate([], '2026-10-01', 'GB')).toBeNull();
-    expect(latestSafeExitDate([], '2026-10-01', 'IE')).toBeNull();
-    expect(latestSafeExitDate([], '2026-10-01', 'CY')).toBeNull();
+  test('treats every engine input as an explicit Schengen stay', () => {
+    expectLatestSafeExitBoundary([], '2026-10-01', '2026-12-29');
   });
 });
 
@@ -237,10 +197,9 @@ describe('golden-master counted-day scenarios', () => {
   test('returns the exact de-duplicated counted days for a mixed itinerary', () => {
     const result = calculateUsageOnDate(
       [
-        { entryDate: '2026-01-01', exitDate: '2026-01-05', countryCode: 'FR' },
-        { entryDate: '2026-01-04', exitDate: '2026-01-07', countryCode: 'DE' },
-        { entryDate: '2026-01-08', exitDate: '2026-01-10', countryCode: 'IE' },
-        { entryDate: '2026-01-11', exitDate: '2026-01-12', countryCode: 'CH' },
+        { entryDate: '2026-01-01', exitDate: '2026-01-05' },
+        { entryDate: '2026-01-04', exitDate: '2026-01-07' },
+        { entryDate: '2026-01-11', exitDate: '2026-01-12' },
         { entryDate: '2026-01-13', exitDate: '2026-01-13' }
       ],
       '2026-01-13'
@@ -289,7 +248,6 @@ function oracleUsage(trips: Trip[], referenceDate: string) {
     const entry = dayNumber(trip.entryDate);
     const exit = dayNumber(trip.exitDate);
     if (exit < entry) throw new RangeError('invalid test trip');
-    if (!oracleCountsForShortStay(trip.countryCode)) continue;
 
     for (let day = Math.max(entry, windowStart); day <= Math.min(exit, reference); day += 1) {
       countedDays.add(day);
@@ -310,30 +268,7 @@ function oracleUsage(trips: Trip[], referenceDate: string) {
   };
 }
 
-function oracleCountsForShortStay(countryCode: string | undefined): boolean {
-  if (!countryCode) return true;
-  return TEST_SCHENGEN_COUNTRY_CODES.has(countryCode.toUpperCase());
-}
-
 function generateTrips(seed: number): Trip[] {
-  const countries = [
-    'FR',
-    'DE',
-    'ES',
-    'IT',
-    'CH',
-    'NO',
-    'IS',
-    'LI',
-    'BG',
-    'RO',
-    'IE',
-    'CY',
-    'GB',
-    'US',
-    'TR',
-    undefined
-  ];
   const base = dayNumber('2025-09-01');
   const count = 1 + (seed % 12);
   const trips: Trip[] = [];
@@ -341,10 +276,9 @@ function generateTrips(seed: number): Trip[] {
   for (let index = 0; index < count; index += 1) {
     const startOffset = (seed * 19 + index * 31 + (index % 3) * seed) % 420;
     const length = 1 + ((seed * 7 + index * 11) % 45);
-    const countryCode = countries[(seed + index * 5) % countries.length];
     const entryDate = formatDayNumber(base + startOffset);
     const exitDate = formatDayNumber(base + startOffset + length - 1);
-    const trip: Trip = countryCode ? { entryDate, exitDate, countryCode } : { entryDate, exitDate };
+    const trip: Trip = { entryDate, exitDate };
     trips.push(trip);
 
     if (index === 0 && seed % 10 === 0) {
@@ -362,28 +296,27 @@ function usageAtDaysUsed(daysUsed: number) {
 
   const entryDate = '2026-01-01';
   const exitDate = formatDayNumber(dayNumber(entryDate) + daysUsed - 1);
-  return calculateUsageOnDate([{ entryDate, exitDate, countryCode: 'FR' }], exitDate);
+  return calculateUsageOnDate([{ entryDate, exitDate }], exitDate);
 }
 
 function expectLatestSafeExitBoundary(
   existingTrips: Trip[],
   entryDate: string,
-  countryCode: string | undefined,
   expectedExitDate: string
 ): void {
-  const actualExitDate = latestSafeExitDate(existingTrips, entryDate, countryCode);
+  const actualExitDate = latestSafeExitDate(existingTrips, entryDate);
   expect(actualExitDate).toBe(expectedExitDate);
 
-  const safeTrip = buildTrip(entryDate, expectedExitDate, countryCode);
+  const safeTrip = buildTrip(entryDate, expectedExitDate);
   expect(isTripSafeForEveryDay(existingTrips, safeTrip)).toBe(true);
 
   const nextExitDate = formatDayNumber(dayNumber(expectedExitDate) + 1);
-  const unsafeTrip = buildTrip(entryDate, nextExitDate, countryCode);
+  const unsafeTrip = buildTrip(entryDate, nextExitDate);
   expect(isTripSafeForEveryDay(existingTrips, unsafeTrip)).toBe(false);
 }
 
-function buildTrip(entryDate: string, exitDate: string, countryCode: string | undefined): Trip {
-  return countryCode ? { entryDate, exitDate, countryCode } : { entryDate, exitDate };
+function buildTrip(entryDate: string, exitDate: string): Trip {
+  return { entryDate, exitDate };
 }
 
 function dayNumber(value: string): number {

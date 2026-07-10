@@ -1,12 +1,14 @@
-import {
-  SCHENGEN_SHORT_STAY_COUNTRY_CODES,
-  type SchengenShortStayCountryCode
-} from '@schngn/engine';
+export const SCHENGEN_SHORT_STAY_COUNTRY_CODES = [
+  'AT', 'BE', 'BG', 'HR', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
+  'GR', 'HU', 'IS', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL',
+  'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'CH'
+] as const;
+
+export type SchengenShortStayCountryCode = (typeof SCHENGEN_SHORT_STAY_COUNTRY_CODES)[number];
 
 export interface SupportedCountryOption {
   code: string;
   name: string;
-  countsForShortStay: boolean;
 }
 
 const SCHENGEN_COUNTRY_NAMES: Record<SchengenShortStayCountryCode, string> = {
@@ -41,28 +43,13 @@ const SCHENGEN_COUNTRY_NAMES: Record<SchengenShortStayCountryCode, string> = {
   CH: 'Switzerland'
 };
 
-const COMMON_EXCLUDED_COUNTRIES = [
-  { code: 'CY', name: 'Cyprus', countsForShortStay: false },
-  { code: 'IE', name: 'Ireland', countsForShortStay: false },
-  { code: 'GB', name: 'United Kingdom', countsForShortStay: false }
-] satisfies SupportedCountryOption[];
-
 export const SCHENGEN_COUNTRY_OPTIONS: readonly SupportedCountryOption[] =
   SCHENGEN_SHORT_STAY_COUNTRY_CODES.map((code) => ({
     code,
-    name: SCHENGEN_COUNTRY_NAMES[code],
-    countsForShortStay: true
+    name: SCHENGEN_COUNTRY_NAMES[code]
   })).sort(compareCountryOptions);
 
-export const EXCLUDED_COUNTRY_OPTIONS: readonly SupportedCountryOption[] =
-  [...COMMON_EXCLUDED_COUNTRIES].sort(compareCountryOptions);
-
-export const SUPPORTED_COUNTRY_OPTIONS: readonly SupportedCountryOption[] = [
-  ...SCHENGEN_COUNTRY_OPTIONS,
-  ...EXCLUDED_COUNTRY_OPTIONS
-];
-
-const SUPPORTED_COUNTRY_CODES = new Set(SUPPORTED_COUNTRY_OPTIONS.map((country) => country.code));
+const SUPPORTED_COUNTRY_CODES = new Set(SCHENGEN_COUNTRY_OPTIONS.map((country) => country.code));
 
 export function normalizeCountryCode(countryCode: string | undefined): string | undefined {
   const normalized = countryCode?.trim().toUpperCase();

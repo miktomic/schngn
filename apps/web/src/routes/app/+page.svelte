@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import { FactCard, SchngnLogo, StatusChip, TimelineLedger } from '$lib/design';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
-  import { buildTripSimulationState, type ProposedTripInput } from '$lib/simulator/tripSimulator';
+  import { buildTripSimulationState, emptyProposedTrip, type ProposedTripInput } from '$lib/simulator/tripSimulator';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
   import { FOOTER_DISCLAIMER_COPY, FULL_DISCLAIMER_COPY, OFFICIAL_SOURCE_LINKS } from '$lib/legal/legalCopy';
@@ -24,19 +24,25 @@
     type AnalyticsVerdict
   } from '$lib/analytics/privacyAnalytics';
   import {
+    countTripOutsideDays,
+    countTripSchengenDays,
+    createOutsideBreak,
     deleteTripById,
     emptyTripForm,
     formatTripRange,
-    inclusiveTripDays,
     MAX_TRIP_COUNT,
     MAX_TRIP_LABEL_LENGTH,
+    MAX_OUTSIDE_BREAKS,
+    tripEntryDate,
+    tripExitDate,
+    tripRouteLabel,
     tripToForm,
     upsertTrip,
     type EditableTrip,
     type TripFormInput,
     type TripValidationErrors
   } from '$lib/trips/tripCrud';
-  import { EXCLUDED_COUNTRY_OPTIONS, SCHENGEN_COUNTRY_OPTIONS, SUPPORTED_COUNTRY_OPTIONS } from '$lib/trips/countries';
+  import { SCHENGEN_COUNTRY_OPTIONS } from '$lib/trips/countries';
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
   import { initializeClerkBrowserAuth, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
@@ -140,6 +146,8 @@
     | 'whatif';
   $: dashboardTextClass = dashboardState.statusTone === 'risk' ? 'risk-text' : dashboardState.statusTone === 'close' ? 'close-text' : 'safe-text';
   $: simulationState = buildTripSimulationState(trips, simulatorForm);
+  $: tripFormPreviewResult = upsertTrip([], { ...tripForm, id: 'preview' });
+  $: tripFormPreview = tripFormPreviewResult.trips[0] ?? null;
   $: simulatorStatusTone = (simulationState.statusTone === 'risk' ? 'risk' : simulationState.statusTone === 'close' ? 'whatif' : 'safe') as
     | 'safe'
     | 'risk'
@@ -811,16 +819,49 @@
   }
 
   function emptySimulationForm(): ProposedTripInput {
-    return { label: '', countryCode: '', entryDate: '', exitDate: '' };
+    return emptyProposedTrip();
   }
 
-  function selectedCountryCopy(countryCode: string | undefined): string {
-    if (!countryCode) return 'Manual Schengen stay: these dates count toward the 90-day allowance.';
-    const option = SUPPORTED_COUNTRY_OPTIONS.find((country) => country.code === countryCode);
-    if (!option) return 'Choose a supported country.';
-    return option.countsForShortStay
-      ? `${option.name} counts toward the Schengen short-stay allowance.`
-      : `${option.name} does not count toward the Schengen short-stay allowance.`;
+  function addTripOutsideBreak(): void {
+    if (tripForm.outsideBreaks.length >= MAX_OUTSIDE_BREAKS) return;
+    tripForm = { ...tripForm, outsideBreaks: [...tripForm.outsideBreaks, createOutsideBreak(tripForm.outsideBreaks.length)] };
+  }
+
+  function removeTripOutsideBreak(id: string): void {
+    tripForm = { ...tripForm, outsideBreaks: tripForm.outsideBreaks.filter((outsideBreak) => outsideBreak.id !== id) };
+    if (formErrors.breakFields?.[id]) {
+      const breakFields = { ...formErrors.breakFields };
+      delete breakFields[id];
+      formErrors = { ...formErrors, breakFields };
+    }
+  }
+
+  function addSimulationOutsideBreak(): void {
+    if (simulatorForm.outsideBreaks.length >= MAX_OUTSIDE_BREAKS) return;
+    simulatorForm = { ...simulatorForm, outsideBreaks: [...simulatorForm.outsideBreaks, createOutsideBreak(simulatorForm.outsideBreaks.length)] };
+    simulationChanged();
+  }
+
+  function removeSimulationOutsideBreak(id: string): void {
+    simulatorForm = { ...simulatorForm, outsideBreaks: simulatorForm.outsideBreaks.filter((outsideBreak) => outsideBreak.id !== id) };
+    simulationChanged();
+  }
+
+  function countryName(code: string | undefined): string | null {
+    return SCHENGEN_COUNTRY_OPTIONS.find((country) => country.code === code)?.name ?? null;
+  }
+
+  function displayRoute(trip: EditableTrip): string {
+    const entry = countryName(trip.entryCountryCode);
+    const exit = countryName(trip.exitCountryCode);
+    if (entry && exit) return `${entry} → ${exit}`;
+    if (entry) return `Entered via ${entry}`;
+    if (exit) return `Left via ${exit}`;
+    return tripRouteLabel(trip);
+  }
+
+  function displayTripName(trip: EditableTrip): string {
+    return trip.label || displayRoute(trip);
   }
 
   function trackPageView(screen: ScreenKey | 'app'): void {
@@ -1065,8 +1106,9 @@
       <section class="screen" aria-labelledby="trip-heading">
         <div class="section-heading">
           <p>Trips</p>
-          <h1 id="trip-heading" class="screen-title">{editingTripId ? 'Edit trip' : 'Add trip'}</h1>
+          <h1 id="trip-heading" class="screen-title">{editingTripId ? 'Edit Schengen stay' : 'Add a Schengen stay'}</h1>
         </div>
+        <p class="intro-copy">Enter when you crossed into and out of the Schengen Area. Travel between Schengen countries is one stay.</p>
         <form class="trip-form" aria-label="Trip form" novalidate onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
           <label for="trip-label">
             <span>Trip label <small>Optional</small></span>
@@ -1075,38 +1117,16 @@
             id="trip-label"
             bind:value={tripForm.label}
             maxlength={MAX_TRIP_LABEL_LENGTH}
-            placeholder="Summer in Spain"
+            placeholder="Summer trip"
             aria-describedby={formErrors.label ? 'trip-label-help trip-label-error' : 'trip-label-help'}
             aria-invalid={formErrors.label ? 'true' : undefined}
           />
-          <small id="trip-label-help">Up to {MAX_TRIP_LABEL_LENGTH} characters. If blank, the country code becomes the label.</small>
+          <small id="trip-label-help">Up to {MAX_TRIP_LABEL_LENGTH} characters. If blank, the entry and exit countries become the label.</small>
           {#if formErrors.label}<strong id="trip-label-error" class="field-error">{formErrors.label}</strong>{/if}
-
-          <label for="trip-country"><span>Country or manual Schengen stay</span></label>
-          <select
-            id="trip-country"
-            bind:value={tripForm.countryCode}
-            aria-describedby={formErrors.countryCode ? 'trip-country-help trip-country-error' : 'trip-country-help'}
-            aria-invalid={formErrors.countryCode ? 'true' : undefined}
-          >
-            <option value="">Manual Schengen stay — count these dates</option>
-            <optgroup label="Schengen countries">
-              {#each SCHENGEN_COUNTRY_OPTIONS as country}
-                <option value={country.code}>{country.name} ({country.code})</option>
-              {/each}
-            </optgroup>
-            <optgroup label="Common nearby countries — not counted">
-              {#each EXCLUDED_COUNTRY_OPTIONS as country}
-                <option value={country.code}>{country.name} ({country.code}) — not counted</option>
-              {/each}
-            </optgroup>
-          </select>
-          <small id="trip-country-help">{selectedCountryCopy(tripForm.countryCode)}</small>
-          {#if formErrors.countryCode}<strong id="trip-country-error" class="field-error">{formErrors.countryCode}</strong>{/if}
 
           <div class="date-fields">
             <div class="field-group">
-              <label for="trip-entry"><span>Entry date</span></label>
+              <label for="trip-entry"><span>Entered Schengen</span></label>
               <input
                 id="trip-entry"
                 type="date"
@@ -1114,11 +1134,11 @@
                 aria-describedby={formErrors.entryDate ? 'entry-help entry-error' : 'entry-help'}
                 aria-invalid={formErrors.entryDate ? 'true' : undefined}
               />
-              <small id="entry-help">Entry day counts.</small>
+              <small id="entry-help">The entry day counts.</small>
               {#if formErrors.entryDate}<strong id="entry-error" class="field-error">{formErrors.entryDate}</strong>{/if}
             </div>
             <div class="field-group">
-              <label for="trip-exit"><span>Exit date</span></label>
+              <label for="trip-exit"><span>Left Schengen</span></label>
               <input
                 id="trip-exit"
                 type="date"
@@ -1126,10 +1146,76 @@
                 aria-describedby={formErrors.exitDate ? 'exit-help exit-error' : 'exit-help'}
                 aria-invalid={formErrors.exitDate ? 'true' : undefined}
               />
-              <small id="exit-help">Exit day counts. Same-day stays are valid.</small>
+              <small id="exit-help">The exit day counts. Same-day stays are valid.</small>
               {#if formErrors.exitDate}<strong id="exit-error" class="field-error">{formErrors.exitDate}</strong>{/if}
             </div>
           </div>
+
+          <div class="date-fields optional-border-fields">
+            <div class="field-group">
+              <label for="trip-entry-country"><span>Entered via <small>Optional</small></span></label>
+              <select
+                id="trip-entry-country"
+                bind:value={tripForm.entryCountryCode}
+                aria-describedby={formErrors.entryCountryCode ? 'trip-border-help trip-entry-country-error' : 'trip-border-help'}
+                aria-invalid={formErrors.entryCountryCode ? 'true' : undefined}
+              >
+                <option value="">Choose if useful</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+              </select>
+              {#if formErrors.entryCountryCode}<strong id="trip-entry-country-error" class="field-error">{formErrors.entryCountryCode}</strong>{/if}
+            </div>
+            <div class="field-group">
+              <label for="trip-exit-country"><span>Left via <small>Optional</small></span></label>
+              <select
+                id="trip-exit-country"
+                bind:value={tripForm.exitCountryCode}
+                aria-describedby={formErrors.exitCountryCode ? 'trip-border-help trip-exit-country-error' : 'trip-border-help'}
+                aria-invalid={formErrors.exitCountryCode ? 'true' : undefined}
+              >
+                <option value="">Choose if useful</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+              </select>
+              {#if formErrors.exitCountryCode}<strong id="trip-exit-country-error" class="field-error">{formErrors.exitCountryCode}</strong>{/if}
+            </div>
+          </div>
+          <small id="trip-border-help">Optional — these countries provide context but do not affect the calculation.</small>
+
+          <section class="outside-breaks" aria-labelledby="trip-breaks-heading">
+            <div class="outside-breaks-heading">
+              <div>
+                <h2 id="trip-breaks-heading">Time outside Schengen</h2>
+                <p>Add a break only if you left the Schengen Area and later returned during this trip.</p>
+              </div>
+              {#if tripForm.outsideBreaks.length === 0}
+                <button class="secondary-button compact-button" type="button" onclick={addTripOutsideBreak}>Add time outside</button>
+              {/if}
+            </div>
+            {#each tripForm.outsideBreaks as outsideBreak, index (outsideBreak.id)}
+              <fieldset class="outside-break" aria-labelledby={`trip-break-${outsideBreak.id}-legend`}>
+                <div class="outside-break-title">
+                  <legend id={`trip-break-${outsideBreak.id}-legend`}>Outside-Schengen break {index + 1}</legend>
+                  <button type="button" class="text-button delete" onclick={() => removeTripOutsideBreak(outsideBreak.id)}>Remove break</button>
+                </div>
+                <div class="date-fields">
+                  <div class="field-group">
+                    <label for={`trip-break-left-${outsideBreak.id}`}><span>Left Schengen</span></label>
+                    <input id={`trip-break-left-${outsideBreak.id}`} type="date" bind:value={outsideBreak.leftDate} aria-invalid={formErrors.breakFields?.[outsideBreak.id]?.leftDate ? 'true' : undefined} />
+                    {#if formErrors.breakFields?.[outsideBreak.id]?.leftDate}<strong class="field-error">{formErrors.breakFields[outsideBreak.id].leftDate}</strong>{/if}
+                  </div>
+                  <div class="field-group">
+                    <label for={`trip-break-return-${outsideBreak.id}`}><span>Re-entered Schengen</span></label>
+                    <input id={`trip-break-return-${outsideBreak.id}`} type="date" bind:value={outsideBreak.reentryDate} aria-invalid={formErrors.breakFields?.[outsideBreak.id]?.reentryDate ? 'true' : undefined} />
+                    {#if formErrors.breakFields?.[outsideBreak.id]?.reentryDate}<strong class="field-error">{formErrors.breakFields[outsideBreak.id].reentryDate}</strong>{/if}
+                  </div>
+                </div>
+              </fieldset>
+            {/each}
+            {#if tripForm.outsideBreaks.length > 0 && tripForm.outsideBreaks.length < MAX_OUTSIDE_BREAKS}
+              <button class="secondary-button add-break-button" type="button" onclick={addTripOutsideBreak}>+ Add another outside-Schengen break</button>
+            {/if}
+            {#if formErrors.outsideBreaks}<strong class="field-error">{formErrors.outsideBreaks}</strong>{/if}
+          </section>
 
           <fieldset aria-describedby={formErrors.status ? 'status-error' : undefined}>
             <legend>Trip status</legend>
@@ -1138,6 +1224,12 @@
             <label class:selected={tripForm.status === 'what-if'} class="toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> What-if</label>
           </fieldset>
           {#if formErrors.status}<strong id="status-error" class="field-error">{formErrors.status}</strong>{/if}
+          {#if tripFormPreview}
+            <section class="trip-form-summary" aria-live="polite">
+              <strong>{displayRoute(tripFormPreview)}</strong>
+              <span>{formatTripRange({ entryDate: tripEntryDate(tripFormPreview), exitDate: tripExitDate(tripFormPreview) })} · {countTripSchengenDays(tripFormPreview)} Schengen {pluralize('day', countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${countTripOutsideDays(tripFormPreview)} ${pluralize('day', countTripOutsideDays(tripFormPreview))} outside` : ''}</span>
+            </section>
+          {/if}
           {#if formErrors.tripCount}
             <strong class="field-error form-error" aria-live="polite">{formErrors.tripCount}</strong>
           {/if}
@@ -1174,19 +1266,20 @@
               <article class:booked={trip.status === 'booked'} class:past={trip.status === 'past'}>
                 <span class="state-strip {trip.status}" aria-hidden="true"></span>
                 <div class="trip-copy">
-                  <h2>{trip.label}</h2>
-                  <p>{formatTripRange(trip)} · {inclusiveTripDays(trip)}d</p>
+                  <h2>{displayTripName(trip)}</h2>
+                  {#if trip.label}<p class="trip-route">{displayRoute(trip)}</p>{/if}
+                  <p>{formatTripRange({ entryDate: tripEntryDate(trip), exitDate: tripExitDate(trip) })} · {countTripSchengenDays(trip)} Schengen {pluralize('day', countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${countTripOutsideDays(trip)} ${pluralize('day', countTripOutsideDays(trip))} outside` : ''}</p>
                   <strong>{statusLabel(trip.status)}</strong>
                 </div>
                 <div class="trip-actions">
-                  <button type="button" aria-label={`Edit ${trip.label}`} onclick={() => startEditTrip(trip)}>Edit</button>
-                  <button class="delete" type="button" aria-label={`Delete ${trip.label}`} onclick={() => requestDeleteTrip(trip.id)}>Delete</button>
+                  <button type="button" aria-label={`Edit ${displayTripName(trip)}`} onclick={() => startEditTrip(trip)}>Edit</button>
+                  <button class="delete" type="button" aria-label={`Delete ${displayTripName(trip)}`} onclick={() => requestDeleteTrip(trip.id)}>Delete</button>
                 </div>
               </article>
               {#if pendingDeleteTrip?.id === trip.id}
                 <section class="confirm-panel" aria-live="polite" aria-labelledby={`delete-${trip.id}-heading`}>
                   <div>
-                    <h2 id={`delete-${trip.id}-heading`}>Delete {trip.label}?</h2>
+                    <h2 id={`delete-${trip.id}-heading`}>Delete {displayTripName(trip)}?</h2>
                     <p>This removes it from this browser and recalculates every result.</p>
                   </div>
                   <div class="button-row">
@@ -1224,34 +1317,9 @@
             <strong id="simulation-label-error" class="field-error">{simulationState.errors.label}</strong>
           {/if}
 
-          <label for="simulation-country"><span>Country or manual Schengen stay</span></label>
-          <select
-            id="simulation-country"
-            bind:value={simulatorForm.countryCode}
-            oninput={simulationChanged}
-            aria-describedby={simulationSubmitted && simulationState.errors.countryCode ? 'simulation-country-help simulation-country-error' : 'simulation-country-help'}
-            aria-invalid={simulationSubmitted && simulationState.errors.countryCode ? 'true' : undefined}
-          >
-            <option value="">Manual Schengen stay — count these dates</option>
-            <optgroup label="Schengen countries">
-              {#each SCHENGEN_COUNTRY_OPTIONS as country}
-                <option value={country.code}>{country.name} ({country.code})</option>
-              {/each}
-            </optgroup>
-            <optgroup label="Common nearby countries — not counted">
-              {#each EXCLUDED_COUNTRY_OPTIONS as country}
-                <option value={country.code}>{country.name} ({country.code}) — not counted</option>
-              {/each}
-            </optgroup>
-          </select>
-          <small id="simulation-country-help">{selectedCountryCopy(simulatorForm.countryCode)}</small>
-          {#if simulationSubmitted && simulationState.errors.countryCode}
-            <strong id="simulation-country-error" class="field-error">{simulationState.errors.countryCode}</strong>
-          {/if}
-
           <div class="date-fields">
             <div class="field-group">
-              <label for="simulation-entry"><span>Entry date</span></label>
+              <label for="simulation-entry"><span>Entered Schengen</span></label>
               <input
                 id="simulation-entry"
                 type="date"
@@ -1265,7 +1333,7 @@
               {/if}
             </div>
             <div class="field-group">
-              <label for="simulation-exit"><span>Exit date</span></label>
+              <label for="simulation-exit"><span>Left Schengen</span></label>
               <input
                 id="simulation-exit"
                 type="date"
@@ -1279,6 +1347,61 @@
               {/if}
             </div>
           </div>
+
+          <div class="date-fields optional-border-fields">
+            <div class="field-group">
+              <label for="simulation-entry-country"><span>Entered via <small>Optional</small></span></label>
+              <select id="simulation-entry-country" bind:value={simulatorForm.entryCountryCode} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.entryCountryCode ? 'true' : undefined}>
+                <option value="">Choose if useful</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+              </select>
+              {#if simulationSubmitted && simulationState.errors.entryCountryCode}<strong class="field-error">{simulationState.errors.entryCountryCode}</strong>{/if}
+            </div>
+            <div class="field-group">
+              <label for="simulation-exit-country"><span>Left via <small>Optional</small></span></label>
+              <select id="simulation-exit-country" bind:value={simulatorForm.exitCountryCode} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.exitCountryCode ? 'true' : undefined}>
+                <option value="">Choose if useful</option>
+                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{country.name}</option>{/each}
+              </select>
+              {#if simulationSubmitted && simulationState.errors.exitCountryCode}<strong class="field-error">{simulationState.errors.exitCountryCode}</strong>{/if}
+            </div>
+          </div>
+          <small>Optional — these countries provide context but do not affect the calculation.</small>
+
+          <section class="outside-breaks" aria-labelledby="simulation-breaks-heading">
+            <div class="outside-breaks-heading">
+              <div>
+                <h2 id="simulation-breaks-heading">Time outside Schengen</h2>
+                <p>Add a break if this plan leaves Schengen and later returns.</p>
+              </div>
+              {#if simulatorForm.outsideBreaks.length === 0}
+                <button class="secondary-button compact-button" type="button" onclick={addSimulationOutsideBreak}>Add time outside</button>
+              {/if}
+            </div>
+            {#each simulatorForm.outsideBreaks as outsideBreak, index (outsideBreak.id)}
+              <fieldset class="outside-break">
+                <div class="outside-break-title">
+                  <legend>Outside-Schengen break {index + 1}</legend>
+                  <button type="button" class="text-button delete" onclick={() => removeSimulationOutsideBreak(outsideBreak.id)}>Remove break</button>
+                </div>
+                <div class="date-fields">
+                  <div class="field-group">
+                    <label for={`simulation-break-left-${outsideBreak.id}`}><span>Left Schengen</span></label>
+                    <input id={`simulation-break-left-${outsideBreak.id}`} type="date" bind:value={outsideBreak.leftDate} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.leftDate ? 'true' : undefined} />
+                    {#if simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.leftDate}<strong class="field-error">{simulationState.errors.breakFields[outsideBreak.id].leftDate}</strong>{/if}
+                  </div>
+                  <div class="field-group">
+                    <label for={`simulation-break-return-${outsideBreak.id}`}><span>Re-entered Schengen</span></label>
+                    <input id={`simulation-break-return-${outsideBreak.id}`} type="date" bind:value={outsideBreak.reentryDate} oninput={simulationChanged} aria-invalid={simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.reentryDate ? 'true' : undefined} />
+                    {#if simulationSubmitted && simulationState.errors.breakFields?.[outsideBreak.id]?.reentryDate}<strong class="field-error">{simulationState.errors.breakFields[outsideBreak.id].reentryDate}</strong>{/if}
+                  </div>
+                </div>
+              </fieldset>
+            {/each}
+            {#if simulatorForm.outsideBreaks.length > 0 && simulatorForm.outsideBreaks.length < MAX_OUTSIDE_BREAKS}
+              <button class="secondary-button add-break-button" type="button" onclick={addSimulationOutsideBreak}>+ Add another outside-Schengen break</button>
+            {/if}
+          </section>
           <div class="form-actions">
             <button class="primary-button" type="submit">Check this plan</button>
             <button class="secondary-button" type="button" onclick={clearSimulation}>Clear</button>
@@ -2181,6 +2304,88 @@
     gap: 8px;
   }
 
+  .outside-breaks {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+    border-block: 1px solid var(--line);
+    padding-block: 16px;
+  }
+
+  .outside-breaks-heading,
+  .outside-break-title {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .outside-breaks h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .outside-breaks p {
+    max-width: 62ch;
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+
+  fieldset.outside-break {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 0;
+    border-color: var(--line);
+    background: var(--paper);
+    padding: 12px;
+  }
+
+  .outside-break-title legend {
+    padding: 0;
+    color: var(--ink);
+  }
+
+  .outside-break-title .text-button {
+    min-height: 36px;
+    color: var(--risk);
+    padding-block: 4px;
+  }
+
+  .compact-button {
+    min-height: 40px;
+    flex: 0 0 auto;
+    padding-block: 8px;
+  }
+
+  .add-break-button {
+    width: 100%;
+    border-style: dashed;
+    color: var(--safe);
+  }
+
+  .trip-form-summary {
+    display: grid;
+    gap: 3px;
+    margin-top: 8px;
+    border: 1px solid color-mix(in srgb, var(--safe), var(--line) 38%);
+    border-radius: 10px;
+    background: var(--safe-bg);
+    padding: 12px;
+  }
+
+  .trip-form-summary strong { color: var(--ink); }
+
+  .trip-form-summary span {
+    color: var(--safe);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
   .trip-form > label,
   .field-group label {
     margin-top: 6px;
@@ -2345,6 +2550,13 @@
     overflow-wrap: anywhere;
   }
 
+  .trip-list .trip-route {
+    color: var(--ink);
+    font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 650;
+  }
+
   .trip-copy strong,
   .ledger strong {
     display: block;
@@ -2470,6 +2682,8 @@
     .verdict { font-size: 2.6rem; }
     .disclaimer-notice { flex-direction: column; }
     .date-fields { grid-template-columns: 1fr; }
+    .outside-breaks-heading { align-items: stretch; flex-direction: column; }
+    .outside-breaks-heading .compact-button { width: 100%; }
     .section-heading.with-action { align-items: flex-start; flex-direction: column; }
     .trip-list article { align-items: flex-start; flex-wrap: wrap; }
     .trip-actions { width: 100%; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 6px; }

@@ -10,7 +10,7 @@ These fixtures encode the public Schengen 90/180-day rule semantics used by the 
 - Ireland and Cyprus do not count for Schengen short-stay allowance;
 - non-EU Schengen members Iceland, Norway, Liechtenstein, and Switzerland do count;
 - Bulgaria and Romania are counted for the MVP baseline;
-- non-Schengen country codes such as `GB`, `US`, and `TR` do not count when present in imported data;
-- missing `countryCode` counts as Schengen, preserving manual-entry behavior.
+- country annotations describe the source itinerary; the test adapter removes non-Schengen ranges before calling the engine;
+- the engine itself receives only explicit counted Schengen stay ranges.
 
 The fixtures are generated from an independent day-set oracle, not from the production engine. They are deliberately boring. Boring is the correct emotional register for border math.

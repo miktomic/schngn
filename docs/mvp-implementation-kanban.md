@@ -41,8 +41,8 @@
   - Entry and exit days both count.
   - Rolling 180-day look-back from any reference date.
   - Overlapping/adjacent trips de-duplicated.
-  - Cyprus/Ireland and other non-Schengen country codes excluded; Iceland/Norway/Liechtenstein/Switzerland included.
-  - Explicit Schengen country-code allowlist exported for UI/import validation.
+  - Engine inputs are explicit Schengen stay ranges; country classification is resolved before calculation.
+  - Outside-Schengen periods are represented as gaps between counted ranges.
 - **Verification:** 50 EC-rule fixtures, 100 deterministic property scenarios, golden counted-day test, and full `npx -y bun@1.3.14 run check` pass.
 
 ## US-02 — Latest safe exit date calculation
@@ -55,9 +55,8 @@
 - **Acceptance summary:**
   - Computes latest exit while keeping usage ≤ 90 on every day of the candidate stay.
   - Handles already-at-limit and over-limit cases.
-  - Treats missing country as manual Schengen input.
-  - Returns `null` for non-Schengen target countries because Schengen safe exit is not applicable.
-- **Verification:** boundary tests prove returned exit is safe and exit + 1 day overstays; covered no-prior-trip, 89-used, 90-used, old-days-aging-out, missing-country, and non-Schengen target cases.
+  - Extends the final continuous stay while preserving earlier segments of a split journey.
+- **Verification:** boundary tests prove returned exit is safe and exit + 1 day overstays; covered no-prior-stay, 89-used, 90-used, old-days-aging-out, and split-journey cases.
 
 ## US-03 — Overstay / verdict flag
 
@@ -97,11 +96,12 @@
 - **Depends on:** US-01 data model contract, US-19 for browser/integration coverage
 - **Implementation target:** trip CRUD UI and validation.
 - **Acceptance summary:**
-  - Add entry date, exit date, optional country/label.
+  - Add first Schengen entry, final Schengen exit, optional entry/exit countries and label.
+  - Add one or more inline outside-Schengen breaks; the app derives multiple counted stays.
   - Equal entry/exit allowed as a one-day trip.
   - Exit before entry rejected inline.
   - Edit/delete re-sorts list and recalculates immediately.
-- **Verification:** `npx -y bun@1.3.14 run check` passed with 75 Bun tests / 1124 assertions; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium add/edit/delete/validation and privacy-network coverage.
+- **Verification:** Bun tests cover multi-country journeys, split stays, outside-day summaries, validation, and recalculation; Playwright covers the complete mobile entry flow and persisted schema-two shape.
 
 ## US-05 — Guest local-only persistence, original no-account scope
 

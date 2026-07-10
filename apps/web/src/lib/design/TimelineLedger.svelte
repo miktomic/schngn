@@ -2,10 +2,9 @@
   import {
     addDays,
     calculateUsageOnDate,
-    countsForShortStay,
     formatISODate,
     parseISODate,
-    type Trip
+    type SchengenStay
   } from '@schngn/engine';
   import type { EditableTrip } from '$lib/trips/tripCrud';
 
@@ -34,7 +33,7 @@
     mode: TimelineMode;
     referenceDate: string;
     returnDates?: string[];
-    simulation?: Trip | null;
+    simulation?: EditableTrip | null;
     trips: EditableTrip[];
   }
 
@@ -77,25 +76,19 @@
     const start = addDays(reference, -179);
     const startDate = formatISODate(start);
     const endDate = formatISODate(reference);
-    const allTrips: Trip[] = [
-      ...input.trips.map(({ countryCode, entryDate, exitDate, label: tripLabel }) => ({
-        countryCode,
-        entryDate,
-        exitDate,
-        label: tripLabel
-      })),
-      ...(input.simulation ? [input.simulation] : [])
+    const allTrips: SchengenStay[] = [
+      ...input.trips.flatMap((trip) => trip.stays.map((stay) => ({ ...stay, label: trip.label }))),
+      ...(input.simulation ? input.simulation.stays.map((stay) => ({ ...stay, label: input.simulation?.label })) : [])
     ];
     const usage = calculateUsageOnDate(allTrips, endDate);
     const riskDays = new Set(usage.overLimit ? usage.countedDays.slice(90) : []);
     const kindByDate = new Map<string, SegmentKind>();
 
     for (const trip of input.trips) {
-      if (!countsForShortStay(trip)) continue;
-      addTripDays(kindByDate, trip, statusKind(trip.status), startDate, endDate);
+      for (const stay of trip.stays) addTripDays(kindByDate, stay, statusKind(trip.status), startDate, endDate);
     }
-    if (input.simulation && countsForShortStay(input.simulation)) {
-      addTripDays(kindByDate, input.simulation, 'whatif', startDate, endDate);
+    if (input.simulation) {
+      for (const stay of input.simulation.stays) addTripDays(kindByDate, stay, 'whatif', startDate, endDate);
     }
     for (const day of riskDays) kindByDate.set(day, 'risk');
 
@@ -118,7 +111,7 @@
 
   function buildReturnsTimeline(input: Omit<TimelineProps, 'label'>): TimelineModel {
     const startDate = formatISODate(addDays(parseISODate(input.referenceDate), 1));
-    const endDate = formatISODate(addDays(parseISODate(input.referenceDate), input.horizonDays));
+    const endDate = formatISODate(addDays(parseISODate(input.referenceDate), input.horizonDays ?? 30));
     const returnDateSet = new Set(input.returnDates);
     const days = isoDateRange(startDate, endDate);
     const returned = days.filter((day) => returnDateSet.has(day)).length;
@@ -138,7 +131,7 @@
 
   function addTripDays(
     kindByDate: Map<string, SegmentKind>,
-    trip: Trip,
+    trip: SchengenStay,
     kind: SegmentKind,
     windowStart: string,
     windowEnd: string

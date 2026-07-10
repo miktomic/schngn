@@ -2,30 +2,34 @@ import {
   addDays,
   calculateUsageOnDate,
   classifyVerdict,
-  countsForShortStay,
   formatISODate,
   latestSafeExitDate,
   parseISODate,
-  type Trip,
   type UsageResult
 } from '@schngn/engine';
 import {
+  countTripSchengenDays,
+  emptyTripForm,
   inclusiveTripDays,
   toEngineTrips,
-  validateTripInput,
+  tripEntryDate,
+  tripExitDate,
+  upsertTrip,
   type EditableTrip,
+  type OutsideSchengenBreakInput,
   type TripStatus,
   type TripValidationErrors
 } from '../trips/tripCrud';
-import { normalizeCountryCode } from '../trips/countries';
 
 export type SimulationTone = 'safe' | 'close' | 'risk' | 'neutral';
 
 export interface ProposedTripInput {
-  countryCode?: string;
+  label?: string;
+  entryCountryCode?: string;
+  exitCountryCode?: string;
   entryDate: string;
   exitDate: string;
-  label?: string;
+  outsideBreaks: OutsideSchengenBreakInput[];
 }
 
 export interface TripSimulationConflict {
@@ -42,7 +46,7 @@ export interface TripSimulationState {
   firstFixCopy: string;
   latestSafeExitLabel: string;
   maxStayLabel: string;
-  simulatedTrip: Trip | null;
+  simulatedTrip: EditableTrip | null;
   statusLabel: string;
   statusTone: SimulationTone;
   summaryCopy: string;
@@ -68,44 +72,27 @@ interface ItineraryAssessment {
 const AFFECTED_WINDOW_DAYS_AFTER_EXIT = 179;
 const MILLISECONDS_PER_DAY = 86_400_000;
 
+export function emptyProposedTrip(): ProposedTripInput {
+  const form = emptyTripForm('what-if');
+  return {
+    label: form.label,
+    entryCountryCode: form.entryCountryCode,
+    exitCountryCode: form.exitCountryCode,
+    entryDate: form.entryDate,
+    exitDate: form.exitDate,
+    outsideBreaks: form.outsideBreaks
+  };
+}
+
 export function buildTripSimulationState(
   savedTrips: EditableTrip[],
   proposed: ProposedTripInput
 ): TripSimulationState {
-  const normalizedProposal = normalizeProposal(proposed);
-  const errors = validateTripInput({ ...normalizedProposal, status: 'what-if' });
+  const result = upsertTrip([], { ...proposed, id: 'simulation', status: 'what-if' });
+  if (Object.keys(result.errors).length > 0) return emptySimulation(result.errors);
 
-  if (Object.keys(errors).length > 0) {
-    return emptySimulation(errors);
-  }
-
-  const existingTrips = toEngineTrips(savedTrips);
-  const simulatedTrip: Trip = {
-    countryCode: normalizedProposal.countryCode,
-    entryDate: normalizedProposal.entryDate,
-    exitDate: normalizedProposal.exitDate,
-    label: normalizedProposal.label
-  };
-  const targetName = normalizedProposal.label || normalizedProposal.countryCode || 'Trip';
-
-  if (!countsForShortStay(simulatedTrip)) {
-    const usage = calculateUsageOnDate(existingTrips, normalizedProposal.exitDate);
-    return {
-      conflict: null,
-      daysUsedLabel: `${usage.daysUsed} / 90`,
-      errors: {},
-      firstFixCopy: 'This country does not use Schengen short-stay allowance.',
-      latestSafeExitLabel: 'Not applicable',
-      maxStayLabel: 'Not applicable',
-      simulatedTrip,
-      statusLabel: `${targetName} does not count`,
-      statusTone: 'safe',
-      summaryCopy: `${targetName} is outside the Schengen short-stay count, so it does not use or reduce the 90-day allowance.`,
-      usage,
-      valid: true
-    };
-  }
-
+  const simulatedTrip = result.trips[0];
+  const targetName = simulatedTrip.label || 'This trip';
   const assessment = assessAffectedItinerary(savedTrips, simulatedTrip, targetName);
   const usage = assessment.conflict?.usage ?? assessment.peakUsage;
   const verdict = assessment.conflict ? { state: 'over' as const } : classifyVerdict(usage);
@@ -119,7 +106,7 @@ export function buildTripSimulationState(
     errors: {},
     firstFixCopy: formatFirstFixCopy(tone, latestSafeExit, targetName, conflict),
     latestSafeExitLabel: latestSafeExit ? formatShortDate(latestSafeExit) : 'No safe stay',
-    maxStayLabel: formatMaxStayLabel(normalizedProposal.entryDate, latestSafeExit),
+    maxStayLabel: formatMaxStayLabel(simulatedTrip, latestSafeExit),
     simulatedTrip,
     statusLabel: formatStatusLabel(tone, targetName),
     statusTone: tone,
@@ -134,7 +121,7 @@ function emptySimulation(errors: TripValidationErrors): TripSimulationState {
     conflict: null,
     daysUsedLabel: '- / 90',
     errors,
-    firstFixCopy: 'Enter valid trip details to simulate a trip.',
+    firstFixCopy: 'Enter valid Schengen stay details to simulate this trip.',
     latestSafeExitLabel: 'Add dates',
     maxStayLabel: 'Add dates',
     simulatedTrip: null,
@@ -146,82 +133,50 @@ function emptySimulation(errors: TripValidationErrors): TripSimulationState {
   };
 }
 
-function normalizeProposal(proposed: ProposedTripInput): Required<Pick<ProposedTripInput, 'entryDate' | 'exitDate'>> &
-  Pick<ProposedTripInput, 'countryCode' | 'label'> {
-  const countryCode = normalizeCountryCode(proposed.countryCode);
-  const label = proposed.label?.trim() || (countryCode ? `${countryCode} trip` : 'What-if trip');
-  return {
-    countryCode,
-    entryDate: proposed.entryDate,
-    exitDate: proposed.exitDate,
-    label
-  };
-}
-
 function assessAffectedItinerary(
   savedTrips: EditableTrip[],
-  simulatedTrip: Trip,
+  simulatedTrip: EditableTrip,
   targetName: string
 ): ItineraryAssessment {
-  const existingTrips = toEngineTrips(savedTrips);
-  const tripsWithSimulation = [...existingTrips, simulatedTrip];
+  const staysWithSimulation = [...toEngineTrips(savedTrips), ...toEngineTrips([simulatedTrip])];
   const checkpoints = buildAffectedCheckpoints(savedTrips, simulatedTrip, targetName);
-  const firstCheckpoint = checkpoints.keys().next().value as string | undefined;
-  const fallbackDate = firstCheckpoint ?? simulatedTrip.exitDate;
-  let peakUsage = calculateUsageOnDate(tripsWithSimulation, fallbackDate);
+  const fallbackDate = checkpoints.keys().next().value as string | undefined ?? tripExitDate(simulatedTrip);
+  let peakUsage = calculateUsageOnDate(staysWithSimulation, fallbackDate);
   let conflict: InternalConflict | null = null;
 
   for (const [date, owner] of checkpoints) {
-    const usage = calculateUsageOnDate(tripsWithSimulation, date);
+    const usage = calculateUsageOnDate(staysWithSimulation, date);
     if (usage.daysUsed > peakUsage.daysUsed) peakUsage = usage;
-
-    if (!conflict && usage.daysUsed > 90) {
-      conflict = {
-        date,
-        tripId: owner.tripId,
-        tripLabel: owner.tripLabel,
-        tripStatus: owner.tripStatus,
-        usage
-      };
-    }
+    if (!conflict && usage.daysUsed > 90) conflict = { date, ...owner, usage };
   }
-
   return { conflict, peakUsage };
 }
 
 function buildAffectedCheckpoints(
   savedTrips: EditableTrip[],
-  simulatedTrip: Trip,
+  simulatedTrip: EditableTrip,
   targetName: string
 ): Map<string, EvaluationOwner> {
   const checkpoints = new Map<string, EvaluationOwner>();
-  const proposalOwner: EvaluationOwner = {
-    tripLabel: targetName,
-    tripStatus: 'proposal'
-  };
-  addCheckpointRange(checkpoints, simulatedTrip.entryDate, simulatedTrip.exitDate, proposalOwner);
+  const proposalOwner: EvaluationOwner = { tripLabel: targetName, tripStatus: 'proposal' };
+  for (const stay of simulatedTrip.stays) addCheckpointRange(checkpoints, stay.entryDate, stay.exitDate, proposalOwner);
 
-  const affectedThrough = formatISODate(
-    addDays(parseISODate(simulatedTrip.exitDate), AFFECTED_WINDOW_DAYS_AFTER_EXIT)
-  );
+  const proposalEntry = tripEntryDate(simulatedTrip);
+  const affectedThrough = formatISODate(addDays(parseISODate(tripExitDate(simulatedTrip)), AFFECTED_WINDOW_DAYS_AFTER_EXIT));
   const plannedTrips = savedTrips
     .filter((trip) => trip.status === 'booked' || trip.status === 'what-if')
-    .filter((trip) => countsForShortStay(trip))
-    .filter((trip) => trip.exitDate >= simulatedTrip.entryDate && trip.entryDate <= affectedThrough)
-    .sort((left, right) => left.entryDate.localeCompare(right.entryDate) || left.id.localeCompare(right.id));
+    .filter((trip) => tripExitDate(trip) >= proposalEntry && tripEntryDate(trip) <= affectedThrough)
+    .sort((left, right) => tripEntryDate(left).localeCompare(tripEntryDate(right)) || left.id.localeCompare(right.id));
 
   for (const trip of plannedTrips) {
-    const startDate = trip.entryDate < simulatedTrip.entryDate ? simulatedTrip.entryDate : trip.entryDate;
-    const endDate = trip.exitDate > affectedThrough ? affectedThrough : trip.exitDate;
-    addCheckpointRange(
-      checkpoints,
-      startDate,
-      endDate,
-      { tripId: trip.id, tripLabel: trip.label, tripStatus: trip.status },
-      false
-    );
+    for (const stay of trip.stays) {
+      const startDate = stay.entryDate < proposalEntry ? proposalEntry : stay.entryDate;
+      const endDate = stay.exitDate > affectedThrough ? affectedThrough : stay.exitDate;
+      if (startDate <= endDate) {
+        addCheckpointRange(checkpoints, startDate, endDate, { tripId: trip.id, tripLabel: trip.label || 'Schengen trip', tripStatus: trip.status }, false);
+      }
+    }
   }
-
   return new Map([...checkpoints.entries()].sort(([left], [right]) => left.localeCompare(right)));
 }
 
@@ -233,8 +188,7 @@ function addCheckpointRange(
   overwrite = true
 ): void {
   const exit = parseISODate(exitDate);
-
-  for (let current = parseISODate(entryDate); current.getTime() <= exit.getTime(); current = addDays(current, 1)) {
+  for (let current = parseISODate(entryDate); current <= exit; current = addDays(current, 1)) {
     const date = formatISODate(current);
     if (overwrite || !checkpoints.has(date)) checkpoints.set(date, owner);
   }
@@ -242,46 +196,39 @@ function addCheckpointRange(
 
 function findLatestProtectedExit(
   savedTrips: EditableTrip[],
-  simulatedTrip: Trip,
+  simulatedTrip: EditableTrip,
   targetName: string
 ): string | null {
-  const existingTrips = toEngineTrips(savedTrips);
-  const engineLatestExit = latestSafeExitDate(existingTrips, simulatedTrip.entryDate, simulatedTrip.countryCode);
+  const finalStay = simulatedTrip.stays.at(-1);
+  if (!finalStay) return null;
+  const earlierProposalStays = simulatedTrip.stays.slice(0, -1);
+  const engineLatestExit = latestSafeExitDate([...toEngineTrips(savedTrips), ...earlierProposalStays], finalStay.entryDate);
   if (!engineLatestExit) return null;
 
-  const entry = parseISODate(simulatedTrip.entryDate);
+  const entry = parseISODate(finalStay.entryDate);
   const engineLatest = parseISODate(engineLatestExit);
   let latestProtectedExit: string | null = null;
   let lowerOffset = 0;
   let upperOffset = Math.floor((engineLatest.getTime() - entry.getTime()) / MILLISECONDS_PER_DAY);
 
-  // A longer continuous proposal only adds counted days, so safety is
-  // monotonic and the last protected exit can be found without rescanning
-  // every possible trip length on each keystroke.
   while (lowerOffset <= upperOffset) {
     const middleOffset = Math.floor((lowerOffset + upperOffset) / 2);
-    const candidateExit = addDays(entry, middleOffset);
-    const exitDate = formatISODate(candidateExit);
-    const candidate = { ...simulatedTrip, exitDate };
-    const assessment = assessAffectedItinerary(savedTrips, candidate, targetName);
-    if (assessment.conflict) {
-      upperOffset = middleOffset - 1;
-    } else {
+    const exitDate = formatISODate(addDays(entry, middleOffset));
+    const candidate: EditableTrip = {
+      ...simulatedTrip,
+      stays: [...earlierProposalStays, { ...finalStay, exitDate }]
+    };
+    if (assessAffectedItinerary(savedTrips, candidate, targetName).conflict) upperOffset = middleOffset - 1;
+    else {
       latestProtectedExit = exitDate;
       lowerOffset = middleOffset + 1;
     }
   }
-
   return latestProtectedExit;
 }
 
 function publicConflict(conflict: InternalConflict): TripSimulationConflict {
-  return {
-    date: conflict.date,
-    tripId: conflict.tripId,
-    tripLabel: conflict.tripLabel,
-    tripStatus: conflict.tripStatus
-  };
+  return { date: conflict.date, tripId: conflict.tripId, tripLabel: conflict.tripLabel, tripStatus: conflict.tripStatus };
 }
 
 function formatStatusLabel(tone: SimulationTone, targetName: string): string {
@@ -290,71 +237,42 @@ function formatStatusLabel(tone: SimulationTone, targetName: string): string {
   return `${targetName} fits`;
 }
 
-function formatSummaryCopy(
-  tone: SimulationTone,
-  usage: UsageResult,
-  targetName: string,
-  conflict: TripSimulationConflict | null
-): string {
+function formatSummaryCopy(tone: SimulationTone, usage: UsageResult, targetName: string, conflict: TripSimulationConflict | null): string {
   if (tone === 'risk' && conflict?.tripStatus !== 'proposal') {
     return `${conflict?.tripLabel ?? 'A later trip'} would reach ${usage.daysUsed} / 90 on ${formatShortDate(conflict?.date ?? usage.referenceDate)} if ${targetName} were added. Change the proposal to protect that commitment.`;
   }
-
   if (tone === 'risk') {
     return `${targetName} would exceed the limit before exit. The first over-limit day reaches ${usage.daysUsed} / 90 on ${formatShortDate(conflict?.date ?? usage.referenceDate)}.`;
   }
-
   return `${targetName} fits with ${usage.daysRemaining} safe buffer ${usage.daysRemaining === 1 ? 'day' : 'days'}. Highest affected-day window shows ${usage.daysUsed} counted days.`;
 }
 
-function formatFirstFixCopy(
-  tone: SimulationTone,
-  latestSafeExit: string | null,
-  targetName: string,
-  conflict: TripSimulationConflict | null
-): string {
+function formatFirstFixCopy(tone: SimulationTone, latestSafeExit: string | null, targetName: string, conflict: TripSimulationConflict | null): string {
   if (tone === 'risk' && conflict?.tripStatus !== 'proposal') {
     return latestSafeExit
       ? `First fix: shorten ${targetName} to ${formatShortDate(latestSafeExit)} to protect ${conflict?.tripLabel ?? 'the later trip'}.`
       : `First fix: move ${targetName} later or reduce earlier Schengen days to protect ${conflict?.tripLabel ?? 'the later trip'}.`;
   }
-
   if (tone === 'risk') {
     return latestSafeExit
       ? `First fix: shorten ${targetName}. Latest safe exit is ${formatShortDate(latestSafeExit)}.`
       : `First fix: move ${targetName} later or reduce earlier Schengen days.`;
   }
-
   return latestSafeExit
     ? `You can stay until ${formatShortDate(latestSafeExit)} while keeping later commitments safe.`
-    : 'This proposed country does not use Schengen short-stay allowance.';
+    : 'No safe continuous final stay is available from this re-entry date.';
 }
 
-function formatMaxStayLabel(entryDate: string, latestSafeExit: string | null): string {
-  if (!latestSafeExit) return 'Not applicable';
-
-  const days = inclusiveTripDays({ entryDate, exitDate: latestSafeExit });
-  return `${days} ${days === 1 ? 'day' : 'days'} max from ${formatShortDate(entryDate)}`;
+function formatMaxStayLabel(trip: EditableTrip, latestSafeExit: string | null): string {
+  const finalStay = trip.stays.at(-1);
+  if (!latestSafeExit || !finalStay) return 'Not applicable';
+  const finalStayMax = inclusiveTripDays({ entryDate: finalStay.entryDate, exitDate: latestSafeExit });
+  const priorDays = countTripSchengenDays({ stays: trip.stays.slice(0, -1) });
+  const days = priorDays + finalStayMax;
+  return `${days} ${days === 1 ? 'day' : 'days'} across this trip`;
 }
 
 function formatShortDate(isoDate: string): string {
   const [, month, day] = isoDate.split('-').map(Number);
-  return `${monthName(month)} ${day}`;
-}
-
-function monthName(month: number): string {
-  return [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
-  ][month - 1];
+  return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]} ${day}`;
 }

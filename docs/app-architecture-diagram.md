@@ -75,7 +75,7 @@ Guest trip dates, scenarios, and calculated personal travel timelines stay in br
 
 ### 2. The Schengen engine is isolated from UI and infrastructure
 
-`packages/engine` is pure TypeScript. It owns the 90/180-day logic: inclusive entry/exit counting, rolling 180-day windows, overlap de-duplication, included/excluded countries, remaining days, over-limit state, and latest safe exit calculations.
+`packages/engine` is pure TypeScript. It owns the 90/180-day logic for explicit Schengen stay ranges: inclusive entry/exit counting, rolling 180-day windows, overlap de-duplication, remaining days, over-limit state, and latest safe exit calculations. Optional border countries and outside-Schengen break editing remain web-layer concerns.
 
 That package must stay free of browser APIs, Cloudflare APIs, network calls, filesystem access, Bun-native APIs, and UI code. This keeps the safety-critical part testable and boring. Boring is a feature when border control is involved.
 

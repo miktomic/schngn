@@ -11,30 +11,16 @@ import {
   shouldRestoreMissingLocalSnapshot,
   type AccountTripSnapshot
 } from '../src/lib/account/accountSync';
+import { makeTrip } from './trip-fixtures';
 
-const localTrip: EditableTrip = {
-  id: 'trip-local',
-  label: 'Local Spain stay',
-  countryCode: 'ES',
-  entryDate: '2026-05-01',
-  exitDate: '2026-05-05',
-  status: 'booked'
-};
-
-const cloudTrip: EditableTrip = {
-  id: 'trip-cloud',
-  label: 'Cloud France stay',
-  countryCode: 'FR',
-  entryDate: '2026-06-01',
-  exitDate: '2026-06-03',
-  status: 'past'
-};
+const localTrip: EditableTrip = makeTrip('trip-local', 'Local Spain stay', '2026-05-01', '2026-05-05', 'booked', 'ES');
+const cloudTrip: EditableTrip = makeTrip('trip-cloud', 'Cloud France stay', '2026-06-01', '2026-06-03', 'past', 'FR');
 
 const snapshot = (trips: EditableTrip[], revision: number): AccountTripSnapshot => ({
   trips,
   revision,
   updatedAt: revision === 0 ? null : '2026-07-09T12:00:00.000Z',
-  consentVersion: revision === 0 ? null : 'account-sync-v1'
+  consentVersion: revision === 0 ? null : 'account-sync-v2'
 });
 
 describe('authenticated account reconciliation', () => {
@@ -73,7 +59,7 @@ describe('authenticated account reconciliation', () => {
 
   test('pushes an offline local edit only when the server revision is unchanged', () => {
     const metadata = buildAccountSyncMetadata('user_123', snapshot([localTrip], 4));
-    const edited = [{ ...localTrip, exitDate: '2026-05-06' }];
+    const edited = [{ ...localTrip, stays: [{ entryDate: '2026-05-01', exitDate: '2026-05-06' }] }];
 
     expect(
       decideAccountReconciliation({
@@ -100,7 +86,7 @@ describe('authenticated account reconciliation', () => {
 
   test('reports a conflict when both the device and account changed', () => {
     const metadata = buildAccountSyncMetadata('user_123', snapshot([localTrip], 4));
-    const edited = [{ ...localTrip, exitDate: '2026-05-06' }];
+    const edited = [{ ...localTrip, stays: [{ entryDate: '2026-05-01', exitDate: '2026-05-06' }] }];
 
     expect(
       decideAccountReconciliation({
@@ -193,13 +179,13 @@ describe('authenticated account reconciliation', () => {
     expect(saveAccountSyncMetadata(storage, metadata)).toEqual({ ok: true });
     expect(loadAccountSyncMetadata(storage)).toEqual(metadata);
     const raw = values.get(ACCOUNT_SYNC_METADATA_KEY) ?? '';
-    expect(raw).not.toContain(localTrip.entryDate);
+    expect(raw).not.toContain(localTrip.stays[0].entryDate);
     expect(raw).not.toContain(localTrip.label);
     expect(metadata.paused).toBe(false);
   });
 
   test('fingerprints stable trip content and detects meaningful changes', () => {
     expect(fingerprintTrips([localTrip])).toBe(fingerprintTrips([{ ...localTrip }]));
-    expect(fingerprintTrips([localTrip])).not.toBe(fingerprintTrips([{ ...localTrip, exitDate: '2026-05-06' }]));
+    expect(fingerprintTrips([localTrip])).not.toBe(fingerprintTrips([{ ...localTrip, stays: [{ entryDate: '2026-05-01', exitDate: '2026-05-06' }] }]));
   });
 });

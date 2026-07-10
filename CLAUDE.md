@@ -31,6 +31,7 @@ Primary product promise:
 5. **Authenticated ownership is server-derived.** Account data is keyed by the verified Clerk user ID. Never accept a client-supplied owner, and never persist guest trips server-side.
 6. **Node 24+ is the Node tooling baseline.** It is pinned through `.node-version` and `.nvmrc`; GitHub Actions uses Node-24-compatible actions and `actions/setup-node`.
 7. **Bun 1.3.14 remains the build/test/package runner.** Production still runs on Cloudflare Workers (`workerd`), not Node or Bun.
+8. **TypeScript 7 is the root and engine compiler baseline.** Keep the Svelte web workspace on TypeScript 6 until TypeScript 7 exposes the programmatic API required by Svelte tooling; do not force an unsupported repo-wide 7.x resolution.
 
 ## Current architecture
 
@@ -47,7 +48,7 @@ Runtime model:
 
 ```text
 Production domain: https://schngn.com
-Build/dev/test: Bun 1.3.14; Node 24+ for Node-based tooling and GitHub Actions
+Build/dev/test: Bun 1.3.14; Node 24+; TypeScript 7 engine + TypeScript 6 Svelte tooling
 App framework: SvelteKit + Vite
 Production: Cloudflare Workers + Static Assets
 Core logic: packages/engine, pure TypeScript
@@ -191,12 +192,13 @@ Correctness requirements from MVP backlog:
 - Entry and exit days both count.
 - Rolling window is the inclusive 180-day period ending on a reference date.
 - Overlapping/adjacent trips must be de-duplicated; no double-counting physical days.
-- Cyprus and Ireland are excluded from Schengen short-stay counting.
-- Iceland, Norway, Liechtenstein, and Switzerland are included.
+- Engine inputs are explicit continuous Schengen stay ranges; country metadata never changes the math.
+- Trips with time outside Schengen are flattened into multiple stay ranges, preserving inclusive exit/re-entry boundary days and excluding only the full calendar-day gaps.
+- The web layer owns the current Schengen border-country allowlist for optional entry/exit context; it never sends non-Schengen records to the engine.
 - Remaining days = `90 - used`, floored at zero for display.
 - Over-limit state must still expose over-by days.
 
-US-01 is implemented as a published-rule correctness gate: `packages/engine/tests/engine.test.ts` loads 50 rule fixtures from `packages/engine/tests/fixtures/ec/rolling-180-fixtures.json`, runs deterministic property checks against an independent day-set oracle, and includes golden counted-day scenarios. Do not claim direct European Commission calculator output parity until captured official outputs and provenance are added.
+US-01 is implemented as a published-rule correctness gate: `packages/engine/tests/engine.test.ts` adapts 50 country-annotated source fixtures into explicit Schengen stay ranges, runs deterministic property checks against an independent day-set oracle, and includes golden counted-day scenarios. Do not claim direct European Commission calculator output parity until captured official outputs and provenance are added.
 
 ## Web app rules
 

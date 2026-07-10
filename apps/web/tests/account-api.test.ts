@@ -19,6 +19,7 @@ import {
   parseAccountTrips
 } from '../src/lib/account/accountTripSnapshot';
 import { MAX_TRIP_COUNT, type EditableTrip } from '../src/lib/trips/tripCrud';
+import { makeTrip } from './trip-fixtures';
 
 interface StoredSnapshot {
   revision: number;
@@ -156,14 +157,7 @@ class MemoryAccountDatabase implements AccountD1Database {
 
 const NO_OVERRIDE = Symbol('no override');
 
-const italyTrip: EditableTrip = {
-  id: 'italy-2026',
-  label: 'Italy',
-  countryCode: 'IT',
-  entryDate: '2026-09-15',
-  exitDate: '2026-10-13',
-  status: 'booked'
-};
+const italyTrip: EditableTrip = makeTrip('italy-2026', 'Italy', '2026-09-15', '2026-10-13', 'booked', 'IT');
 
 const authenticated = async () => ({
   ok: true as const,
@@ -212,14 +206,7 @@ describe('account trip snapshot parser', () => {
   test('reuses strict trip validation and returns a sorted safe copy', () => {
     const result = parseAccountTrips([
       italyTrip,
-      {
-        id: 'france-2026',
-        label: 'France',
-        countryCode: 'FR',
-        entryDate: '2026-05-01',
-        exitDate: '2026-05-12',
-        status: 'past'
-      }
+      makeTrip('france-2026', 'France', '2026-05-01', '2026-05-12', 'past', 'FR')
     ]);
 
     expect(result).toEqual({
@@ -229,7 +216,7 @@ describe('account trip snapshot parser', () => {
   });
 
   test('rejects unsupported countries, duplicate ids, too many trips, and oversized data', () => {
-    expect(parseAccountTrips([{ ...italyTrip, countryCode: 'Spain' }])).toMatchObject({ ok: false });
+    expect(parseAccountTrips([{ ...italyTrip, entryCountryCode: 'Spain' }])).toMatchObject({ ok: false });
     expect(parseAccountTrips([italyTrip, { ...italyTrip, label: 'Duplicate' }])).toMatchObject({ ok: false });
     expect(
       parseAccountTrips(
@@ -360,7 +347,7 @@ describe('authenticated account trip API', () => {
       consentVersion: ACCOUNT_SYNC_CONSENT_VERSION
     });
 
-    const updatedTrip = { ...italyTrip, exitDate: '2026-10-14' };
+    const updatedTrip = { ...italyTrip, stays: [{ entryDate: '2026-09-15', exitDate: '2026-10-14' }] };
     const updated = await PUT(
       accountEvent('PUT', db, syncBody([updatedTrip], 1)) as Parameters<typeof PUT>[0]
     );
@@ -416,7 +403,7 @@ describe('authenticated account trip API', () => {
     expect(userIdResponse.status).toBe(400);
 
     const invalidTripResponse = await PUT(
-      accountEvent('PUT', db, syncBody([{ ...italyTrip, countryCode: 'Spain' }], 0)) as Parameters<typeof PUT>[0]
+      accountEvent('PUT', db, syncBody([{ ...italyTrip, entryCountryCode: 'Spain' }], 0)) as Parameters<typeof PUT>[0]
     );
     expect(invalidTripResponse.status).toBe(400);
     expect(db.prepared).toHaveLength(0);
@@ -693,7 +680,7 @@ describe('authenticated account trip API', () => {
     const db = new MemoryAccountDatabase();
     db.snapshots.set('user_verified_alice', {
       revision: 1,
-      tripsJson: JSON.stringify([{ ...italyTrip, countryCode: 'not-supported' }]),
+      tripsJson: JSON.stringify([{ ...italyTrip, entryCountryCode: 'not-supported' }]),
       updatedAt: '2026-07-09T10:00:00.000Z',
       consentVersion: ACCOUNT_SYNC_CONSENT_VERSION
     });
@@ -704,10 +691,11 @@ describe('authenticated account trip API', () => {
     expect(await corruptResponse.json()).toEqual({ error: 'account_storage_unavailable' });
   });
 
-  test('ships a separate constrained D1 account snapshot migration', () => {
-    const migration = readFileSync('apps/web/migrations/0002_create_account_trip_snapshots.sql', 'utf8');
+  test('ships an explicit no-compatibility D1 account snapshot reset for schema two', () => {
+    const migration = readFileSync('apps/web/migrations/0004_reset_account_trip_snapshots_v2.sql', 'utf8');
 
-    expect(migration).toContain('create table if not exists account_trip_snapshots');
+    expect(migration).toContain('drop table if exists account_trip_snapshots');
+    expect(migration).toContain('create table account_trip_snapshots');
     expect(migration).toContain('clerk_user_id text primary key');
     expect(migration).toContain('revision integer not null');
     expect(migration).toContain('trips_json text not null');

@@ -2,13 +2,12 @@ import {
   addDays,
   calculateUsageOnDate,
   classifyVerdict,
-  countsForShortStay,
   formatISODate,
   latestSafeExitDate,
   parseISODate,
   type UsageResult,
 } from "@schngn/engine";
-import { type EditableTrip, sortTrips, toEngineTrips } from "../trips/tripCrud";
+import { type EditableTrip, sortTrips, toEngineTrips, tripEntryDate, tripExitDate, tripRouteLabel } from "../trips/tripCrud";
 
 export type DashboardStatusTone = "safe" | "close" | "risk";
 
@@ -34,12 +33,12 @@ export function buildDashboardState(
   const earliestConflict = findEarliestPlannedConflict(sortedTrips);
   const targetTrip = earliestConflict?.trip ?? chooseTargetTrip(sortedTrips);
   const effectiveReferenceDate =
-    referenceDate ?? earliestConflict?.date ?? targetTrip?.exitDate ?? todayISODate();
+    referenceDate ?? earliestConflict?.date ?? (targetTrip ? tripExitDate(targetTrip) : undefined) ?? todayISODate();
   const usage = calculateUsageOnDate(
     toEngineTrips(sortedTrips),
     effectiveReferenceDate
   );
-  const targetName = targetTrip?.label ?? targetTrip?.countryCode ?? "Trip";
+  const targetName = targetTrip?.label ?? (targetTrip ? tripRouteLabel(targetTrip) : "Trip");
   const statusTone = toDashboardTone(usage);
   const latestSafeExit = targetTrip
     ? calculateLatestSafeExit(sortedTrips, targetTrip)
@@ -69,18 +68,15 @@ function findEarliestPlannedConflict(
 ): { date: string; trip: EditableTrip } | null {
   const checkpoints = new Map<string, EditableTrip>();
   const plannedTrips = trips
-    .filter((trip) => trip.status === "booked" || trip.status === "what-if")
-    .filter((trip) => countsForShortStay(trip));
+    .filter((trip) => trip.status === "booked" || trip.status === "what-if");
 
   for (const trip of plannedTrips) {
-    const exit = parseISODate(trip.exitDate);
-    for (
-      let current = parseISODate(trip.entryDate);
-      current.getTime() <= exit.getTime();
-      current = addDays(current, 1)
-    ) {
-      const date = formatISODate(current);
-      if (!checkpoints.has(date)) checkpoints.set(date, trip);
+    for (const stay of trip.stays) {
+      const exit = parseISODate(stay.exitDate);
+      for (let current = parseISODate(stay.entryDate); current <= exit; current = addDays(current, 1)) {
+        const date = formatISODate(current);
+        if (!checkpoints.has(date)) checkpoints.set(date, trip);
+      }
     }
   }
 
@@ -98,7 +94,7 @@ function chooseTargetTrip(trips: EditableTrip[]): EditableTrip | null {
   );
   return (
     [...(plannedTrips.length > 0 ? plannedTrips : trips)]
-      .sort((a, b) => a.exitDate.localeCompare(b.exitDate))
+      .sort((a, b) => tripExitDate(a).localeCompare(tripExitDate(b)))
       .at(-1) ?? null
   );
 }
@@ -110,11 +106,9 @@ function calculateLatestSafeExit(
   const existingTrips = toEngineTrips(
     trips.filter((trip) => trip.id !== targetTrip.id)
   );
-  return latestSafeExitDate(
-    existingTrips,
-    targetTrip.entryDate,
-    targetTrip.countryCode
-  );
+  const finalStay = targetTrip.stays.at(-1);
+  if (!finalStay) return null;
+  return latestSafeExitDate([...existingTrips, ...targetTrip.stays.slice(0, -1)], finalStay.entryDate);
 }
 
 function toDashboardTone(usage: UsageResult): DashboardStatusTone {
@@ -181,9 +175,9 @@ function formatActionCopy(
     return `First fix: shorten or move ${targetName}, then recalculate before booking.`;
   }
   if (latestSafeExit) {
-    return `Current plan exits ${formatShortDate(targetTrip.exitDate)}. Latest calculated safe exit is ${formatShortDate(latestSafeExit)}.`;
+    return `Current plan exits ${formatShortDate(tripExitDate(targetTrip))}. Latest calculated safe exit is ${formatShortDate(latestSafeExit)}.`;
   }
-  return "This trip does not count toward the Schengen short-stay limit.";
+  return "No safe final Schengen stay is available from this entry date.";
 }
 
 function formatWindowLabel(windowStart: string, windowEnd: string): string {

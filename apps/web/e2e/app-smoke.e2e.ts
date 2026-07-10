@@ -76,9 +76,10 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Add your first trip' }).click();
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await tripForm.getByLabel(/Trip label/).fill('Offline Spain stay');
-    await tripForm.locator('#trip-country').selectOption('ES');
-    await tripForm.getByLabel('Entry date').fill('2026-05-01');
-    await tripForm.getByLabel('Exit date').fill('2026-05-05');
+    await tripForm.locator('#trip-entry-country').selectOption('ES');
+    await tripForm.locator('#trip-exit-country').selectOption('ES');
+    await tripForm.getByLabel('Entered Schengen').fill('2026-05-01');
+    await tripForm.getByLabel('Left Schengen').fill('2026-05-05');
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
     await expect(page.getByText('Offline Spain stay')).toBeVisible();
 
@@ -137,6 +138,41 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await context.setOffline(false);
   });
 
+  test('records a multi-country journey with an outside-Schengen break', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.goto('/app');
+    await page.getByRole('button', { name: 'Dismiss' }).click();
+    await page.getByRole('button', { name: 'Add your first trip' }).click();
+
+    const form = page.getByRole('form', { name: 'Trip form' });
+    await form.getByLabel(/Trip label/).fill('Summer trip');
+    await form.locator('#trip-entry').fill('2026-07-01');
+    await form.locator('#trip-exit').fill('2026-07-12');
+    await form.locator('#trip-entry-country').selectOption('IT');
+    await form.locator('#trip-exit-country').selectOption('AT');
+    await form.getByRole('button', { name: 'Add time outside' }).click();
+    await form.locator('[id^="trip-break-left-"]').fill('2026-07-05');
+    await form.locator('[id^="trip-break-return-"]').fill('2026-07-08');
+
+    await expect(form.getByText(/10 Schengen days · 2 days outside/)).toBeVisible();
+    await form.getByRole('button', { name: 'Save trip' }).click();
+    await expect(page.getByText('Italy → Austria')).toBeVisible();
+    await expect(page.getByText(/10 Schengen days · 2 days outside/)).toBeVisible();
+
+    const stored = await page.evaluate(() => JSON.parse(window.localStorage.getItem('schngn.trips.v2') ?? '[]'));
+    expect(stored).toEqual([
+      expect.objectContaining({
+        entryCountryCode: 'IT',
+        exitCountryCode: 'AT',
+        stays: [
+          { entryDate: '2026-07-01', exitDate: '2026-07-05' },
+          { entryDate: '2026-07-08', exitDate: '2026-07-12' }
+        ]
+      })
+    ]);
+  });
+
   test('app completes real local-first planning, proof, error, and recovery flows', async ({ page }) => {
     test.setTimeout(90_000);
     const requests = observeNetwork(page);
@@ -181,18 +217,19 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await expect(tripForm.getByLabel(/Trip label/)).toHaveAttribute('maxlength', '80');
     await tripForm.getByLabel(/Trip label/).fill('Spain booking');
-    await tripForm.locator('#trip-country').evaluate((select) => {
+    await tripForm.locator('#trip-entry-country').evaluate((select) => {
       const countrySelect = select as HTMLSelectElement;
       countrySelect.add(new Option('Spain typo', 'SPAIN'));
       countrySelect.value = 'SPAIN';
       countrySelect.dispatchEvent(new Event('change', { bubbles: true }));
     });
-    await tripForm.getByLabel('Entry date').fill('2026-07-01');
-    await tripForm.getByLabel('Exit date').fill('2026-07-19');
+    await tripForm.getByLabel('Entered Schengen').fill('2026-07-01');
+    await tripForm.getByLabel('Left Schengen').fill('2026-07-19');
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
-    await expect(page.getByText('Choose a supported country or leave it blank for a manual Schengen trip.')).toBeVisible();
-    await expect(tripForm.locator('#trip-country')).toHaveAttribute('aria-invalid', 'true');
-    await tripForm.locator('#trip-country').selectOption('ES');
+    await expect(page.getByText('Choose a Schengen country or leave this optional field blank.')).toBeVisible();
+    await expect(tripForm.locator('#trip-entry-country')).toHaveAttribute('aria-invalid', 'true');
+    await tripForm.locator('#trip-entry-country').selectOption('ES');
+    await tripForm.locator('#trip-exit-country').selectOption('ES');
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
     await expect(page.getByRole('heading', { name: 'Trips' })).toBeVisible();
     await expect(page.getByText('Spain booking')).toBeVisible();
@@ -238,9 +275,9 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('button', { name: 'Unlock full trip planner — £9' })).toBeVisible();
     const simulator = page.getByRole('form', { name: 'Future trip simulator' });
     await simulator.getByLabel(/Simulation label/).fill('Spain proposal');
-    await simulator.locator('#simulation-country').selectOption('ES');
-    await simulator.getByLabel('Entry date').fill('2026-01-01');
-    await simulator.getByLabel('Exit date').fill('2026-03-03');
+    await simulator.locator('#simulation-entry-country').selectOption('ES');
+    await simulator.getByLabel('Entered Schengen').fill('2026-01-01');
+    await simulator.getByLabel('Left Schengen').fill('2026-03-03');
     await simulator.getByRole('button', { name: 'Check this plan' }).click();
     await expect(page.getByText('Spain proposal needs changes')).toBeVisible();
     await expect(page.getByText(/Germany booking would reach 91 \/ 90 on Apr 1/i)).toBeVisible();
@@ -279,7 +316,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       const storagePrototype = Storage.prototype as Storage & { __schngnSetItem?: Storage['setItem'] };
       storagePrototype.__schngnSetItem = storagePrototype.setItem;
       storagePrototype.setItem = function (key: string, value: string): void {
-        if (key === 'schngn.trips.v1') throw new DOMException('Quota exceeded', 'QuotaExceededError');
+        if (key === 'schngn.trips.v2') throw new DOMException('Quota exceeded', 'QuotaExceededError');
         storagePrototype.__schngnSetItem?.call(this, key, value);
       };
     });
@@ -380,7 +417,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
             trips: cloudTrips,
             revision,
             updatedAt: revision === 0 ? null : `2026-07-09T12:0${revision}:00.000Z`,
-            consentVersion: revision === 0 ? null : 'account-sync-v1'
+            consentVersion: revision === 0 ? null : 'account-sync-v2'
           })
         });
         return;
@@ -403,7 +440,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
           trips: cloudTrips,
           revision,
           updatedAt: `2026-07-09T12:0${revision}:00.000Z`,
-          consentVersion: 'account-sync-v1'
+          consentVersion: 'account-sync-v2'
         })
       });
     });
@@ -424,9 +461,10 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Add your first trip' }).click();
     const firstTripForm = page.getByRole('form', { name: 'Trip form' });
     await firstTripForm.getByLabel(/Trip label/).fill('Account Italy stay');
-    await firstTripForm.locator('#trip-country').selectOption('IT');
-    await firstTripForm.getByLabel('Entry date').fill('2026-08-01');
-    await firstTripForm.getByLabel('Exit date').fill('2026-08-05');
+    await firstTripForm.locator('#trip-entry-country').selectOption('IT');
+    await firstTripForm.locator('#trip-exit-country').selectOption('IT');
+    await firstTripForm.getByLabel('Entered Schengen').fill('2026-08-01');
+    await firstTripForm.getByLabel('Left Schengen').fill('2026-08-05');
     await firstTripForm.getByRole('button', { name: 'Save trip' }).click();
 
     await page.getByRole('button', { name: 'Account', exact: true }).click();
@@ -442,7 +480,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(writes[0]).toMatchObject({
       expectedRevision: 0,
       consent: true,
-      consentVersion: 'account-sync-v1'
+      consentVersion: 'account-sync-v2'
     });
     expect(writes[0].trips).toHaveLength(1);
     expect(writes[0].trips.map((trip) => trip.label)).toEqual(['Account Italy stay']);
@@ -465,7 +503,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(writes[1]).toMatchObject({
       expectedRevision: 1,
       consent: true,
-      consentVersion: 'account-sync-v1'
+      consentVersion: 'account-sync-v2'
     });
     expect(writes[1].trips).toHaveLength(2);
     expect(writes[1].trips.map((trip) => trip.label)).toEqual(['Account Italy stay', 'Account Spain stay']);
@@ -474,7 +512,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       const storagePrototype = Storage.prototype as Storage & { __schngnAccountSetItem?: Storage['setItem'] };
       storagePrototype.__schngnAccountSetItem = storagePrototype.setItem;
       storagePrototype.setItem = function (key: string, value: string): void {
-        if (key === 'schngn.trips.v1') throw new DOMException('Quota exceeded', 'QuotaExceededError');
+        if (key === 'schngn.trips.v2') throw new DOMException('Quota exceeded', 'QuotaExceededError');
         storagePrototype.__schngnAccountSetItem?.call(this, key, value);
       };
     });
@@ -533,9 +571,10 @@ async function addTrip(
   await page.getByRole('button', { name: 'Add trip', exact: true }).click();
   const form = page.getByRole('form', { name: 'Trip form' });
   await form.getByLabel(/Trip label/).fill(trip.label);
-  await form.locator('#trip-country').selectOption(trip.countryCode);
-  await form.getByLabel('Entry date').fill(trip.entryDate);
-  await form.getByLabel('Exit date').fill(trip.exitDate);
+  await form.locator('#trip-entry-country').selectOption(trip.countryCode);
+  await form.locator('#trip-exit-country').selectOption(trip.countryCode);
+  await form.getByLabel('Entered Schengen').fill(trip.entryDate);
+  await form.getByLabel('Left Schengen').fill(trip.exitDate);
   await form.getByRole('radio', { name: trip.status === 'past' ? 'Past' : trip.status === 'booked' ? 'Booked' : 'What-if' }).check();
   await form.getByRole('button', { name: 'Save trip' }).click();
   await expect(page.getByRole('heading', { name: 'Trips' })).toBeVisible();

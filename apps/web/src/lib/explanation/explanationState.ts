@@ -1,5 +1,5 @@
-import { addDays, calculateUsageOnDate, countsForShortStay, formatISODate, parseISODate } from '@schngn/engine';
-import { sortTrips, toEngineTrips, type EditableTrip } from '../trips/tripCrud';
+import { addDays, calculateUsageOnDate, formatISODate, parseISODate } from '@schngn/engine';
+import { sortTrips, toEngineTrips, tripEntryDate, tripExitDate, tripRouteLabel, type EditableTrip } from '../trips/tripCrud';
 
 export interface CountedTripRow {
   label: string;
@@ -30,7 +30,7 @@ export function buildExplanationState(trips: EditableTrip[], referenceDate: stri
     ruleBullets: [
       'Entry and exit dates both count.',
       `The app looks back 180 calendar days from ${referenceLabel}, including ${referenceLabel} itself.`,
-      'Only Schengen short-stay countries count. Ireland and Cyprus are excluded.'
+      'Travel between Schengen countries is one continuous stay. Full calendar days outside Schengen are not counted.'
     ],
     summary: usage.overLimit
       ? `${usage.daysUsed} counted days between ${windowStartLabel} and ${windowEndLabel}. That is ${usage.overBy} ${pluralize('day', usage.overBy)} over the 90-day limit.`
@@ -48,8 +48,8 @@ function buildCountedTripRows(trips: EditableTrip[], countedDays: Set<string>): 
       const days = countTripDaysInSet(trip, countedDays);
       if (days <= 0) return null;
       return {
-        label: trip.label ?? trip.countryCode ?? 'Schengen trip',
-        rangeLabel: `${formatShortDate(trip.entryDate)} to ${formatShortDate(trip.exitDate)}`,
+        label: trip.label ?? tripRouteLabel(trip),
+        rangeLabel: `${formatShortDate(tripEntryDate(trip))} to ${formatShortDate(tripExitDate(trip))}`,
         daysLabel: `${days} ${pluralize('day', days)} counted`
       } satisfies CountedTripRow;
     })
@@ -57,16 +57,15 @@ function buildCountedTripRows(trips: EditableTrip[], countedDays: Set<string>): 
 }
 
 function countTripDaysInSet(trip: EditableTrip, countedDays: Set<string>): number {
-  if (!countsForShortStay(trip)) return 0;
-
-  const entry = parseISODate(trip.entryDate);
-  const exit = parseISODate(trip.exitDate);
   let count = 0;
-
-  for (let current = entry; current.getTime() <= exit.getTime(); current = addDays(current, 1)) {
-    if (countedDays.has(formatISODate(current))) count += 1;
+  const tripDays = new Set<string>();
+  for (const stay of trip.stays) {
+    const exit = parseISODate(stay.exitDate);
+    for (let current = parseISODate(stay.entryDate); current <= exit; current = addDays(current, 1)) {
+      tripDays.add(formatISODate(current));
+    }
   }
-
+  for (const day of tripDays) if (countedDays.has(day)) count += 1;
   return count;
 }
 

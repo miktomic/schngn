@@ -6,31 +6,25 @@ import {
   putAccountTrips,
   type AccountFetch
 } from '../src/lib/account/accountClient';
+import { makeTrip } from './trip-fixtures';
 
-const trip: EditableTrip = {
-  id: 'trip-client',
-  label: 'Account trip',
-  countryCode: 'IT',
-  entryDate: '2026-08-01',
-  exitDate: '2026-08-03',
-  status: 'booked'
-};
+const trip: EditableTrip = makeTrip('trip-client', 'Account trip', '2026-08-01', '2026-08-03', 'booked', 'IT');
 const sessionToken = 'test-session-token';
 
 describe('browser account API client', () => {
   test('loads and validates an authenticated account snapshot', async () => {
     const fetcher: AccountFetch = async () =>
-      Response.json({ trips: [trip], revision: 2, updatedAt: '2026-07-09T12:00:00.000Z', consentVersion: 'account-sync-v1' });
+      Response.json({ trips: [trip], revision: 2, updatedAt: '2026-07-09T12:00:00.000Z', consentVersion: 'account-sync-v2' });
 
     expect(await getAccountTrips(sessionToken, fetcher)).toEqual({
       ok: true,
-      snapshot: { trips: [trip], revision: 2, updatedAt: '2026-07-09T12:00:00.000Z', consentVersion: 'account-sync-v1' }
+      snapshot: { trips: [trip], revision: 2, updatedAt: '2026-07-09T12:00:00.000Z', consentVersion: 'account-sync-v2' }
     });
   });
 
   test('rejects malformed server data instead of applying it locally', async () => {
     const fetcher: AccountFetch = async () =>
-      Response.json({ trips: [{ ...trip, entryDate: '2026-99-99' }], revision: 2, updatedAt: '2026-07-09T12:00:00.000Z', consentVersion: 'account-sync-v1' });
+      Response.json({ trips: [{ ...trip, stays: [{ entryDate: '2026-99-99', exitDate: '2026-08-03' }] }], revision: 2, updatedAt: '2026-07-09T12:00:00.000Z', consentVersion: 'account-sync-v2' });
 
     expect(await getAccountTrips(sessionToken, fetcher)).toEqual({ ok: false, code: 'invalid_response' });
   });
@@ -41,20 +35,20 @@ describe('browser account API client', () => {
     const fetcher: AccountFetch = async (_input, init) => {
       requestBody = String(init?.body ?? '');
       requestInit = init;
-      return Response.json({ trips: [trip], revision: 3, updatedAt: '2026-07-09T12:01:00.000Z', consentVersion: 'account-sync-v1' });
+      return Response.json({ trips: [trip], revision: 3, updatedAt: '2026-07-09T12:01:00.000Z', consentVersion: 'account-sync-v2' });
     };
 
     const result = await putAccountTrips(sessionToken, [trip], 2, fetcher);
 
     expect(result).toEqual({
       ok: true,
-      snapshot: { trips: [trip], revision: 3, updatedAt: '2026-07-09T12:01:00.000Z', consentVersion: 'account-sync-v1' }
+      snapshot: { trips: [trip], revision: 3, updatedAt: '2026-07-09T12:01:00.000Z', consentVersion: 'account-sync-v2' }
     });
     expect(JSON.parse(requestBody)).toEqual({
       trips: [trip],
       expectedRevision: 2,
       consent: true,
-      consentVersion: 'account-sync-v1'
+      consentVersion: 'account-sync-v2'
     });
     expect(requestBody).not.toContain('userId');
     expect(requestBody).not.toContain('email');
@@ -69,7 +63,7 @@ describe('browser account API client', () => {
       Response.json(
         {
           error: 'revision_conflict',
-          snapshot: { trips: [trip], revision: 4, updatedAt: '2026-07-09T12:02:00.000Z', consentVersion: 'account-sync-v1' }
+          snapshot: { trips: [trip], revision: 4, updatedAt: '2026-07-09T12:02:00.000Z', consentVersion: 'account-sync-v2' }
         },
         { status: 409 }
       );
@@ -77,7 +71,7 @@ describe('browser account API client', () => {
     expect(await putAccountTrips(sessionToken, [trip], 2, fetcher)).toEqual({
       ok: false,
       code: 'conflict',
-      snapshot: { trips: [trip], revision: 4, updatedAt: '2026-07-09T12:02:00.000Z', consentVersion: 'account-sync-v1' }
+      snapshot: { trips: [trip], revision: 4, updatedAt: '2026-07-09T12:02:00.000Z', consentVersion: 'account-sync-v2' }
     });
   });
 
