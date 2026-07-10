@@ -27,12 +27,16 @@
     countTripOutsideDays,
     countTripSchengenDays,
     createOutsideBreak,
+    currentLocalIsoDate,
     deleteTripById,
     emptyTripForm,
     formatTripRange,
     MAX_TRIP_COUNT,
     MAX_TRIP_LABEL_LENGTH,
     MAX_OUTSIDE_BREAKS,
+    isTripBeforeRollingWindow,
+    rollingWindowStartDate,
+    statusForTripDates,
     tripEntryDate,
     tripExitDate,
     tripRouteLabel,
@@ -46,6 +50,12 @@
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
   import { initializeClerkBrowserAuth, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
+  import {
+    appSectionFromUrl,
+    appSectionUrl,
+    isAppSectionAvailable,
+    type AppSection
+  } from '$lib/navigation/appSection';
   import {
     deleteAccountData,
     getAccountTrips,
@@ -63,7 +73,7 @@
     type AccountTripSnapshot
   } from '$lib/account/accountSync';
 
-  type ScreenKey = 'dashboard' | 'trip' | 'trips' | 'planner' | 'proof' | 'returns' | 'report' | 'privacy' | 'waitlist';
+  type ScreenKey = AppSection;
   type NavScreen = Exclude<ScreenKey, 'trip' | 'waitlist'>;
   type WaitlistState = 'idle' | 'submitting' | 'stored' | 'not_configured' | 'error';
   type AccountState =
@@ -97,6 +107,7 @@
   let clearConfirmationVisible = false;
   let tripForm: TripFormInput = emptyTripForm('booked');
   let formErrors: TripValidationErrors = {};
+  let outsideWindowConfirmationVisible = false;
   let storageWarning = '';
   let storageSource: 'empty' | 'storage' = 'empty';
   let localTripsDurable = true;
@@ -148,6 +159,16 @@
   $: simulationState = buildTripSimulationState(trips, simulatorForm);
   $: tripFormPreviewResult = upsertTrip([], { ...tripForm, id: 'preview' });
   $: tripFormPreview = tripFormPreviewResult.trips[0] ?? null;
+  $: tripFormToday = currentLocalIsoDate();
+  $: tripFormTimelineTrips = tripFormPreview
+    ? [...trips.filter((trip) => trip.id !== editingTripId), tripFormPreview]
+    : trips.filter((trip) => trip.id !== editingTripId);
+  $: tripFormTimelineReferenceDate = tripFormPreview && tripFormPreview.status !== 'past'
+    ? tripExitDate(tripFormPreview)
+    : tripFormToday;
+  $: tripFormWindowStartDate = rollingWindowStartDate(tripFormToday);
+  $: resolvedTripFormStatus = statusForTripDates(tripForm.status, tripForm.exitDate);
+  $: tripFormIsPast = resolvedTripFormStatus === 'past';
   $: simulatorStatusTone = (simulationState.statusTone === 'risk' ? 'risk' : simulationState.statusTone === 'close' ? 'whatif' : 'safe') as
     | 'safe'
     | 'risk'
@@ -169,13 +190,17 @@
     localTripsDurable = result.warning === undefined;
     market = new URL(window.location.href).searchParams.get('market') === 'uk' ? 'uk' : 'eu';
     unlockPrice = loadOrAssignUnlockPriceBucket(window.localStorage, { market });
+    restoreActiveScreenFromUrl(false);
     hasLoadedTrips = true;
     trackPageView('app');
     void initializeAccount();
+    const handlePopState = () => restoreActiveScreenFromUrl(true);
+    window.addEventListener('popstate', handlePopState);
     return () => {
       accountIdentityEpoch += 1;
       unsubscribeClerk?.();
       unsubscribeClerk = null;
+      window.removeEventListener('popstate', handlePopState);
     };
   });
 
@@ -652,22 +677,43 @@
   }
 
   function setActiveScreen(screen: ScreenKey): void {
+    if (screen === active) return;
     active = screen;
+    if (browser) {
+      window.history.pushState(window.history.state, '', appSectionUrl(new URL(window.location.href), screen));
+    }
     trackPageView(screen);
     if (screen === 'trip') trackCalculatorStart('trip_form');
+  }
+
+  function restoreActiveScreenFromUrl(trackView: boolean): void {
+    if (!browser) return;
+    const currentUrl = new URL(window.location.href);
+    const requested = appSectionFromUrl(currentUrl);
+    const restored = isAppSectionAvailable(requested, trips.length > 0) ? requested : 'dashboard';
+    const restoredUrl = appSectionUrl(currentUrl, restored);
+    const currentPath = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+
+    if (restoredUrl !== currentPath) window.history.replaceState(window.history.state, '', restoredUrl);
+    if (active === restored) return;
+    active = restored;
+    if (trackView) trackPageView(restored);
   }
 
   function startAddTrip(): void {
     editingTripId = null;
     tripForm = emptyTripForm('booked');
     formErrors = {};
+    outsideWindowConfirmationVisible = false;
     setActiveScreen('trip');
   }
 
   function startEditTrip(trip: EditableTrip): void {
     editingTripId = trip.id;
-    tripForm = tripToForm(trip);
+    const form = tripToForm(trip);
+    tripForm = { ...form, status: statusForTripDates(form.status, form.exitDate) };
     formErrors = {};
+    outsideWindowConfirmationVisible = false;
     pendingDeleteTripId = null;
     setActiveScreen('trip');
   }
@@ -676,15 +722,30 @@
     editingTripId = null;
     tripForm = emptyTripForm('booked');
     formErrors = {};
+    outsideWindowConfirmationVisible = false;
     setActiveScreen(trips.length > 0 ? 'trips' : 'dashboard');
   }
 
-  function saveTrip(): void {
+  function saveTrip(confirmOutsideWindow = false): void {
     const result = upsertTrip(trips, { ...tripForm, id: editingTripId ?? tripForm.id });
     formErrors = result.errors;
-    if (Object.keys(result.errors).length > 0) return;
+    if (Object.keys(result.errors).length > 0) {
+      outsideWindowConfirmationVisible = false;
+      return;
+    }
+
+    if (
+      !confirmOutsideWindow &&
+      editingTripId === null &&
+      tripFormPreview &&
+      isTripBeforeRollingWindow(tripFormPreview, tripFormToday)
+    ) {
+      outsideWindowConfirmationVisible = true;
+      return;
+    }
 
     const wasAdding = editingTripId === null;
+    outsideWindowConfirmationVisible = false;
     persistTrips(result.trips);
     if (wasAdding) {
       trackAnalyticsEvent('trip_added', {
@@ -697,6 +758,25 @@
     setActiveScreen('trips');
   }
 
+  function updateTripExitDate(event: Event): void {
+    const exitDate = (event.currentTarget as HTMLInputElement).value;
+    outsideWindowConfirmationVisible = false;
+    tripForm = {
+      ...tripForm,
+      exitDate,
+      status: statusForTripDates(tripForm.status, exitDate)
+    };
+  }
+
+  function updateTripEntryCountry(event: Event): void {
+    const entryCountryCode = (event.currentTarget as HTMLSelectElement).value;
+    tripForm = {
+      ...tripForm,
+      entryCountryCode,
+      exitCountryCode: tripForm.exitCountryCode || entryCountryCode
+    };
+  }
+
   function requestDeleteTrip(id: string): void {
     pendingDeleteTripId = id;
   }
@@ -705,7 +785,7 @@
     if (!pendingDeleteTripId) return;
     persistTrips(deleteTripById(trips, pendingDeleteTripId));
     pendingDeleteTripId = null;
-    if (trips.length === 0) active = 'trips';
+    if (trips.length === 0) setActiveScreen('trips');
   }
 
   function exportTrips(): void {
@@ -795,7 +875,7 @@
     pendingDeleteTripId = null;
     importMessage = 'Trip data is now cleared from this tab.';
     importError = '';
-    active = 'privacy';
+    setActiveScreen('privacy');
   }
 
   function statusLabel(status: EditableTrip['status']): string {
@@ -1142,7 +1222,8 @@
               <input
                 id="trip-exit"
                 type="date"
-                bind:value={tripForm.exitDate}
+                value={tripForm.exitDate}
+                oninput={updateTripExitDate}
                 aria-describedby={formErrors.exitDate ? 'exit-help exit-error' : 'exit-help'}
                 aria-invalid={formErrors.exitDate ? 'true' : undefined}
               />
@@ -1156,7 +1237,8 @@
               <label for="trip-entry-country"><span>Entered via <small>Optional</small></span></label>
               <select
                 id="trip-entry-country"
-                bind:value={tripForm.entryCountryCode}
+                value={tripForm.entryCountryCode}
+                onchange={updateTripEntryCountry}
                 aria-describedby={formErrors.entryCountryCode ? 'trip-border-help trip-entry-country-error' : 'trip-border-help'}
                 aria-invalid={formErrors.entryCountryCode ? 'true' : undefined}
               >
@@ -1217,12 +1299,18 @@
             {#if formErrors.outsideBreaks}<strong class="field-error">{formErrors.outsideBreaks}</strong>{/if}
           </section>
 
-          <fieldset aria-describedby={formErrors.status ? 'status-error' : undefined}>
-            <legend>Trip status</legend>
-            <label class:selected={tripForm.status === 'past'} class="toggle"><input type="radio" bind:group={tripForm.status} value="past" /> Past</label>
-            <label class:selected={tripForm.status === 'booked'} class="toggle"><input type="radio" bind:group={tripForm.status} value="booked" /> Booked</label>
-            <label class:selected={tripForm.status === 'what-if'} class="toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> What-if</label>
-          </fieldset>
+          {#if tripFormIsPast}
+            <section class="inferred-trip-status" aria-live="polite">
+              <strong>Past trip</strong>
+              <span>The final exit is before today, so this trip will be counted as past automatically.</span>
+            </section>
+          {:else}
+            <fieldset class="trip-status-options" aria-describedby={formErrors.status ? 'status-error' : undefined}>
+              <legend>Trip status</legend>
+              <label class:selected={tripForm.status === 'booked'} class="toggle"><input type="radio" bind:group={tripForm.status} value="booked" /> Booked</label>
+              <label class:selected={tripForm.status === 'what-if'} class="toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> What-if</label>
+            </fieldset>
+          {/if}
           {#if formErrors.status}<strong id="status-error" class="field-error">{formErrors.status}</strong>{/if}
           {#if tripFormPreview}
             <section class="trip-form-summary" aria-live="polite">
@@ -1230,13 +1318,33 @@
               <span>{formatTripRange({ entryDate: tripEntryDate(tripFormPreview), exitDate: tripExitDate(tripFormPreview) })} · {countTripSchengenDays(tripFormPreview)} Schengen {pluralize('day', countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${countTripOutsideDays(tripFormPreview)} ${pluralize('day', countTripOutsideDays(tripFormPreview))} outside` : ''}</span>
             </section>
           {/if}
+          <div class="trip-form-timeline">
+            <TimelineLedger
+              label="Your 180-day allocation"
+              mode="planner"
+              trips={tripFormTimelineTrips}
+              referenceDate={tripFormTimelineReferenceDate}
+            />
+          </div>
+          {#if outsideWindowConfirmationVisible}
+            <section class="outside-window-confirmation" role="alert" aria-labelledby="outside-window-heading">
+              <h2 id="outside-window-heading">This trip is outside today’s 180-day window</h2>
+              <p>It ended before {formatDate(tripFormWindowStartDate)}, so it will not change today’s day allocation. You can still keep it in your history.</p>
+              <div class="button-row compact-actions">
+                <button class="primary-button" type="button" onclick={() => saveTrip(true)}>Save anyway</button>
+                <button class="secondary-button" type="button" onclick={() => { outsideWindowConfirmationVisible = false; }}>Keep editing</button>
+              </div>
+            </section>
+          {/if}
           {#if formErrors.tripCount}
             <strong class="field-error form-error" aria-live="polite">{formErrors.tripCount}</strong>
           {/if}
-          <div class="form-actions">
-            <button class="primary-button" type="submit">Save trip</button>
-            <button class="secondary-button" type="button" onclick={cancelTripForm}>Cancel</button>
-          </div>
+          {#if !outsideWindowConfirmationVisible}
+            <div class="form-actions">
+              <button class="primary-button" type="submit">Save trip</button>
+              <button class="secondary-button" type="button" onclick={cancelTripForm}>Cancel</button>
+            </div>
+          {/if}
         </form>
       </section>
     {:else if active === 'trips'}
@@ -2386,6 +2494,52 @@
     line-height: 1.45;
   }
 
+  .trip-form-timeline { margin-top: 8px; }
+
+  .outside-window-confirmation {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+    border: 1px solid color-mix(in srgb, var(--whatif), var(--line) 35%);
+    border-radius: 10px;
+    background: var(--whatif-bg);
+    padding: 14px;
+  }
+
+  .outside-window-confirmation h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1rem;
+  }
+
+  .outside-window-confirmation p {
+    max-width: 65ch;
+    margin: 0;
+    color: var(--ink);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .compact-actions { margin-top: 2px; }
+
+  .inferred-trip-status {
+    display: grid;
+    gap: 3px;
+    margin-top: 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper);
+    padding: 12px;
+  }
+
+  .inferred-trip-status strong { color: var(--ink); }
+
+  .inferred-trip-status span {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+
   .trip-form > label,
   .field-group label {
     margin-top: 6px;
@@ -2438,6 +2592,8 @@
     border-radius: 10px;
     padding: 8px;
   }
+
+  fieldset.trip-status-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   legend {
     padding: 0 5px;

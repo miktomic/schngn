@@ -97,11 +97,15 @@ export function validateEditableTrip(trip: EditableTrip): TripValidationErrors {
   return errors;
 }
 
-export function upsertTrip(existingTrips: EditableTrip[], input: TripFormInput): UpsertTripResult {
+export function upsertTrip(
+  existingTrips: EditableTrip[],
+  input: TripFormInput,
+  referenceDate: string = currentLocalIsoDate()
+): UpsertTripResult {
   const errors = validateTripInput(input);
   if (Object.keys(errors).length > 0) return { trips: sortTrips(existingTrips), errors };
 
-  const normalizedTrip = normalizeTripInput(input);
+  const normalizedTrip = normalizeTripInput(input, referenceDate);
   const replacesExistingTrip = existingTrips.some((trip) => trip.id === normalizedTrip.id);
   if (!replacesExistingTrip && existingTrips.length >= MAX_TRIP_COUNT) {
     return {
@@ -221,12 +225,27 @@ export function isTripStatus(value: unknown): value is TripStatus {
   return value === 'past' || value === 'booked' || value === 'what-if';
 }
 
+export function statusForTripDates(status: TripStatus, exitDate: string, referenceDate: string = currentLocalIsoDate()): TripStatus {
+  if (isRealIsoDate(exitDate) && isRealIsoDate(referenceDate) && exitDate < referenceDate) return 'past';
+  return status === 'past' ? 'booked' : status;
+}
+
+export function rollingWindowStartDate(referenceDate: string = currentLocalIsoDate()): string {
+  if (!isRealIsoDate(referenceDate)) throw new RangeError('Reference date must be a real ISO date.');
+  return new Date((dayNumber(referenceDate) - 179) * 86_400_000).toISOString().slice(0, 10);
+}
+
+export function isTripBeforeRollingWindow(trip: EditableTrip, referenceDate: string = currentLocalIsoDate()): boolean {
+  const exitDate = tripExitDate(trip);
+  return isRealIsoDate(exitDate) && exitDate < rollingWindowStartDate(referenceDate);
+}
+
 export function isValidTripId(value: string): boolean {
   const normalized = value.trim();
   return normalized.length > 0 && normalized.length <= MAX_TRIP_ID_LENGTH && /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/u.test(normalized);
 }
 
-function normalizeTripInput(input: TripFormInput): EditableTrip {
+function normalizeTripInput(input: TripFormInput, referenceDate: string): EditableTrip {
   const breaks = [...input.outsideBreaks].sort((a, b) => a.leftDate.localeCompare(b.leftDate));
   const stays: SchengenStay[] = [];
   let stayEntry = input.entryDate;
@@ -237,10 +256,17 @@ function normalizeTripInput(input: TripFormInput): EditableTrip {
   stays.push({ entryDate: stayEntry, exitDate: input.exitDate });
 
   const entryCountryCode = normalizeCountryCode(input.entryCountryCode);
-  const exitCountryCode = normalizeCountryCode(input.exitCountryCode);
+  const exitCountryCode = normalizeCountryCode(input.exitCountryCode) ?? entryCountryCode;
   const label = input.label?.trim() || undefined;
   const id = input.id?.trim() || makeTripId(input.entryDate, input.exitDate, label);
-  return { id, label, status: input.status, entryCountryCode, exitCountryCode, stays };
+  return {
+    id,
+    label,
+    status: statusForTripDates(input.status, input.exitDate, referenceDate),
+    entryCountryCode,
+    exitCountryCode,
+    stays
+  };
 }
 
 function validateOptionalCountry(
@@ -337,4 +363,11 @@ function codePointLength(value: string): number {
 function dayNumber(value: string): number {
   const date = new Date(`${value}T00:00:00.000Z`);
   return Math.floor(date.getTime() / 86_400_000);
+}
+
+export function currentLocalIsoDate(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }

@@ -88,7 +88,10 @@ export function buildTripSimulationState(
   savedTrips: EditableTrip[],
   proposed: ProposedTripInput
 ): TripSimulationState {
-  const result = upsertTrip([], { ...proposed, id: 'simulation', status: 'what-if' });
+  // Simulations are hypothetical regardless of when the chosen dates fall.
+  // Using the proposed entry as the status reference keeps this path independent
+  // from the real-world clock while the saved-trip form infers Past from today.
+  const result = upsertTrip([], { ...proposed, id: 'simulation', status: 'what-if' }, proposed.entryDate);
   if (Object.keys(result.errors).length > 0) return emptySimulation(result.errors);
 
   const simulatedTrip = result.trips[0];

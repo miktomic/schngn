@@ -5,7 +5,10 @@ import {
   countTripSchengenDays,
   deleteTripById,
   inclusiveTripDays,
+  isTripBeforeRollingWindow,
+  rollingWindowStartDate,
   sortTrips,
+  statusForTripDates,
   toEngineTrips,
   tripToForm,
   upsertTrip,
@@ -39,6 +42,21 @@ describe('trip CRUD model', () => {
     expect(inclusiveTripDays(input)).toBe(1);
   });
 
+  test('infers past status from the final exit date', () => {
+    expect(statusForTripDates('booked', '2026-07-09', '2026-07-10')).toBe('past');
+    expect(statusForTripDates('what-if', '2026-07-09', '2026-07-10')).toBe('past');
+    expect(statusForTripDates('booked', '2026-07-10', '2026-07-10')).toBe('booked');
+    expect(statusForTripDates('what-if', '2026-07-11', '2026-07-10')).toBe('what-if');
+    expect(statusForTripDates('past', '2026-07-11', '2026-07-10')).toBe('booked');
+
+    const result = upsertTrip(
+      [],
+      form({ entryDate: '2026-07-01', exitDate: '2026-07-09', status: 'booked' }),
+      '2026-07-10'
+    );
+    expect(result.trips[0].status).toBe('past');
+  });
+
   test('rejects the final exit before the first entry', () => {
     expect(validateTripInput(form({ entryDate: '2026-10-14', exitDate: '2026-10-13' }))).toEqual({
       exitDate: 'The date you left Schengen cannot be before the date you entered.'
@@ -52,6 +70,24 @@ describe('trip CRUD model', () => {
     });
     expect(SCHENGEN_COUNTRY_OPTIONS.some((country) => country.code === 'IT')).toBe(true);
     expect(SCHENGEN_COUNTRY_OPTIONS.some((country) => country.code === 'IE')).toBe(false);
+  });
+
+  test('defaults an empty exit country to the entry country without overwriting an explicit exit', () => {
+    expect(upsertTrip([], form({ entryCountryCode: 'IT', exitCountryCode: '' }), '2026-06-01').trips[0]).toMatchObject({
+      entryCountryCode: 'IT',
+      exitCountryCode: 'IT'
+    });
+    expect(upsertTrip([], form({ entryCountryCode: 'IT', exitCountryCode: 'AT' }), '2026-06-01').trips[0]).toMatchObject({
+      entryCountryCode: 'IT',
+      exitCountryCode: 'AT'
+    });
+  });
+
+  test('identifies only trips ending before the inclusive 180-day window', () => {
+    expect(rollingWindowStartDate('2026-07-10')).toBe('2026-01-12');
+    expect(isTripBeforeRollingWindow(makeTrip('old', 'Old', '2026-01-01', '2026-01-11'), '2026-07-10')).toBe(true);
+    expect(isTripBeforeRollingWindow(makeTrip('boundary', 'Boundary', '2026-01-01', '2026-01-12'), '2026-07-10')).toBe(false);
+    expect(isTripBeforeRollingWindow(makeTrip('future', 'Future', '2026-08-01', '2026-08-05'), '2026-07-10')).toBe(false);
   });
 
   test('turns an outside-Schengen break into two counted stays', () => {

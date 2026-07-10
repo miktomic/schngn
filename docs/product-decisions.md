@@ -240,7 +240,10 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - The engine accepts explicit `{ entryDate, exitDate }` Schengen stay ranges only.
 - Entry and exit boundary days count inclusively; overlapping ranges are de-duplicated.
 - The web layer validates optional entry/exit countries against the current Schengen list.
-- The form progressively reveals inline outside-Schengen breaks and summarizes counted versus outside days.
+- When the entry country is chosen and the exit country is blank, the form mirrors the entry country as a reversible default; it never overwrites an explicit exit choice.
+- The form progressively reveals inline outside-Schengen breaks, summarizes counted versus outside days, and previews the resulting inclusive 180-day allocation on the shared timeline.
+- A newly added historical trip ending before today’s inclusive rolling-window start requires an inline “Save anyway” confirmation because it will not affect today’s allocation. The boundary day itself remains in-window.
+- A journey whose final exit is before the current local date is automatically marked Past. An exit today remains current; users choose only Booked or What-if for current and future journeys.
 - Local storage, backups, and account snapshots use schema version 2. Version-one data is intentionally unsupported because no legacy-data commitment exists.
 - D1 migration `0004_reset_account_trip_snapshots_v2.sql` clears pre-launch snapshots and recreates the constrained schema-two table without deleting Clerk accounts.
 - Country metadata and full travel histories remain prohibited from analytics and logs.
