@@ -86,6 +86,9 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByText('Offline Spain stay')).toBeVisible();
 
     await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Trips', exact: true })).toBeVisible();
+    await expect(page.getByText('1 trip stored on this device.')).toBeVisible();
+    await page.getByRole('button', { name: 'Overview', exact: true }).click();
     await expect(page.getByRole('heading', { name: '85 safe buffer days' })).toBeVisible();
     await expect(page.getByText('Offline Spain stay fits')).toBeVisible();
 
