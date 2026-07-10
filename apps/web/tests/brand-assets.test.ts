@@ -29,6 +29,14 @@ describe('SCHNGN production brand assets', () => {
     }
   });
 
+  test('pairs primary header logos with the fixed brand motto', () => {
+    expect(logoComponent).toContain('Never Overstay');
+    expect(logoComponent).toContain('lang="en"');
+    for (const source of [landingSource, accuracySource, appSource]) {
+      expect(source).toMatch(/<SchngnLogo[^>]*motto/);
+    }
+  });
+
   test('ships a correctly sized social preview using the approved brand artwork', () => {
     expect(readPngDimensions('apps/web/static/brand/schngn-social.png')).toEqual({ width: 1200, height: 630 });
   });

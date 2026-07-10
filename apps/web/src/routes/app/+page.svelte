@@ -1100,7 +1100,7 @@
   <section class="workspace" aria-labelledby="app-title">
     <header class="app-header">
       <div class="brand" id="app-title">
-        <SchngnLogo />
+        <SchngnLogo motto />
       </div>
       <div class="app-header-actions">
         <LanguageSelector label={t('common.language')} {locale} url={page.url} />

@@ -58,7 +58,7 @@
 <main class="accuracy-page">
   <header class="topbar" aria-label={t('accuracy.header')}>
     <a class="brand" href={homePath} aria-label={t('common.home')}>
-      <SchngnLogo alt="" />
+      <SchngnLogo alt="" motto />
     </a>
     <div class="topbar-actions">
       <LanguageSelector label={t('common.language')} {locale} url={page.url} />
