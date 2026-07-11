@@ -378,8 +378,17 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const quickAdjuster = page.locator('.trip-adjust-panel');
     await expect(page).toHaveURL(/\/app#timeline$/);
     await expect(quickAdjuster.getByRole('heading', { name: 'Adjust trip dates' })).toBeFocused();
-    await quickAdjuster.getByRole('button', { name: /Move trip:/ }).press('ArrowRight');
-    await quickAdjuster.getByRole('button', { name: 'Save changes' }).click();
+    const moveTrip = quickAdjuster.getByRole('button', { name: /Move trip:/ });
+    const saveChanges = quickAdjuster.getByRole('button', { name: 'Save changes' });
+    await expect(quickAdjuster.getByText('Live what-if result')).toBeVisible();
+    await expect(saveChanges).toBeDisabled();
+    await moveTrip.press('ArrowRight');
+    await expect(saveChanges).toBeEnabled();
+    await moveTrip.press('ArrowLeft');
+    await expect(saveChanges).toBeDisabled();
+    await moveTrip.press('ArrowRight');
+    await expect(saveChanges).toBeEnabled();
+    await saveChanges.click();
     await expect(page.getByText('Trip dates updated.')).toBeVisible();
 
     await expect(page.getByText('1 trip stored on this device.')).toBeVisible();

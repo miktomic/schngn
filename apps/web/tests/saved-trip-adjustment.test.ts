@@ -3,6 +3,7 @@ import {
   applySavedTripDateAdjustment,
   commitSavedTripAdjustment,
   createSavedTripAdjustmentDraft,
+  hasSavedTripAdjustmentChanges,
   savedTripAdjustmentBounds
 } from '../src/lib/simulator/savedTripAdjustment';
 import { upsertTrip, type EditableTrip, type TripStatus } from '../src/lib/trips/tripCrud';
@@ -20,6 +21,46 @@ function trip(id: string, status: TripStatus, entryDate: string, exitDate: strin
 }
 
 describe('saved trip adjustment', () => {
+  test('enables saving only while the adjusted dates differ from the saved trip', () => {
+    const sourceResult = upsertTrip([], {
+      id: 'dirty-state-trip',
+      label: 'Dirty state trip',
+      entryDate: '2026-08-01',
+      exitDate: '2026-08-20',
+      outsideBreaks: [
+        { id: 'break-1', leftDate: '2026-08-05', reentryDate: '2026-08-08' },
+        { id: 'break-2', leftDate: '2026-08-12', reentryDate: '2026-08-15' }
+      ],
+      status: 'booked'
+    }, '2026-07-01');
+    const source = sourceResult.trips[0];
+    const draft = createSavedTripAdjustmentDraft(source);
+
+    expect(hasSavedTripAdjustmentChanges(source, draft.form)).toBe(false);
+    expect(hasSavedTripAdjustmentChanges(source, {
+      ...draft.form,
+      outsideBreaks: [
+        { id: 'regenerated-2', leftDate: '2026-08-12', reentryDate: '2026-08-15' },
+        { id: 'regenerated-1', leftDate: '2026-08-05', reentryDate: '2026-08-08' }
+      ]
+    })).toBe(false);
+
+    const moved = applySavedTripDateAdjustment(draft.form, {
+      entryDate: '2026-08-02', exitDate: '2026-08-21', mode: 'move', moveDays: 1
+    });
+    expect(hasSavedTripAdjustmentChanges(source, moved)).toBe(true);
+    expect(hasSavedTripAdjustmentChanges(source, {
+      ...moved,
+      entryDate: draft.form.entryDate,
+      exitDate: draft.form.exitDate
+    })).toBe(true);
+
+    const restored = applySavedTripDateAdjustment(moved, {
+      entryDate: '2026-08-01', exitDate: '2026-08-20', mode: 'move', moveDays: -1
+    });
+    expect(hasSavedTripAdjustmentChanges(source, restored)).toBe(false);
+  });
+
   test('updates only the selected trip and preserves its identity', () => {
     const first = trip('first', 'booked', '2026-08-01', '2026-08-05');
     const second = trip('second', 'booked', '2026-09-01', '2026-09-05');

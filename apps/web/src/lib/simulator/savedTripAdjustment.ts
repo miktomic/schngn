@@ -65,6 +65,21 @@ export function applySavedTripDateAdjustment(
   };
 }
 
+export function hasSavedTripAdjustmentChanges(trip: EditableTrip, form: ProposedTripInput): boolean {
+  const original = createSavedTripAdjustmentDraft(trip).form;
+  if (form.entryDate !== original.entryDate || form.exitDate !== original.exitDate) return true;
+
+  const originalBreaks = comparableBreakDates(original);
+  const adjustedBreaks = comparableBreakDates(form);
+  return originalBreaks.length !== adjustedBreaks.length
+    || originalBreaks.some((outsideBreak, index) => {
+      const adjustedBreak = adjustedBreaks[index];
+      return adjustedBreak === undefined
+        || outsideBreak.leftDate !== adjustedBreak.leftDate
+        || outsideBreak.reentryDate !== adjustedBreak.reentryDate;
+    });
+}
+
 export function commitSavedTripAdjustment(
   trips: EditableTrip[],
   sourceId: string,
@@ -97,4 +112,13 @@ export function savedTripAdjustmentBounds(form: ProposedTripInput): { entryMax: 
     entryMax: sortedBreaks[0]?.leftDate ?? form.exitDate,
     exitMin: sortedBreaks.at(-1)?.reentryDate ?? form.entryDate
   };
+}
+
+function comparableBreakDates(
+  form: ProposedTripInput
+): Array<Pick<ProposedTripInput['outsideBreaks'][number], 'leftDate' | 'reentryDate'>> {
+  return form.outsideBreaks
+    .map(({ leftDate, reentryDate }) => ({ leftDate, reentryDate }))
+    .sort((left, right) => left.leftDate.localeCompare(right.leftDate)
+      || left.reentryDate.localeCompare(right.reentryDate));
 }

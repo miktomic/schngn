@@ -27,6 +27,7 @@
     applySavedTripDateAdjustment,
     commitSavedTripAdjustment,
     createSavedTripAdjustmentDraft,
+    hasSavedTripAdjustmentChanges,
     savedTripAdjustmentBounds
   } from '$lib/simulator/savedTripAdjustment';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
@@ -189,6 +190,9 @@
   $: simulationBaseTrips = trips;
   $: simulationState = localizeSimulationState(locale, buildTripSimulationState(simulationBaseTrips, simulatorForm));
   $: quickAdjustSourceTrip = quickAdjustSourceId ? trips.find((trip) => trip.id === quickAdjustSourceId) ?? null : null;
+  $: quickAdjustHasChanges = quickAdjustSourceTrip
+    ? hasSavedTripAdjustmentChanges(quickAdjustSourceTrip, quickAdjustForm)
+    : false;
   $: quickAdjustBaseTrips = quickAdjustSourceId ? trips.filter((trip) => trip.id !== quickAdjustSourceId) : trips;
   $: quickAdjustState = localizeSimulationState(locale, buildTripSimulationState(quickAdjustBaseTrips, quickAdjustForm));
   $: quickAdjustBounds = savedTripAdjustmentBounds(quickAdjustForm);
@@ -1011,7 +1015,7 @@
   }
 
   function saveQuickAdjustment(): void {
-    if (!quickAdjustSourceId || !quickAdjustState.valid) return;
+    if (!quickAdjustSourceId || !quickAdjustState.valid || !quickAdjustHasChanges) return;
     const result = commitSavedTripAdjustment(trips, quickAdjustSourceId, quickAdjustForm, tripFormToday);
     if (!result.updated) {
       quickAdjustError = whatIfUi('unavailable');
@@ -1610,6 +1614,7 @@
               entryMax={quickAdjustBounds.entryMax}
               exitDate={quickAdjustForm.exitDate}
               exitMin={quickAdjustBounds.exitMin}
+              hasChanges={quickAdjustHasChanges}
               locale={locale}
               range={quickAdjustRange}
               state={quickAdjustState}

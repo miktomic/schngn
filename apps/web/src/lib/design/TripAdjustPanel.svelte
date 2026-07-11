@@ -15,6 +15,7 @@
     entryMax?: string;
     exitDate: string;
     exitMin?: string;
+    hasChanges: boolean;
     headingId?: string;
     locale?: Locale;
     onClose: () => void;
@@ -32,6 +33,7 @@
     entryMax,
     exitDate,
     exitMin,
+    hasChanges,
     headingId: requestedHeadingId,
     locale = 'en',
     onClose,
@@ -50,7 +52,8 @@
 
   let deep = $derived(createAppDeepUiTranslator(locale));
   let whatIf = $derived(createWhatIfUiTranslator(locale));
-  let canSave = $derived(state.valid && state.usage !== null && state.simulatedTrip !== null);
+  let hasValidResult = $derived(state.valid && state.usage !== null && state.simulatedTrip !== null);
+  let canSave = $derived(hasChanges && hasValidResult);
   let tone = $derived<'safe' | 'risk' | 'whatif'>(
     state.statusTone === 'risk' ? 'risk' : state.statusTone === 'safe' ? 'safe' : 'whatif'
   );
@@ -74,7 +77,7 @@
     {onDatesChange}
   />
 
-  {#if canSave && state.usage && state.simulatedTrip}
+  {#if hasValidResult && state.usage && state.simulatedTrip}
     <div id={resultId} class="live-result" aria-live="polite" aria-atomic="true">
       <div class="result-heading">
         <span>{whatIf('live')}</span>
