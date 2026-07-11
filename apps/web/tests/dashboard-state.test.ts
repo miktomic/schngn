@@ -59,4 +59,13 @@ describe('dashboard money-shot state', () => {
     summer.stays.push({ entryDate: '2026-07-08', exitDate: '2026-07-12' });
     expect(buildDashboardState([summer]).daysUsedLabel).toBe('10 / 90');
   });
+
+  test('counts overlapping saved trips once while preserving both records', () => {
+    const first = makeTrip('first-overlap', 'First overlap', '2026-07-01', '2026-07-10', 'booked', 'IT');
+    const second = makeTrip('second-overlap', 'Second overlap', '2026-07-05', '2026-07-14', 'booked', 'FR');
+    const state = buildDashboardState([first, second]);
+
+    expect(state.daysUsedLabel).toBe('14 / 90');
+    expect(state.targetTrip?.id).toBe('second-overlap');
+  });
 });

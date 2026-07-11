@@ -374,7 +374,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.reload();
     await expect(page.locator('#status').getByRole('heading', { name: /safe buffer days/i })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Adjust this trip Quick-adjust booking' }).click();
+    await navigateToAppAnchor(page, 'timeline');
+    await page.locator('#timeline').getByRole('button', { name: /Adjust this trip Quick-adjust booking\./ }).click();
     const quickAdjuster = page.locator('.trip-adjust-panel');
     await expect(page).toHaveURL(/\/app#timeline$/);
     await expect(quickAdjuster.getByRole('heading', { name: 'Adjust trip dates' })).toBeFocused();
@@ -440,7 +441,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     ]);
   });
 
-  test('previews day allocation, mirrors an empty exit country, and confirms expired history', async ({ page }) => {
+  test('keeps trip entry compact, mirrors an empty exit country, and confirms expired history', async ({ page }) => {
     await page.clock.setFixedTime(new Date('2026-07-10T12:00:00Z'));
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
@@ -449,7 +450,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
 
     const form = page.getByRole('form', { name: 'Trip form' });
-    await expect(form.getByRole('img', { name: /Your 180-day allocation/i })).toBeVisible();
+    await expect(form.getByRole('img', { name: /Your 180-day allocation/i })).toHaveCount(0);
     await form.locator('#trip-entry-country').selectOption('IT');
     await expect(form.locator('#trip-exit-country')).toHaveValue('IT');
     await form.getByLabel('Entered Schengen').fill('2025-11-01');
@@ -462,6 +463,47 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'Trips & planning', exact: true })).toBeVisible();
     await page.locator('#trips').getByRole('button', { name: 'Show older trips' }).click();
     await expect(page.locator('#trips').getByRole('heading', { name: 'Italy → Italy', exact: true })).toBeVisible();
+  });
+
+  test('keeps overlapping trips separately visible and opens adjustment from either timeline lane', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-02-01T12:00:00Z'));
+    await installFakeClerk(page, null);
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.goto('/app');
+    await page.getByRole('button', { name: 'Dismiss' }).click();
+    await page
+      .locator('#status')
+      .getByRole('button', { name: 'No previous Schengen trips? Go straight to planning.' })
+      .click();
+
+    await addTrip(page, {
+      countryCode: 'IT',
+      entryDate: '2026-07-01',
+      exitDate: '2026-07-10',
+      label: 'Italy overlap',
+      status: 'booked'
+    });
+    await addTrip(page, {
+      countryCode: 'FR',
+      entryDate: '2026-07-05',
+      exitDate: '2026-07-14',
+      label: 'France overlap',
+      status: 'booked'
+    });
+
+    await navigateToAppAnchor(page, 'timeline');
+    const timeline = page.locator('#timeline');
+    const italyLane = timeline.getByRole('button', { name: /Adjust this trip Italy overlap/ });
+    const franceLane = timeline.getByRole('button', { name: /Adjust this trip France overlap/ });
+    await expect(italyLane).toBeVisible();
+    await expect(franceLane).toBeVisible();
+    const [italyBox, franceBox] = await Promise.all([italyLane.boundingBox(), franceLane.boundingBox()]);
+    expect(italyBox?.y).not.toBe(franceBox?.y);
+
+    await franceLane.click();
+    const quickAdjuster = page.locator('.trip-adjust-panel');
+    await expect(quickAdjuster.getByText('France overlap', { exact: true })).toBeVisible();
+    await expect(franceLane).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('app completes real local-first planning, proof, error, and recovery flows', async ({ page }) => {
@@ -532,7 +574,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(overviewTimeline).toBeVisible();
     await expect(page.locator('#timeline .timeline-head > bdi')).toHaveText('21 Jan–19 Jul 2026');
 
-    await page.getByRole('button', { name: 'Adjust this trip Spain booking' }).click();
+    await page.locator('#timeline').getByRole('button', { name: /Adjust this trip Spain booking\./ }).click();
     const quickAdjuster = page.locator('.trip-adjust-panel');
     await expect(quickAdjuster).toBeVisible();
     await quickAdjuster.getByRole('button', { name: /Move trip:/ }).press('ArrowRight');

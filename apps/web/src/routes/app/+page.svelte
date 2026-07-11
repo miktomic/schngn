@@ -199,12 +199,6 @@
   $: tripFormPreviewResult = upsertTrip([], { ...tripForm, id: 'preview' });
   $: tripFormPreview = tripFormPreviewResult.trips[0] ?? null;
   $: tripFormToday = currentLocalIsoDate();
-  $: tripFormTimelineTrips = tripFormPreview
-    ? [...trips.filter((trip) => trip.id !== editingTripId), tripFormPreview]
-    : trips.filter((trip) => trip.id !== editingTripId);
-  $: tripFormTimelineReferenceDate = tripFormPreview && tripFormPreview.status !== 'past'
-    ? tripExitDate(tripFormPreview)
-    : tripFormToday;
   $: tripFormWindowStartDate = rollingWindowStartDate(tripFormToday);
   $: currentTrips = trips.filter((trip) => !isTripBeforeRollingWindow(trip, tripFormToday));
   $: olderTrips = trips.filter((trip) => isTripBeforeRollingWindow(trip, tripFormToday));
@@ -1491,16 +1485,6 @@
               <span><bdi>{formatDateRange(tripEntryDate(tripFormPreview), tripExitDate(tripFormPreview))}</bdi> · <bdi>{formatLocalizedSchengenDays(locale, countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${formatLocalizedOutsideDays(locale, countTripOutsideDays(tripFormPreview))}` : ''}</bdi></span>
             </section>
           {/if}
-          <div class="trip-form-timeline">
-            <TimelineLedger
-              headingId="trip-form-timeline-heading"
-              label={deep('allocation')}
-              {locale}
-              mode="planner"
-              trips={tripFormTimelineTrips}
-              referenceDate={tripFormTimelineReferenceDate}
-            />
-          </div>
           {#if outsideWindowConfirmationVisible}
             <section class="outside-window-confirmation" role="alert" aria-labelledby="outside-window-heading">
               <h2 id="outside-window-heading">{deep('outsideWindow')}</h2>
@@ -2934,8 +2918,6 @@
     font-size: 0.8rem;
     line-height: 1.45;
   }
-
-  .trip-form-timeline { margin-top: 8px; }
 
   .outside-window-confirmation {
     display: grid;

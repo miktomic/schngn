@@ -30,6 +30,19 @@
     summary: string;
   }
 
+  interface TimelineTripLaneSegment {
+    days: number;
+    endDate: string;
+    startDate: string;
+    startOffset: number;
+  }
+
+  interface TimelineTripLane {
+    kind: SegmentKind;
+    segments: TimelineTripLaneSegment[];
+    trip: EditableTrip;
+  }
+
   interface TimelineProps {
     headingId?: string;
     horizonDays?: number;
@@ -74,6 +87,7 @@
   }));
   let visibleKinds = $derived(new Set(model.segments.map((segment) => segment.kind)));
   let adjustmentCopy = $derived(createWhatIfUiTranslator(locale));
+  let tripLanes = $derived(buildTripLanes(trips, model.startDate, model.endDate));
 
   const legendCatalog: Record<Locale, string[]> = {
     en: ['Past trip', 'Booked trip', 'What-if trip', 'Over the limit', 'Day returned', 'Not counted'],
@@ -236,18 +250,35 @@
     return `${labelForKind}: ${formatDateRange(segment.startDate, segment.endDate)}`;
   }
 
-  function selectTrip(event: Event): void {
-    const id = (event.currentTarget as HTMLSelectElement).value;
-    const trip = trips.find((value) => value.id === id);
-    if (trip) onTripSelect?.(trip);
+  function tripLaneLabel(trip: EditableTrip): string {
+    const range = formatDateRange(tripEntryDate(trip), tripExitDate(trip));
+    return `${adjustmentCopy('adjust')} ${tripName(trip)}. ${range}`;
   }
 
-  function tripOptionLabel(trip: EditableTrip): string {
-    const range = formatDateRange(tripEntryDate(trip), tripExitDate(trip));
-    const kind = statusKind(trip.status);
-    const status = legendItems.find((item) => item.kind === kind)?.label ?? kind;
-    const outside = tripExitDate(trip) < model.startDate || tripEntryDate(trip) > model.endDate;
-    return `${tripName(trip)} · ${range} · ${status}${outside ? ` · ${adjustmentCopy('outsideWindow')}` : ''}`;
+  function buildTripLanes(inputTrips: EditableTrip[], windowStart: string, windowEnd: string): TimelineTripLane[] {
+    return inputTrips
+      .map((trip): TimelineTripLane | null => {
+        const segments = trip.stays.flatMap((stay): TimelineTripLaneSegment[] => {
+          const startDate = stay.entryDate < windowStart ? windowStart : stay.entryDate;
+          const endDate = stay.exitDate > windowEnd ? windowEnd : stay.exitDate;
+          if (startDate > endDate) return [];
+          return [{
+            days: dayDistance(startDate, endDate) + 1,
+            endDate,
+            startDate,
+            startOffset: dayDistance(windowStart, startDate)
+          }];
+        });
+        return segments.length > 0 ? { kind: statusKind(trip.status), segments, trip } : null;
+      })
+      .filter((lane): lane is TimelineTripLane => lane !== null)
+      .sort((left, right) => tripEntryDate(left.trip).localeCompare(tripEntryDate(right.trip))
+        || tripExitDate(left.trip).localeCompare(tripExitDate(right.trip))
+        || left.trip.id.localeCompare(right.trip.id));
+  }
+
+  function dayDistance(startDate: string, endDate: string): number {
+    return Math.round((parseISODate(endDate).getTime() - parseISODate(startDate).getTime()) / 86_400_000);
   }
 </script>
 
@@ -275,16 +306,35 @@
     <bdi>{formatDateRange(model.endDate, model.endDate)}</bdi>
   </div>
   <p class="timeline-summary">{model.summary}</p>
-  {#if onTripSelect && trips.length > 0}
-    <label class:has-selection={selectedTripId !== null} class="timeline-trip-picker" for={`${headingId}-trip-picker`}>
-      <span>{adjustmentCopy('tripToAdjust')}</span>
-      <select id={`${headingId}-trip-picker`} value={selectedTripId ?? ''} onchange={selectTrip}>
-        <option value="" disabled>{adjustmentCopy('chooseTrip')}</option>
-        {#each trips as trip (trip.id)}
-          <option value={trip.id}>{tripOptionLabel(trip)}</option>
+  {#if onTripSelect && tripLanes.length > 0}
+    <section class="timeline-trip-lanes" aria-label={adjustmentCopy('tripToAdjust')}>
+      <p>{adjustmentCopy('chooseTrip')}</p>
+      <div class="timeline-trip-lane-list">
+        {#each tripLanes as lane (lane.trip.id)}
+          <button
+            class:selected={selectedTripId === lane.trip.id}
+            class="timeline-trip-lane"
+            type="button"
+            aria-label={tripLaneLabel(lane.trip)}
+            aria-pressed={selectedTripId === lane.trip.id}
+            onclick={() => onTripSelect?.(lane.trip)}
+          >
+            <span class="timeline-trip-name">
+              <strong><bdi>{tripName(lane.trip)}</bdi></strong>
+              <small><bdi>{formatDateRange(tripEntryDate(lane.trip), tripExitDate(lane.trip))}</bdi></small>
+            </span>
+            <span class="timeline-trip-track" style={`--timeline-days: ${model.dayCount}`} aria-hidden="true">
+              {#each lane.segments as segment, index (`${lane.trip.id}-${segment.startDate}-${index}`)}
+                <span
+                  class={`timeline-trip-segment ${lane.kind}`}
+                  style={`grid-column: ${segment.startOffset + 1} / span ${segment.days}`}
+                ></span>
+              {/each}
+            </span>
+          </button>
         {/each}
-      </select>
-    </label>
+      </div>
+    </section>
   {/if}
   <ul class="timeline-legend" aria-label={timelineAriaLabel[locale]}>
     {#each legendItems as item}
@@ -381,39 +431,99 @@
     text-wrap: pretty;
   }
 
-  .timeline-trip-picker {
+  .timeline-trip-lanes {
     display: grid;
-    gap: 5px;
+    gap: 8px;
     border-top: 1px solid var(--line);
     padding-top: 10px;
   }
 
-  .timeline-trip-picker > span {
+  .timeline-trip-lanes > p {
+    margin: 0;
     color: var(--ink);
     font-size: 0.85rem;
     font-weight: 750;
   }
 
-  .timeline-trip-picker select {
+  .timeline-trip-lane-list {
+    display: grid;
+    gap: 6px;
+    max-height: 360px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .timeline-trip-lane {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.32fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
     width: 100%;
     min-height: 44px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--surface);
     color: var(--ink);
-    padding: 9px 34px 9px 10px;
+    padding: 6px 8px;
     font: inherit;
+    text-align: start;
+    cursor: pointer;
   }
 
-  .timeline-trip-picker.has-selection select {
+  .timeline-trip-lane:hover {
+    border-color: var(--muted);
+  }
+
+  .timeline-trip-lane.selected {
     border-color: var(--whatif);
     background: var(--whatif-bg);
   }
 
-  .timeline-trip-picker select:focus-visible {
+  .timeline-trip-lane:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--whatif), transparent 35%);
     outline-offset: 2px;
   }
+
+  .timeline-trip-name {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+  }
+
+  .timeline-trip-name strong,
+  .timeline-trip-name small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .timeline-trip-name strong { font-size: 0.82rem; }
+  .timeline-trip-name small {
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.68rem;
+  }
+
+  .timeline-trip-track {
+    display: grid;
+    grid-template-columns: repeat(var(--timeline-days), minmax(0, 1fr));
+    min-width: 0;
+    min-height: 20px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--paper);
+    padding: 2px;
+  }
+
+  .timeline-trip-segment {
+    min-width: 1px;
+    border-radius: 2px;
+  }
+
+  .timeline-trip-segment.past { background: var(--past); }
+  .timeline-trip-segment.booked { background: var(--booked); }
+  .timeline-trip-segment.whatif { background: var(--whatif); }
 
   .timeline-legend {
     flex-wrap: wrap;
@@ -436,6 +546,13 @@
     height: 11px;
     flex: 0 0 auto;
     border-radius: 2px;
+  }
+
+  @media (max-width: 620px) {
+    .timeline-trip-lane {
+      grid-template-columns: 1fr;
+      gap: 5px;
+    }
   }
 
   @media (max-width: 520px) {
