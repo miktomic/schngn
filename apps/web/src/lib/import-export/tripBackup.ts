@@ -76,6 +76,10 @@ export function importTripsFromJson(json: string): ImportTripsResult {
     trips.push(result.trip);
   }
 
+  if (trips.filter((trip) => trip.ongoing).length > 1) {
+    return { ok: false, error: 'Import file contains more than one ongoing stay.' };
+  }
+
   return { ok: true, trips: sortTrips(trips) };
 }
 
@@ -85,6 +89,7 @@ function copyTripForBackup(trip: EditableTrip): EditableTrip {
     label: trip.label,
     entryCountryCode: trip.entryCountryCode,
     exitCountryCode: trip.exitCountryCode,
+    ongoing: trip.ongoing,
     stays: trip.stays.map((stay) => ({ ...stay })),
     status: trip.status
   };
@@ -109,12 +114,13 @@ function parseBackupTrip(value: unknown, ordinal: number): { ok: true; trip: Edi
   const id = readRequiredString(candidate.id);
   const label = readOptionalString(candidate.label);
   const status = candidate.status;
+  const ongoing = candidate.ongoing === true ? true : candidate.ongoing === undefined ? undefined : null;
 
   if (!id || !isValidTripId(id) || !Array.isArray(candidate.stays) || candidate.stays.length === 0) {
     return { ok: false, error: `Trip ${ordinal} is missing required fields.` };
   }
 
-  if (!isTripStatus(status)) {
+  if (!isTripStatus(status) || ongoing === null) {
     return { ok: false, error: `Trip ${ordinal} has an invalid status.` };
   }
 
@@ -134,6 +140,7 @@ function parseBackupTrip(value: unknown, ordinal: number): { ok: true; trip: Edi
     label,
     entryCountryCode,
     exitCountryCode,
+    ongoing,
     stays: stays as EditableTrip['stays'],
     status
   };

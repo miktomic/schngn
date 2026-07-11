@@ -14,7 +14,6 @@ const allowedEvents: AnalyticsEventName[] = [
   'calculator_start',
   'trip_added',
   'simulation_run',
-  'pdf_buy_intent',
   'unlock_buy_intent'
 ];
 

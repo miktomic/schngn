@@ -9,7 +9,6 @@ import {
 const keys: SinglePageUiKey[] = [
   'skipToContent',
   'jumpTo',
-  'answer',
   'trips',
   'timeline',
   'plan',
@@ -48,11 +47,36 @@ describe('single-page app localization', () => {
     }
   });
 
+  test('uses the compact English navigation labels', () => {
+    const translate = createSinglePageUiTranslator('en');
+
+    expect({
+      timeline: translate('timeline'),
+      trips: translate('trips'),
+      account: translate('account')
+    }).toEqual({
+      timeline: 'Timeline',
+      trips: 'Trips',
+      account: 'Account'
+    });
+  });
+
+  test('ships complete navigation labels in every non-English catalog', () => {
+    const navigationKeys = ['timeline', 'trips', 'account'] as const;
+
+    for (const locale of SUPPORTED_LOCALES.filter((locale) => locale !== 'en')) {
+      const translate = createSinglePageUiTranslator(locale);
+      for (const key of navigationKeys) {
+        expect(translate(key).trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
   test('localizes navigation, state, and disclosure copy', () => {
     expect(createSinglePageUiTranslator('en')('unsavedPreview')).toBe('Preview · not saved');
     expect(createSinglePageUiTranslator('fr')('planNextTrip')).toBe('Planifiez votre prochain voyage');
     expect(createSinglePageUiTranslator('de')('details')).toBe('Berechnungsdetails');
-    expect(createSinglePageUiTranslator('he')('account')).toBe('חשבון ונתונים');
+    expect(createSinglePageUiTranslator('he')('account')).toBe('חשבון');
     expect(createSinglePageUiTranslator('ar')('collapse')).toBe('طيّ');
   });
 });

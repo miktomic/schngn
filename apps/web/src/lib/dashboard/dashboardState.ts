@@ -33,16 +33,16 @@ export function buildDashboardState(
   currentDate: string = currentLocalIsoDate()
 ): DashboardState {
   const sortedTrips = sortTrips(trips);
-  const earliestConflict = findEarliestPlannedConflict(sortedTrips);
-  const targetTrip = earliestConflict?.trip ?? chooseTargetTrip(sortedTrips);
+  const earliestConflict = findEarliestPlannedConflict(sortedTrips, currentDate);
+  const targetTrip = earliestConflict?.trip ?? chooseTargetTrip(sortedTrips, currentDate);
   const effectiveReferenceDate =
-    referenceDate ?? earliestConflict?.date ?? (targetTrip ? tripExitDate(targetTrip) : undefined) ?? currentDate;
+    referenceDate ?? earliestConflict?.date ?? (targetTrip ? tripExitDate(targetTrip, currentDate) : undefined) ?? currentDate;
   const usage = calculateUsageOnDate(
-    toEngineTrips(sortedTrips),
+    toEngineTrips(sortedTrips, effectiveReferenceDate),
     effectiveReferenceDate
   );
   const targetName = targetTrip?.label ?? (targetTrip ? tripRouteLabel(targetTrip) : "Trip");
-  const completed = targetTrip !== null && tripExitDate(targetTrip) < currentDate;
+  const completed = targetTrip !== null && !targetTrip.ongoing && tripExitDate(targetTrip, currentDate) < currentDate;
   const statusTone = toDashboardTone(usage);
   const latestSafeExit = targetTrip
     ? calculateLatestSafeExit(sortedTrips, targetTrip)
@@ -70,14 +70,15 @@ export function buildDashboardState(
 }
 
 function findEarliestPlannedConflict(
-  trips: EditableTrip[]
+  trips: EditableTrip[],
+  currentDate: string
 ): { date: string; trip: EditableTrip } | null {
   const checkpoints = new Map<string, EditableTrip>();
   const plannedTrips = trips
     .filter((trip) => trip.status === "booked" || trip.status === "what-if");
 
   for (const trip of plannedTrips) {
-    for (const stay of trip.stays) {
+    for (const stay of toEngineTrips([trip], currentDate)) {
       const exit = parseISODate(stay.exitDate);
       for (let current = parseISODate(stay.entryDate); current <= exit; current = addDays(current, 1)) {
         const date = formatISODate(current);
@@ -86,7 +87,7 @@ function findEarliestPlannedConflict(
     }
   }
 
-  const engineTrips = toEngineTrips(trips);
+  const engineTrips = toEngineTrips(trips, currentDate);
   for (const [date, trip] of [...checkpoints.entries()].sort(([left], [right]) => left.localeCompare(right))) {
     if (calculateUsageOnDate(engineTrips, date).overLimit) return { date, trip };
   }
@@ -94,13 +95,15 @@ function findEarliestPlannedConflict(
   return null;
 }
 
-function chooseTargetTrip(trips: EditableTrip[]): EditableTrip | null {
+function chooseTargetTrip(trips: EditableTrip[], currentDate: string): EditableTrip | null {
+  const ongoingTrip = trips.find((trip) => trip.ongoing);
+  if (ongoingTrip) return ongoingTrip;
   const plannedTrips = trips.filter(
     (trip) => trip.status === "booked" || trip.status === "what-if"
   );
   return (
     [...(plannedTrips.length > 0 ? plannedTrips : trips)]
-      .sort((a, b) => tripExitDate(a).localeCompare(tripExitDate(b)))
+      .sort((a, b) => tripExitDate(a, currentDate).localeCompare(tripExitDate(b, currentDate)))
       .at(-1) ?? null
   );
 }

@@ -31,6 +31,7 @@ export interface ProposedTripInput {
   entryDate: string;
   exitDate: string;
   outsideBreaks: OutsideSchengenBreakInput[];
+  ongoing?: boolean;
 }
 
 export interface TripSimulationConflict {
@@ -94,7 +95,11 @@ export function buildTripSimulationState(
 ): TripSimulationState {
   // Keep the persisted status hypothetical; presentation separately derives
   // whether the proposed dates have already elapsed.
-  const result = upsertTrip([], { ...proposed, id: 'simulation', status: 'what-if' }, proposed.entryDate);
+  const result = upsertTrip(
+    [],
+    { ...proposed, id: 'simulation', status: 'what-if' },
+    proposed.ongoing ? currentDate : proposed.entryDate
+  );
   if (Object.keys(result.errors).length > 0) return emptySimulation(result.errors);
 
   const simulatedTrip = result.trips[0];

@@ -9,6 +9,7 @@ export interface EditableTrip {
   status: TripStatus;
   entryCountryCode?: string;
   exitCountryCode?: string;
+  ongoing?: true;
   stays: SchengenStay[];
 }
 
@@ -25,6 +26,7 @@ export interface TripFormInput {
   exitCountryCode?: string;
   entryDate: string;
   exitDate: string;
+  ongoing?: boolean;
   outsideBreaks: OutsideSchengenBreakInput[];
   status: TripStatus;
 }
@@ -61,7 +63,7 @@ export interface UpsertTripResult {
 
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 
-export function validateTripInput(input: TripFormInput): TripValidationErrors {
+export function validateTripInput(input: TripFormInput, referenceDate: string = currentLocalIsoDate()): TripValidationErrors {
   const errors: TripValidationErrors = {};
   const label = typeof input.label === 'string' ? input.label.trim() : '';
 
@@ -76,15 +78,19 @@ export function validateTripInput(input: TripFormInput): TripValidationErrors {
   validateOptionalCountry(input.entryCountryCode, 'entryCountryCode', errors);
   validateOptionalCountry(input.exitCountryCode, 'exitCountryCode', errors);
   validateRequiredDate(input.entryDate, 'entryDate', 'entry', errors);
-  validateRequiredDate(input.exitDate, 'exitDate', 'exit', errors);
+  if (!input.ongoing) validateRequiredDate(input.exitDate, 'exitDate', 'exit', errors);
+
+  if (input.ongoing && !errors.entryDate && input.entryDate > referenceDate) {
+    errors.entryDate = 'An ongoing stay cannot start in the future.';
+  }
 
   if (!isTripStatus(input.status)) errors.status = 'Choose past, booked, or what-if.';
 
-  if (!errors.entryDate && !errors.exitDate && dayNumber(input.exitDate) < dayNumber(input.entryDate)) {
+  if (!input.ongoing && !errors.entryDate && !errors.exitDate && dayNumber(input.exitDate) < dayNumber(input.entryDate)) {
     errors.exitDate = 'The exit date cannot be before the entry date.';
   }
 
-  validateOutsideBreaks(input, errors);
+  validateOutsideBreaks(input, errors, referenceDate);
   return errors;
 }
 
@@ -102,10 +108,17 @@ export function upsertTrip(
   input: TripFormInput,
   referenceDate: string = currentLocalIsoDate()
 ): UpsertTripResult {
-  const errors = validateTripInput(input);
+  const errors = validateTripInput(input, referenceDate);
   if (Object.keys(errors).length > 0) return { trips: sortTrips(existingTrips), errors };
 
   const normalizedTrip = normalizeTripInput(input, referenceDate);
+  const existingOngoing = existingTrips.find((trip) => trip.ongoing && trip.id !== normalizedTrip.id);
+  if (normalizedTrip.ongoing && existingOngoing) {
+    return {
+      trips: sortTrips(existingTrips),
+      errors: { exitDate: 'Finish your existing ongoing stay before adding another one.' }
+    };
+  }
   const replacesExistingTrip = existingTrips.some((trip) => trip.id === normalizedTrip.id);
   if (!replacesExistingTrip && existingTrips.length >= MAX_TRIP_COUNT) {
     return {
@@ -134,9 +147,13 @@ export function sortTrips(trips: EditableTrip[]): EditableTrip[] {
   });
 }
 
-export function toEngineTrips(trips: EditableTrip[]): SchengenStay[] {
+export function toEngineTrips(trips: EditableTrip[], referenceDate: string = currentLocalIsoDate()): SchengenStay[] {
   return trips.flatMap((trip) =>
-    trip.stays.map((stay) => ({ entryDate: stay.entryDate, exitDate: stay.exitDate, label: trip.label }))
+    trip.stays.map((stay, index) => ({
+      entryDate: stay.entryDate,
+      exitDate: trip.ongoing && index === trip.stays.length - 1 ? referenceDate : stay.exitDate,
+      label: trip.label
+    }))
   );
 }
 
@@ -144,8 +161,8 @@ export function tripEntryDate(trip: EditableTrip): string {
   return trip.stays[0]?.entryDate ?? '';
 }
 
-export function tripExitDate(trip: EditableTrip): string {
-  return trip.stays.at(-1)?.exitDate ?? '';
+export function tripExitDate(trip: EditableTrip, referenceDate: string = currentLocalIsoDate()): string {
+  return trip.ongoing ? referenceDate : trip.stays.at(-1)?.exitDate ?? '';
 }
 
 export function tripRouteLabel(trip: Pick<EditableTrip, 'entryCountryCode' | 'exitCountryCode'>): string {
@@ -155,11 +172,11 @@ export function tripRouteLabel(trip: Pick<EditableTrip, 'entryCountryCode' | 'ex
   return 'Schengen stay';
 }
 
-export function countTripSchengenDays(trip: Pick<EditableTrip, 'stays'>): number {
+export function countTripSchengenDays(trip: Pick<EditableTrip, 'stays' | 'ongoing'>, referenceDate: string = currentLocalIsoDate()): number {
   const days = new Set<number>();
-  for (const stay of trip.stays) {
+  for (const [index, stay] of trip.stays.entries()) {
     const entry = dayNumber(stay.entryDate);
-    const exit = dayNumber(stay.exitDate);
+    const exit = dayNumber(trip.ongoing && index === trip.stays.length - 1 ? referenceDate : stay.exitDate);
     for (let day = entry; day <= exit; day += 1) days.add(day);
   }
   return days.size;
@@ -188,6 +205,7 @@ export function emptyTripForm(status: TripStatus = 'booked'): TripFormInput {
     exitCountryCode: '',
     entryDate: '',
     exitDate: '',
+    ongoing: false,
     outsideBreaks: [],
     status
   };
@@ -205,7 +223,8 @@ export function tripToForm(trip: EditableTrip): TripFormInput {
     entryCountryCode: trip.entryCountryCode ?? '',
     exitCountryCode: trip.exitCountryCode ?? '',
     entryDate: stays[0]?.entryDate ?? '',
-    exitDate: stays.at(-1)?.exitDate ?? '',
+    exitDate: trip.ongoing ? '' : stays.at(-1)?.exitDate ?? '',
+    ongoing: trip.ongoing === true,
     outsideBreaks: stays.slice(0, -1).map((stay, index) => ({
       id: `break-${index + 1}`,
       leftDate: stay.exitDate,
@@ -253,18 +272,20 @@ function normalizeTripInput(input: TripFormInput, referenceDate: string): Editab
     stays.push({ entryDate: stayEntry, exitDate: outsideBreak.leftDate });
     stayEntry = outsideBreak.reentryDate;
   }
-  stays.push({ entryDate: stayEntry, exitDate: input.exitDate });
+  const effectiveExitDate = input.ongoing ? referenceDate : input.exitDate;
+  stays.push({ entryDate: stayEntry, exitDate: effectiveExitDate });
 
   const entryCountryCode = normalizeCountryCode(input.entryCountryCode);
-  const exitCountryCode = normalizeCountryCode(input.exitCountryCode) ?? entryCountryCode;
+  const exitCountryCode = input.ongoing ? undefined : normalizeCountryCode(input.exitCountryCode) ?? entryCountryCode;
   const label = input.label?.trim() || undefined;
-  const id = input.id?.trim() || makeTripId(input.entryDate, input.exitDate, label);
+  const id = input.id?.trim() || makeTripId(input.entryDate, input.ongoing ? 'ongoing' : input.exitDate, label);
   return {
     id,
     label,
-    status: statusForTripDates(input.status, input.exitDate, referenceDate),
+    status: input.ongoing ? 'booked' : statusForTripDates(input.status, input.exitDate, referenceDate),
     entryCountryCode,
     exitCountryCode,
+    ongoing: input.ongoing ? true : undefined,
     stays
   };
 }
@@ -290,7 +311,7 @@ function validateRequiredDate(
   else if (!isRealIsoDate(value)) errors[field] = `Enter a valid ${description} date.`;
 }
 
-function validateOutsideBreaks(input: TripFormInput, errors: TripValidationErrors): void {
+function validateOutsideBreaks(input: TripFormInput, errors: TripValidationErrors, referenceDate: string): void {
   if (!Array.isArray(input.outsideBreaks)) {
     errors.outsideBreaks = 'Outside-Schengen breaks are invalid.';
     return;
@@ -327,14 +348,15 @@ function validateOutsideBreaks(input: TripFormInput, errors: TripValidationError
   }
 
   if (errors.entryDate || errors.exitDate) return;
+  const effectiveExitDate = input.ongoing ? referenceDate : input.exitDate;
   const sorted = [...validBreaks].sort((a, b) => a.leftDate.localeCompare(b.leftDate));
   let previousReentry = input.entryDate;
   for (const outsideBreak of sorted) {
     const fieldErrors = errors.breakFields?.[outsideBreak.id] ?? {};
-    if (outsideBreak.leftDate < input.entryDate || outsideBreak.leftDate > input.exitDate) {
+    if (outsideBreak.leftDate < input.entryDate || outsideBreak.leftDate > effectiveExitDate) {
       fieldErrors.leftDate = 'The exit date must fall within the trip.';
     }
-    if (outsideBreak.reentryDate < input.entryDate || outsideBreak.reentryDate > input.exitDate) {
+    if (outsideBreak.reentryDate < input.entryDate || outsideBreak.reentryDate > effectiveExitDate) {
       fieldErrors.reentryDate = 'The re-entry date must fall within the trip.';
     }
     if (outsideBreak.leftDate < previousReentry) {

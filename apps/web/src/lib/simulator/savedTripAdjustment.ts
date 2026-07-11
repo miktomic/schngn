@@ -1,5 +1,6 @@
 import {
   statusForTripDates,
+  currentLocalIsoDate,
   tripToForm,
   upsertTrip,
   type EditableTrip,
@@ -19,18 +20,20 @@ export interface SavedTripAdjustmentResult {
   updated: boolean;
 }
 
-export function createSavedTripAdjustmentDraft(trip: EditableTrip): SavedTripAdjustmentDraft {
+export function createSavedTripAdjustmentDraft(trip: EditableTrip, referenceDate: string = currentLocalIsoDate()): SavedTripAdjustmentDraft {
   const form = tripToForm(trip);
+  const effectiveExitDate = form.ongoing ? referenceDate : form.exitDate;
   return {
     form: {
       label: form.label,
       entryCountryCode: form.entryCountryCode,
       exitCountryCode: form.exitCountryCode,
       entryDate: form.entryDate,
-      exitDate: form.exitDate,
+      exitDate: effectiveExitDate,
+      ongoing: form.ongoing,
       outsideBreaks: form.outsideBreaks
     },
-    range: buildAdjustmentRange(form.entryDate, form.exitDate)
+    range: buildAdjustmentRange(form.entryDate, effectiveExitDate)
   };
 }
 
@@ -65,14 +68,19 @@ export function applySavedTripDateAdjustment(
   };
 }
 
-export function hasSavedTripAdjustmentChanges(trip: EditableTrip, form: ProposedTripInput): boolean {
-  const original = createSavedTripAdjustmentDraft(trip).form;
+export function hasSavedTripAdjustmentChanges(
+  trip: EditableTrip,
+  form: ProposedTripInput,
+  referenceDate: string = currentLocalIsoDate()
+): boolean {
+  const original = createSavedTripAdjustmentDraft(trip, referenceDate).form;
   if (
     form.label !== original.label
     || form.entryCountryCode !== original.entryCountryCode
     || form.exitCountryCode !== original.exitCountryCode
     || form.entryDate !== original.entryDate
     || form.exitDate !== original.exitDate
+    || Boolean(form.ongoing) !== Boolean(original.ongoing)
   ) return true;
 
   const originalBreaks = comparableBreakDates(original);
@@ -104,7 +112,7 @@ export function commitSavedTripAdjustment(
   const result = upsertTrip(trips, {
     ...form,
     id: source.id,
-    status: statusForTripDates(source.status, form.exitDate, referenceDate)
+    status: form.ongoing ? 'booked' : statusForTripDates(source.status, form.exitDate, referenceDate)
   }, referenceDate);
   return {
     ...result,

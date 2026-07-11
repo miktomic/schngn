@@ -1,11 +1,11 @@
 import type { DashboardState } from '../dashboard/dashboardState';
 import type { TripSimulationState } from '../simulator/tripSimulator';
 import type { ReturningDaysForecast } from '../returns/returningDays';
-import type { PdfReportFakeDoorState } from '../fake-door/pdfReportFakeDoor';
 import type { UnlockFakeDoorState } from '../fake-door/unlockFakeDoor';
 import { formatDate, intlLocale } from './index';
 import type { Locale } from './locales';
 import { formatLocalizedCount, formatLocalizedNumber, localizedPluralCategory } from './countUi';
+import { createOngoingStayUiTranslator } from './ongoingStayUi';
 
 interface StateLabels {
   addDates: string; addTrip: string; atLimit: string; countedDays: string; countedDayLeaves: string;
@@ -169,6 +169,23 @@ function localizeMaxStayLabel(locale: Locale, label: string, l: StateLabels): st
 }
 
 export function localizeDashboardState(locale: Locale, state: DashboardState): DashboardState {
+  if (state.targetTrip?.ongoing) {
+    const ongoing = createOngoingStayUiTranslator(locale);
+    const latest = state.latestSafeExitDate ? shortDate(locale, state.latestSafeExitDate) : labels[locale].noSafeStay;
+    if (locale === 'en') {
+      return { ...state, actionCopy: `${ongoing('leaveBy')}: ${latest}`, latestSafeExitLabel: latest, statusLabel: ongoing('ongoing') };
+    }
+    const l = labels[locale];
+    const over = state.usage.overLimit;
+    return { ...state,
+      actionCopy: `${ongoing('leaveBy')}: ${latest}`,
+      heroMetric: formatDayMetric(locale, over ? state.usage.overBy : state.usage.daysRemaining, over ? 'over' : 'safeBuffer'),
+      latestSafeExitLabel: latest,
+      statusLabel: ongoing('ongoing'),
+      whyCopy: `${shortDate(locale,state.referenceDate)} · ${formatCountedRatio(locale,state.usage.daysUsed)} · ${formatDayMetric(locale,over ? state.usage.overBy : state.usage.daysRemaining,over ? 'over' : 'remaining')}`,
+      windowLabel: fullRange(locale,state.usage.windowStart,state.usage.windowEnd)
+    };
+  }
   if (locale === 'en') return state;
   const l = labels[locale];
   const completed = completedCopy[locale];
@@ -214,10 +231,6 @@ export function localizeReturningForecast(locale: Locale, forecast: ReturningDay
   return {...forecast,rows,currentUsedLabel:formatCountedRatio(locale,forecast.currentUsed),summaryLabel:rows.length ? `${formatDayMetric(locale,returningDays,'returning')} · ${horizon}` : `${l.noDaysReturn} · ${horizon}`,nextReturnLabel:rows[0] ? `${l.nextReturn}: ${rows[0].dateLabel}` : l.noReturning};
 }
 
-export function localizePdfState(locale: Locale, state: PdfReportFakeDoorState): PdfReportFakeDoorState {
-  if (locale === 'en') return state;
-  const l=labels[locale]; return {...state,buttonLabel:`${l.pdfButton} — €9`,helperCopy:l.pdfHelper,messageTitle:l.pdfTitle,messageCopy:l.pdfMessage};
-}
 export function localizeUnlockState(locale: Locale, state: UnlockFakeDoorState, price: string): UnlockFakeDoorState {
   if (locale === 'en') return state;
   const l=labels[locale]; return {...state,buttonLabel:`${l.unlockButton} — ${price}`,helperCopy:l.unlockHelper,messageTitle:l.unlockTitle,messageCopy:l.unlockMessage};

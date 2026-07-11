@@ -32,10 +32,10 @@ export function buildReturningDaysForecast(
 ): ReturningDaysForecast {
   const horizonDays = options.horizonDays ?? DEFAULT_HORIZON_DAYS;
   const reference = parseISODate(options.referenceDate);
-  const engineTrips = toEngineTrips(trips);
+  const engineTrips = toEngineTrips(trips, options.referenceDate);
   const usage = calculateUsageOnDate(engineTrips, options.referenceDate);
   const countedDays = new Set(usage.countedDays);
-  const sourcesByCountedDay = sourceLabelsByCountedDay(sortTrips(trips), countedDays);
+  const sourcesByCountedDay = sourceLabelsByCountedDay(sortTrips(trips), countedDays, options.referenceDate);
   const rows: ReturningDayRow[] = [];
 
   for (const countedDay of usage.countedDays) {
@@ -70,11 +70,11 @@ export function buildReturningDaysForecast(
   };
 }
 
-function sourceLabelsByCountedDay(trips: EditableTrip[], countedDays: Set<string>): Map<string, string> {
+function sourceLabelsByCountedDay(trips: EditableTrip[], countedDays: Set<string>, referenceDate: string): Map<string, string> {
   const sources = new Map<string, string>();
 
   for (const trip of trips) {
-    for (const stay of trip.stays) {
+    for (const stay of toEngineTrips([trip], referenceDate)) {
       const exit = parseISODate(stay.exitDate);
       for (let current = parseISODate(stay.entryDate); current <= exit; current = addDays(current, 1)) {
         const iso = formatISODate(current);

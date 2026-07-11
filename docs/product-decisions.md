@@ -43,7 +43,6 @@ This file records product, privacy, infrastructure, and launch decisions that un
   - `calculator_start`
   - `trip_added`
   - `simulation_run`
-  - `pdf_buy_intent`
   - `unlock_buy_intent`
 - Never include:
   - trip dates
@@ -248,6 +247,7 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - The form progressively reveals inline outside-Schengen breaks, summarizes counted versus outside days, and previews the resulting inclusive 180-day allocation on the shared timeline.
 - A newly added historical trip ending before today’s inclusive rolling-window start requires an inline “Save anyway” confirmation because it will not affect today’s allocation. The boundary day itself remains in-window.
 - A journey whose final exit is before the current local date is automatically marked Past. An exit today remains current; users choose only Booked or What-if for current and future journeys.
+- A traveler who is currently inside Schengen may leave the final exit open. The saved journey carries an explicit ongoing marker, is projected through the current local date for calculation, and shows a live latest-safe-exit date. The calculated deadline is never stored as though it were the traveler’s actual exit. Only one journey may be ongoing at a time; entering the actual exit closes it.
 - Local storage, backups, and account snapshots use schema version 2. Version-one data is intentionally unsupported because no legacy-data commitment exists.
 - D1 migration `0004_reset_account_trip_snapshots_v2.sql` clears pre-launch snapshots and recreates the constrained schema-two table without deleting Clerk accounts.
 - Country metadata and full travel histories remain prohibited from analytics and logs.
@@ -267,21 +267,22 @@ This is an approved **scope change** after the original no-account MVP cards. It
 
 ## DEC-14 — One continuous calculator workspace
 
-**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, combined Trips workspace, report, and account/data controls are addressable by stable URL hashes. Trips contains the canonical master timeline followed by saved-trip cards. Every card always shows its own color-coded 180-day timeline; selecting the card expands sliders and direct date inputs inside it. One bottom “Add new trip” action opens the new-trip editor as a dialog.
+**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The canonical 180-day timeline, Trips list, report, and account controls are addressable by stable URL hashes; the persistent answer rail is visible but is not a navigation destination. The master timeline is the first workspace section, followed immediately by the saved-trip cards under Trips. Every card always shows its own color-coded 180-day timeline; selecting the card expands sliders and direct date inputs inside it. One bottom “Add new trip” action opens the new-trip editor as a dialog.
 
 **Implementation constraints:**
 
 - A first-time user sees the previous-trip step before any safe verdict. They may either add history or explicitly confirm that no prior Schengen trips exist; that assumption persists locally.
 - Desktop keeps the current answer visible beside the working surface. Mobile uses one reading column with a compact sticky jump control.
-- The master timeline at the top of Trips is canonical. Editor and adjustment previews may show contextual timelines, but they never replace or mutate the saved result until the user saves.
+- The master timeline in the first workspace section is canonical. Editor and adjustment previews may show contextual timelines, but they never replace or mutate the saved result until the user saves.
 - Every saved-trip card is the edit affordance: there is no separate expand icon, Edit button, or saved-trip edit dialog. The expanded card exposes the draggable/resizable adjuster and direct date inputs together; a compact details disclosure allows corrections to its label, border-country context, and outside-Schengen breaks. Saving preserves the trip ID, and whether a trip is completed is derived from its dates.
 - A card with unsaved changes stays open. Opening another card or the new-trip dialog is blocked until the traveler explicitly saves the changes or chooses “Keep original,” preventing silent loss of an in-progress adjustment.
 - Card timeline colors distinguish trips, not safety or booking state. Text labels and the aggregate red over-limit evidence carry status meaning, so the cards remain understandable without color.
 - A completed trip that exceeded the allowance is historical evidence, not a plan that still “needs changes.” It is labeled “Completed · N days over at the time,” remains fully counted in any rolling window it affects, and offers correction only if its recorded dates are inaccurate. If that completed history would make a later plan exceed the limit, the later plan is identified as the affected item rather than misattributing the overage to the completed trip.
 - The single “Add new trip” action at the bottom of Trips opens the trip editor as a modal dialog; the workspace has no second trip-entry surface.
 - Future planning and saved-trip adjustment keep independent state so experimenting with one cannot silently alter the other.
-- `#status`, `#trips`, `#report`, and `#account` restore on refresh and browser navigation. Retired `#timeline` and `#details` hashes canonicalize to `#trips`; old planner, proof, and returning-days `?section=` destinations also map to `#trips`.
-- Returning-days, report, and account/data controls use accessible progressive disclosure so the primary workflow stays compact.
+- `#timeline`, `#trips`, and `#account` restore on refresh and browser navigation. Retired `#status` canonicalizes to `#timeline`; retired `#details` and old planner, proof, and returning-days destinations map to `#trips`; retired report and waitlist destinations map to `#account`.
+- Account/data controls use accessible progressive disclosure so the primary workflow stays compact.
+- The unrecognized “border-ready PDF” fake door and its analytics event are retired. The visible bottom CTA instead explains the real account value: keeping trip history for future 90/180 calculations and optional cross-device sync after explicit consent.
 
 ## Board state
 

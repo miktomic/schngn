@@ -6,7 +6,7 @@
     parseISODate,
     type SchengenStay
   } from '@schngn/engine';
-  import { tripEntryDate, tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
+  import { toEngineTrips, tripEntryDate, tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
   import { intlLocale, type Locale } from '$lib/i18n';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
   import {
@@ -123,7 +123,7 @@
     const startDate = formatISODate(start);
     const endDate = formatISODate(reference);
     const allTrips: SchengenStay[] = [
-      ...input.trips.flatMap((trip) => trip.stays.map((stay) => ({ ...stay, label: trip.label }))),
+      ...toEngineTrips(input.trips, endDate),
       ...(input.simulation ? input.simulation.stays.map((stay) => ({ ...stay, label: input.simulation?.label })) : [])
     ];
     const usage = calculateUsageOnDate(allTrips, endDate);
@@ -131,7 +131,7 @@
     const kindByDate = new Map<string, SegmentKind>();
 
     for (const trip of input.trips) {
-      for (const stay of trip.stays) addTripDays(kindByDate, stay, statusKind(trip.status), startDate, endDate);
+      for (const stay of toEngineTrips([trip], endDate)) addTripDays(kindByDate, stay, statusKind(trip.status), startDate, endDate);
     }
     if (input.simulation) {
       for (const stay of input.simulation.stays) addTripDays(kindByDate, stay, 'whatif', startDate, endDate);
@@ -264,7 +264,7 @@
   function buildTripLanes(inputTrips: EditableTrip[], windowStart: string, windowEnd: string): TimelineTripLane[] {
     return inputTrips
       .map((trip): TimelineTripLane | null => {
-        const segments = trip.stays.flatMap((stay): TimelineTripLaneSegment[] => {
+        const segments = toEngineTrips([trip], windowEnd).flatMap((stay): TimelineTripLaneSegment[] => {
           const startDate = stay.entryDate < windowStart ? windowStart : stay.entryDate;
           const endDate = stay.exitDate > windowEnd ? windowEnd : stay.exitDate;
           if (startDate > endDate) return [];
@@ -299,10 +299,7 @@
 </script>
 
 <section class="timeline-card" aria-labelledby={headingId}>
-  <div class="timeline-head">
-    <h2 id={headingId}>{label}</h2>
-    <bdi>{model.rangeLabel}</bdi>
-  </div>
+  <h2 id={headingId}>{label}</h2>
   <div
     class="timeline-rail"
     style={`--timeline-days: ${model.dayCount}`}
@@ -392,14 +389,12 @@
     padding: 14px;
   }
 
-  .timeline-head,
   .timeline-ticks,
   .timeline-legend {
     display: flex;
     align-items: center;
   }
 
-  .timeline-head,
   .timeline-ticks {
     justify-content: space-between;
     gap: 12px;
@@ -413,17 +408,11 @@
     overflow-wrap: anywhere;
   }
 
-  .timeline-head > bdi,
   .timeline-ticks {
     color: var(--muted);
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
     font-size: 0.75rem;
     font-weight: 650;
-  }
-
-  .timeline-head > bdi {
-    flex: 0 1 auto;
-    text-align: end;
   }
 
   .timeline-rail {
@@ -659,15 +648,4 @@
     }
   }
 
-  @media (max-width: 520px) {
-    .timeline-head {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .timeline-head > bdi {
-      text-align: start;
-    }
-  }
 </style>

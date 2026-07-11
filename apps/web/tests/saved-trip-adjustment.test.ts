@@ -21,6 +21,19 @@ function trip(id: string, status: TripStatus, entryDate: string, exitDate: strin
 }
 
 describe('saved trip adjustment', () => {
+  test('keeps an ongoing stay open until the traveler explicitly ends it', () => {
+    const ongoing = { ...trip('ongoing', 'booked', '2026-07-01', '2026-07-10', 'Current stay'), ongoing: true as const, exitCountryCode: undefined };
+    const draft = createSavedTripAdjustmentDraft(ongoing, '2026-07-10');
+    expect(draft.form.ongoing).toBe(true);
+
+    const keptOpen = commitSavedTripAdjustment([ongoing], ongoing.id, { ...draft.form, entryDate: '2026-07-02' }, '2026-07-10');
+    expect(keptOpen.trips[0].ongoing).toBe(true);
+    expect(keptOpen.trips[0].stays.at(-1)?.exitDate).toBe('2026-07-10');
+
+    const ended = commitSavedTripAdjustment(keptOpen.trips, ongoing.id, { ...draft.form, ongoing: false }, '2026-07-10');
+    expect(ended.trips[0].ongoing).toBeUndefined();
+    expect(ended.trips[0].stays.at(-1)?.exitDate).toBe('2026-07-10');
+  });
   test('enables saving only while the adjusted dates differ from the saved trip', () => {
     const sourceResult = upsertTrip([], {
       id: 'dirty-state-trip',

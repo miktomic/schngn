@@ -10,7 +10,7 @@ import {
 
 describe('single-page app anchors', () => {
   test('recognizes only the supported workspace anchors', () => {
-    const expected: AppAnchor[] = ['status', 'trips', 'report', 'account'];
+    const expected: AppAnchor[] = ['timeline', 'trips', 'account'];
 
     expect(APP_ANCHORS).toEqual(expected);
     for (const anchor of expected) expect(isAppAnchor(anchor)).toBe(true);
@@ -18,24 +18,25 @@ describe('single-page app anchors', () => {
     expect(isAppAnchor('')).toBe(false);
   });
 
-  test('restores a valid hash and defaults missing or invalid hashes to status', () => {
+  test('restores a valid hash and defaults missing or invalid hashes to timeline', () => {
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#trips'))).toBe('trips');
     expect(appAnchorFromUrl(new URL('https://schngn.com/he/app#account'))).toBe('account');
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app#timeline'))).toBe('trips');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#timeline'))).toBe('timeline');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#status'))).toBe('timeline');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#details'))).toBe('trips');
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app#unknown'))).toBe('status');
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app'))).toBe('status');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#unknown'))).toBe('timeline');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app'))).toBe('timeline');
   });
 
   test.each([
-    ['dashboard', 'status'],
+    ['dashboard', 'timeline'],
     ['trip', 'trips'],
     ['trips', 'trips'],
     ['planner', 'trips'],
     ['proof', 'trips'],
     ['returns', 'trips'],
-    ['report', 'report'],
-    ['waitlist', 'report'],
+    ['report', 'account'],
+    ['waitlist', 'account'],
     ['privacy', 'account']
   ] as const)('maps legacy section=%s to #%s', (section, anchor) => {
     expect(appAnchorFromUrl(new URL(`https://schngn.com/app?section=${section}`))).toBe(anchor);
@@ -43,13 +44,13 @@ describe('single-page app anchors', () => {
 
   test('an explicit legacy section wins over an existing valid hash', () => {
     expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=planner#timeline'))).toBe('trips');
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=unknown#timeline'))).toBe('status');
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=#timeline'))).toBe('status');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=unknown#timeline'))).toBe('timeline');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=#timeline'))).toBe('timeline');
   });
 
   test('builds anchor URLs without losing locale, path, or safe query context', () => {
     const current = new URL(
-      'https://schngn.com/he/app?market=uk&account=connected&campaign=summer#status'
+      'https://schngn.com/he/app?market=uk&account=connected&campaign=summer#timeline'
     );
 
     expect(appAnchorUrl(current, 'trips')).toBe(
@@ -75,14 +76,14 @@ describe('single-page app anchors', () => {
       canonicalAppAnchorUrl(
         new URL('https://schngn.com/tr/app?market=uk&account=connected#report')
       )
-    ).toBe('/tr/app?market=uk&account=connected#report');
+    ).toBe('/tr/app?market=uk&account=connected#account');
 
     expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app?market=uk#invalid'))).toBe(
-      '/app?market=uk#status'
+      '/app?market=uk#timeline'
     );
 
     expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app#timeline'))).toBe(
-      '/app#trips'
+      '/app#timeline'
     );
     expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app#details'))).toBe(
       '/app#trips'

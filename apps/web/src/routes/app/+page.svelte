@@ -4,6 +4,7 @@
   import { page } from '$app/state';
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
+  import { latestSafeExitDate } from '@schngn/engine';
   import { FactCard, SchngnLogo, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
   import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
   import { createTranslator, intlLocale, localeFromPath } from '$lib/i18n';
@@ -18,10 +19,10 @@
   } from '$lib/i18n/tripCardUi';
   import { createTripOnboardingTranslator } from '$lib/i18n/tripOnboardingUi';
   import { createSinglePageUiTranslator } from '$lib/i18n/singlePageUi';
+  import { createOngoingStayUiTranslator } from '$lib/i18n/ongoingStayUi';
+  import { createSignupValueUiTranslator } from '$lib/i18n/signupValueUi';
   import {
     localizeDashboardState,
-    localizePdfState,
-    localizeReturningForecast,
     localizeSimulationState,
     localizeUnlockState
   } from '$lib/i18n/stateUi';
@@ -38,7 +39,6 @@
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
   import { localizedLegalCopy, localizedOfficialSourceLinks } from '$lib/legal/legalCopy';
-  import { buildPdfBuyIntentEvent, buildPdfReportFakeDoorState } from '$lib/fake-door/pdfReportFakeDoor';
   import {
     buildUnlockBuyIntentEvent,
     buildUnlockFakeDoorState,
@@ -66,6 +66,7 @@
     isTripBeforeRollingWindow,
     rollingWindowStartDate,
     statusForTripDates,
+    toEngineTrips,
     tripEntryDate,
     tripExitDate,
     upsertTrip,
@@ -120,21 +121,21 @@
   $: tripOnboarding = createTripOnboardingTranslator(locale);
   $: singlePage = createSinglePageUiTranslator(locale);
   $: tripCardUi = createTripCardUiTranslator(locale);
+  $: ongoingStay = createOngoingStayUiTranslator(locale);
+  $: signupValue = createSignupValueUiTranslator(locale);
   $: legal = localizedLegalCopy(locale);
   $: officialSourceLinks = localizedOfficialSourceLinks(locale);
   $: anchorLinks = APP_ANCHORS.map((anchor) => ({
     anchor,
-    label: singlePage(anchor === 'status' ? 'answer' : anchor)
+    label: singlePage(anchor)
   }));
 
-  let currentAnchor: AppAnchor = 'status';
+  let currentAnchor: AppAnchor = 'timeline';
   let hasLoadedTrips = false;
   let trips: EditableTrip[] = [];
   let tripEditorVisible = false;
   let historyConfirmedEmpty = false;
   let olderTripsVisible = false;
-  let returnsDetailsOpen = false;
-  let reportDetailsOpen = false;
   let accountDetailsOpen = false;
   let pendingDeleteTripId: string | null = null;
   let clearConfirmationVisible = false;
@@ -149,7 +150,6 @@
   let importError = '';
   let importInput: HTMLInputElement;
   let tripDialog: HTMLDialogElement;
-  let pdfIntentMessageVisible = false;
   let unlockIntentMessageVisible = false;
   let market: UnlockMarket = 'eu';
   let unlockPrice = chooseUnlockPriceBucket('eu', 0.34);
@@ -197,13 +197,14 @@
   $: simulationState = localizeSimulationState(locale, buildTripSimulationState(simulationBaseTrips, simulatorForm, tripFormToday));
   $: quickAdjustSourceTrip = quickAdjustSourceId ? trips.find((trip) => trip.id === quickAdjustSourceId) ?? null : null;
   $: quickAdjustHasChanges = quickAdjustSourceTrip
-    ? hasSavedTripAdjustmentChanges(quickAdjustSourceTrip, quickAdjustForm)
+    ? hasSavedTripAdjustmentChanges(quickAdjustSourceTrip, quickAdjustForm, tripFormToday)
     : false;
   $: quickAdjustBaseTrips = quickAdjustSourceId ? trips.filter((trip) => trip.id !== quickAdjustSourceId) : trips;
   $: quickAdjustState = localizeSimulationState(locale, buildTripSimulationState(quickAdjustBaseTrips, quickAdjustForm, tripFormToday));
   $: quickAdjustBounds = savedTripAdjustmentBounds(quickAdjustForm);
   $: tripFormPreviewResult = upsertTrip([], { ...tripForm, id: 'preview' });
   $: tripFormPreview = tripFormPreviewResult.trips[0] ?? null;
+  $: ongoingLeaveByDate = calculateOngoingLeaveBy(tripFormPreview);
   $: tripFormWindowStartDate = rollingWindowStartDate(tripFormToday);
   $: currentTrips = trips.filter((trip) => !isTripBeforeRollingWindow(trip, tripFormToday));
   $: olderTrips = trips.filter((trip) => isTripBeforeRollingWindow(trip, tripFormToday));
@@ -222,7 +223,7 @@
   $: tripColors = assignTripColors(trips);
   $: tripCardStates = buildTripCardStates(tripCardCalculationTrips, tripCardPreviewTrips, tripFormToday);
   $: historyReady = trips.length > 0 || historyConfirmedEmpty;
-  $: resolvedTripFormStatus = statusForTripDates(tripForm.status, tripForm.exitDate);
+  $: resolvedTripFormStatus = tripForm.ongoing ? 'booked' : statusForTripDates(tripForm.status, tripForm.exitDate);
   $: tripFormIsPast = resolvedTripFormStatus === 'past';
   $: simulationSaveStatus = statusForTripDates('booked', simulatorForm.exitDate);
   $: simulatorStatusTone = (simulationState.statusTone === 'risk' ? 'risk' : simulationState.statusTone === 'close' ? 'whatif' : 'safe') as
@@ -233,10 +234,8 @@
     | 'safe'
     | 'risk'
     | 'whatif';
-  $: returningForecast = localizeReturningForecast(locale, buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 30 }));
   $: timelineReturningForecast = buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 180 });
   $: explanationState = buildExplanationState(trips, dashboardState.referenceDate, locale);
-  $: pdfFakeDoorState = localizePdfState(locale, buildPdfReportFakeDoorState(pdfIntentMessageVisible));
   $: unlockFakeDoorState = localizeUnlockState(locale, buildUnlockFakeDoorState(unlockPrice, unlockIntentMessageVisible), unlockPrice.label);
   $: pendingDeleteTrip = trips.find((trip) => trip.id === pendingDeleteTripId) ?? null;
   $: accountSignedIn = clerkAuth?.available === true && clerkAuth.isSignedIn && clerkAuth.userId !== null;
@@ -756,9 +755,17 @@
 
   function navigateToAnchor(anchor: AppAnchor, openDisclosure = false): void {
     currentAnchor = anchor;
-    if (openDisclosure || anchor === 'report' || anchor === 'account') openAnchorDisclosure(anchor);
+    if (openDisclosure || anchor === 'account') openAnchorDisclosure(anchor);
     if (browser) pushState(appAnchorUrl(new URL(window.location.href), anchor), page.state);
     scrollToAnchor(anchor, true, true);
+  }
+
+  function skipToAnswer(event: MouseEvent): void {
+    event.preventDefault();
+    if (!browser) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('status')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    document.getElementById('status-heading')?.focus({ preventScroll: true });
   }
 
   function scrollToAnchor(anchor: AppAnchor, focus = true, smooth = true): void {
@@ -774,7 +781,6 @@
   }
 
   function openAnchorDisclosure(anchor: AppAnchor): void {
-    if (anchor === 'report') reportDetailsOpen = true;
     if (anchor === 'account') accountDetailsOpen = true;
   }
 
@@ -823,7 +829,8 @@
     }
 
     const savedTripId = result.trips.find((trip) => trip.id === tripForm.id)?.id
-      ?? result.trips.find((trip) => tripEntryDate(trip) === tripForm.entryDate && tripExitDate(trip) === tripForm.exitDate)?.id;
+      ?? result.trips.find((trip) => tripEntryDate(trip) === tripForm.entryDate
+        && (tripForm.ongoing ? trip.ongoing : tripExitDate(trip) === tripForm.exitDate))?.id;
     outsideWindowConfirmationVisible = false;
     persistTrips(result.trips);
     trackAnalyticsEvent('trip_added', {
@@ -844,6 +851,28 @@
       exitDate,
       status: statusForTripDates(tripForm.status, exitDate)
     };
+  }
+
+  function updateOngoingStay(event: Event): void {
+    const ongoing = (event.currentTarget as HTMLInputElement).checked;
+    outsideWindowConfirmationVisible = false;
+    tripForm = {
+      ...tripForm,
+      ongoing,
+      exitDate: ongoing ? '' : tripForm.exitDate,
+      exitCountryCode: ongoing ? '' : tripForm.exitCountryCode,
+      status: ongoing ? 'booked' : tripForm.status
+    };
+  }
+
+  function calculateOngoingLeaveBy(preview: EditableTrip | null): string | null {
+    if (!preview?.ongoing) return null;
+    const finalStay = preview.stays.at(-1);
+    if (!finalStay) return null;
+    return latestSafeExitDate(
+      [...toEngineTrips(trips, tripFormToday), ...preview.stays.slice(0, -1)],
+      finalStay.entryDate
+    );
   }
 
   function updateTripEntryCountry(event: Event): void {
@@ -992,7 +1021,7 @@
   function openQuickAdjuster(target: EditableTrip | null = dashboardState.targetTrip): void {
     if (!target) return;
     if (isTripBeforeRollingWindow(target, tripFormToday)) olderTripsVisible = true;
-    const draft = createSavedTripAdjustmentDraft(target);
+    const draft = createSavedTripAdjustmentDraft(target, tripFormToday);
     quickAdjustForm = draft.form;
     quickAdjustSourceId = target.id;
     quickAdjustRange = draft.range;
@@ -1106,7 +1135,7 @@
   function confirmNoPreviousTrips(): void {
     historyConfirmedEmpty = true;
     if (browser) window.localStorage.setItem(EMPTY_HISTORY_STORAGE_KEY, 'true');
-    navigateToAnchor('status');
+    navigateToAnchor('timeline');
   }
 
   function continueSimulation(): void {
@@ -1214,7 +1243,9 @@
     const context = [
       displayTripName(trip),
       trip.label ? displayRoute(trip) : null,
-      formatDateRange(tripEntryDate(trip), tripExitDate(trip))
+      formatDateRange(tripEntryDate(trip), tripExitDate(trip)),
+      formatLocalizedCount(locale, countTripSchengenDays(trip), 'day').text,
+      countTripOutsideDays(trip) > 0 ? formatLocalizedOutsideDays(locale, countTripOutsideDays(trip)) : null
     ].filter(Boolean).join(' · ');
     return formatTripCardToggleLabel(locale, context, expanded);
   }
@@ -1237,13 +1268,6 @@
       verdict: analyticsVerdict(),
       safe_buffer_bucket: buildSafeBufferBucket(simulationState.usage?.daysRemaining ?? 0)
     });
-  }
-
-  function recordPdfBuyIntent(): void {
-    const event = buildPdfBuyIntentEvent();
-    trackAnalyticsEvent(event.name, event.props);
-    pdfIntentMessageVisible = true;
-    if (!accountSignedIn) void startAccountSignUp();
   }
 
   function recordUnlockBuyIntent(): void {
@@ -1312,7 +1336,7 @@
 </svelte:head>
 
 <main class="app-shell">
-  <a class="skip-link" href="#status">{singlePage('skipToContent')}</a>
+  <a class="skip-link" href="#status" onclick={skipToAnswer}>{singlePage('skipToContent')}</a>
   <section class="workspace" aria-labelledby="app-title">
     <header class="app-header">
       <div class="brand" id="app-title">
@@ -1439,20 +1463,32 @@
             </div>
             <div class="field-group">
               <label for="trip-exit"><span>{deep('left')}</span></label>
-              <input
-                id="trip-exit"
-                type="date"
-                value={tripForm.exitDate}
-                oninput={updateTripExitDate}
-                aria-describedby={formErrors.exitDate ? 'exit-help exit-error' : 'exit-help'}
-                aria-invalid={formErrors.exitDate ? 'true' : undefined}
-              />
-              <small id="exit-help">{deep('exitCounts')}</small>
+              {#if tripForm.ongoing}
+                <output id="trip-exit" class="ongoing-departure" aria-live="polite">
+                  <span>{ongoingStay('leaveBy')}</span>
+                  <strong>{ongoingLeaveByDate ? formatDate(ongoingLeaveByDate) : ongoingStay('calculating')}</strong>
+                </output>
+              {:else}
+                <input
+                  id="trip-exit"
+                  type="date"
+                  value={tripForm.exitDate}
+                  oninput={updateTripExitDate}
+                  aria-describedby={formErrors.exitDate ? 'exit-help exit-error' : 'exit-help'}
+                  aria-invalid={formErrors.exitDate ? 'true' : undefined}
+                />
+                <small id="exit-help">{deep('exitCounts')}</small>
+              {/if}
               {#if formErrors.exitDate}<strong id="exit-error" class="field-error">{formErrors.exitDate}</strong>{/if}
             </div>
           </div>
 
-          <div class="date-fields optional-border-fields">
+          <label class="consent-row ongoing-stay-control" for="trip-ongoing">
+            <input id="trip-ongoing" type="checkbox" checked={tripForm.ongoing} onchange={updateOngoingStay} />
+            <span><strong>{ongoingStay('label')}</strong><small>{ongoingStay('help')}</small></span>
+          </label>
+
+          <div class="date-fields optional-border-fields" class:single-field={tripForm.ongoing}>
             <div class="field-group">
               <label for="trip-entry-country"><span>{deep('enteredVia')} <small>{deep('optional')}</small></span></label>
               <select
@@ -1467,19 +1503,21 @@
               </select>
               {#if formErrors.entryCountryCode}<strong id="trip-entry-country-error" class="field-error">{formErrors.entryCountryCode}</strong>{/if}
             </div>
-            <div class="field-group">
-              <label for="trip-exit-country"><span>{deep('leftVia')} <small>{deep('optional')}</small></span></label>
-              <select
-                id="trip-exit-country"
-                bind:value={tripForm.exitCountryCode}
-                aria-describedby={formErrors.exitCountryCode ? 'trip-border-help trip-exit-country-error' : 'trip-border-help'}
-                aria-invalid={formErrors.exitCountryCode ? 'true' : undefined}
-              >
-                <option value="">{deep('chooseUseful')}</option>
-                {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
-              </select>
-              {#if formErrors.exitCountryCode}<strong id="trip-exit-country-error" class="field-error">{formErrors.exitCountryCode}</strong>{/if}
-            </div>
+            {#if !tripForm.ongoing}
+              <div class="field-group">
+                <label for="trip-exit-country"><span>{deep('leftVia')} <small>{deep('optional')}</small></span></label>
+                <select
+                  id="trip-exit-country"
+                  bind:value={tripForm.exitCountryCode}
+                  aria-describedby={formErrors.exitCountryCode ? 'trip-border-help trip-exit-country-error' : 'trip-border-help'}
+                  aria-invalid={formErrors.exitCountryCode ? 'true' : undefined}
+                >
+                  <option value="">{deep('chooseUseful')}</option>
+                  {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
+                </select>
+                {#if formErrors.exitCountryCode}<strong id="trip-exit-country-error" class="field-error">{formErrors.exitCountryCode}</strong>{/if}
+              </div>
+            {/if}
           </div>
           <small id="trip-border-help">{deep('borderContext')}</small>
 
@@ -1548,6 +1586,27 @@
       </dialog>
       {/if}
 
+      <section class="screen timeline-section" id="timeline" aria-labelledby="timeline-heading">
+        <div class="timeline-intro">
+          <h2 id="timeline-heading" class="screen-title" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
+          <p class="timeline-source">{singlePage('savedResult')}</p>
+          <p>{tripOnboarding('timelineHelp')}</p>
+        </div>
+        {#if historyReady}
+          <TimelineLedger
+            headingId="canonical-timeline-heading"
+            label={ui('rollingWindow')}
+            {locale}
+            mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
+            {trips}
+            referenceDate={dashboardState.referenceDate}
+            returnDates={timelineReturningForecast.rows.map((row) => row.date)}
+            horizonDays={timelineReturningForecast.horizonDays}
+          />
+          {#if quickAdjustNotice}<p class="micro-safe" aria-live="polite">{quickAdjustNotice}</p>{/if}
+        {/if}
+      </section>
+
       <section class="screen trips-section" id="trips" aria-labelledby="trips-heading">
         <div class="section-heading">
           <div>
@@ -1555,26 +1614,6 @@
             <h2 id="trips-heading" class="screen-title" tabindex="-1">{tripOnboarding('nav')}</h2>
           </div>
         </div>
-        <section class="embedded-timeline" aria-labelledby="timeline-heading">
-          <div class="timeline-intro">
-            <p>{singlePage('savedResult')}</p>
-            <h2 id="timeline-heading" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
-            <p>{tripOnboarding('timelineHelp')}</p>
-          </div>
-          {#if historyReady}
-            <TimelineLedger
-              headingId="canonical-timeline-heading"
-              label={ui('rollingWindow')}
-              {locale}
-              mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
-              {trips}
-              referenceDate={dashboardState.referenceDate}
-              returnDates={timelineReturningForecast.rows.map((row) => row.date)}
-              horizonDays={timelineReturningForecast.horizonDays}
-            />
-            {#if quickAdjustNotice}<p class="micro-safe" aria-live="polite">{quickAdjustNotice}</p>{/if}
-          {/if}
-        </section>
         {#if trips.length === 0}
           <section class="empty-state" aria-labelledby="empty-trips-heading">
             <h2 id="empty-trips-heading">{singlePage('noPreviousTrips')}</h2>
@@ -1596,7 +1635,7 @@
                   id={`trip-trigger-${trip.id}`}
                   class="trip-summary-trigger"
                   type="button"
-                  aria-label={tripCardToggleLabel(trip, quickAdjustVisible && quickAdjustSourceId === trip.id)}
+                  aria-label={tripCardToggleLabel(tripCardPreview(trip), quickAdjustVisible && quickAdjustSourceId === trip.id)}
                   aria-expanded={quickAdjustVisible && quickAdjustSourceId === trip.id}
                   aria-controls={quickAdjustVisible && quickAdjustSourceId === trip.id ? 'quick-adjust-panel' : undefined}
                   onclick={() => toggleQuickAdjuster(trip)}
@@ -1605,15 +1644,23 @@
                     <span class="trip-color-dot" aria-hidden="true"></span>
                     <span class="trip-copy">
                       <strong><bdi>{displayTripName(tripCardPreview(trip))}</bdi></strong>
+                      <span class="trip-day-count"><bdi>{formatLocalizedCount(locale, countTripSchengenDays(tripCardPreview(trip)), 'day').text}</bdi></span>
                       {#if tripCardPreview(trip).label}<span class="trip-route"><bdi>{displayRoute(tripCardPreview(trip))}</bdi></span>{/if}
-                      <span><bdi>{formatDateRange(tripEntryDate(tripCardPreview(trip)), tripExitDate(tripCardPreview(trip)))}</bdi> · <bdi>{formatLocalizedSchengenDays(locale, countTripSchengenDays(tripCardPreview(trip)))}{countTripOutsideDays(tripCardPreview(trip)) > 0 ? ` · ${formatLocalizedOutsideDays(locale, countTripOutsideDays(tripCardPreview(trip)))}` : ''}</bdi></span>
+                      <span class="trip-dates">
+                        {#if tripCardPreview(trip).ongoing}
+                          <bdi>{formatDate(tripEntryDate(tripCardPreview(trip)))} – {ongoingStay('ongoing')}</bdi>
+                        {:else}
+                          <bdi>{formatDateRange(tripEntryDate(tripCardPreview(trip)), tripExitDate(tripCardPreview(trip)))}</bdi>
+                        {/if}
+                        {#if countTripOutsideDays(tripCardPreview(trip)) > 0}<span aria-hidden="true"> · </span><bdi>{formatLocalizedOutsideDays(locale, countTripOutsideDays(tripCardPreview(trip)))}</bdi>{/if}
+                      </span>
                     </span>
-                    {#if tripCardStates[trip.id]?.completed || (tripCardStates[trip.id]?.overBy ?? 0) > 0}
+                    {#if tripCardPreview(trip).ongoing || tripCardStates[trip.id]?.completed || (tripCardStates[trip.id]?.overBy ?? 0) > 0}
                       <span
                         class="trip-card-status"
                         class:completed={tripCardStates[trip.id]?.completed}
                         class:over-limit={(tripCardStates[trip.id]?.overBy ?? 0) > 0}
-                      >{formatTripCardOverage(locale, tripCardStates[trip.id]?.overBy ?? 0, tripCardStates[trip.id]?.completed ?? false)}</span>
+                      >{tripCardPreview(trip).ongoing && (tripCardStates[trip.id]?.overBy ?? 0) === 0 ? ongoingStay('ongoing') : formatTripCardOverage(locale, tripCardStates[trip.id]?.overBy ?? 0, tripCardStates[trip.id]?.completed ?? false)}</span>
                     {/if}
                   </span>
                   <TripMiniTimeline
@@ -1878,95 +1925,16 @@
       </section>
       {/if}
 
-      <section class="screen returns-section" aria-labelledby="returns-heading">
-        <details class="section-disclosure" bind:open={returnsDetailsOpen}>
-          <summary class="disclosure-summary">
-            <div class="section-heading">
-              <p>{historyReady ? rt('allowanceFrom', { date: formatDate(dashboardState.referenceDate) }) : singlePage('detailsSummary')}</p>
-              <h2 id="returns-heading" class="screen-title" tabindex="-1">{historyReady ? returningForecast.summaryLabel : deep('returnsForecast')}</h2>
-            </div>
-          </summary>
-          <div class="disclosure-body">
-        {#if historyReady}
-        <p class="window-label">{rt('usedOn', { used: returningForecast.currentUsedLabel, date: formatDate(dashboardState.referenceDate) })}</p>
-        <TimelineLedger
-          headingId="returns-timeline-heading"
-          label={deep('returnsForecast')}
-          {locale}
-          mode="returns"
-          {trips}
-          referenceDate={dashboardState.referenceDate}
-          returnDates={returningForecast.rows.map((row) => row.date)}
-          horizonDays={returningForecast.horizonDays}
-        />
-        <section class="panel mint">
-          <h2>{returningForecast.nextReturnLabel}</h2>
-          <p>{rt('returnExplain')}</p>
-        </section>
-        <div class="return-list">
-          {#each returningForecast.rows as row}
-            <article>
-              <strong><bdi>{row.dateLabel}</bdi></strong>
-              <span>{row.daysLabel}</span>
-              <p>{row.source}</p>
-            </article>
-          {:else}
-            <section class="empty-state compact-empty">
-              <h2>{rt('noReturnTitle')}</h2>
-              <p>{rt('noReturnCopy', { days: returningForecast.horizonDays })}</p>
-            </section>
-          {/each}
-        </div>
-        {:else}
-          <section class="history-gate panel" aria-labelledby="returns-history-gate-heading">
-            <h2 id="returns-history-gate-heading">{tripOnboarding('title')}</h2>
-            <p>{tripOnboarding('copy')}</p>
-            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-          </section>
-        {/if}
-          </div>
-        </details>
-      </section>
 
-      <section class="screen report-section" id="report" aria-labelledby="report-heading">
-        <details class="section-disclosure" bind:open={reportDetailsOpen}>
-          <summary class="disclosure-summary">
-            <div class="section-heading">
-              <p>{singlePage('reportSummary')}</p>
-              <h2 id="report-heading" class="screen-title" tabindex="-1">{deep('reportTitle')}</h2>
-            </div>
-          </summary>
-          <div class="disclosure-body">
-        {#if historyReady}
-        <article class="report-preview" aria-label={deep('reportTitle')}>
-          <div class="brand report-brand"><SchngnLogo small /></div>
-          <h2>{dashboardState.statusLabel} · {dashboardState.heroMetric}</h2>
-          <p class="mono-range">{ui('daysUsed')}: <bdi>{dashboardState.daysUsedLabel}</bdi> · <bdi>{formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</bdi></p>
-          <p>{explanationState.summary}</p>
-          <p>{legal.footer}</p>
-        </article>
-        <section class="panel whatif-panel">
-          <h2>{pdfFakeDoorState.messageTitle}</h2>
-          <p>{pdfFakeDoorState.helperCopy}</p>
-          <button class="primary-button" type="button" onclick={recordPdfBuyIntent}>{accountSignedIn ? pdfFakeDoorState.buttonLabel : deep('signUp')}</button>
-        </section>
-        {#if pdfFakeDoorState.showIntentMessage}
-          <section class="panel mint" aria-live="polite">
-            <h2>{rt('requestNoted')}</h2>
-            <p>{pdfFakeDoorState.messageCopy}</p>
-            <p class="micro-safe">{rt('noPaymentReport')}</p>
-          </section>
-        {/if}
-        {:else}
-          <section class="history-gate panel" aria-labelledby="report-history-gate-heading">
-            <h2 id="report-history-gate-heading">{tripOnboarding('title')}</h2>
-            <p>{tripOnboarding('copy')}</p>
-            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-          </section>
-        {/if}
+      {#if !accountSignedIn}
+        <section class="signup-value-section" aria-labelledby="signup-value-heading">
+          <div>
+            <h2 id="signup-value-heading">{signupValue('title')}</h2>
+            <p>{signupValue('copy')}</p>
           </div>
-        </details>
-      </section>
+          <button class="primary-button" type="button" onclick={startAccountSignUp}>{signupValue('button')}</button>
+        </section>
+      {/if}
 
       <section class="screen account-section" id="account" aria-labelledby="account-section-heading">
         <details class="section-disclosure" bind:open={accountDetailsOpen}>
@@ -2210,8 +2178,7 @@
   .anchor-links,
   .facts,
   .button-row,
-  .form-actions,
-  .return-list article {
+  .form-actions {
     display: flex;
     align-items: center;
   }
@@ -2389,13 +2356,7 @@
     margin-top: 10px;
   }
 
-  .embedded-timeline {
-    display: grid;
-    min-width: 0;
-    gap: 14px;
-    padding-bottom: 22px;
-    border-bottom: 1px solid var(--line);
-  }
+  .timeline-section { gap: 14px; }
 
   .timeline-intro {
     display: grid;
@@ -2409,7 +2370,7 @@
     line-height: 1.45;
   }
 
-  .timeline-intro > p:first-child {
+  .timeline-intro > .timeline-source {
     color: var(--safe);
     font-size: 0.82rem;
     font-weight: 760;
@@ -2418,9 +2379,6 @@
   .timeline-intro h2 {
     margin: 0;
     color: var(--ink);
-    font-size: 1.55rem;
-    line-height: 1.15;
-    letter-spacing: -0.018em;
     text-wrap: balance;
   }
 
@@ -2621,7 +2579,6 @@
   }
 
   .panel,
-  .report-preview,
   .empty-state,
   .confirm-panel {
     min-width: 0;
@@ -2632,7 +2589,6 @@
   }
 
   .panel h2,
-  .report-preview h2,
   .empty-state h2,
   .confirm-panel h2,
   .trip-list h2 {
@@ -2644,7 +2600,6 @@
   }
 
   .panel p,
-  .report-preview p,
   .empty-state p,
   .confirm-panel p {
     max-width: 72ch;
@@ -2987,10 +2942,13 @@
     gap: 12px;
   }
 
+  .date-fields.single-field { grid-template-columns: 1fr; }
+
   .field-group {
     display: grid;
     min-width: 0;
     gap: 6px;
+    align-content: start;
   }
 
   input,
@@ -3005,15 +2963,44 @@
     padding: 10px 12px;
   }
 
-  /* iOS Safari includes a date input's inline padding outside width: 100%. */
+  /* Keep native date controls aligned with text fields without exceeding their grid cell. */
   input[type='date'] {
     max-inline-size: 100%;
-    padding-inline: 0;
+    padding-inline: 12px 8px;
   }
 
   input::placeholder { color: #596761; }
   input[aria-invalid='true'],
   select[aria-invalid='true'] { border-color: var(--risk); }
+
+  .ongoing-stay-control {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 10px 12px;
+  }
+
+  .ongoing-stay-control strong,
+  .ongoing-stay-control small {
+    display: block;
+  }
+
+  .ongoing-stay-control strong { color: var(--ink); }
+  .ongoing-stay-control small { margin-top: 2px; }
+
+  .ongoing-departure {
+    display: grid;
+    align-content: center;
+    min-height: 48px;
+    border: 1px solid color-mix(in srgb, var(--safe), var(--control-line) 55%);
+    border-radius: 10px;
+    background: var(--safe-bg);
+    padding: 8px 12px;
+    color: var(--safe);
+  }
+
+  .ongoing-departure span { font-size: 0.78rem; font-weight: 700; }
+  .ongoing-departure strong { font-size: 1rem; }
 
   fieldset {
     display: grid;
@@ -3068,7 +3055,6 @@
   }
 
   .trip-list,
-  .return-list,
   .simulation-result {
     display: grid;
     gap: 10px;
@@ -3120,6 +3106,17 @@
     font-size: 0.8rem;
     line-height: 1.4;
     overflow-wrap: anywhere;
+  }
+
+  .trip-copy > .trip-day-count {
+    width: fit-content;
+    max-width: 100%;
+    color: var(--ink);
+    font-size: 1.35rem;
+    font-weight: 780;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
   }
 
   .trip-copy > strong {
@@ -3248,33 +3245,6 @@
     gap: 18px;
   }
 
-  .compact-empty { padding: 14px; }
-
-  .return-list article {
-    min-width: 0;
-    justify-content: space-between;
-    gap: 12px;
-    border-bottom: 1px solid var(--line);
-    padding: 12px 0;
-  }
-
-  .return-list span {
-    flex: 0 0 auto;
-    border: 1px solid color-mix(in srgb, var(--safe), var(--line) 35%);
-    border-radius: 6px;
-    background: var(--safe-bg);
-    color: var(--safe);
-    padding: 6px 8px;
-    font-weight: 760;
-  }
-
-  .return-list p {
-    max-width: 42ch;
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.88rem;
-    overflow-wrap: anywhere;
-  }
 
   .window-label {
     margin: 0;
@@ -3298,11 +3268,19 @@
     line-height: 1.5;
   }
 
-  .report-preview {
-    display: grid;
-    gap: 10px;
-    border-color: var(--ink);
+  .signup-value-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-mint);
+    padding: 24px 32px;
   }
+
+  .signup-value-section h2 { margin: 0; font-size: 1.35rem; }
+  .signup-value-section p { max-width: 68ch; margin: 6px 0 0; color: var(--muted); line-height: 1.5; }
+  .signup-value-section button { flex: 0 0 auto; }
 
   .loading-state {
     display: grid;
@@ -3364,9 +3342,9 @@
       padding: 18px 16px;
     }
     .confirm-panel { align-items: stretch; flex-direction: column; }
+    .signup-value-section { align-items: stretch; flex-direction: column; padding: 22px 18px; }
+    .signup-value-section button { width: 100%; }
     .account-choice-grid { grid-template-columns: 1fr; }
-    .return-list article { align-items: flex-start; flex-wrap: wrap; }
-    .return-list p { width: 100%; max-width: none; }
     .simulation-save-actions { grid-template-columns: 1fr; }
   }
 

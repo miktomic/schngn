@@ -30,6 +30,7 @@ function form(overrides: Partial<TripFormInput> = {}): TripFormInput {
     entryDate: '2026-07-01',
     exitDate: '2026-07-12',
     outsideBreaks: [],
+    ongoing: false,
     status: 'booked',
     ...overrides
   };
@@ -40,6 +41,33 @@ describe('trip CRUD model', () => {
     const input = form({ entryDate: '2026-10-13', exitDate: '2026-10-13', status: 'what-if' });
     expect(validateTripInput(input)).toEqual({});
     expect(inclusiveTripDays(input)).toBe(1);
+  });
+
+  test('stores an ongoing stay without requiring a made-up departure and projects it through the reference date', () => {
+    const input = form({ entryDate: '2026-07-01', exitDate: '', ongoing: true });
+    expect(validateTripInput(input, '2026-07-10')).toEqual({});
+
+    const result = upsertTrip([], input, '2026-07-10');
+    expect(result.errors).toEqual({});
+    expect(result.trips[0]).toMatchObject({ ongoing: true, stays: [{ entryDate: '2026-07-01', exitDate: '2026-07-10' }] });
+    expect(tripToForm(result.trips[0])).toMatchObject({ ongoing: true, exitDate: '' });
+    expect(toEngineTrips(result.trips, '2026-07-12')).toEqual([
+      { entryDate: '2026-07-01', exitDate: '2026-07-12', label: undefined }
+    ]);
+    expect(calculateUsageOnDate(toEngineTrips(result.trips, '2026-07-12'), '2026-07-12').daysUsed).toBe(12);
+  });
+
+  test('requires an ongoing stay to have started by today', () => {
+    expect(validateTripInput(form({ entryDate: '2026-07-11', exitDate: '', ongoing: true }), '2026-07-10')).toEqual({
+      entryDate: 'An ongoing stay cannot start in the future.'
+    });
+  });
+
+  test('allows only one ongoing stay at a time', () => {
+    const existing = upsertTrip([], form({ id: 'current', entryDate: '2026-07-01', exitDate: '', ongoing: true }), '2026-07-10').trips;
+    const result = upsertTrip(existing, form({ id: 'second', entryDate: '2026-07-05', exitDate: '', ongoing: true }), '2026-07-10');
+    expect(result.errors).toEqual({ exitDate: 'Finish your existing ongoing stay before adding another one.' });
+    expect(result.trips).toEqual(existing);
   });
 
   test('infers past status from the final exit date', () => {

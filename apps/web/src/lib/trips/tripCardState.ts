@@ -26,10 +26,11 @@ export function buildTripCardStates(
   displayedTrips: EditableTrip[],
   currentDate: string = currentLocalIsoDate()
 ): Record<string, TripCardState> {
-  const allSavedStays = toEngineTrips(allTrips);
+  const allSavedStays = toEngineTrips(allTrips, currentDate);
   const entries = displayedTrips.map((trip): [string, TripCardState] => {
-    const stayExitDates = [...new Set(trip.stays.map((stay) => stay.exitDate))].sort();
-    const finalExitDate = tripExitDate(trip);
+    const resolvedStays = toEngineTrips([trip], currentDate);
+    const stayExitDates = [...new Set(resolvedStays.map((stay) => stay.exitDate))].sort();
+    const finalExitDate = tripExitDate(trip, currentDate);
     let peakDaysUsed = 0;
     let peakReferenceDate = stayExitDates[0] ?? (finalExitDate || currentDate);
 

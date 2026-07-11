@@ -1,7 +1,7 @@
 <script lang="ts">
   import { addDays, formatISODate, parseISODate } from '@schngn/engine';
   import { formatDate, type Locale } from '$lib/i18n';
-  import { tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
+  import { toEngineTrips, tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
 
   interface MiniTimelineProps {
     color: string;
@@ -41,7 +41,7 @@
     const endsOutsideWindow = exitDate < suppliedStartDate || exitDate > suppliedEndDate;
     const endDate = endsOutsideWindow ? exitDate : suppliedEndDate;
     const startDate = shiftDate(endDate, -179);
-    const segments = [...inputTrip.stays]
+    const segments = toEngineTrips([inputTrip], suppliedEndDate)
       .sort((left, right) => left.entryDate.localeCompare(right.entryDate))
       .flatMap((stay): MiniTimelineSegment[] => {
         const visibleStart = stay.entryDate < startDate ? startDate : stay.entryDate;

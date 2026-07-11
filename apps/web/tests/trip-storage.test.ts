@@ -53,6 +53,13 @@ describe('local-only trip storage repository', () => {
     expect(result.trips).toEqual([spain]);
   });
 
+  test('round-trips the explicit ongoing-stay marker', () => {
+    const storage = new MemoryStorage();
+    const ongoing = { ...spain, ongoing: true as const, exitCountryCode: undefined };
+    expect(saveTripsToStorage(storage, [ongoing])).toEqual({ ok: true });
+    expect(loadTripsFromStorage(storage).trips).toEqual([ongoing]);
+  });
+
   test('falls back safely to empty with a warning when stored JSON is corrupt', () => {
     const storage = new MemoryStorage();
     storage.setItem(SCHNGN_TRIPS_STORAGE_KEY, '{not json');

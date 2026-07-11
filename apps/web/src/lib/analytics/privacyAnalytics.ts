@@ -3,7 +3,6 @@ export const ALLOWED_ANALYTICS_EVENTS = [
   'calculator_start',
   'trip_added',
   'simulation_run',
-  'pdf_buy_intent',
   'unlock_buy_intent'
 ] as const;
 
@@ -19,7 +18,6 @@ export type AnalyticsSource =
   | 'dashboard'
   | 'trip_form'
   | 'planner'
-  | 'report'
   | 'privacy'
   | 'manual';
 export type PriceBucket = 'eur_5' | 'eur_9' | 'eur_19' | 'gbp_5' | 'gbp_9' | 'gbp_19';
@@ -53,7 +51,6 @@ const ALLOWED_PROP_VALUES: { [Key in keyof Required<AnalyticsProps>]: ReadonlySe
     'dashboard',
     'trip_form',
     'planner',
-    'report',
     'privacy',
     'manual'
   ]),

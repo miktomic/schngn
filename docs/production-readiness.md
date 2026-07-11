@@ -122,7 +122,6 @@ After deployment, confirm these events arrive with bucket/source properties only
 - `calculator_start`
 - `trip_added`
 - `simulation_run`
-- `pdf_buy_intent`
 - `unlock_buy_intent`
 
 Do not launch paid traffic if events are absent or if any event contains a date, email, free-form trip label, country history, or calculated timeline.

@@ -48,7 +48,7 @@
   .language-selector {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     min-width: 0;
     color: var(--ink);
     font-size: 0.82rem;

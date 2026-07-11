@@ -20,6 +20,17 @@ describe('dashboard money-shot state', () => {
     expect(state.latestSafeExitLabel).toBe('Nov 9');
   });
 
+  test('prioritizes an ongoing stay and calculates its live departure deadline', () => {
+    const ongoing = { ...makeTrip('current', 'Current stay', '2026-07-01', '2026-07-10', 'booked', 'IT'), ongoing: true as const, exitCountryCode: undefined };
+    const later = makeTrip('later', 'Later trip', '2026-12-01', '2026-12-05', 'booked', 'FR');
+    const state = buildDashboardState([ongoing, later], undefined, '2026-07-10');
+
+    expect(state.targetTrip?.id).toBe('current');
+    expect(state.referenceDate).toBe('2026-07-10');
+    expect(state.completed).toBe(false);
+    expect(state.latestSafeExitDate).toBe('2026-09-28');
+  });
+
   test('warns when a planned trip is exactly at the limit', () => {
     const state = buildDashboardState([
       makeTrip('past-89', 'Prior Schengen', '2026-01-01', '2026-03-30'),

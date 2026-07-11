@@ -22,9 +22,10 @@ import {
 } from '../src/lib/i18n/appRuntimeUi';
 import { createWhatIfUiTranslator, formatAdjusterFeedback, whatIfCatalogLengths } from '../src/lib/i18n/whatIfUi';
 import { createTripOnboardingTranslator, tripOnboardingCatalogLengths } from '../src/lib/i18n/tripOnboardingUi';
+import { createOngoingStayUiTranslator, ongoingStayCatalogLengths } from '../src/lib/i18n/ongoingStayUi';
+import { createSignupValueUiTranslator, signupValueCatalogLengths } from '../src/lib/i18n/signupValueUi';
 import {
   localizeDashboardState,
-  localizePdfState,
   localizeReturningForecast,
   localizeSimulationState,
   localizeUnlockState,
@@ -33,7 +34,6 @@ import {
 import { buildDashboardState } from '../src/lib/dashboard/dashboardState';
 import { buildTripSimulationState } from '../src/lib/simulator/tripSimulator';
 import { createTranslator } from '../src/lib/i18n';
-import { buildPdfReportFakeDoorState } from '../src/lib/fake-door/pdfReportFakeDoor';
 import { buildUnlockFakeDoorState } from '../src/lib/fake-door/unlockFakeDoor';
 import { buildReturningDaysForecast } from '../src/lib/returns/returningDays';
 import { makeTrip } from './trip-fixtures';
@@ -102,6 +102,26 @@ describe('whole-site localization', () => {
     expect(new Set(Object.values(tripOnboardingCatalogLengths())).size).toBe(1);
   });
 
+  test('localizes the ongoing-stay flow in every supported language', () => {
+    expect(new Set(Object.values(ongoingStayCatalogLengths()))).toEqual(new Set([5]));
+    for (const locale of SUPPORTED_LOCALES) {
+      const ongoing = createOngoingStayUiTranslator(locale);
+      for (const key of ['label', 'help', 'leaveBy', 'calculating', 'ongoing'] as const) {
+        expect(ongoing(key).trim().length).toBeGreaterThan(0);
+      }
+    }
+    expect(createOngoingStayUiTranslator('ru')('label')).not.toContain('currently');
+    expect(createOngoingStayUiTranslator('he')('leaveBy')).not.toContain('Leave');
+  });
+
+  test('localizes the repeat-calculation signup value in every supported language', () => {
+    expect(new Set(Object.values(signupValueCatalogLengths()))).toEqual(new Set([3]));
+    for (const locale of SUPPORTED_LOCALES) {
+      const signup = createSignupValueUiTranslator(locale);
+      for (const key of ['title', 'copy', 'button'] as const) expect(signup(key).trim().length).toBeGreaterThan(0);
+    }
+  });
+
   test('uses neutral entry and exit labels in every deep app locale', () => {
     const expected = {
       en: ['Entry date', 'Exit date', 'Entry country', 'Exit country', 'Re-entry date'],
@@ -147,7 +167,6 @@ describe('whole-site localization', () => {
     expect(localizeDashboardState('ar', raw).statusLabel).toBe('إضافة رحلة');
     expect(createAppRuntimeUiTranslator('de')('checkingSignIn')).toBe('Anmeldung wird geprüft…');
     expect(createAppRuntimeUiTranslator('he')('needPlanningPower')).toContain('תכנון');
-    expect(localizePdfState('he', buildPdfReportFakeDoorState(true)).messageCopy).toContain('הירשמו');
     expect(
       localizeUnlockState(
         'ar',
@@ -306,6 +325,9 @@ describe('whole-site localization', () => {
     const timeline = readFileSync('apps/web/src/lib/design/TimelineLedger.svelte', 'utf8');
     expect(timeline).toContain('horizonDays,\n    locale,\n    mode');
     expect(timeline).toContain('dateRangeLabel[locale]');
-    expect(timeline).toContain('<bdi>{model.rangeLabel}</bdi>');
+    expect(timeline).toContain('aria-label={`${label}. ${model.summary} ${dateRangeLabel[locale]} ${model.rangeLabel}.`}');
+    expect(timeline).not.toContain('<bdi>{model.rangeLabel}</bdi>');
+    expect(timeline).toContain('<bdi>{formatDateRange(model.startDate, model.startDate)}</bdi>');
+    expect(timeline).toContain('<bdi>{formatDateRange(model.endDate, model.endDate)}</bdi>');
   });
 });

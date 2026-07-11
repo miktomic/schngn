@@ -29,6 +29,12 @@ describe('JSON trip backup and restore', () => {
     expect(calculateUsageOnDate(toEngineTrips([multiStay]), '2026-07-12').daysUsed).toBe(10);
   });
 
+  test('preserves ongoing stays in private backups', () => {
+    const ongoing = { ...makeTrip('current', 'Current stay', '2026-07-01', '2026-07-11', 'booked', 'IT'), ongoing: true as const, exitCountryCode: undefined };
+    const result = importTripsFromJson(tripsToBackupJson([ongoing], new Date('2026-07-11T12:00:00.000Z')));
+    expect(result).toEqual({ ok: true, trips: [ongoing] });
+  });
+
   test('rejects malformed JSON and version-one backups', () => {
     expect(importTripsFromJson('{not json')).toEqual({ ok: false, error: 'Import file is not valid JSON.' });
     expect(importTripsFromJson(JSON.stringify({ schemaVersion: 1, exportedAt: '2026-01-02T03:04:05.000Z', trips: [] }))).toEqual({

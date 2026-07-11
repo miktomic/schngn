@@ -117,6 +117,10 @@ function parseStoredTrips(value: unknown): EditableTrip[] {
   const trips = value.map(parseStoredTrip);
   const ids = new Set<string>();
 
+  if (trips.filter((trip) => trip.ongoing).length > 1) {
+    throw new Error('Stored trip payload contains more than one ongoing stay.');
+  }
+
   for (const trip of trips) {
     if (ids.has(trip.id)) throw new Error(`Duplicate trip id: ${trip.id}`);
     ids.add(trip.id);
@@ -137,6 +141,7 @@ function parseStoredTrip(value: unknown): EditableTrip {
 
   const entryCountryCode = readOptionalCountryCode(trip.entryCountryCode, 'entryCountryCode');
   const exitCountryCode = readOptionalCountryCode(trip.exitCountryCode, 'exitCountryCode');
+  const ongoing = readOngoing(trip.ongoing);
   if (!Array.isArray(trip.stays) || trip.stays.length < 1 || trip.stays.length > 21) {
     throw new Error('Trip stays are invalid.');
   }
@@ -147,6 +152,7 @@ function parseStoredTrip(value: unknown): EditableTrip {
     label,
     entryCountryCode,
     exitCountryCode,
+    ongoing,
     stays,
     status: trip.status
   };
@@ -157,6 +163,12 @@ function parseStoredTrip(value: unknown): EditableTrip {
   }
 
   return parsedTrip;
+}
+
+function readOngoing(value: unknown): true | undefined {
+  if (value === undefined) return undefined;
+  if (value === true) return true;
+  throw new Error('Trip ongoing marker is invalid.');
 }
 
 function parseStoredStay(value: unknown, index: number): { entryDate: string; exitDate: string } {

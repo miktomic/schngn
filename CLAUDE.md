@@ -98,7 +98,7 @@ apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
 
-`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `trips`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, and retired `#timeline`/`#details` hashes plus planner, proof, and returning-days destinations map to `trips`. The combined Trips workspace contains the canonical master timeline followed by saved-trip rows. Clicking a row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
+`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `timeline`, `trips`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, retired `#status` maps to `timeline`, retired `#details` plus planner, proof, and returning-days destinations map to `trips`, and the retired report destination maps to `account`. The canonical master timeline is the first workspace section, followed immediately by the saved-trip cards under their own Trips anchor. Clicking a row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
 
 ## Commands
 
@@ -312,7 +312,6 @@ Allowed analytics events must be aggregate only:
 - `calculator_start`
 - `trip_added` with count bucket only
 - `simulation_run` without dates
-- `pdf_buy_intent`
 - `unlock_buy_intent`
 
 Never include:

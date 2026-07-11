@@ -26,7 +26,7 @@ const en: Record<TripOnboardingKey, string> = {
   bookedAction: 'Then add any trips you already booked',
   noHistory: 'I don’t have a trip to add yet.',
   addNew: 'Add new trip',
-  nav: 'Your trips',
+  nav: 'Your Trips',
   timelineTitle: 'Your 180-day timeline',
   timelineHelp: 'This timeline updates whenever you add, edit, or remove a trip.',
   plannerTitle: 'Plan a future trip',

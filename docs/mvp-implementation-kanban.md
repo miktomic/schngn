@@ -214,17 +214,17 @@
 - **Depends on:** US-04, US-05, privacy/product decision.
 - **Implementation target:** privacy-safe analytics wrapper with Plausible-compatible client hook and no provider lock-in.
 - **Acceptance summary:**
-  - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`, `pdf_buy_intent`, `unlock_buy_intent`.
+  - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`, `unlock_buy_intent`.
   - Payloads are allowlisted and aggregate-only: source, trip count bucket, safe-buffer bucket, verdict, or price bucket.
   - Trip dates, labels, names, email addresses, country history, and personal timelines are rejected before any analytics call.
   - UI wiring fires aggregate funnel events from workspace views, trip-add, simulator, and paid-intent actions without sending trip details or identity data.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 104 Bun tests / 1242 assertions including privacy-safe analytics allowlist and forbidden-payload rejection tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for intercepted Plausible-compatible events and no forbidden network payloads.
 
-## US-13 — Border-ready PDF export fake-door
+## US-13 — Border-ready PDF export fake-door (retired)
 
 - **Priority:** Must
 - **Estimate:** S
-- **Status:** Done
+- **Status:** Retired after validation
 - **Depends on:** US-07, US-15, approved fake-door pricing; see `docs/product-decisions.md`.
 - **Implementation target:** report-screen fake-door CTA using the approved €9 MVP default; broader price-bucket persistence/distribution remains US-14.
 - **Acceptance summary:**
@@ -234,6 +234,7 @@
   - Does not send trip dates, report contents, labels, email, or personal travel timelines.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 106 Bun tests / 1250 assertions including PDF fake-door state and analytics-event tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the PDF fake-door CTA, early-access/no-charge message, `pdf_buy_intent`, and no forbidden network payloads.
 - **Success metric:** PDF-click rate after completed calculation > 10%.
+- **Retirement note:** The PDF/report fake door and `pdf_buy_intent` event were removed. The product now uses the bottom-of-workspace account CTA to explain the validated repeat-visit value: saving trip history for future calculations and optional cross-device sync after explicit consent.
 
 ## US-14 — Paid unlock fake-door + pricing A/B
 

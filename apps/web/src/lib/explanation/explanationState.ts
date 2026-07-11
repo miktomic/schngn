@@ -188,7 +188,7 @@ export function buildExplanationState(
     .replace(/\.\.$/u, '.');
 
   return {
-    countedTripRows: buildCountedTripRows(sortedTrips, countedDays, locale),
+    countedTripRows: buildCountedTripRows(sortedTrips, countedDays, locale, referenceDate),
     heading: localizedCopy.heading,
     ruleBullets: [
       localizedCopy.inclusiveRule,
@@ -203,24 +203,24 @@ export function buildExplanationState(
   };
 }
 
-function buildCountedTripRows(trips: EditableTrip[], countedDays: Set<string>, locale: Locale): CountedTripRow[] {
+function buildCountedTripRows(trips: EditableTrip[], countedDays: Set<string>, locale: Locale, referenceDate: string): CountedTripRow[] {
   return trips
     .map((trip) => {
-      const days = countTripDaysInSet(trip, countedDays);
+      const days = countTripDaysInSet(trip, countedDays, referenceDate);
       if (days <= 0) return null;
       return {
         label: trip.label ?? formatTripRouteLabel(trip, locale),
-        rangeLabel: formatDateRange(locale, tripEntryDate(trip), tripExitDate(trip)),
+        rangeLabel: formatDateRange(locale, tripEntryDate(trip), tripExitDate(trip, referenceDate)),
         daysLabel: formatCountedRowDays(locale, days)
       } satisfies CountedTripRow;
     })
     .filter((row): row is CountedTripRow => row !== null);
 }
 
-function countTripDaysInSet(trip: EditableTrip, countedDays: Set<string>): number {
+function countTripDaysInSet(trip: EditableTrip, countedDays: Set<string>, referenceDate: string): number {
   let count = 0;
   const tripDays = new Set<string>();
-  for (const stay of trip.stays) {
+  for (const stay of toEngineTrips([trip], referenceDate)) {
     const exit = parseISODate(stay.exitDate);
     for (let current = parseISODate(stay.entryDate); current <= exit; current = addDays(current, 1)) {
       tripDays.add(formatISODate(current));

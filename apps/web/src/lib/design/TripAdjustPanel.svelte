@@ -3,6 +3,7 @@
   import { intlLocale, type Locale } from '$lib/i18n';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
   import { createWhatIfUiTranslator, formatAdjusterFeedback } from '$lib/i18n/whatIfUi';
+  import { createOngoingStayUiTranslator } from '$lib/i18n/ongoingStayUi';
   import type { AdjustmentRange, DateAdjustment } from '$lib/simulator/whatIfDates';
   import type { ProposedTripInput, TripSimulationState } from '$lib/simulator/tripSimulator';
   import { SCHENGEN_COUNTRY_OPTIONS } from '$lib/trips/countries';
@@ -58,6 +59,7 @@
 
   let whatIf = $derived(createWhatIfUiTranslator(locale));
   let deep = $derived(createAppDeepUiTranslator(locale));
+  let ongoingStay = $derived(createOngoingStayUiTranslator(locale));
   let hasValidResult = $derived(state.valid && state.usage !== null && state.simulatedTrip !== null);
   let canSave = $derived(hasChanges && hasValidResult);
   let tone = $derived<'safe' | 'risk' | 'whatif'>(
@@ -87,8 +89,13 @@
     onFormChange({
       ...form,
       entryCountryCode,
-      exitCountryCode: form.exitCountryCode || entryCountryCode
+      exitCountryCode: form.ongoing ? '' : form.exitCountryCode || entryCountryCode
     });
+  }
+
+  function updateOngoing(event: Event): void {
+    const ongoing = (event.currentTarget as HTMLInputElement).checked;
+    onFormChange({ ...form, ongoing, exitCountryCode: ongoing ? '' : form.exitCountryCode });
   }
 
   function addOutsideBreak(): void {
@@ -115,19 +122,43 @@
     </div>
   </header>
 
-  <WhatIfAdjuster
-    {accentColor}
-    {entryDate}
-    {entryMax}
-    {exitDate}
-    {exitMin}
-    {range}
-    {locale}
-    {cutoffDate}
-    feedback={rangeFeedback}
-    feedbackTone={state.statusTone === 'risk' ? 'risk' : state.statusTone === 'close' ? 'limit' : 'safe'}
-    {onDatesChange}
-  />
+  {#if form.ongoing}
+    <section class="ongoing-editor" aria-label={ongoingStay('ongoing')}>
+      <label for={`${instanceId}-ongoing-entry`}>
+        <span>{deep('entered')}</span>
+        <input
+          id={`${instanceId}-ongoing-entry`}
+          type="date"
+          max={exitDate}
+          value={entryDate}
+          onchange={(event) => updateField('entryDate', (event.currentTarget as HTMLInputElement).value)}
+        />
+      </label>
+      <div class="ongoing-leave-by">
+        <span>{ongoingStay('leaveBy')}</span>
+        <strong>{state.latestSafeExitLabel}</strong>
+      </div>
+    </section>
+  {:else}
+    <WhatIfAdjuster
+      {accentColor}
+      {entryDate}
+      {entryMax}
+      {exitDate}
+      {exitMin}
+      {range}
+      {locale}
+      {cutoffDate}
+      feedback={rangeFeedback}
+      feedbackTone={state.statusTone === 'risk' ? 'risk' : state.statusTone === 'close' ? 'limit' : 'safe'}
+      {onDatesChange}
+    />
+  {/if}
+
+  <label class="ongoing-toggle" for={`${instanceId}-ongoing`}>
+    <input id={`${instanceId}-ongoing`} type="checkbox" checked={form.ongoing} onchange={updateOngoing} />
+    <span><strong>{ongoingStay('label')}</strong><small>{ongoingStay('help')}</small></span>
+  </label>
 
   <details class="trip-details-editor">
     <summary>{whatIf('details')}</summary>
@@ -151,17 +182,19 @@
             {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
           </select>
         </label>
-        <label for={`${instanceId}-exit-country`}>
-          <span>{deep('leftVia')} <small>{deep('optional')}</small></span>
-          <select
-            id={`${instanceId}-exit-country`}
-            value={form.exitCountryCode ?? ''}
-            onchange={(event) => updateField('exitCountryCode', (event.currentTarget as HTMLSelectElement).value)}
-          >
-            <option value="">{deep('chooseUseful')}</option>
-            {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
-          </select>
-        </label>
+        {#if !form.ongoing}
+          <label for={`${instanceId}-exit-country`}>
+            <span>{deep('leftVia')} <small>{deep('optional')}</small></span>
+            <select
+              id={`${instanceId}-exit-country`}
+              value={form.exitCountryCode ?? ''}
+              onchange={(event) => updateField('exitCountryCode', (event.currentTarget as HTMLSelectElement).value)}
+            >
+              <option value="">{deep('chooseUseful')}</option>
+              {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
+            </select>
+          </label>
+        {/if}
       </div>
       <small class="detail-help">{deep('borderContext')}</small>
 
@@ -285,6 +318,41 @@
     text-wrap: balance;
   }
 
+  .ongoing-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 0.8fr);
+    gap: 12px;
+    align-items: end;
+  }
+
+  .ongoing-leave-by {
+    display: grid;
+    align-content: center;
+    min-height: 44px;
+    border: 1px solid color-mix(in srgb, var(--safe), var(--line) 55%);
+    border-radius: 8px;
+    background: var(--safe-bg);
+    padding: 8px 10px;
+    color: var(--safe);
+  }
+
+  .ongoing-leave-by span { font-size: 0.72rem; font-weight: 700; }
+
+  .ongoing-toggle {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+    padding: 10px;
+  }
+
+  .ongoing-toggle input { width: 20px; min-height: 20px; margin: 2px 0 0; }
+  .ongoing-toggle strong, .ongoing-toggle small { display: block; }
+  .ongoing-toggle small { margin-top: 2px; color: var(--muted); font-weight: 500; }
+
   .live-result,
   .invalid-result {
     display: grid;
@@ -352,7 +420,7 @@
 
   input[type='date'] {
     max-inline-size: 100%;
-    padding-inline: 0;
+    padding-inline: 10px 8px;
   }
 
   .outside-details,
@@ -502,6 +570,7 @@
   }
 
   @media (max-width: 560px) {
+    .ongoing-editor { grid-template-columns: 1fr; }
     .result-heading {
       align-items: flex-start;
       flex-direction: column;

@@ -1,7 +1,6 @@
 export const APP_ANCHORS = [
-  'status',
+  'timeline',
   'trips',
-  'report',
   'account'
 ] as const;
 
@@ -10,14 +9,14 @@ export type AppAnchor = (typeof APP_ANCHORS)[number];
 const APP_ANCHOR_SET = new Set<string>(APP_ANCHORS);
 
 const LEGACY_SECTION_ANCHORS: Readonly<Record<string, AppAnchor>> = {
-  dashboard: 'status',
+  dashboard: 'timeline',
   trip: 'trips',
   trips: 'trips',
   planner: 'trips',
   proof: 'trips',
   returns: 'trips',
-  report: 'report',
-  waitlist: 'report',
+  report: 'account',
+  waitlist: 'account',
   privacy: 'account'
 };
 
@@ -27,12 +26,14 @@ export function isAppAnchor(value: unknown): value is AppAnchor {
 
 export function appAnchorFromUrl(url: URL): AppAnchor {
   if (url.searchParams.has('section')) {
-    return LEGACY_SECTION_ANCHORS[url.searchParams.get('section') ?? ''] ?? 'status';
+    return LEGACY_SECTION_ANCHORS[url.searchParams.get('section') ?? ''] ?? 'timeline';
   }
 
   const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
-  if (hash === 'details' || hash === 'timeline') return 'trips';
-  return isAppAnchor(hash) ? hash : 'status';
+  if (hash === 'status') return 'timeline';
+  if (hash === 'details') return 'trips';
+  if (hash === 'report') return 'account';
+  return isAppAnchor(hash) ? hash : 'timeline';
 }
 
 export function appAnchorUrl(currentUrl: URL, anchor: AppAnchor): string {
