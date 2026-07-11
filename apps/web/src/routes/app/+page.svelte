@@ -9,7 +9,7 @@
   import { createTranslator, intlLocale, localeFromPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
-  import { createAppRuntimeUiTranslator, formatLocalizedCount } from '$lib/i18n/appRuntimeUi';
+  import { createAppRuntimeUiTranslator, formatLocalizedCount, formatLocalizedOutsideDays, formatLocalizedSchengenDays } from '$lib/i18n/appRuntimeUi';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
   import { createTripOnboardingTranslator } from '$lib/i18n/tripOnboardingUi';
   import { createSinglePageUiTranslator } from '$lib/i18n/singlePageUi';
@@ -1204,11 +1204,6 @@
     return `${startLabel}–${formatDate(endDate)}`;
   }
 
-  function pluralize(word: string, count: number): string {
-    if (word === 'trip' || word === 'day') return formatLocalizedCount(locale, count, word).label;
-    return count === 1 ? word : `${word}s`;
-  }
-
   function tripCount(count: number): string {
     return formatLocalizedCount(locale, count, 'trip').text;
   }
@@ -1488,7 +1483,7 @@
           {#if tripFormPreview}
             <section class="trip-form-summary" aria-live="polite">
               <strong><bdi>{displayRoute(tripFormPreview)}</bdi></strong>
-              <span><bdi>{formatDateRange(tripEntryDate(tripFormPreview), tripExitDate(tripFormPreview))}</bdi> · <bdi>{countTripSchengenDays(tripFormPreview)} {rt('schengen')} {pluralize('day', countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${countTripOutsideDays(tripFormPreview)} ${pluralize('day', countTripOutsideDays(tripFormPreview))} ${rt('outside')}` : ''}</bdi></span>
+              <span><bdi>{formatDateRange(tripEntryDate(tripFormPreview), tripExitDate(tripFormPreview))}</bdi> · <bdi>{formatLocalizedSchengenDays(locale, countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${formatLocalizedOutsideDays(locale, countTripOutsideDays(tripFormPreview))}` : ''}</bdi></span>
             </section>
           {/if}
           <div class="trip-form-timeline">
@@ -1552,7 +1547,7 @@
                 <div class="trip-copy">
                   <h2><bdi>{displayTripName(trip)}</bdi></h2>
                   {#if trip.label}<p class="trip-route"><bdi>{displayRoute(trip)}</bdi></p>{/if}
-                  <p><bdi>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))}</bdi> · <bdi>{countTripSchengenDays(trip)} {rt('schengen')} {pluralize('day', countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${countTripOutsideDays(trip)} ${pluralize('day', countTripOutsideDays(trip))} ${rt('outside')}` : ''}</bdi></p>
+                  <p><bdi>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))}</bdi> · <bdi>{formatLocalizedSchengenDays(locale, countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${formatLocalizedOutsideDays(locale, countTripOutsideDays(trip))}` : ''}</bdi></p>
                   <strong>{statusLabel(trip.status)}</strong>
                 </div>
                 <div class="trip-actions">

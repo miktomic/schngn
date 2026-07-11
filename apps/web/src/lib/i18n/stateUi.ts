@@ -3,8 +3,9 @@ import type { TripSimulationState } from '../simulator/tripSimulator';
 import type { ReturningDaysForecast } from '../returns/returningDays';
 import type { PdfReportFakeDoorState } from '../fake-door/pdfReportFakeDoor';
 import type { UnlockFakeDoorState } from '../fake-door/unlockFakeDoor';
-import { formatDate } from './index';
+import { formatDate, intlLocale } from './index';
 import type { Locale } from './locales';
+import { formatLocalizedCount, formatLocalizedNumber, localizedPluralCategory } from './countUi';
 
 interface StateLabels {
   addDates: string; addTrip: string; atLimit: string; countedDays: string; countedDayLeaves: string;
@@ -32,6 +33,102 @@ const labels: Record<Locale, StateLabels> = {
 const shortDate = (locale: Locale, iso: string) => formatDate(locale, iso, { day:'numeric', month:'short' });
 const fullRange = (locale: Locale, start: string, end: string) => `${formatDate(locale,start,{day:'numeric',month:'short'})}–${formatDate(locale,end,{day:'numeric',month:'short',year:'numeric'})}`;
 
+type DayMetric = 'plain' | 'counted' | 'over' | 'remaining' | 'returning' | 'safeBuffer';
+
+function formatDayMetric(locale: Locale, count: number, metric: DayMetric): string {
+  if (metric === 'plain') return formatLocalizedCount(locale, count, 'day').text;
+
+  const number = formatLocalizedNumber(locale, count);
+  const category = localizedPluralCategory(locale, count);
+  const one = category === 'one';
+  const simpleForms: Partial<Record<Locale, Record<DayMetric, [string, string]>>> = {
+    en: {
+      plain: ['day', 'days'], counted: ['counted day', 'counted days'], over: ['day over the limit', 'days over the limit'],
+      remaining: ['day remaining', 'days remaining'], returning: ['day returns', 'days return'], safeBuffer: ['safe buffer day', 'safe buffer days']
+    },
+    fr: {
+      plain: ['jour', 'jours'], counted: ['jour compté', 'jours comptés'], over: ['jour au-dessus de la limite', 'jours au-dessus de la limite'],
+      remaining: ['jour restant', 'jours restants'], returning: ['jour revient', 'jours reviennent'], safeBuffer: ['jour de marge de sécurité', 'jours de marge de sécurité']
+    },
+    de: {
+      plain: ['Tag', 'Tage'], counted: ['gezählter Tag', 'gezählte Tage'], over: ['Tag über dem Limit', 'Tage über dem Limit'],
+      remaining: ['Tag verbleibt', 'Tage verbleiben'], returning: ['Tag kehrt zurück', 'Tage kehren zurück'], safeBuffer: ['sicherer Puffertag', 'sichere Puffertage']
+    },
+    es: {
+      plain: ['día', 'días'], counted: ['día contabilizado', 'días contabilizados'], over: ['día sobre el límite', 'días sobre el límite'],
+      remaining: ['día restante', 'días restantes'], returning: ['día vuelve', 'días vuelven'], safeBuffer: ['día de margen seguro', 'días de margen seguro']
+    },
+    it: {
+      plain: ['giorno', 'giorni'], counted: ['giorno conteggiato', 'giorni conteggiati'], over: ['giorno oltre il limite', 'giorni oltre il limite'],
+      remaining: ['giorno rimanente', 'giorni rimanenti'], returning: ['giorno torna', 'giorni tornano'], safeBuffer: ['giorno di margine sicuro', 'giorni di margine sicuro']
+    },
+    tr: {
+      plain: ['gün', 'gün'], counted: ['sayılan gün', 'sayılan gün'], over: ['gün sınırın üzerinde', 'gün sınırın üzerinde'],
+      remaining: ['gün kaldı', 'gün kaldı'], returning: ['gün geri döner', 'gün geri döner'], safeBuffer: ['günlük güvenli pay', 'günlük güvenli pay']
+    },
+    he: {
+      plain: ['יום', 'ימים'], counted: ['יום שנספר', 'ימים שנספרו'], over: ['יום מעל למגבלה', 'ימים מעל למגבלה'],
+      remaining: ['יום נותר', 'ימים נותרו'], returning: ['יום חוזר', 'ימים חוזרים'], safeBuffer: ['יום של מרווח בטוח', 'ימים של מרווח בטוח']
+    }
+  };
+
+  if (locale === 'he' && count === 2) {
+    const dual: Record<Exclude<DayMetric, 'plain'>, string> = {
+      counted: 'יומיים שנספרו', over: 'יומיים מעל למגבלה', remaining: 'יומיים נותרו',
+      returning: 'יומיים חוזרים', safeBuffer: 'יומיים של מרווח בטוח'
+    };
+    return dual[metric];
+  }
+
+  const simple = simpleForms[locale];
+  if (simple) return `${number} ${simple[metric][one ? 0 : 1]}`;
+
+  if (locale === 'ru') {
+    const forms: Record<DayMetric, [string, string, string]> = {
+      plain: ['день', 'дня', 'дней'], counted: ['учтённый день', 'учтённых дня', 'учтённых дней'],
+      over: ['день сверх лимита', 'дня сверх лимита', 'дней сверх лимита'],
+      remaining: ['день остался', 'дня осталось', 'дней осталось'],
+      returning: ['день вернётся', 'дня вернутся', 'дней вернутся'],
+      safeBuffer: ['день безопасного запаса', 'дня безопасного запаса', 'дней безопасного запаса']
+    };
+    const index = category === 'one' ? 0 : category === 'few' ? 1 : 2;
+    return `${number} ${forms[metric][index]}`;
+  }
+
+  const arabicForms: Record<Exclude<DayMetric, 'plain'>, Record<'zero' | 'one' | 'two' | 'few' | 'many' | 'other', string>> = {
+    counted: { zero: 'أيام محتسبة', one: 'يوم محتسب', two: 'يومان محتسبان', few: 'أيام محتسبة', many: 'يومًا محتسبًا', other: 'يوم محتسب' },
+    over: { zero: 'أيام فوق الحد', one: 'يوم فوق الحد', two: 'يومان فوق الحد', few: 'أيام فوق الحد', many: 'يومًا فوق الحد', other: 'يوم فوق الحد' },
+    remaining: { zero: 'أيام متبقية', one: 'يوم متبقٍ', two: 'يومان متبقيان', few: 'أيام متبقية', many: 'يومًا متبقيًا', other: 'يوم متبقٍ' },
+    returning: { zero: 'أيام تعود', one: 'يوم يعود', two: 'يومان يعودان', few: 'أيام تعود', many: 'يومًا يعود', other: 'يوم يعود' },
+    safeBuffer: { zero: 'أيام كهامش آمن', one: 'يوم كهامش آمن', two: 'يومان كهامش آمن', few: 'أيام كهامش آمن', many: 'يومًا كهامش آمن', other: 'يوم كهامش آمن' }
+  };
+  if (count === 2) return arabicForms[metric].two;
+  const arabicCategory = category === 'zero' || category === 'one' || category === 'few' || category === 'many' ? category : 'other';
+  return `${number} ${arabicForms[metric][arabicCategory]}`;
+}
+
+function formatCountedRatio(locale: Locale, count: number): string {
+  const used = formatLocalizedNumber(locale, count);
+  const limit = formatLocalizedNumber(locale, 90);
+  return ({
+    en: `${used}/${limit} counted days`,
+    fr: `${used} jours comptés sur ${limit}`,
+    de: `${used} von ${limit} Tagen gezählt`,
+    es: `${used} de ${limit} días contabilizados`,
+    it: `${used} giorni conteggiati su ${limit}`,
+    ru: `${used} из ${limit} учтённых дней`,
+    tr: `${limit} günün ${used} günü sayıldı`,
+    he: `${used} מתוך ${limit} ימים שנספרו`,
+    ar: `${used} من أصل ${limit} يومًا محتسبًا`
+  } as Record<Locale, string>)[locale];
+}
+
+function localizeMaxStayLabel(locale: Locale, label: string, l: StateLabels): string {
+  if (label === 'Not applicable') return l.notApplicable;
+  const match = /^(\d+) days? across this trip$/u.exec(label);
+  return match ? `${formatDayMetric(locale, Number(match[1]), 'plain')} ${l.daysAcrossTrip}` : label;
+}
+
 export function localizeDashboardState(locale: Locale, state: DashboardState): DashboardState {
   if (locale === 'en') return state;
   const l = labels[locale];
@@ -39,10 +136,10 @@ export function localizeDashboardState(locale: Locale, state: DashboardState): D
   const over = state.usage.overLimit;
   return {...state,
     actionCopy: !state.targetTrip ? l.proposalPrompt : over ? l.fixPlan : state.latestSafeExitDate ? `${l.currentExit}: ${shortDate(locale,state.targetTrip.stays.at(-1)?.exitDate ?? state.referenceDate)} · ${l.latestSafeExit}: ${shortDate(locale,state.latestSafeExitDate)}` : l.noSafeContinuous,
-    heroMetric: over ? `${state.usage.overBy} ${l.daysOver}` : `${state.usage.daysRemaining} ${l.safeBuffer}`,
+    heroMetric: formatDayMetric(locale, over ? state.usage.overBy : state.usage.daysRemaining, over ? 'over' : 'safeBuffer'),
     latestSafeExitLabel: state.latestSafeExitDate ? shortDate(locale,state.latestSafeExitDate) : state.targetTrip ? l.noSafeStay : l.addDates,
     statusLabel: !state.targetTrip ? l.addTrip : `${name} · ${over ? l.needsChanges : state.statusTone === 'close' ? l.atLimit : l.fits}`,
-    whyCopy: `${shortDate(locale,state.referenceDate)} · ${state.usage.daysUsed}/90 ${l.countedDays} · ${over ? `${state.usage.overBy} ${l.daysOver}` : `${state.usage.daysRemaining} ${l.daysRemain}`}`,
+    whyCopy: `${shortDate(locale,state.referenceDate)} · ${formatCountedRatio(locale,state.usage.daysUsed)} · ${formatDayMetric(locale,over ? state.usage.overBy : state.usage.daysRemaining,over ? 'over' : 'remaining')}`,
     windowLabel: fullRange(locale,state.usage.windowStart,state.usage.windowEnd)
   };
 }
@@ -60,17 +157,19 @@ export function localizeSimulationState(locale: Locale, state: TripSimulationSta
   return {...state,
     firstFixCopy: over ? l.fixPlan : `${l.safeUntil}: ${latest}`,
     latestSafeExitLabel: latest,
-    maxStayLabel: state.maxStayLabel.replace(/days? across this trip/i, `${l.days} ${l.daysAcrossTrip}`),
+    maxStayLabel: localizeMaxStayLabel(locale,state.maxStayLabel,l),
     statusLabel: `${name} · ${over ? l.needsChanges : state.statusTone === 'close' ? l.atLimit : l.fits}`,
-    summaryCopy: `${state.usage.daysUsed}/90 ${l.countedDays} · ${over ? l.firstOverLimit : `${state.usage.daysRemaining} ${l.daysRemain}`}`
+    summaryCopy: `${formatCountedRatio(locale,state.usage.daysUsed)} · ${over ? l.firstOverLimit : formatDayMetric(locale,state.usage.daysRemaining,'remaining')}`
   };
 }
 
 export function localizeReturningForecast(locale: Locale, forecast: ReturningDaysForecast): ReturningDaysForecast {
   if (locale === 'en') return forecast;
   const l = labels[locale];
-  const rows = forecast.rows.map((row) => ({...row,dateLabel:shortDate(locale,row.date),daysLabel:`+${row.daysReturned} ${row.daysReturned === 1 ? l.day : l.days}`,source:l.countedDayLeaves}));
-  return {...forecast,rows,currentUsedLabel:`${forecast.currentUsed}/90 ${l.used}`,summaryLabel:rows.length ? `${rows.length} ${l.daysReturn} · ${forecast.horizonDays} ${l.days}` : `${l.noDaysReturn} · ${forecast.horizonDays} ${l.days}`,nextReturnLabel:rows[0] ? `${l.nextReturn}: ${rows[0].dateLabel}` : l.noReturning};
+  const rows = forecast.rows.map((row) => ({...row,dateLabel:shortDate(locale,row.date),daysLabel:`+${formatDayMetric(locale,row.daysReturned,'plain')}`,source:l.countedDayLeaves}));
+  const returningDays = rows.reduce((total,row)=>total+row.daysReturned,0);
+  const horizon = formatDayMetric(locale,forecast.horizonDays,'plain');
+  return {...forecast,rows,currentUsedLabel:formatCountedRatio(locale,forecast.currentUsed),summaryLabel:rows.length ? `${formatDayMetric(locale,returningDays,'returning')} · ${horizon}` : `${l.noDaysReturn} · ${horizon}`,nextReturnLabel:rows[0] ? `${l.nextReturn}: ${rows[0].dateLabel}` : l.noReturning};
 }
 
 export function localizePdfState(locale: Locale, state: PdfReportFakeDoorState): PdfReportFakeDoorState {

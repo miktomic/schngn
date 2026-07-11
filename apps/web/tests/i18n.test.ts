@@ -4,6 +4,7 @@ import { reroute } from '../src/hooks';
 import {
   LOCALE_LABELS,
   SUPPORTED_LOCALES,
+  intlLocale,
   localeDirection,
   localeFromPath,
   localizedPath,
@@ -12,12 +13,19 @@ import {
 } from '../src/lib/i18n';
 import { createAppUiTranslator } from '../src/lib/i18n/appUi';
 import { appDeepCatalogLengths, createAppDeepUiTranslator } from '../src/lib/i18n/appDeepUi';
-import { appRuntimeCatalogLengths, createAppRuntimeUiTranslator } from '../src/lib/i18n/appRuntimeUi';
+import {
+  appRuntimeCatalogLengths,
+  createAppRuntimeUiTranslator,
+  formatLocalizedCount,
+  formatLocalizedOutsideDays,
+  formatLocalizedSchengenDays
+} from '../src/lib/i18n/appRuntimeUi';
 import { createWhatIfUiTranslator, whatIfCatalogLengths } from '../src/lib/i18n/whatIfUi';
 import { createTripOnboardingTranslator, tripOnboardingCatalogLengths } from '../src/lib/i18n/tripOnboardingUi';
 import {
   localizeDashboardState,
   localizePdfState,
+  localizeReturningForecast,
   localizeUnlockState,
   stateCatalogKeyCount
 } from '../src/lib/i18n/stateUi';
@@ -25,6 +33,8 @@ import { buildDashboardState } from '../src/lib/dashboard/dashboardState';
 import { createTranslator } from '../src/lib/i18n';
 import { buildPdfReportFakeDoorState } from '../src/lib/fake-door/pdfReportFakeDoor';
 import { buildUnlockFakeDoorState } from '../src/lib/fake-door/unlockFakeDoor';
+import { buildReturningDaysForecast } from '../src/lib/returns/returningDays';
+import { makeTrip } from './trip-fixtures';
 
 describe('whole-site localization', () => {
   test('supports all approved locales and both RTL languages', () => {
@@ -115,6 +125,38 @@ describe('whole-site localization', () => {
         '€9'
       ).messageCopy
     ).toContain('أنشئ حسابًا');
+
+    const overByOne = buildDashboardState([
+      makeTrip('past', 'Prior Schengen', '2026-01-01', '2026-03-31'),
+      makeTrip('italy', 'Italy', '2026-06-29', '2026-06-29', 'booked', 'IT')
+    ]);
+    expect(localizeDashboardState('fr', overByOne).heroMetric).toBe('1 jour au-dessus de la limite');
+    expect(localizeDashboardState('ru', overByOne).heroMetric).toBe('1 день сверх лимита');
+    expect(localizeDashboardState('he', overByOne).heroMetric).toBe('1 יום מעל למגבלה');
+    expect(localizeDashboardState('ar', overByOne).heroMetric)
+      .toBe(`${new Intl.NumberFormat(intlLocale('ar')).format(1)} يوم فوق الحد`);
+    expect(localizeDashboardState('fr', overByOne).whyCopy).toContain('91 jours comptés sur 90');
+    expect(localizeDashboardState('he', overByOne).whyCopy).toContain('91 מתוך 90 ימים שנספרו');
+
+    const overByTwo = buildDashboardState([
+      makeTrip('past', 'Prior Schengen', '2026-01-01', '2026-03-31'),
+      makeTrip('italy', 'Italy', '2026-06-28', '2026-06-29', 'booked', 'IT')
+    ], '2026-06-29');
+    expect(localizeDashboardState('he', overByTwo).heroMetric).toBe('יומיים מעל למגבלה');
+    expect(localizeDashboardState('ar', overByTwo).heroMetric).toBe('يومان فوق الحد');
+
+    expect(createAppRuntimeUiTranslator('ru')('schengen')).toBe('Шенген');
+    expect(createAppRuntimeUiTranslator('he')('schengen')).toBe('שנגן');
+    expect(createAppRuntimeUiTranslator('ar')('schengen')).toBe('شنغن');
+
+    const oneDayReturns = buildReturningDaysForecast(
+      [makeTrip('returning', 'Returning day', '2026-05-01', '2026-05-01')],
+      { referenceDate: '2026-10-27', horizonDays: 1 }
+    );
+    expect(localizeReturningForecast('ru', oneDayReturns).summaryLabel).toBe('1 день вернётся · 1 день');
+    expect(localizeReturningForecast('he', oneDayReturns).summaryLabel).toBe('1 יום חוזר · 1 יום');
+    expect(localizeReturningForecast('ar', oneDayReturns).summaryLabel)
+      .toBe(`${new Intl.NumberFormat(intlLocale('ar')).format(1)} يوم يعود · ${new Intl.NumberFormat(intlLocale('ar')).format(1)} يوم`);
   });
 
   test('keeps app copy behind translators without reviewed-English fallback notices', () => {
@@ -123,6 +165,34 @@ describe('whole-site localization', () => {
       expect(source).not.toContain(`>${literal}<`);
     }
     expect(source).not.toContain("t('common.reviewedEnglishNotice')");
+  });
+
+  test('pluralizes day and trip counts with complete localized travel phrases', () => {
+    expect(formatLocalizedSchengenDays('en', 10)).toBe('10 Schengen days');
+    expect(formatLocalizedOutsideDays('en', 2)).toBe('2 days outside');
+    expect(formatLocalizedCount('ru', 1, 'day').text).toBe('1 день');
+    expect(formatLocalizedCount('ru', 2, 'day').text).toBe('2 дня');
+    expect(formatLocalizedCount('ru', 5, 'day').text).toBe('5 дней');
+    expect(formatLocalizedCount('ru', 21, 'trip').text).toBe('21 поездка');
+    expect(formatLocalizedCount('ru', 22, 'trip').text).toBe('22 поездки');
+    expect(formatLocalizedCount('ru', 25, 'trip').text).toBe('25 поездок');
+
+    const arabicOne = new Intl.NumberFormat(intlLocale('ar')).format(1);
+    const arabicThree = new Intl.NumberFormat(intlLocale('ar')).format(3);
+    const arabicEleven = new Intl.NumberFormat(intlLocale('ar')).format(11);
+    const arabicZero = new Intl.NumberFormat(intlLocale('ar')).format(0);
+    const arabicHundred = new Intl.NumberFormat(intlLocale('ar')).format(100);
+    expect(formatLocalizedCount('ar', 0, 'day').text).toBe(`${arabicZero} أيام`);
+    expect(formatLocalizedCount('ar', 1, 'day').text).toBe(`${arabicOne} يوم`);
+    expect(formatLocalizedCount('ar', 2, 'day').text).toBe('يومان');
+    expect(formatLocalizedCount('ar', 3, 'day').text).toBe(`${arabicThree} أيام`);
+    expect(formatLocalizedCount('ar', 11, 'day').text).toBe(`${arabicEleven} يومًا`);
+    expect(formatLocalizedCount('ar', 100, 'day').text).toBe(`${arabicHundred} يوم`);
+
+    expect(formatLocalizedSchengenDays('he', 1)).toBe('1 יום בשנגן');
+    expect(formatLocalizedOutsideDays('he', 2)).toBe('יומיים מחוץ לשנגן');
+    expect(formatLocalizedSchengenDays('ru', 2)).toBe('2 дня в Шенгене');
+    expect(formatLocalizedOutsideDays('ar', 3)).toBe(`${arabicThree} أيام خارج شنغن`);
   });
 
   test('keeps localized navigation offline-safe and declares language alternates', () => {
