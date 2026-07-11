@@ -90,7 +90,7 @@ describe('localized calculation explanation', () => {
       timeZone: 'UTC'
     });
     const windowStart = russianDate.format(new Date('2026-01-01T00:00:00.000Z'));
-    const windowEnd = russianDate.format(new Date('2026-06-29T00:00:00.000Z'));
+    const windowEnd = russianDate.format(new Date('2026-06-29T00:00:00.000Z')).replace(/\.$/u, '');
 
     expect(buildExplanationState(trips, '2026-06-29', 'ru').summary)
       .toBe(`91 учтённый день в период с ${windowStart} по ${windowEnd}. Это на 1 день больше лимита в 90 дней.`);
