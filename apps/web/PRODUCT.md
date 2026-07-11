@@ -64,7 +64,7 @@ Avoid these words in product copy unless there is a specific technical context: 
 
 4. **Separate booked from what-if.** Booked trips and simulations are different user commitments. The UI must make that distinction obvious without suggesting booked trips are legally protected.
 
-5. **Local-first is part of trust.** Trip data stays on the device. Analytics and waitlist flows must not receive trip dates, full travel histories, or calculated personal timelines.
+5. **Local-first is part of trust.** Guest trip data stays on the device. Analytics must never receive trip dates, full travel histories, or calculated personal timelines; account sync requires sign-in and explicit consent.
 
 6. **Risk states deserve the same craft as safe states.** Unsafe plans should be specific, fixable, and non-panicky: how many days over, why, and the first correction.
 

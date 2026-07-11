@@ -9,7 +9,7 @@ describe('project status documentation', () => {
     const source = read('docs/production-readiness.md');
     expect(source).toContain('Repository release gate');
     expect(source).toContain('One-time production configuration');
-    expect(source).toContain('Waitlist edge rate limiting');
+    expect(source).toContain('Authenticated-write edge rate limiting');
     expect(source).toContain('Go/no-go decision');
   });
 
@@ -38,7 +38,7 @@ describe('project status documentation', () => {
   });
 
   test('does not claim direct EC calculator parity without captured provenance', () => {
-    const accuracy = read('apps/web/src/routes/accuracy/+page.svelte');
+    const accuracy = read('apps/web/src/lib/i18n/messages.ts');
     const fixtures = read('packages/engine/tests/fixtures/ec/README.md');
 
     expect(fixtures).toContain('independent day-set oracle');

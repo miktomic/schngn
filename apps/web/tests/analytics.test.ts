@@ -15,8 +15,7 @@ const allowedEvents: AnalyticsEventName[] = [
   'trip_added',
   'simulation_run',
   'pdf_buy_intent',
-  'unlock_buy_intent',
-  'waitlist_signup'
+  'unlock_buy_intent'
 ];
 
 describe('privacy-safe analytics wrapper', () => {
@@ -74,6 +73,7 @@ describe('privacy-safe analytics wrapper', () => {
 
   test('rejects unknown event names and unknown property keys', () => {
     expect(() => buildAnalyticsEvent('trip_deleted' as AnalyticsEventName, {})).toThrow(/not allowlisted/i);
+    expect(() => buildAnalyticsEvent('waitlist_signup' as AnalyticsEventName, {})).toThrow(/not allowlisted/i);
     expect(() =>
       buildAnalyticsEvent('trip_added', {
         trip_count_bucket: '1',
@@ -85,6 +85,7 @@ describe('privacy-safe analytics wrapper', () => {
   test('runtime-validates every analytics bucket instead of relying on TypeScript types', () => {
     const unsafeValues = [
       { source: 'other' },
+      { source: 'waitlist' },
       { trip_count_bucket: 'exactly-2' },
       { safe_buffer_bucket: 'about-a-week' },
       { verdict: 'approved' },

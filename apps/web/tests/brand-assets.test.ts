@@ -17,7 +17,7 @@ describe('SCHNGN production brand assets', () => {
     expect(logoComponent).toContain('width="864"');
     expect(logoComponent).toContain('height="156"');
     expect(logoComponent).toContain('{alt}');
-    expect(logoComponent).toContain('mix-blend-mode: multiply');
+    expect(logoComponent).not.toContain('mix-blend-mode');
   });
 
   test('uses the wordmark on every public product header', () => {

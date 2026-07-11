@@ -73,18 +73,19 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.goto('/he/app?section=planner');
     await expect(page.locator('html')).toHaveAttribute('lang', 'he');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    await expect(page).toHaveURL(/\/he\/app\?section=trips$/);
-    await expect(page.getByRole('button', { name: 'נסיעות ותכנון', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page).toHaveURL(/\/he\/app#plan$/);
+    await expect(page.locator('#app-anchor-select')).toHaveValue('plan');
     await expect(page.getByRole('heading', { name: 'תכנון נסיעה עתידית' })).toBeVisible();
+    await page.locator('#plan').getByRole('button', { name: 'לא היו לי נסיעות קודמות באזור שנגן', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'צריכים אפשרויות תכנון נוספות?' })).toBeVisible();
     const appLanguageSelector = page.getByRole('combobox', { name: 'שפה' });
     await appLanguageSelector.selectOption('fr');
-    await expect(page).toHaveURL(/\/fr\/app\?section=trips$/);
-    await expect(page.getByRole('button', { name: 'Voyages et planification', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page).toHaveURL(/\/fr\/app#plan$/);
+    await expect(page.locator('#app-anchor-select')).toHaveValue('plan');
     await expect(page.getByRole('heading', { name: 'Planifier un futur voyage' })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('button', { name: 'Voyages et planification', exact: true })).toHaveAttribute('aria-current', 'page');
-    await page.getByRole('button', { name: 'Compte', exact: true }).click();
+    await expect(page.locator('#app-anchor-select')).toHaveValue('plan');
+    await navigateToAppAnchor(page, 'account');
     await expect(page.getByRole('heading', { name: 'Continuer sans compte' })).toBeVisible();
 
     await page.goto('/tr/accuracy');
@@ -93,7 +94,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'Doğruluk kanıtı' })).toBeVisible();
   });
 
-  test('installed PWA shell reloads locally saved trips offline', async ({ page, context }) => {
+  test('installed PWA shell serves locally saved trips and a cached shell offline', async ({ page, context }) => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => {
       if (window.sessionStorage.getItem('schngn.e2e.initialized')) return;
@@ -101,7 +102,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       window.sessionStorage.setItem('schngn.e2e.initialized', 'true');
     });
     await page.goto('/app');
-    await expect(page.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(page.locator('#status').getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
     await expect(page.getByText('Add trips you already completed')).toBeVisible();
     await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.json');
     await expect(page.locator('link[rel="icon"][href$="/favicon.png"]')).toHaveAttribute('sizes', '64x64');
@@ -114,10 +115,10 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(offlineReady).toBe(true);
 
     await page.getByRole('button', { name: 'Dismiss' }).click();
-    await page.getByRole('button', { name: 'Trips & planning', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
-    await expect(page.getByRole('img', { name: /0 counted days in this inclusive 180-day window/i })).toBeVisible();
-    await page.getByRole('button', { name: 'Add your first trip' }).click();
+    await expect(page.getByRole('img', { name: /0 counted days in this inclusive 180-day window/i })).toHaveCount(0);
+    expect(await sectionComesBefore(page, 'trips', 'timeline')).toBe(true);
+    await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await tripForm.getByLabel(/Trip label/).fill('Offline Spain stay');
     await tripForm.locator('#trip-entry-country').selectOption('ES');
@@ -127,14 +128,14 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(tripForm.locator('.inferred-trip-status').getByText('Past trip', { exact: true })).toBeVisible();
     await expect(tripForm.getByRole('radio', { name: 'Past' })).toHaveCount(0);
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
-    await expect(page.getByText('Offline Spain stay')).toBeVisible();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Offline Spain stay', exact: true })).toBeVisible();
+    await expect(page.getByRole('img', { name: /5 counted days in this inclusive 180-day window/i })).toBeVisible();
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Trips & planning', exact: true })).toBeVisible();
     await expect(page.getByText('1 trip stored on this device.')).toBeVisible();
-    await page.getByRole('button', { name: 'Overview', exact: true }).click();
     await expect(page.getByRole('heading', { name: '85 safe buffer days' })).toBeVisible();
-    await expect(page.getByText('Offline Spain stay fits')).toBeVisible();
+    await expect(page.locator('#status .status-chip').getByText('Offline Spain stay fits', { exact: true })).toBeVisible();
 
     const cacheAudit = await page.evaluate(async () => {
       const offlineWindow = window as unknown as { __schngnOfflineReady?: Promise<boolean> };
@@ -169,34 +170,82 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
         apiPrecacheReply,
         cachedDevResourceCount: devResources.length,
         missingDevResources,
+        hasCachedAppShell: cachedRequests.some((request) => new URL(request.url).pathname === '/app'),
         hasCachedAccountApi: cachedRequests.some((request) => new URL(request.url).pathname.startsWith('/api/'))
       };
     });
     expect(cacheAudit.apiPrecacheReply).toEqual({ ok: true, cached: 0 });
     expect(cacheAudit.cachedDevResourceCount).toBeGreaterThan(10);
     expect(cacheAudit.missingDevResources).toEqual([]);
+    expect(cacheAudit.hasCachedAppShell).toBe(true);
     expect(cacheAudit.hasCachedAccountApi).toBe(false);
 
     await context.setOffline(true);
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    const offlineShell = await page.evaluate(async () => {
+      const response = await caches.match('/app');
+      if (!response) return { ok: false, status: 0, text: '' };
+      return { ok: response.ok, status: response.status, text: await response.text() };
+    });
+    expect(offlineShell.ok).toBe(true);
+    expect(offlineShell.status).toBe(200);
+    expect(offlineShell.text).toContain('href="/manifest.json"');
     await expect(page.getByRole('heading', { name: '85 safe buffer days' })).toBeVisible();
-    await expect(page.getByText('Offline Spain stay fits')).toBeVisible();
-    await page.getByRole('button', { name: 'Trips & planning' }).click();
+    await expect(page.locator('#status .status-chip').getByText('Offline Spain stay fits', { exact: true })).toBeVisible();
     await expect(page.getByText('1 trip stored on this device.')).toBeVisible();
-    await expect(page.getByText('Offline Spain stay')).toBeVisible();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Offline Spain stay', exact: true })).toBeVisible();
     await context.setOffline(false);
   });
 
-  test('keeps the selected app section through refresh and browser history', async ({ page }) => {
+  test('makes previous-trip setup explicit and remembers a confirmed empty history', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-07-10T12:00:00Z'));
+    await installFakeClerk(page, null);
+    await page.addInitScript(() => {
+      if (window.sessionStorage.getItem('schngn.e2e.history-initialized')) return;
+      window.localStorage.clear();
+      window.sessionStorage.setItem('schngn.e2e.history-initialized', 'true');
+    });
+    await page.goto('/app');
+    await page.getByRole('button', { name: 'Dismiss' }).click();
+
+    const answer = page.locator('#status');
+    await expect(answer.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(answer.getByText('Add trips you already completed')).toBeVisible();
+    await expect(answer.getByText('Then add any trips you already booked')).toBeVisible();
+    await expect(answer.getByRole('button', { name: 'Add your first trip' })).toBeVisible();
+
+    await navigateToAppAnchor(page, 'details');
+    await expect(page.locator('#details').getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(page.locator('#details .ledger')).toHaveCount(0);
+    await navigateToAppAnchor(page, 'report');
+    await expect(page.locator('#report').getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(page.locator('#report .report-preview')).toHaveCount(0);
+    await navigateToAppAnchor(page, 'status');
+
+    await answer.getByRole('button', { name: 'No previous Schengen trips? Go straight to planning.' }).click();
+    await expect(page).toHaveURL(/\/app#plan$/);
+    await expect(answer.getByRole('heading', { name: '90 safe buffer days' })).toBeVisible();
+    await expect(answer.getByText(/calculate as if you spent no days in Schengen during the last 180 days/i)).toBeVisible();
+    expect(await page.evaluate(() => window.localStorage.getItem('schngn-no-previous-history-v1'))).toBe('true');
+
+    await page.reload();
+    await expect(answer.getByRole('heading', { name: '90 safe buffer days' })).toBeVisible();
+    await expect(answer.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toHaveCount(0);
+  });
+
+  test('keeps the selected app anchor through refresh and browser history', async ({ page }) => {
     await page.clock.setFixedTime(new Date('2026-07-10T12:00:00Z'));
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app?market=uk');
     await page.getByRole('button', { name: 'Dismiss' }).click();
 
-    await page.getByRole('button', { name: 'Trips & planning' }).click();
-    await expect(page).toHaveURL(/\/app\?market=uk&section=trips$/);
+    await navigateToAppAnchor(page, 'plan');
+    await expect(page).toHaveURL(/\/app\?market=uk#plan$/);
     await expect(page.getByRole('heading', { name: 'Plan a future trip' })).toBeVisible();
+    await page
+      .locator('#plan')
+      .getByRole('button', { name: 'I have no previous Schengen trips' })
+      .click();
 
     const combinedSimulator = page.getByRole('form', { name: 'Future trip simulator' });
     await combinedSimulator.getByLabel(/Simulation label/).fill('Saved scenario');
@@ -205,7 +254,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await combinedSimulator.getByRole('button', { name: 'Check this plan' }).click();
     await page.getByRole('button', { name: 'Save as booked trip' }).click();
     await expect(page.getByText('Saved as a booked trip.')).toBeVisible();
-    await expect(page.getByText('Saved scenario')).toBeVisible();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Saved scenario', exact: true })).toBeVisible();
 
     await combinedSimulator.getByLabel(/Simulation label/).fill('Old scenario');
     await combinedSimulator.getByLabel('Entered Schengen').fill('2025-01-01');
@@ -215,38 +264,85 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'This trip is outside today’s 180-day window' })).toBeVisible();
     await page.getByRole('button', { name: 'Save anyway' }).click();
     await expect(page.getByText('Saved as a past trip.')).toBeVisible();
-    await expect(page.getByText('Old scenario')).toBeVisible();
+    await page.locator('#trips').getByRole('button', { name: 'Show older trips' }).click();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Old scenario', exact: true })).toBeVisible();
 
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Plan a future trip' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Trips & planning', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('#app-anchor-select')).toHaveValue('plan');
 
-    await page.getByRole('button', { name: 'Account', exact: true }).click();
-    await expect(page).toHaveURL(/\/app\?market=uk&section=privacy$/);
+    await navigateToAppAnchor(page, 'account');
+    await expect(page).toHaveURL(/\/app\?market=uk#account$/);
     await page.goBack();
+    await expect(page).toHaveURL(/\/app\?market=uk#plan$/);
     await expect(page.getByRole('heading', { name: 'Plan a future trip' })).toBeVisible();
+  });
+
+  test('maps legacy section URLs to stable single-page anchors', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.addInitScript(() => window.localStorage.clear());
+
+    await page.goto('/app?market=uk&section=planner');
+    await expect(page).toHaveURL(/\/app\?market=uk#plan$/);
+    await expect(page.locator('#app-anchor-select')).toHaveValue('plan');
+    await expect(page.locator('#plan')).toBeVisible();
+
+    await page.goto('/app?section=trip');
+    await expect(page).toHaveURL(/\/app#trips$/);
+    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
+
+    await page.goto('/app?section=privacy');
+    await expect(page).toHaveURL(/\/app#account$/);
+    await expect(page.locator('#account details')).toHaveAttribute('open', '');
+  });
+
+  test('sends signup calls directly to Clerk without leaving the local app in tests', async ({ page }) => {
+    const requests = observeNetwork(page);
+    await installFakeClerk(page, null);
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.goto('/app');
+    await page.getByRole('button', { name: 'Dismiss' }).click();
+
+    await navigateToAppAnchor(page, 'account');
+    const account = page.locator('#account');
+    await expect(account.getByRole('heading', { name: 'Keep using SCHNGN without an account' })).toBeVisible();
+    await account.getByRole('button', { name: 'Sign up' }).click();
+
+    await expect.poll(() => readClerkSignUpRedirects(page)).toEqual(['/app?account=connected#account']);
+    expect(requests.filter((request) => new URL(request.url).pathname.startsWith('/api/'))).toEqual([]);
   });
 
   test('saving a quick adjustment replaces the original booked trip', async ({ page }) => {
     await page.clock.setFixedTime(new Date('2026-02-01T12:00:00Z'));
     await installFakeClerk(page, null);
-    await page.addInitScript(() => window.localStorage.clear());
+    await page.addInitScript(() => {
+      if (window.sessionStorage.getItem('schngn.e2e.quick-adjust-initialized')) return;
+      window.localStorage.clear();
+      window.sessionStorage.setItem('schngn.e2e.quick-adjust-initialized', 'true');
+    });
     await page.goto('/app');
     await page.getByRole('button', { name: 'Dismiss' }).click();
-    await page.getByRole('button', { name: 'Add your first trip' }).click();
+    await page
+      .locator('#status')
+      .getByRole('button', { name: 'No previous Schengen trips? Go straight to planning.' })
+      .click();
+    await page.locator('#status').getByRole('button', { name: 'Add trip', exact: true }).click();
 
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await tripForm.getByLabel(/Trip label/).fill('Quick-adjust booking');
     await tripForm.getByLabel('Entered Schengen').fill('2026-07-01');
     await tripForm.getByLabel('Left Schengen').fill('2026-07-05');
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
+    await page.reload();
+    await expect(page.locator('#status').getByRole('heading', { name: /safe buffer days/i })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Overview' }).click();
-    await page.getByRole('button', { name: 'Adjust this trip' }).click();
-    const quickAdjuster = page.locator('section[aria-label="Adjust what-if trip"]');
+    await page.getByRole('button', { name: 'Adjust this trip Quick-adjust booking' }).click();
+    const quickAdjuster = page.locator('.trip-adjust-panel');
+    await expect(page).toHaveURL(/\/app#timeline$/);
+    await expect(quickAdjuster.getByRole('heading', { name: 'Adjust trip dates' })).toBeFocused();
     await quickAdjuster.getByRole('button', { name: /Move trip:/ }).press('ArrowRight');
-    await page.getByRole('button', { name: 'Trips & planning' }).click();
-    await page.getByRole('button', { name: 'Save as booked trip' }).click();
+    await quickAdjuster.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('Trip dates updated.')).toBeVisible();
 
     await expect(page.getByText('1 trip stored on this device.')).toBeVisible();
     await page.getByRole('button', { name: 'Edit Quick-adjust booking' }).click();
@@ -260,7 +356,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
     await page.getByRole('button', { name: 'Dismiss' }).click();
-    await page.getByRole('button', { name: 'Add your first trip' }).click();
+    await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
 
     const form = page.getByRole('form', { name: 'Trip form' });
     await form.getByLabel(/Trip label/).fill('Summer trip');
@@ -277,6 +373,9 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await expect(form.getByText(/10 Schengen days · 2 days outside/)).toBeVisible();
     await form.getByRole('button', { name: 'Save trip' }).click();
+    await expect(page.locator('#status').getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(page.locator('#status').getByRole('heading', { name: /safe buffer days/i })).toHaveCount(0);
+    await expect(page.locator('#timeline').getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
     await expect(page.getByText('Italy → Austria')).toBeVisible();
     await expect(page.getByText(/10 Schengen days · 2 days outside/)).toBeVisible();
     await expect(page.locator('.trip-list article.whatif')).toHaveCSS('background-color', 'rgb(255, 241, 214)');
@@ -300,7 +399,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
     await page.getByRole('button', { name: 'Dismiss' }).click();
-    await page.getByRole('button', { name: 'Add your first trip' }).click();
+    await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
 
     const form = page.getByRole('form', { name: 'Trip form' });
     await expect(form.getByRole('img', { name: /Your 180-day allocation/i })).toBeVisible();
@@ -313,8 +412,9 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(form.getByRole('heading', { name: 'This trip is outside today’s 180-day window' })).toBeVisible();
     expect(await page.evaluate(() => window.localStorage.getItem('schngn.trips.v2'))).toBeNull();
     await form.getByRole('button', { name: 'Save anyway' }).click();
-    await expect(page.getByRole('heading', { name: 'Trips' })).toBeVisible();
-    await expect(page.getByText('Italy → Italy')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Trips & planning', exact: true })).toBeVisible();
+    await page.locator('#trips').getByRole('button', { name: 'Show older trips' }).click();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Italy → Italy', exact: true })).toBeVisible();
   });
 
   test('app completes real local-first planning, proof, error, and recovery flows', async ({ page }) => {
@@ -322,21 +422,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.clock.setFixedTime(new Date('2026-02-01T12:00:00Z'));
     const requests = observeNetwork(page);
     const accountRequests = observeAccountNetwork(page);
-    const waitlistRequests: string[] = [];
-    let waitlistMode: 'not-configured' | 'rate-limit' | 'stored' = 'not-configured';
-
-    await page.route('**/api/waitlist', async (route) => {
-      waitlistRequests.push(route.request().postData() ?? '');
-      if (waitlistMode === 'rate-limit') {
-        await route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: 'rate_limited' }) });
-        return;
-      }
-      await route.fulfill({
-        status: waitlistMode === 'not-configured' ? 202 : 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ok: true, stored: waitlistMode === 'stored' })
-      });
-    });
     await installFakeClerk(page, null);
     await page.addInitScript(() => {
       window.localStorage.clear();
@@ -350,15 +435,14 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
 
     await page.goto('/app?market=uk');
-    const overviewButton = page.getByRole('button', { name: 'Overview' });
-    await overviewButton.focus();
-    await expect(overviewButton).toBeFocused();
-    await expect(page.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Proof' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Unlock full trip planner — £9' })).toHaveCount(0);
+    const anchorSelector = page.locator('#app-anchor-select');
+    await anchorSelector.focus();
+    await expect(anchorSelector).toBeFocused();
+    await expect(page.locator('#status').getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(page.locator('#status').getByRole('heading', { name: /safe buffer days/i })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Dismiss' }).click();
-    await page.getByRole('button', { name: 'Add your first trip' }).click();
+    await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await expect(tripForm.getByLabel(/Trip label/)).toHaveAttribute('maxlength', '80');
     await tripForm.getByLabel(/Trip label/).fill('Spain booking');
@@ -376,8 +460,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await tripForm.locator('#trip-entry-country').selectOption('ES');
     await tripForm.locator('#trip-exit-country').selectOption('ES');
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
-    await expect(page.getByRole('heading', { name: 'Trips' })).toBeVisible();
-    await expect(page.getByText('Spain booking')).toBeVisible();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Trips & planning', exact: true })).toBeVisible();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Spain booking', exact: true })).toBeVisible();
 
     await addTrip(page, {
       countryCode: 'FR',
@@ -395,40 +479,42 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
     await expect(page.getByText('3 trips stored on this device.')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Overview' }).click();
     await expect(page.getByRole('heading', { name: '39 safe buffer days' })).toBeVisible();
-    await expect(page.getByText('Spain booking fits')).toBeVisible();
+    await expect(page.locator('#status .status-chip').getByText('Spain booking fits', { exact: true })).toBeVisible();
     const overviewTimeline = page.getByRole('img', { name: /Rolling 180-day window\. 51 counted days/i });
     await expect(overviewTimeline).toBeVisible();
-    await expect(page.getByText('21 Jan–19 Jul 2026')).toBeVisible();
+    await expect(page.locator('#timeline .timeline-head > bdi')).toHaveText('21 Jan–19 Jul 2026');
 
-    await page.getByRole('button', { name: 'Adjust this trip' }).click();
-    const quickAdjuster = page.locator('section[aria-label="Adjust what-if trip"]');
+    await page.getByRole('button', { name: 'Adjust this trip Spain booking' }).click();
+    const quickAdjuster = page.locator('.trip-adjust-panel');
     await expect(quickAdjuster).toBeVisible();
     await quickAdjuster.getByRole('button', { name: /Move trip:/ }).press('ArrowRight');
+    await quickAdjuster.getByText('Exact dates').click();
     const exactDates = quickAdjuster.locator('input[type="date"]');
     await expect(exactDates.nth(0)).toHaveValue('2026-07-02');
     await expect(exactDates.nth(1)).toHaveValue('2026-07-20');
     await expect(page.getByText(/Highest affected-day window shows 51 counted days/)).toBeVisible();
-    await page.getByRole('button', { name: 'Close adjuster' }).click();
+    await quickAdjuster.getByRole('button', { name: 'Keep original' }).click();
     await expect(quickAdjuster).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Show calculation' }).click();
-    await expect(page.getByRole('heading', { name: 'Calculation proof' })).toBeVisible();
-    await expect(page.getByText('51 counted days between Jan 21 and Jul 19. That leaves 39 safe buffer days.')).toBeVisible();
-    await expect(page.getByText(/The app looks back 180 calendar days from Jul 19/i)).toBeVisible();
-    await expect(page.locator('p.mono-range').filter({ hasText: '21 Jan–19 Jul 2026' })).toBeVisible();
+    const details = page.locator('#details');
+    await expect(details.getByRole('heading', { name: 'Calculation proof' })).toBeVisible();
+    await expect(details.getByText('51 counted days between Jan 21 and Jul 19. That leaves 39 safe buffer days.')).toBeVisible();
+    await expect(details.getByText(/The app looks back 180 calendar days from Jul 19/i)).toBeVisible();
+    await expect(details.locator('p.mono-range').filter({ hasText: '21 Jan–19 Jul 2026' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'See when days return' }).click();
-    await expect(page.getByRole('heading', { name: '2 days return in the next 30 days' })).toBeVisible();
-    await expect(page.getByText('51 / 90 used on 19 Jul 2026')).toBeVisible();
-    await expect(page.getByText('Next return: Jul 24')).toBeVisible();
-    await expect(page.getByText('France history Jan 25 leaves the window')).toBeVisible();
-    await expect(page.getByRole('img', { name: /2 counted days return to the allowance during this 30-day forecast/i })).toBeVisible();
+    await details.getByRole('button', { name: 'See when days return' }).click();
+    const returns = page.locator('.returns-section');
+    await expect(returns.getByRole('heading', { name: '2 days return in the next 30 days' })).toBeVisible();
+    await expect(returns.getByText('51 / 90 used on 19 Jul 2026')).toBeVisible();
+    await expect(returns.getByText('Next return: Jul 24')).toBeVisible();
+    await expect(returns.getByText('France history Jan 25 leaves the window')).toBeVisible();
+    await expect(returns.getByRole('img', { name: /2 counted days return to the allowance during this 30-day forecast/i })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Trips & planning' }).click();
+    await navigateToAppAnchor(page, 'plan');
     await expect(page.getByRole('heading', { name: 'Plan a future trip' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Unlock full trip planner — £9' })).toBeVisible();
+    await expect(page.locator('#plan').getByRole('button', { name: 'Sign up' })).toBeVisible();
     const simulator = page.getByRole('form', { name: 'Future trip simulator' });
     await simulator.getByLabel(/Simulation label/).fill('Spain proposal');
     await simulator.locator('#simulation-entry-country').selectOption('ES');
@@ -440,34 +526,15 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByText(/protect Germany booking/i)).toBeVisible();
     await expect(page.getByRole('img', { name: /What-if rolling window\. 91 counted days/i })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Report' }).click();
+    await navigateToAppAnchor(page, 'report');
     await expect(page.getByRole('heading', { name: 'Border-ready report' })).toBeVisible();
     await expect(page.getByLabel('Border-ready report').getByText('21 Jan–19 Jul 2026')).toBeVisible();
-    await page.getByRole('button', { name: 'Join PDF export list' }).click();
-    await page.getByRole('textbox', { name: 'Email' }).fill('michael@example.com');
-    await page.getByLabel(/I agree to receive SCHNGN updates/i).check();
-    await page.getByRole('button', { name: 'Join waitlist' }).click();
-    await expect(page.getByRole('heading', { name: 'Email was not confirmed as saved' })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue('michael@example.com');
-    expect((await readPlausibleEvents(page)).map((event) => event.name)).not.toContain('waitlist_signup');
+    const report = page.locator('#report');
+    await report.getByRole('button', { name: 'Sign up' }).click();
+    await expect.poll(() => readClerkSignUpRedirects(page)).toEqual(['/app?market=uk&account=connected#account']);
+    expect((await readPlausibleEvents(page)).map((event) => event.name)).toContain('pdf_buy_intent');
 
-    waitlistMode = 'rate-limit';
-    await page.getByRole('button', { name: 'Try again' }).click();
-    await expect(page.getByText(/Too many attempts were made/i)).toBeVisible();
-    waitlistMode = 'stored';
-    await page.getByRole('button', { name: 'Try again' }).click();
-    await expect(page.getByRole('heading', { name: 'You are on the list' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Joined' })).toBeDisabled();
-    const waitlistEvents = (await readPlausibleEvents(page)).filter((event) => event.name === 'waitlist_signup');
-    expect(waitlistEvents).toHaveLength(1);
-    expect(waitlistRequests).toHaveLength(3);
-    for (const payload of waitlistRequests) {
-      expect(JSON.parse(payload)).toEqual({ email: 'michael@example.com', consent: true, source: 'waitlist' });
-      expect(payload).not.toContain('2026-07-19');
-      expect(payload).not.toContain('Spain booking');
-    }
-
-    await page.getByRole('button', { name: 'Trips & planning' }).click();
+    await navigateToAppAnchor(page, 'trips');
     await page.evaluate(() => {
       const storagePrototype = Storage.prototype as Storage & { __schngnSetItem?: Storage['setItem'] };
       storagePrototype.__schngnSetItem = storagePrototype.setItem;
@@ -483,7 +550,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       label: '家族旅行 ✈️',
       status: 'booked'
     });
-    await expect(page.getByText('家族旅行 ✈️')).toBeVisible();
+    const unicodeTripHeading = page.locator('#trips').getByRole('heading', { name: '家族旅行 ✈️', exact: true });
+    await expect(unicodeTripHeading).toBeVisible();
     await expect(page.getByText(/Trips could not be saved in this browser/i)).toBeVisible();
     await page.evaluate(() => {
       const storagePrototype = Storage.prototype as Storage & { __schngnSetItem?: Storage['setItem'] };
@@ -492,12 +560,12 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Delete 家族旅行 ✈️' }).click();
     await expect(page.getByRole('heading', { name: 'Delete 家族旅行 ✈️?' })).toBeVisible();
     await page.getByRole('button', { name: 'Keep trip' }).click();
-    await expect(page.getByText('家族旅行 ✈️')).toBeVisible();
+    await expect(unicodeTripHeading).toBeVisible();
     await page.getByRole('button', { name: 'Delete 家族旅行 ✈️' }).click();
     await page.getByRole('button', { name: 'Delete trip' }).click();
-    await expect(page.getByText('家族旅行 ✈️')).toHaveCount(0);
+    await expect(unicodeTripHeading).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await navigateToAppAnchor(page, 'account');
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export JSON' }).click();
     const download = await downloadPromise;
@@ -522,8 +590,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Clear this browser' }).click();
     await expect(page.getByText('Trip data is now cleared from this tab.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Export JSON' })).toBeDisabled();
-    await page.getByRole('button', { name: 'Trips & planning' }).click();
-    await expect(page.getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
+    await expect(page.locator('#status').getByRole('heading', { name: 'First, add your previous Schengen trips' })).toBeVisible();
 
     const plausibleEvents = await readPlausibleEvents(page);
     const plausibleEventNames = plausibleEvents.map((event) => event.name);
@@ -533,7 +600,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(plausibleEventNames).toContain('simulation_run');
     assertSafePlausiblePayload(plausibleEvents);
     expect(accountRequests).toEqual([]);
-    assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues.filter((value) => value !== 'michael@example.com'));
+    assertNoForbiddenNetworkPayloads(requests, forbiddenTripValues);
   });
 
   test('signed-in account sync requires consent, revisions writes, and deletes only the cloud copy', async ({ page }) => {
@@ -615,7 +682,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await page.goto('/app');
     await page.getByRole('button', { name: 'Dismiss' }).click();
-    await page.getByRole('button', { name: 'Add your first trip' }).click();
+    await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
     const firstTripForm = page.getByRole('form', { name: 'Trip form' });
     await firstTripForm.getByLabel(/Trip label/).fill('Account Italy stay');
     await firstTripForm.locator('#trip-entry-country').selectOption('IT');
@@ -624,7 +691,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await firstTripForm.getByLabel('Left Schengen').fill('2026-08-05');
     await firstTripForm.getByRole('button', { name: 'Save trip' }).click();
 
-    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await navigateToAppAnchor(page, 'account');
     const accountScreen = page.getByRole('region', { name: 'Account & data' });
     await expect(accountScreen.getByRole('heading', { name: 'Account & data' })).toBeVisible();
     await expect(accountScreen.getByRole('heading', { name: 'Choose whether to sync' })).toBeVisible();
@@ -645,7 +712,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(JSON.stringify(writes[0])).not.toContain('user_e2eaccount');
     expect(JSON.stringify(writes[0])).not.toContain('signed-in@example.invalid');
 
-    await page.getByRole('button', { name: 'Trips & planning', exact: true }).click();
+    await navigateToAppAnchor(page, 'trips');
     await addTrip(page, {
       countryCode: 'ES',
       entryDate: '2026-09-10',
@@ -673,7 +740,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
         storagePrototype.__schngnAccountSetItem?.call(this, key, value);
       };
     });
-    await page.getByRole('button', { name: 'Trips & planning', exact: true }).click();
+    await navigateToAppAnchor(page, 'trips');
     await addTrip(page, {
       countryCode: 'FR',
       entryDate: '2026-10-01',
@@ -695,19 +762,19 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
     await page.reload();
     await expect(page.getByRole('button', { name: 'Open Account — Synced' })).toBeVisible();
-    await page.getByRole('button', { name: 'Trips & planning', exact: true }).click();
-    await expect(page.getByText('Account France stay')).toBeVisible();
+    await navigateToAppAnchor(page, 'trips');
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Account France stay', exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await navigateToAppAnchor(page, 'account');
     await accountScreen.getByRole('button', { name: 'Delete saved account trips' }).click();
     await accountScreen.getByRole('button', { name: 'Delete account trips' }).click();
     await expect.poll(() => deleteCount).toBe(1);
     await expect(accountScreen.getByText(/Cloud trip data was deleted/i)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Trips & planning', exact: true }).click();
-    await expect(page.getByText('Account Italy stay')).toBeVisible();
-    await expect(page.getByText('Account Spain stay')).toBeVisible();
-    await expect(page.getByText('Account France stay')).toBeVisible();
+    await navigateToAppAnchor(page, 'trips');
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Account Italy stay', exact: true })).toBeVisible();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Account Spain stay', exact: true })).toBeVisible();
+    await expect(page.locator('#trips').getByRole('heading', { name: 'Account France stay', exact: true })).toBeVisible();
     await expect(page.getByText('3 trips stored on this device.')).toBeVisible();
 
     const accountPuts = accountRequests.filter((request) => request.method === 'PUT');
@@ -725,7 +792,7 @@ async function addTrip(
   page: Page,
   trip: { countryCode: string; entryDate: string; exitDate: string; label: string; status: 'past' | 'booked' | 'what-if' }
 ): Promise<void> {
-  await page.getByRole('button', { name: 'Add trip', exact: true }).click();
+  await page.locator('#trips').getByRole('button', { name: 'Add trip', exact: true }).click();
   const form = page.getByRole('form', { name: 'Trip form' });
   await form.getByLabel(/Trip label/).fill(trip.label);
   await form.locator('#trip-entry-country').selectOption(trip.countryCode);
@@ -738,7 +805,7 @@ async function addTrip(
     await form.getByRole('radio', { name: trip.status === 'booked' ? 'Booked' : 'What-if' }).check();
   }
   await form.getByRole('button', { name: 'Save trip' }).click();
-  await expect(page.getByRole('heading', { name: 'Trips' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Trips & planning', exact: true })).toBeVisible();
 }
 
 type FakeClerkIdentity = {
@@ -757,6 +824,7 @@ type AccountWrite = {
 async function installFakeClerk(page: Page, identity: FakeClerkIdentity | null): Promise<void> {
   await page.addInitScript((accountIdentity) => {
     const listeners = new Set<() => void>();
+    const redirects: { signUp: (string | null)[]; signIn: (string | null)[] } = { signUp: [], signIn: [] };
     const client = {
       user: accountIdentity
         ? { id: accountIdentity.userId, primaryEmailAddress: { emailAddress: accountIdentity.email } }
@@ -774,8 +842,12 @@ async function installFakeClerk(page: Page, identity: FakeClerkIdentity | null):
         listeners.add(listener);
         return () => listeners.delete(listener);
       },
-      async redirectToSignUp() {},
-      async redirectToSignIn() {},
+      async redirectToSignUp(options?: { redirectUrl?: string | null }) {
+        redirects.signUp.push(options?.redirectUrl ?? null);
+      },
+      async redirectToSignIn(options?: { redirectUrl?: string | null }) {
+        redirects.signIn.push(options?.redirectUrl ?? null);
+      },
       async redirectToUserProfile() {},
       async signOut() {
         client.user = null;
@@ -783,9 +855,41 @@ async function installFakeClerk(page: Page, identity: FakeClerkIdentity | null):
         listeners.forEach((listener) => listener());
       }
     };
-    const clerkWindow = window as unknown as { __schngnClerkTestClient: typeof client };
+    const clerkWindow = window as unknown as {
+      __schngnClerkTestClient: typeof client;
+      __schngnClerkRedirects: typeof redirects;
+    };
     clerkWindow.__schngnClerkTestClient = client;
+    clerkWindow.__schngnClerkRedirects = redirects;
   }, identity);
+}
+
+async function navigateToAppAnchor(
+  page: Page,
+  anchor: 'status' | 'trips' | 'timeline' | 'plan' | 'details' | 'report' | 'account'
+): Promise<void> {
+  await page.locator('#app-anchor-select').selectOption(anchor);
+  await expect(page).toHaveURL(new RegExp(`#${anchor}$`));
+}
+
+async function sectionComesBefore(page: Page, firstId: string, secondId: string): Promise<boolean> {
+  return page.evaluate(
+    ([first, second]) => {
+      const firstSection = document.getElementById(first);
+      const secondSection = document.getElementById(second);
+      if (!firstSection || !secondSection) return false;
+      return Boolean(firstSection.compareDocumentPosition(secondSection) & Node.DOCUMENT_POSITION_FOLLOWING);
+    },
+    [firstId, secondId]
+  );
+}
+
+async function readClerkSignUpRedirects(page: Page): Promise<(string | null)[]> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __schngnClerkRedirects: { signUp: (string | null)[] } })
+        .__schngnClerkRedirects.signUp
+  );
 }
 
 function observeNetwork(page: Page): ObservedNetworkRequest[] {
@@ -814,7 +918,7 @@ async function readPlausibleEvents(page: Page): Promise<PlausibleEvent[]> {
 }
 
 function assertSafePlausiblePayload(events: PlausibleEvent[]): void {
-  const allowedNames = ['page_view', 'calculator_start', 'trip_added', 'simulation_run', 'pdf_buy_intent', 'unlock_buy_intent', 'waitlist_signup'];
+  const allowedNames = ['page_view', 'calculator_start', 'trip_added', 'simulation_run', 'pdf_buy_intent', 'unlock_buy_intent'];
   const allowedProps = ['source', 'trip_count_bucket', 'safe_buffer_bucket', 'verdict', 'price_bucket'];
   for (const event of events) {
     expect(allowedNames).toContain(event.name);

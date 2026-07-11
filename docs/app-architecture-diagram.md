@@ -16,16 +16,13 @@ flowchart TB
     Domain["schngn.com\ncustom domain"]
     Worker["Worker: schngn-web\nworkerd V8 isolate"]
     Assets["Workers Static Assets\nSvelteKit output"]
-    Waitlist["/api/waitlist\nseparate email-only route"]
     AccountApi["/api/account + /trips\nauthenticated sync/export/deletion"]
     Webhook["/api/webhooks/clerk\nsigned lifecycle cleanup"]
-    Store[("Cloudflare D1\nseparate waitlist + account tables")]
+    Store[("Cloudflare D1\nconsented account data")]
     Domain --> Worker
     Worker --> Assets
-    Worker --> Waitlist
     Worker --> AccountApi
     Worker --> Webhook
-    Waitlist --> Store
     AccountApi --> Store
     Webhook --> Store
   end
@@ -46,13 +43,12 @@ flowchart TB
 
   Deploy --> Worker
   Assets --> UI
-  UI -- "explicit waitlist signup: email only" --> Waitlist
   Consent --> Clerk
   Clerk --> AccountApi
   Clerk --> Webhook
   Consent -- "signed-in trip sync" --> AccountApi
   Local -. "guest trips never leave browser" .-> Privacy["Privacy boundary\nno anonymous trip persistence\nno trip analytics/logging"]
-  Privacy -. blocks .-> Waitlist
+  Privacy -. blocks .-> AccountApi
 
   classDef ci fill:#eff6ff,stroke:#2563eb,color:#0f172a
   classDef edge fill:#ecfdf5,stroke:#059669,color:#0f172a
@@ -60,7 +56,7 @@ flowchart TB
   classDef data fill:#f5f3ff,stroke:#7c3aed,color:#0f172a
   classDef privacy fill:#fff1f2,stroke:#e11d48,color:#0f172a
   class Repo,Toolchain,Gates,Deploy ci
-  class Domain,Worker,Assets,Waitlist,AccountApi,Webhook,Clerk edge
+  class Domain,Worker,Assets,AccountApi,Webhook,Clerk edge
   class UI,Engine,Export,Consent browser
   class Local,Store data
   class Privacy privacy
@@ -86,18 +82,18 @@ Production runs at `https://schngn.com` on Cloudflare Workers + Workers Static A
 - `schngn-web` is the Worker name.
 - Static assets are the SvelteKit/Vite output.
 - `workerd` is the production runtime, not Node and not Bun.
-- The dynamic Worker surface remains narrow: separate `/api/waitlist`, authenticated `/api/account` and `/api/account/trips`, and signed `/api/webhooks/clerk` routes.
+- The dynamic Worker surface remains narrow: authenticated `/api/account` and `/api/account/trips`, plus the signed `/api/webhooks/clerk` route.
 - Account rows are keyed by the Clerk user ID derived from the verified session; client-supplied ownership is ignored/rejected.
 
-### 4. `/api/waitlist` is email-only
+Fresh D1 databases begin with the account schema at migration `0002`. Forward migration `0005_drop_waitlist_signups.sql` idempotently removes the retired table from any already-provisioned database. The product does not expose the former route or write new rows to that table.
 
-The waitlist route may accept an email address for validation/fake-door demand testing. It must not accept trip dates, travel history, names, passport details, residence status, or legal-context payloads.
+### 4. Signup goes directly through Clerk
 
-Cloudflare D1 is the approved waitlist store. The endpoint accepts a strict email/consent/source payload and does not accept trip fields. D1 provisioning and migration application are explicit deployment prerequisites, while the calculator remains functional without server storage.
+SCHNGN does not manage a separate email list. The signup action opens Clerk, which owns identity and session data. Completing signup does not upload browser-local trips; sync remains a separate, explicit consent action.
 
 ### 5. Optional account sync is consented and reversible
 
-Clerk is the identity source of truth. A guest remains local-only. A signed-in user must explicitly opt in before local trips are uploaded. D1 waitlist and account records remain separate. Account storage includes authenticated export and deletion, plus signature-verified Clerk lifecycle cleanup; no trip data is allowed in analytics or logs.
+Clerk is the identity source of truth. A guest remains local-only. A signed-in user must explicitly opt in before local trips are uploaded. Account storage includes authenticated export and deletion, plus signature-verified Clerk lifecycle cleanup; no trip data is allowed in analytics or logs.
 
 ### 6. CI/CD gates deployment on correctness and build health
 
@@ -140,7 +136,6 @@ The remaining environment-owned work is explicit: configure the Clerk production
 
 - `packages/engine/`
 - `apps/web/`
-- `apps/web/src/routes/api/waitlist/+server.ts`
 - `apps/web/src/routes/api/account/+server.ts`
 - `apps/web/src/routes/api/account/trips/+server.ts`
 - `apps/web/src/routes/api/webhooks/clerk/+server.ts`

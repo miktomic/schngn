@@ -6,8 +6,9 @@
     parseISODate,
     type SchengenStay
   } from '@schngn/engine';
-  import type { EditableTrip } from '$lib/trips/tripCrud';
+  import { tripEntryDate, tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
   import { intlLocale, type Locale } from '$lib/i18n';
+  import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
 
   type TimelineMode = 'safe' | 'risk' | 'planner' | 'returns';
   type SegmentKind = 'past' | 'booked' | 'whatif' | 'risk' | 'return' | 'empty';
@@ -29,26 +30,37 @@
   }
 
   interface TimelineProps {
+    headingId?: string;
     horizonDays?: number;
     label: string;
     locale?: Locale;
     mode: TimelineMode;
+    onTripSelect?: (trip: EditableTrip) => void;
     referenceDate: string;
     returnDates?: string[];
+    selectedTripId?: string | null;
     simulation?: EditableTrip | null;
+    tripName?: (trip: EditableTrip) => string;
     trips: EditableTrip[];
   }
 
   let {
+    headingId: requestedHeadingId,
     horizonDays = 30,
     label,
     locale = 'en',
     mode,
+    onTripSelect,
     referenceDate,
     returnDates = [],
+    selectedTripId = null,
     simulation = null,
+    tripName = (trip: EditableTrip) => trip.label ?? 'Trip',
     trips
   }: TimelineProps = $props();
+
+  const instanceId = $props.id();
+  let headingId = $derived(requestedHeadingId ?? `${instanceId}-heading`);
 
   let model = $derived(buildTimelineModel({
     horizonDays,
@@ -60,6 +72,7 @@
     trips
   }));
   let visibleKinds = $derived(new Set(model.segments.map((segment) => segment.kind)));
+  let adjustmentCopy = $derived(createWhatIfUiTranslator(locale));
 
   const legendCatalog: Record<Locale, string[]> = {
     en: ['Past trip', 'Booked trip', 'What-if trip', 'Over the limit', 'Day returned', 'Not counted'],
@@ -251,11 +264,25 @@
     const labelForKind = legendItems.find((item) => item.kind === segment.kind)?.label ?? segment.kind;
     return `${labelForKind}: ${formatDateRange(segment.startDate, segment.endDate)}`;
   }
+
+  function selectTrip(event: Event): void {
+    const id = (event.currentTarget as HTMLSelectElement).value;
+    const trip = trips.find((value) => value.id === id);
+    if (trip) onTripSelect?.(trip);
+  }
+
+  function tripOptionLabel(trip: EditableTrip): string {
+    const range = formatDateRange(tripEntryDate(trip), tripExitDate(trip));
+    const kind = statusKind(trip.status);
+    const status = legendItems.find((item) => item.kind === kind)?.label ?? kind;
+    const outside = tripExitDate(trip) < model.startDate || tripEntryDate(trip) > model.endDate;
+    return `${tripName(trip)} · ${range} · ${status}${outside ? ` · ${adjustmentCopy('outsideWindow')}` : ''}`;
+  }
 </script>
 
-<section class="timeline-card" aria-labelledby="timeline-heading">
+<section class="timeline-card" aria-labelledby={headingId}>
   <div class="timeline-head">
-    <h2 id="timeline-heading">{label}</h2>
+    <h2 id={headingId}>{label}</h2>
     <bdi>{model.rangeLabel}</bdi>
   </div>
   <div
@@ -277,6 +304,17 @@
     <bdi>{formatDateRange(model.endDate, model.endDate)}</bdi>
   </div>
   <p class="timeline-summary">{model.summary}</p>
+  {#if onTripSelect && trips.length > 0}
+    <label class:has-selection={selectedTripId !== null} class="timeline-trip-picker" for={`${headingId}-trip-picker`}>
+      <span>{adjustmentCopy('tripToAdjust')}</span>
+      <select id={`${headingId}-trip-picker`} value={selectedTripId ?? ''} onchange={selectTrip}>
+        <option value="" disabled>{adjustmentCopy('chooseTrip')}</option>
+        {#each trips as trip (trip.id)}
+          <option value={trip.id}>{tripOptionLabel(trip)}</option>
+        {/each}
+      </select>
+    </label>
+  {/if}
   <ul class="timeline-legend" aria-label={timelineAriaLabel[locale]}>
     {#each legendItems as item}
       {#if visibleKinds.has(item.kind)}
@@ -370,6 +408,40 @@
     font-size: 0.9rem;
     line-height: 1.45;
     text-wrap: pretty;
+  }
+
+  .timeline-trip-picker {
+    display: grid;
+    gap: 5px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+
+  .timeline-trip-picker > span {
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 750;
+  }
+
+  .timeline-trip-picker select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    padding: 9px 34px 9px 10px;
+    font: inherit;
+  }
+
+  .timeline-trip-picker.has-selection select {
+    border-color: var(--whatif);
+    background: var(--whatif-bg);
+  }
+
+  .timeline-trip-picker select:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--whatif), transparent 35%);
+    outline-offset: 2px;
   }
 
   .timeline-legend {

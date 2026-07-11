@@ -4,7 +4,6 @@ const en = {
   'common.language': 'Language',
   'common.openCalculator': 'Open calculator',
   'common.home': 'SCHNGN home',
-  'common.reviewedEnglishNotice': 'Safety and legal notices remain in reviewed English until approved translations are available.',
 
   'landing.title': 'Schengen 90/180 calculator for UK second-home owners | SCHNGN',
   'landing.description': 'Plan Europe trips around the Schengen 90/180-day rule with a calculator built for UK second-home owners and frequent travellers.',
@@ -46,6 +45,8 @@ const en = {
   'accuracy.officialCalculator': 'European Commission short-stay calculator',
   'accuracy.scope': 'Scope and limitations',
   'accuracy.cases': 'Curated accuracy cases',
+  'accuracy.noticeTitle': 'SCHNGN is not certified, approved, or guaranteed by the EU',
+  'accuracy.noticeCopy': "The European Commission calculator is linked for independent comparison. SCHNGN's checked-in suite currently verifies published rule semantics; it does not claim captured output parity with the official calculator. It is not legal advice and does not guarantee entry.",
   'accuracy.caseInclusiveTitle': 'Inclusive entry and exit days',
   'accuracy.caseInclusiveCopy': 'A same-day Schengen stay counts as one physical day. A 10-calendar-day stay counts 10 days, not 9 nights.',
   'accuracy.caseWindowTitle': 'Rolling 180-day window',
@@ -61,7 +62,6 @@ type Catalog = Record<MessageKey, string>;
 
 const fr: Catalog = {
   'common.language': 'Langue', 'common.openCalculator': 'Ouvrir le calculateur', 'common.home': 'Accueil SCHNGN',
-  'common.reviewedEnglishNotice': 'Les avis de sécurité et juridiques restent en anglais validé jusqu’à l’approbation de leurs traductions.',
   'landing.title': 'Calculateur Schengen 90/180 pour propriétaires britanniques | SCHNGN',
   'landing.description': 'Planifiez vos séjours en Europe selon la règle Schengen des 90/180 jours avec un calculateur conçu pour les voyageurs fréquents.',
   'landing.ogDescription': 'Un calculateur Schengen 90/180 pour planifier vos séjours en Europe.',
@@ -85,6 +85,8 @@ const fr: Catalog = {
   'accuracy.kicker': 'Tests de calcul transparents', 'accuracy.hero': 'Preuves de précision',
   'accuracy.lede': 'Testé avec 50 scénarios déterministes, des cas limites et un oracle indépendant selon la méthode publiée du calcul Schengen 90/180.',
   'accuracy.officialCalculator': 'Calculateur de court séjour de la Commission européenne', 'accuracy.scope': 'Portée et limites', 'accuracy.cases': 'Cas de précision sélectionnés',
+  'accuracy.noticeTitle': 'SCHNGN n’est ni certifié, ni approuvé, ni garanti par l’Union européenne',
+  'accuracy.noticeCopy': 'Le calculateur de la Commission européenne est proposé pour permettre une comparaison indépendante. La suite de tests versionnée de SCHNGN vérifie actuellement la mise en œuvre des règles publiées ; elle ne prétend pas reproduire à l’identique les résultats enregistrés du calculateur officiel. Il ne s’agit pas d’un conseil juridique et l’entrée n’est pas garantie.',
   'accuracy.caseInclusiveTitle': 'Jours d’entrée et de sortie inclus', 'accuracy.caseInclusiveCopy': 'Un séjour Schengen le même jour compte comme un jour. Un séjour de 10 jours calendaires compte 10 jours, pas 9 nuits.',
   'accuracy.caseWindowTitle': 'Fenêtre glissante de 180 jours', 'accuracy.caseWindowCopy': 'Le calcul remonte sur 180 jours calendaires, date de référence incluse, et compte uniquement les jours de court séjour Schengen dans cette fenêtre.',
   'accuracy.caseOverlapTitle': 'Les séjours qui se chevauchent sont dédupliqués', 'accuracy.caseOverlapCopy': 'Deux séjours couvrant le même jour ne comptent pas ce jour deux fois.',
@@ -93,7 +95,6 @@ const fr: Catalog = {
 
 const de: Catalog = {
   'common.language': 'Sprache', 'common.openCalculator': 'Rechner öffnen', 'common.home': 'SCHNGN Startseite',
-  'common.reviewedEnglishNotice': 'Sicherheits- und Rechtshinweise bleiben auf geprüftem Englisch, bis freigegebene Übersetzungen vorliegen.',
   'landing.title': 'Schengen-90/180-Rechner für britische Zweitwohnsitze | SCHNGN', 'landing.description': 'Planen Sie Europa-Aufenthalte nach der Schengen-90/180-Regel mit einem Rechner für häufige Reisen.',
   'landing.ogDescription': 'Ein Schengen-90/180-Rechner für Aufenthalte in Europa.', 'landing.twitterDescription': 'Prüfen Sie Ihren nächsten Europa-Aufenthalt nach der 90/180-Regel und sehen Sie die Berechnung.',
   'landing.header': 'SCHNGN-Kopfzeile', 'landing.kicker': 'Für britische Zweitwohnsitzbesitzer', 'landing.hero': 'Planen Sie Europa-Aufenthalte, ohne Ihre 90 Tage zu schätzen.',
@@ -110,6 +111,8 @@ const de: Catalog = {
   'accuracy.ogDescription': 'Offizielle Quellen und ausgewählte Grenzfälle für den 90/180-Rechner von SCHNGN.', 'accuracy.header': 'SCHNGN Genauigkeitskopfzeile',
   'accuracy.kicker': 'Transparente Berechnungstests', 'accuracy.hero': 'Genauigkeitsnachweis', 'accuracy.lede': 'Getestet mit 50 deterministischen Regelfällen, Grenzfällen und einem unabhängigen Orakel für die veröffentlichte Schengen-90/180-Methode.',
   'accuracy.officialCalculator': 'Kurzaufenthaltsrechner der Europäischen Kommission', 'accuracy.scope': 'Umfang und Grenzen', 'accuracy.cases': 'Ausgewählte Genauigkeitsfälle',
+  'accuracy.noticeTitle': 'SCHNGN ist weder von der EU zertifiziert noch genehmigt oder garantiert',
+  'accuracy.noticeCopy': 'Der Rechner der Europäischen Kommission ist zum unabhängigen Vergleich verlinkt. Die im Quellcode hinterlegte Testsuite von SCHNGN überprüft derzeit die veröffentlichten Regelgrundlagen; sie beansprucht keine Übereinstimmung mit erfassten Ausgaben des offiziellen Rechners. Dies ist keine Rechtsberatung und keine Einreisegarantie.',
   'accuracy.caseInclusiveTitle': 'Ein- und Ausreisetag zählen mit', 'accuracy.caseInclusiveCopy': 'Ein Aufenthalt am selben Tag zählt als ein Tag. Zehn Kalendertage zählen als 10 Tage, nicht als 9 Nächte.',
   'accuracy.caseWindowTitle': 'Rollierendes 180-Tage-Fenster', 'accuracy.caseWindowCopy': 'Die Berechnung blickt einschließlich des Stichtags 180 Kalendertage zurück und zählt nur Schengen-Kurzaufenthaltstage in diesem Fenster.',
   'accuracy.caseOverlapTitle': 'Überschneidungen werden dedupliziert', 'accuracy.caseOverlapCopy': 'Zwei Reisen am selben Kalendertag zählen diesen Tag nicht doppelt.',
@@ -118,7 +121,6 @@ const de: Catalog = {
 
 const es: Catalog = {
   'common.language': 'Idioma', 'common.openCalculator': 'Abrir calculadora', 'common.home': 'Inicio de SCHNGN',
-  'common.reviewedEnglishNotice': 'Los avisos de seguridad y legales permanecen en inglés revisado hasta que haya traducciones aprobadas.',
   'landing.title': 'Calculadora Schengen 90/180 para propietarios británicos | SCHNGN', 'landing.description': 'Planifica estancias en Europa según la regla Schengen 90/180 con una calculadora para viajeros frecuentes.',
   'landing.ogDescription': 'Una calculadora Schengen 90/180 para planificar estancias en Europa.', 'landing.twitterDescription': 'Comprueba si tu próximo viaje cumple la regla Schengen 90/180 y consulta el cálculo.',
   'landing.header': 'Cabecera de SCHNGN', 'landing.kicker': 'Para propietarios británicos de segunda residencia', 'landing.hero': 'Planifica estancias en Europa sin adivinar tus 90 días.',
@@ -135,6 +137,8 @@ const es: Catalog = {
   'accuracy.ogDescription': 'Fuentes oficiales y casos límite seleccionados para la calculadora 90/180 de SCHNGN.', 'accuracy.header': 'Cabecera de precisión de SCHNGN',
   'accuracy.kicker': 'Pruebas de cálculo transparentes', 'accuracy.hero': 'Pruebas de precisión', 'accuracy.lede': 'Probado con 50 casos deterministas, casos límite y un oráculo independiente para el método publicado Schengen 90/180.',
   'accuracy.officialCalculator': 'Calculadora de corta estancia de la Comisión Europea', 'accuracy.scope': 'Alcance y limitaciones', 'accuracy.cases': 'Casos de precisión seleccionados',
+  'accuracy.noticeTitle': 'SCHNGN no está certificado, aprobado ni garantizado por la UE',
+  'accuracy.noticeCopy': 'Se enlaza la calculadora de la Comisión Europea para permitir una comparación independiente. La batería de pruebas incluida en el repositorio de SCHNGN verifica actualmente el significado de las reglas publicadas; no afirma reproducir los resultados registrados de la calculadora oficial. No es asesoramiento legal ni garantiza la entrada.',
   'accuracy.caseInclusiveTitle': 'Días de entrada y salida incluidos', 'accuracy.caseInclusiveCopy': 'Una estancia de un mismo día cuenta como un día. Diez días naturales cuentan como 10 días, no 9 noches.',
   'accuracy.caseWindowTitle': 'Ventana móvil de 180 días', 'accuracy.caseWindowCopy': 'El cálculo mira 180 días naturales hacia atrás, incluida la fecha de referencia, y cuenta solo los días de corta estancia Schengen.',
   'accuracy.caseOverlapTitle': 'Los viajes solapados se deduplican', 'accuracy.caseOverlapCopy': 'Dos viajes que cubren el mismo día no lo cuentan dos veces.',
@@ -143,7 +147,6 @@ const es: Catalog = {
 
 const it: Catalog = {
   'common.language': 'Lingua', 'common.openCalculator': 'Apri calcolatore', 'common.home': 'Home SCHNGN',
-  'common.reviewedEnglishNotice': 'Gli avvisi di sicurezza e legali restano nell’inglese verificato finché non saranno disponibili traduzioni approvate.',
   'landing.title': 'Calcolatore Schengen 90/180 per proprietari britannici | SCHNGN', 'landing.description': 'Pianifica soggiorni in Europa secondo la regola Schengen 90/180 con un calcolatore per viaggi frequenti.',
   'landing.ogDescription': 'Un calcolatore Schengen 90/180 per pianificare soggiorni in Europa.', 'landing.twitterDescription': 'Verifica il prossimo soggiorno con la regola Schengen 90/180 e consulta il calcolo.',
   'landing.header': 'Intestazione SCHNGN', 'landing.kicker': 'Per proprietari britannici di seconde case', 'landing.hero': 'Pianifica i soggiorni in Europa senza indovinare i tuoi 90 giorni.',
@@ -160,6 +163,8 @@ const it: Catalog = {
   'accuracy.ogDescription': 'Fonti ufficiali e casi limite selezionati per il calcolatore 90/180 di SCHNGN.', 'accuracy.header': 'Intestazione accuratezza SCHNGN',
   'accuracy.kicker': 'Test di calcolo trasparenti', 'accuracy.hero': 'Prove di accuratezza', 'accuracy.lede': 'Testato con 50 casi deterministici, casi limite e un oracolo indipendente per il metodo Schengen 90/180 pubblicato.',
   'accuracy.officialCalculator': 'Calcolatore per soggiorni brevi della Commissione europea', 'accuracy.scope': 'Ambito e limiti', 'accuracy.cases': 'Casi di accuratezza selezionati',
+  'accuracy.noticeTitle': 'SCHNGN non è certificato, approvato o garantito dall’UE',
+  'accuracy.noticeCopy': 'Il calcolatore della Commissione europea è collegato per consentire un confronto indipendente. La suite di test inclusa nel repository di SCHNGN verifica attualmente il significato delle regole pubblicate; non dichiara la parità con gli output acquisiti del calcolatore ufficiale. Non è consulenza legale e non garantisce l’ingresso.',
   'accuracy.caseInclusiveTitle': 'Giorni di ingresso e uscita inclusi', 'accuracy.caseInclusiveCopy': 'Un soggiorno nello stesso giorno conta come un giorno. Dieci giorni di calendario contano come 10 giorni, non 9 notti.',
   'accuracy.caseWindowTitle': 'Finestra mobile di 180 giorni', 'accuracy.caseWindowCopy': 'Il calcolo guarda indietro di 180 giorni di calendario, inclusa la data di riferimento, e conta solo i giorni Schengen nella finestra.',
   'accuracy.caseOverlapTitle': 'I viaggi sovrapposti sono deduplicati', 'accuracy.caseOverlapCopy': 'Due viaggi che coprono lo stesso giorno non lo conteggiano due volte.',
@@ -168,7 +173,6 @@ const it: Catalog = {
 
 const ru: Catalog = {
   'common.language': 'Язык', 'common.openCalculator': 'Открыть калькулятор', 'common.home': 'Главная SCHNGN',
-  'common.reviewedEnglishNotice': 'Предупреждения о безопасности и правовых вопросах остаются на проверенном английском до утверждения переводов.',
   'landing.title': 'Калькулятор Шенген 90/180 для владельцев второго жилья | SCHNGN', 'landing.description': 'Планируйте поездки по Европе по правилу Шенген 90/180 с калькулятором для частых поездок.',
   'landing.ogDescription': 'Калькулятор Шенген 90/180 для поездок по Европе.', 'landing.twitterDescription': 'Проверьте следующую поездку по правилу Шенген 90/180 и изучите расчёт.',
   'landing.header': 'Шапка SCHNGN', 'landing.kicker': 'Для британских владельцев второго жилья', 'landing.hero': 'Планируйте поездки по Европе без догадок о 90 днях.',
@@ -185,6 +189,8 @@ const ru: Catalog = {
   'accuracy.ogDescription': 'Официальные источники и выбранные пограничные случаи для калькулятора SCHNGN.', 'accuracy.header': 'Шапка страницы точности SCHNGN',
   'accuracy.kicker': 'Прозрачные тесты расчёта', 'accuracy.hero': 'Доказательства точности', 'accuracy.lede': 'Проверено на 50 детерминированных сценариях, пограничных случаях и независимом оракуле для опубликованного метода Шенген 90/180.',
   'accuracy.officialCalculator': 'Калькулятор краткосрочного пребывания Еврокомиссии', 'accuracy.scope': 'Область применения и ограничения', 'accuracy.cases': 'Выбранные случаи точности',
+  'accuracy.noticeTitle': 'SCHNGN не сертифицирован, не одобрен и не гарантирован ЕС',
+  'accuracy.noticeCopy': 'Калькулятор Европейской комиссии приведён для независимого сравнения. Набор тестов SCHNGN, сохранённый в репозитории, сейчас проверяет смысл опубликованных правил; он не заявляет совпадение с зафиксированными результатами официального калькулятора. Это не юридическая консультация и не гарантия въезда.',
   'accuracy.caseInclusiveTitle': 'Дни въезда и выезда включены', 'accuracy.caseInclusiveCopy': 'Поездка в один день считается одним днём. 10 календарных дней считаются как 10, а не 9 ночей.',
   'accuracy.caseWindowTitle': 'Скользящее окно 180 дней', 'accuracy.caseWindowCopy': 'Расчёт охватывает 180 календарных дней вместе с контрольной датой и считает только дни краткосрочного пребывания в Шенгене.',
   'accuracy.caseOverlapTitle': 'Пересечения не считаются дважды', 'accuracy.caseOverlapCopy': 'Две поездки, включающие один и тот же день, не удваивают его.',
@@ -193,7 +199,6 @@ const ru: Catalog = {
 
 const he: Catalog = {
   'common.language': 'שפה', 'common.openCalculator': 'פתיחת המחשבון', 'common.home': 'דף הבית של SCHNGN',
-  'common.reviewedEnglishNotice': 'הודעות בטיחות ומשפט נשארות באנגלית שנבדקה עד לאישור תרגומים.',
   'landing.title': 'מחשבון שנגן 90/180 לבעלי בית שני מבריטניה | SCHNGN', 'landing.description': 'תכנון שהיות באירופה לפי כלל שנגן 90/180 באמצעות מחשבון לנוסעים תכופים.',
   'landing.ogDescription': 'מחשבון שנגן 90/180 לתכנון שהיות באירופה.', 'landing.twitterDescription': 'בדקו אם הנסיעה הבאה מתאימה לכלל שנגן 90/180 וצפו בחישוב.',
   'landing.header': 'כותרת SCHNGN', 'landing.kicker': 'לבעלי בית שני מבריטניה', 'landing.hero': 'מתכננים שהיות באירופה בלי לנחש את 90 הימים.',
@@ -210,6 +215,8 @@ const he: Catalog = {
   'accuracy.ogDescription': 'מקורות רשמיים ומקרי גבול נבחרים למחשבון 90/180 של SCHNGN.', 'accuracy.header': 'כותרת דף הדיוק של SCHNGN',
   'accuracy.kicker': 'בדיקות חישוב שקופות', 'accuracy.hero': 'ראיות לדיוק', 'accuracy.lede': 'נבדק באמצעות 50 תרחישים קבועים, מקרי גבול ואורקל עצמאי לפי שיטת החישוב שפורסמה לכלל שנגן 90/180.',
   'accuracy.officialCalculator': 'מחשבון השהייה הקצרה של הנציבות האירופית', 'accuracy.scope': 'היקף ומגבלות', 'accuracy.cases': 'מקרי דיוק נבחרים',
+  'accuracy.noticeTitle': 'SCHNGN אינו מוסמך, מאושר או מובטח על ידי האיחוד האירופי',
+  'accuracy.noticeCopy': 'קישור למחשבון של הנציבות האירופית ניתן לצורך השוואה עצמאית. מערך הבדיקות השמור במאגר הקוד של SCHNGN מאמת כיום את משמעות הכללים שפורסמו; הוא אינו טוען להתאמה לפלטים שנקלטו מהמחשבון הרשמי. אין מדובר בייעוץ משפטי ואין בכך הבטחה לכניסה.',
   'accuracy.caseInclusiveTitle': 'ימי הכניסה והיציאה נכללים', 'accuracy.caseInclusiveCopy': 'שהות באותו יום נספרת כיום אחד. שהות של 10 ימים קלנדריים נספרת כ־10 ימים ולא כ־9 לילות.',
   'accuracy.caseWindowTitle': 'חלון מתגלגל של 180 יום', 'accuracy.caseWindowCopy': 'החישוב בוחן 180 ימים קלנדריים לאחור, כולל תאריך הייחוס, וסופר רק ימי שהייה קצרים בשנגן.',
   'accuracy.caseOverlapTitle': 'נסיעות חופפות אינן נספרות פעמיים', 'accuracy.caseOverlapCopy': 'שתי נסיעות שמכסות את אותו יום אינן סופרות אותו פעמיים.',
@@ -218,7 +225,6 @@ const he: Catalog = {
 
 const tr: Catalog = {
   'common.language': 'Dil', 'common.openCalculator': 'Hesaplayıcıyı aç', 'common.home': 'SCHNGN ana sayfa',
-  'common.reviewedEnglishNotice': 'Güvenlik ve hukuki bildirimler, onaylı çeviriler hazır olana kadar incelenmiş İngilizce olarak kalır.',
   'landing.title': 'Birleşik Krallık ikinci ev sahipleri için Schengen 90/180 hesaplayıcı | SCHNGN', 'landing.description': 'Sık seyahat edenler için Schengen 90/180 hesaplayıcıyla Avrupa konaklamalarını planlayın.',
   'landing.ogDescription': 'Avrupa konaklamalarını planlamak için Schengen 90/180 hesaplayıcı.', 'landing.twitterDescription': 'Bir sonraki Avrupa seyahatinizin Schengen 90/180 kuralına uyup uymadığını kontrol edin ve hesabı görün.',
   'landing.header': 'SCHNGN üst bilgisi', 'landing.kicker': 'Birleşik Krallık’taki ikinci ev sahipleri için', 'landing.hero': '90 gününüzü tahmin etmeden Avrupa konaklamalarını planlayın.',
@@ -235,6 +241,8 @@ const tr: Catalog = {
   'accuracy.ogDescription': 'SCHNGN 90/180 hesaplayıcısı için resmi kaynaklar ve seçilmiş sınır durumları.', 'accuracy.header': 'SCHNGN doğruluk üst bilgisi',
   'accuracy.kicker': 'Şeffaf hesaplama testleri', 'accuracy.hero': 'Doğruluk kanıtı', 'accuracy.lede': 'Yayımlanmış Schengen 90/180 yöntemi için 50 deterministik senaryo, sınır durumları ve bağımsız bir oracle ile test edildi.',
   'accuracy.officialCalculator': 'Avrupa Komisyonu kısa kalış hesaplayıcısı', 'accuracy.scope': 'Kapsam ve sınırlamalar', 'accuracy.cases': 'Seçilmiş doğruluk durumları',
+  'accuracy.noticeTitle': 'SCHNGN, AB tarafından sertifikalandırılmamış, onaylanmamış veya garanti edilmemiştir',
+  'accuracy.noticeCopy': 'Avrupa Komisyonu hesaplayıcısına bağımsız karşılaştırma için bağlantı verilmiştir. SCHNGN’in kaynak deposundaki test paketi şu anda yayımlanmış kuralların anlamını doğrular; resmi hesaplayıcının kaydedilmiş çıktılarıyla eşdeğerlik iddiasında bulunmaz. Hukuki tavsiye değildir ve ülkeye girişi garanti etmez.',
   'accuracy.caseInclusiveTitle': 'Giriş ve çıkış günleri dahildir', 'accuracy.caseInclusiveCopy': 'Aynı gün yapılan bir Schengen konaklaması bir gün sayılır. 10 takvim günü 9 gece değil 10 gün sayılır.',
   'accuracy.caseWindowTitle': 'Kayan 180 günlük pencere', 'accuracy.caseWindowCopy': 'Hesap, referans tarihi dahil 180 takvim günü geriye bakar ve yalnızca bu penceredeki kısa Schengen konaklama günlerini sayar.',
   'accuracy.caseOverlapTitle': 'Çakışan seyahatler iki kez sayılmaz', 'accuracy.caseOverlapCopy': 'Aynı fiziksel günü kapsayan iki seyahat o günü iki kez saymaz.',
@@ -243,7 +251,6 @@ const tr: Catalog = {
 
 const ar: Catalog = {
   'common.language': 'اللغة', 'common.openCalculator': 'فتح الحاسبة', 'common.home': 'الصفحة الرئيسية لـ SCHNGN',
-  'common.reviewedEnglishNotice': 'تبقى إشعارات السلامة والإشعارات القانونية بالإنجليزية المراجعة إلى أن تتوفر ترجمات معتمدة.',
   'landing.title': 'حاسبة شنغن 90/180 لأصحاب المنازل الثانية من المملكة المتحدة | SCHNGN', 'landing.description': 'خطط للإقامات في أوروبا وفق قاعدة شنغن 90/180 باستخدام حاسبة للمسافرين المتكررين.',
   'landing.ogDescription': 'حاسبة شنغن 90/180 لتخطيط الإقامات في أوروبا.', 'landing.twitterDescription': 'تحقق من توافق رحلتك القادمة مع قاعدة شنغن 90/180 واطّلع على الحساب.',
   'landing.header': 'رأس صفحة SCHNGN', 'landing.kicker': 'لأصحاب المنازل الثانية من المملكة المتحدة', 'landing.hero': 'خطط لإقامتك في أوروبا من دون تخمين أيامك التسعين.',
@@ -260,6 +267,8 @@ const ar: Catalog = {
   'accuracy.ogDescription': 'مصادر رسمية وحالات حدودية مختارة لحاسبة SCHNGN 90/180.', 'accuracy.header': 'رأس صفحة دقة SCHNGN',
   'accuracy.kicker': 'اختبارات حساب شفافة', 'accuracy.hero': 'دليل الدقة', 'accuracy.lede': 'تم الاختبار باستخدام 50 حالة حتمية وحالات حدودية ومرجع مستقل وفق طريقة شنغن 90/180 المنشورة.',
   'accuracy.officialCalculator': 'حاسبة الإقامة القصيرة للمفوضية الأوروبية', 'accuracy.scope': 'النطاق والقيود', 'accuracy.cases': 'حالات دقة مختارة',
+  'accuracy.noticeTitle': 'لا يحظى SCHNGN باعتماد أو موافقة أو ضمان من الاتحاد الأوروبي',
+  'accuracy.noticeCopy': 'أُدرج رابط حاسبة المفوضية الأوروبية لإتاحة المقارنة المستقلة. تتحقق حزمة اختبارات SCHNGN المحفوظة في مستودع الشفرة حاليًا من دلالات القواعد المنشورة؛ ولا تدّعي التطابق مع المخرجات المسجلة للحاسبة الرسمية. هذه ليست استشارة قانونية ولا ضمانًا للدخول.',
   'accuracy.caseInclusiveTitle': 'يشمل يومي الدخول والخروج', 'accuracy.caseInclusiveCopy': 'تُحتسب الإقامة في اليوم نفسه يومًا واحدًا. وتُحتسب 10 أيام تقويمية عشرة أيام لا تسع ليالٍ.',
   'accuracy.caseWindowTitle': 'نافذة متحركة من 180 يومًا', 'accuracy.caseWindowCopy': 'ينظر الحساب 180 يومًا تقويميًا إلى الوراء بما في ذلك التاريخ المرجعي، ويحسب فقط أيام الإقامة القصيرة في شنغن.',
   'accuracy.caseOverlapTitle': 'لا تتكرر الرحلات المتداخلة', 'accuracy.caseOverlapCopy': 'لا تحتسب رحلتان تغطيان اليوم نفسه ذلك اليوم مرتين.',

@@ -13,13 +13,15 @@
 
   interface Props {
     entryDate: string;
+    entryMax?: string;
     exitDate: string;
+    exitMin?: string;
     range: AdjustmentRange;
     locale?: Locale;
     onDatesChange: (adjustment: DateAdjustment) => void;
   }
 
-  let { entryDate, exitDate, range, locale = 'en', onDatesChange }: Props = $props();
+  let { entryDate, entryMax, exitDate, exitMin, range, locale = 'en', onDatesChange }: Props = $props();
   let rail: HTMLDivElement;
   let drag = $state<{ entryDate: string; exitDate: string; mode: AdjustmentMode; pointerX: number; width: number } | null>(null);
   let copy = $derived(createWhatIfUiTranslator(locale));
@@ -29,6 +31,10 @@
   let right = $derived((exitOffset / range.totalDays) * 100);
   let width = $derived(Math.max(1.5, right - left));
   let compact = $derived(right - left < 8);
+  let entryMaximum = $derived(entryMax ?? exitDate);
+  let exitMinimum = $derived(exitMin ?? entryDate);
+  let entryMaximumOffset = $derived(differenceInDays(range.minDate, entryMaximum));
+  let exitMinimumOffset = $derived(differenceInDays(range.minDate, exitMinimum));
 
   function beginDrag(event: PointerEvent, mode: AdjustmentMode): void {
     const target = event.currentTarget as HTMLElement;
@@ -98,7 +104,7 @@
         role="slider"
         aria-label={`${copy('entry')}: ${labelDate(entryDate)}`}
         aria-valuemin={0}
-        aria-valuemax={exitOffset}
+        aria-valuemax={entryMaximumOffset}
         aria-valuenow={entryOffset}
         aria-valuetext={labelDate(entryDate)}
         onpointerdown={(event) => beginDrag(event, 'entry')}
@@ -115,7 +121,7 @@
         style={`left:${right}%`}
         role="slider"
         aria-label={`${copy('exit')}: ${labelDate(exitDate)}`}
-        aria-valuemin={entryOffset}
+        aria-valuemin={exitMinimumOffset}
         aria-valuemax={range.totalDays}
         aria-valuenow={exitOffset}
         aria-valuetext={labelDate(exitDate)}
@@ -131,8 +137,8 @@
   <details>
     <summary>{copy('exact')}</summary>
     <div class="exact-dates">
-      <label><span>{copy('entry')}</span><input type="date" value={entryDate} onchange={(event) => updateExactDate(event, 'entry')} /></label>
-      <label><span>{copy('exit')}</span><input type="date" value={exitDate} onchange={(event) => updateExactDate(event, 'exit')} /></label>
+      <label><span>{copy('entry')}</span><input type="date" min={range.minDate} max={entryMaximum} value={entryDate} onchange={(event) => updateExactDate(event, 'entry')} /></label>
+      <label><span>{copy('exit')}</span><input type="date" min={exitMinimum} max={range.maxDate} value={exitDate} onchange={(event) => updateExactDate(event, 'exit')} /></label>
     </div>
   </details>
 </section>
@@ -146,12 +152,14 @@
   .rail { position: relative; height: 64px; touch-action: none; }
   .rail-line { position: absolute; inset: 28px 0 auto; height: 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
   .trip-block { position: absolute; top: 18px; z-index: 1; min-width: 22px; height: 28px; border: 1px solid var(--whatif); border-radius: 7px; background: var(--whatif-bg); color: var(--whatif); cursor: grab; touch-action: none; }
+  .trip-block::before { content: ''; position: absolute; inset: -8px -11px; }
   .trip-block:active, .trip-block.dragging { cursor: grabbing; background: color-mix(in srgb, var(--whatif-bg), var(--whatif) 12%); }
   .trip-block span { font: 700 0.72rem/1 'IBM Plex Mono', ui-monospace, monospace; pointer-events: none; }
-  .handle { position: absolute; top: 12px; z-index: 2; width: 28px; height: 40px; margin-left: -14px; border: 2px solid var(--whatif); border-radius: 8px; background: var(--surface); cursor: ew-resize; touch-action: none; }
-  .handle::after { content: ''; position: absolute; inset: 9px auto auto 11px; width: 2px; height: 18px; border-radius: 2px; background: var(--whatif); }
-  .handle.dragging { background: var(--whatif-bg); }
-  .entry-handle.compact { margin-left: -30px; }
+  .handle { position: absolute; top: 10px; z-index: 2; width: 44px; height: 44px; margin-left: -22px; border: 0; background: transparent; cursor: ew-resize; touch-action: none; }
+  .handle::before { content: ''; position: absolute; inset: 2px 8px; border: 2px solid var(--whatif); border-radius: 8px; background: var(--surface); }
+  .handle::after { content: ''; position: absolute; inset: 13px auto auto 21px; width: 2px; height: 18px; border-radius: 2px; background: var(--whatif); }
+  .handle.dragging::before { background: var(--whatif-bg); }
+  .entry-handle.compact { margin-left: -46px; }
   .exit-handle.compact { margin-left: 2px; }
   button:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid color-mix(in srgb, var(--whatif), transparent 35%); outline-offset: 2px; }
   details { border-top: 1px solid color-mix(in srgb, var(--whatif), transparent 65%); padding-top: 10px; }

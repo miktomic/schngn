@@ -4,8 +4,7 @@ export const ALLOWED_ANALYTICS_EVENTS = [
   'trip_added',
   'simulation_run',
   'pdf_buy_intent',
-  'unlock_buy_intent',
-  'waitlist_signup'
+  'unlock_buy_intent'
 ] as const;
 
 export type AnalyticsEventName = (typeof ALLOWED_ANALYTICS_EVENTS)[number];
@@ -21,7 +20,6 @@ export type AnalyticsSource =
   | 'trip_form'
   | 'planner'
   | 'report'
-  | 'waitlist'
   | 'privacy'
   | 'manual';
 export type PriceBucket = 'eur_5' | 'eur_9' | 'eur_19' | 'gbp_5' | 'gbp_9' | 'gbp_19';
@@ -56,7 +54,6 @@ const ALLOWED_PROP_VALUES: { [Key in keyof Required<AnalyticsProps>]: ReadonlySe
     'trip_form',
     'planner',
     'report',
-    'waitlist',
     'privacy',
     'manual'
   ]),

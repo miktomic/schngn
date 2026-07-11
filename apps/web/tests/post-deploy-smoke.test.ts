@@ -10,7 +10,7 @@ describe('post-deploy smoke and privacy-safe operations', () => {
     expect(packageJson.scripts['smoke:production']).toBe('node scripts/post-deploy-smoke.mjs');
   });
 
-  test('production smoke script checks public routes, PWA assets, canonical domain, and privacy-safe waitlist payload', () => {
+  test('production smoke script checks public routes, PWA assets, canonical domain, and anonymous account boundaries', () => {
     expect(existsSync('scripts/post-deploy-smoke.mjs')).toBe(true);
     const source = readFileSync('scripts/post-deploy-smoke.mjs', 'utf8');
 
@@ -30,11 +30,10 @@ describe('post-deploy smoke and privacy-safe operations', () => {
       expect(source).toContain(path);
     }
 
-    expect(source).toContain('production-smoke@schngn.invalid');
-    expect(source).toContain('SCHNGN_SMOKE_EXPECT_WAITLIST_STORAGE');
     expect(source).toContain('SCHNGN_SMOKE_EXPECT_WWW_REDIRECT');
-    expect(source).toContain('result.stored !== true');
-    expect(source).toContain('tripDates');
+    expect(source).not.toContain('/api/waitlist');
+    expect(source).not.toContain('SCHNGN_SMOKE_EXPECT_WAITLIST_STORAGE');
+    expect(source).not.toContain('production-smoke@schngn.invalid');
     expect(source).toContain('www.schngn.com');
     expect(source).toContain('Sitemap: https://schngn.com/sitemap.xml');
     expect(source).toContain('x-content-type-options');
@@ -82,7 +81,8 @@ describe('post-deploy smoke and privacy-safe operations', () => {
   test('CI/CD docs include the privacy-safe post-deploy runbook and rollback notes', () => {
     expect(ciDocs).toContain('## Post-deploy smoke and privacy-safe operations');
     expect(ciDocs).toContain('bun run smoke:production');
-    expect(ciDocs).toContain('does not submit trip dates');
+    expect(ciDocs).toContain('no public SCHNGN email-capture endpoint exists');
+    expect(ciDocs).toContain('signup is delegated to Clerk');
     expect(ciDocs).toContain('Rollback');
     expect(ciDocs).toContain('Cloudflare logs');
   });

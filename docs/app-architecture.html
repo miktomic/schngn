@@ -72,7 +72,7 @@
   <header>
     <div class="eyebrow">SCHNGN architecture</div>
     <h1>Local-first Schengen planner on Cloudflare Workers</h1>
-    <p class="subtitle">The important line: trip dates stay in the browser. Cloudflare serves the app and handles only tiny dynamic endpoints like email-only waitlist signup. The calculation engine stays pure and testable.</p>
+    <p class="subtitle">The important line: guest trip dates stay in the browser. Clerk owns optional signup, while Cloudflare handles only consented authenticated account data. The calculation engine stays pure and testable.</p>
   </header>
 
   <main class="canvas" aria-label="SCHNGN application architecture diagram">
@@ -119,8 +119,8 @@
       <rect class="box cf" x="466" y="104" width="260" height="64" /><text x="486" y="130">schngn.com</text><text class="small" x="486" y="150">custom domain</text>
       <rect class="box cf" x="466" y="204" width="260" height="74" /><text x="486" y="230">Worker: schngn-web</text><text class="small" x="486" y="250">workerd V8 isolate; not Node/Bun</text>
       <rect class="box cf" x="450" y="318" width="166" height="74" /><text x="470" y="344">Static Assets</text><text class="small" x="470" y="364">SvelteKit/Vite output</text>
-      <rect class="box cf" x="632" y="318" width="128" height="74" /><text x="650" y="344">Worker APIs</text><text class="small" x="650" y="364">waitlist + account</text>
-      <rect class="box data" x="540" y="424" width="210" height="54" /><text x="560" y="448">Cloudflare D1</text><text class="small" x="560" y="466">separate waitlist/account rows</text>
+      <rect class="box cf" x="632" y="318" width="128" height="74" /><text x="650" y="344">Worker APIs</text><text class="small" x="650" y="364">account + webhook</text>
+      <rect class="box data" x="540" y="424" width="210" height="54" /><text x="560" y="448">Cloudflare D1</text><text class="small" x="560" y="466">consented account rows</text>
 
       <rect class="box browser" x="900" y="104" width="240" height="74" /><text x="920" y="130">Svelte UI</text><text class="small" x="920" y="150">landing + app shell</text>
       <rect class="box browser" x="900" y="218" width="240" height="74" /><text x="920" y="244">@schngn/engine</text><text class="small" x="920" y="264">pure TS 90/180 calculator</text>

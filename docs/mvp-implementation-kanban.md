@@ -20,7 +20,7 @@
 | `Infrastructure / Cross-cutting` | Test harness, privacy QA, production smoke, domain hygiene | 1 |
 | `Next / Sprint 2` | Core UX, trust, simulator, import/export | 2 |
 | `Validation / Sprint 2–3` | Fake-door monetization and analytics | 2 |
-| `Launch / Sprint 3` | SEO, waitlist, PWA, accuracy proof | 2 |
+| `Launch / Sprint 3` | SEO, PWA, accuracy proof, and optional Clerk signup | 2 |
 | `Blocked / Needs decision` | Requires product/legal/provider decision | n/a |
 | `Done` | Implemented + verified | n/a |
 | `Won't in MVP` | Explicit scope guardrails | n/a |
@@ -84,7 +84,7 @@
   - Automated mobile Chromium smoke covers `/` and `/app` via `bun run test:e2e`.
   - Bun app utility tests cover reusable privacy-network assertions.
   - Privacy helper fails if trip dates, email, names, labels, or travel history appear in forbidden network URLs/bodies.
-  - E2E smoke covers mobile viewport, keyboard focus reachability, proof/report/privacy/waitlist states, and no forbidden network payloads.
+  - E2E smoke covers mobile viewport, keyboard focus reachability, proof/report/account states, and no forbidden network payloads.
   - `bun run check` remains fast and includes app utility tests, typecheck, and build; Playwright remains explicit so normal CI/local checks are not painfully slow.
 - **Verification:** `npx -y bun@1.3.14 run check` passed; `npx -y bun@1.3.14 run test:e2e` passed; deliberate forbidden-payload fixtures fail loudly in `apps/web/tests/privacy-network.test.ts`.
 
@@ -214,10 +214,10 @@
 - **Depends on:** US-04, US-05, privacy/product decision.
 - **Implementation target:** privacy-safe analytics wrapper with Plausible-compatible client hook and no provider lock-in.
 - **Acceptance summary:**
-  - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`, `pdf_buy_intent`, `unlock_buy_intent`, `waitlist_signup`.
+  - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`, `pdf_buy_intent`, `unlock_buy_intent`.
   - Payloads are allowlisted and aggregate-only: source, trip count bucket, safe-buffer bucket, verdict, or price bucket.
   - Trip dates, labels, names, email addresses, country history, and personal timelines are rejected before any analytics call.
-  - UI wiring fires aggregate funnel events from screen views, trip-add, simulator, and waitlist intent without sending trip details.
+  - UI wiring fires aggregate funnel events from workspace views, trip-add, simulator, and paid-intent actions without sending trip details or identity data.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 104 Bun tests / 1242 assertions including privacy-safe analytics allowlist and forbidden-payload rejection tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for intercepted Plausible-compatible events and no forbidden network payloads.
 
 ## US-13 — Border-ready PDF export fake-door
@@ -251,21 +251,22 @@
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 110 Bun tests / 1266 assertions including bucket assignment, persistence, invalid-value recovery, and aggregate unlock-intent payload tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the planner unlock CTA, early-access/no-charge message, `unlock_buy_intent`, PDF fake-door, and no forbidden network payloads.
 - **Success metric:** targeted-traffic preorder/buy-intent > 2%.
 
-## US-18 — Waitlist / email capture
+## US-18 — Retired waitlist / email-capture experiment
 
 - **Priority:** Should
 - **Estimate:** S
-- **Status:** Done
+- **Status:** Retired and removed from the active product on 2026-07-11
 - **Depends on:** approved Cloudflare D1 waitlist decision and privacy copy; see `docs/product-decisions.md`.
-- **Implementation target:** email capture on the Waitlist screen with a D1-backed `/api/waitlist` endpoint when the `DB` binding is configured.
-- **Acceptance summary:**
+- **Historical implementation target:** email capture on the Waitlist screen with a D1-backed `/api/waitlist` endpoint when the `DB` binding is configured.
+- **Historical acceptance summary:**
   - Email field with explicit consent and visible privacy note.
   - Submit button remains disabled until email + consent are present.
   - Endpoint accepts only normalized email, consent/version, source, and optional price bucket.
   - Endpoint rejects missing consent, invalid source, and invalid price bucket values.
   - Endpoint rejects unknown fields, including trip dates/history/calculation payload fields, and stores no trip data.
   - If `DB` is not bound yet, endpoint returns `202` accepted with `stored: false` instead of attempting unsafe storage.
-- **Verification:** `npx -y bun@1.3.14 run test` passed with 114 Bun tests / 1279 assertions including D1 insert-shape, consent-required, invalid-source/bucket rejection, and unbound fallback tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for email-only waitlist submit, consent gating, confirmation, `waitlist_signup`, and no trip-date/label leakage.
+- **Historical verification:** `npx -y bun@1.3.14 run test` passed with 114 Bun tests / 1279 assertions including D1 insert-shape, consent-required, invalid-source/bucket rejection, and unbound fallback tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for email-only waitlist submit, consent gating, confirmation, `waitlist_signup`, and no trip-date/label leakage.
+- **Retirement note:** the active screen, endpoint, and analytics event are removed. Signup now goes directly through Clerk. With no production waitlist data to preserve, the obsolete `0001` creation migration is removed; `0005` idempotently drops the old table from any already-provisioned database.
 
 ---
 
@@ -283,7 +284,7 @@
   - SEO title/meta/social tags for UK 90/180 and second-home long-tail terms.
   - Mobile-first load without private trip-value network leakage.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 117 Bun tests / 1296 assertions including UK second-home SEO source tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the targeted landing metadata, hero, trust line, CTA, and no forbidden network payloads.
-- **Success metric:** cold-traffic email/waitlist signup > 5%.
+- **Success metric:** cold-traffic Clerk signup conversion > 5%.
 
 ## US-12 — Accuracy trust signal
 
@@ -320,7 +321,7 @@
 - **Implementation target:** repeatable production smoke script/checklist and privacy-safe operational monitoring using Cloudflare logs/smoke tests first.
 - **Acceptance summary:**
   - `bun run smoke:production` verifies `https://schngn.com/`, `/app`, `/accuracy`, `/manifest.json`, `/service-worker.js`, `/robots.txt`, and `/sitemap.xml` return healthy responses.
-  - Smoke script submits only the deterministic `production-smoke@schngn.invalid` waitlist email request and rejects trip-date/history fields in the smoke payload.
+  - Smoke script proves the anonymous account boundary without submitting email or traveler data.
   - Smoke script verifies anonymous account GET/empty-trip PUT/DELETE requests return `401 authentication_required` with no-store caching; signed-in account sync remains a controlled manual production check.
   - GitHub Actions runs production smoke checks after successful Cloudflare deploy.
   - Post-deploy runbook covers privacy-safe payload inspection, no-Sentry MVP operations, Cloudflare logs, failure handling, rollback notes, and `www` DNS warning behavior.
@@ -348,7 +349,7 @@ These decisions were approved on 2026-07-09 and recorded in `docs/product-decisi
 
 - **Analytics provider:** Plausible Cloud for MVP.
 - **Fake-door pricing:** one-time €5 / €9 / €19 default; £5 / £9 / £19 for UK-targeted pages.
-- **Email/waitlist provider:** Cloudflare D1 with email + consent/source metadata only.
+- **Retired email/waitlist experiment:** Cloudflare D1 capture was superseded by direct Clerk signup on 2026-07-11; fresh databases start at account migration `0002`, and `0005` cleans already-provisioned databases.
 - **Legal/disclaimer copy:** fixed planning-aid/not-legal-advice copy; no runtime AI legal explanations.
 - **Official-source references:** EC short-stay calculator, EES, and ETIAS official links.
 - **Public validation page:** include `/accuracy` after US-01 is robust.
@@ -361,7 +362,7 @@ These decisions were approved on 2026-07-09 and recorded in `docs/product-decisi
 
 # Current state
 
-The original MVP implementation cards above have shipped code and automated coverage. Production-readiness hardening is tracked separately because a green feature card is not proof that provider configuration, live telemetry, or every adversarial input is safe.
+The original MVP implementation cards above shipped code and automated coverage. The separate waitlist experiment was later retired; the active product now sends account creation directly to Clerk. Production-readiness hardening is tracked separately because a green feature card is not proof that provider configuration, live telemetry, or every adversarial input is safe.
 
 ---
 
@@ -379,7 +380,7 @@ The original MVP implementation cards above have shipped code and automated cove
   - Signup/sign-in does not upload existing local trips until the signed-in user gives explicit consent.
   - Clerk is the identity source of truth; D1 application data is keyed by the server-verified Clerk user ID.
   - No endpoint accepts a client-supplied owner. Every account read/write/export/deletion is scoped from the verified session.
-  - Account storage and the email-only waitlist use separate tables and consent purposes.
+  - No SCHNGN-managed email waitlist exists; account creation goes through Clerk, while trip sync still requires separate explicit consent.
   - Signed-in users can export and delete their application data; a verified Clerk deletion webhook provides cleanup fallback.
   - Sign-out isolates or removes synchronized local cache data on shared devices.
   - No trip dates, history, labels, calculated timelines, Clerk user IDs, or email enter analytics or operational logs.
@@ -407,7 +408,7 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 
 1. Result integrity: controlled country input, empty first-run state, semantically validated local data, and simulations that protect future booked trips.
 2. Truthful evidence UI: data-driven timeline, proof, risk, and returning-days states.
-3. Live validation plumbing: Plausible loader plus D1 schema/binding/migration and strict email-only requests.
+3. Live validation plumbing: Plausible loader plus the authenticated D1 schema/binding/migrations and Clerk signup entry points.
 4. Release gates: Playwright, accessibility, privacy payload, type, build, and post-deploy storage checks in CI.
 5. Account expansion: optional Clerk authentication, explicit sync consent, server-derived ownership, D1 data isolation, export/deletion, and lifecycle webhook cleanup.
 6. External closeout: provider account setup, least-privilege credentials, migration application, `www` verification, Clerk domain/webhook verification, and a live privacy audit.

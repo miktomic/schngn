@@ -86,14 +86,14 @@ Current tests are a real published-rule correctness gate:
 
 US-19 adds two app-level gates, both required by CI:
 
-- `bun run test` includes privacy-network rejection, empty/corrupt/unavailable storage, schema-two multi-stay import validation, optional Schengen border countries, outside-break calculation, dashboard and future-commitment conflicts, dynamic proof/return state, runtime analytics allowlists, strict email-only waitlist parsing, authenticated account isolation/consent/export/deletion/webhook checks, D1 migration/config checks, security headers, PWA/offline behavior, SEO, and truthful accuracy evidence.
-- `bun run test:e2e` runs Playwright mobile Chromium smoke for `/`, `/accuracy`, and `/app`, including UK second-home landing title/meta/hero/CTA coverage, accuracy-page title/official-source/case/non-endorsement coverage, US-17 service-worker install/control plus offline `/app` reload coverage, proof/report/privacy/waitlist states, US-04 add/edit/delete/validation behavior, US-05 reload persistence, US-06 JSON export/import/malformed-import behavior, US-07 dynamic latest-safe-exit display, US-09 future-trip simulator safe/unsafe behavior with non-mutating saved trips, US-08 dynamic days-coming-back forecast rows, US-10/US-11 disclaimer/explanation/official-link coverage, US-15 Plausible-compatible event interception with no trip-date/label/email leakage, US-13 PDF fake-door CTA/no-charge/intent coverage, US-14 paid unlock CTA/no-charge/intent coverage, US-18 waitlist email-only POST/consent/confirmation coverage, keyboard focus reachability, and privacy-network assertions.
+- `bun run test` includes privacy-network rejection, empty/corrupt/unavailable storage, schema-two multi-stay import validation, optional Schengen border countries, outside-break calculation, dashboard and future-commitment conflicts, dynamic proof/return state, runtime analytics allowlists, authenticated account isolation/consent/export/deletion/webhook checks, D1 migration/config checks, security headers, PWA/offline behavior, SEO, and truthful accuracy evidence.
+- `bun run test:e2e` runs Playwright mobile Chromium smoke for `/`, `/accuracy`, and `/app`, including UK second-home landing title/meta/hero/CTA coverage, accuracy-page title/official-source/case/non-endorsement coverage, service-worker install/control plus offline `/app` reload coverage, the continuous trips/timeline/planner/details/report/account workspace, add/edit/delete/adjust validation behavior, reload persistence, JSON export/import behavior, dynamic latest-safe-exit and returning-day states, simulator safe/unsafe behavior with non-mutating saved trips, fixed disclaimer/explanation/official-link coverage, Plausible-compatible event interception with no trip-date/label/email leakage, Clerk signup entry points, keyboard focus reachability, and privacy-network assertions.
 
 Before enabling analytics or fake-door flows, CI/manual QA must confirm:
 
 - analytics payloads do not contain trip dates
-- analytics payloads do not contain email/PII unless explicitly part of waitlist flow
-- waitlist endpoint accepts only email, not trips
+- analytics payloads do not contain email/PII
+- no public SCHNGN email-capture endpoint exists; signup is delegated to Clerk
 - guests generate no account trip requests; authenticated sync requires explicit consent
 - account endpoints derive the owner from the verified Clerk session, never request data
 - account trips, Clerk user IDs, and identity data do not enter analytics or logs
@@ -130,8 +130,6 @@ The script verifies:
 - `https://schngn.com/`, `/app`, and `/accuracy` return healthy HTML and expected launch copy.
 - PWA/static assets `/manifest.json`, `/service-worker.js`, `/favicon.png`, the production wordmark/social card, a maskable icon, `/robots.txt`, and `/sitemap.xml` return healthy responses.
 - Canonical metadata and sitemap content stay on the apex domain, not `www.schngn.com`.
-- `/api/waitlist` accepts one deterministic `production-smoke@schngn.invalid` email-only request and reports `stored: true` (the fixed address is upserted, not multiplied on every deploy).
-- The smoke request does not submit trip dates, trip history, country timelines, names, passports, secrets, or other traveler data.
 - Anonymous `GET /api/account/trips`, empty-trip `PUT /api/account/trips`, and `DELETE /api/account` requests all return `401 authentication_required` with `cache-control: no-store`. The PUT contains no dates or identity fields and proves authentication happens before sync parsing/storage.
 - Public responses include the baseline security headers.
 - `www.schngn.com` redirects canonically; unresolved or split-domain behavior fails production smoke by default.
@@ -143,7 +141,7 @@ The public smoke intentionally has no Clerk session, so it cannot prove signed-i
 Privacy-safe operations for MVP:
 
 - Use Cloudflare logs plus the smoke script first; no Sentry or equivalent third-party error-monitoring SDK in the MVP.
-- Inspect analytics, account sync, waitlist, and fake-door payloads with browser/devtools or Playwright before changing those flows.
+- Inspect analytics, account sync, Clerk signup, and fake-door payloads with browser/devtools or Playwright before changing those flows.
 - Keep operational logs aggregate; never log trip dates, labels, full history, passport/residence details, or secrets.
 - Verify account routes return only the current signed-in user’s data, and verify that a guest or signed-in user without sync consent cannot upload trips.
 
@@ -152,7 +150,7 @@ Rollback/failure notes:
 - If `test-build` fails, do not deploy.
 - If deploy fails, inspect the GitHub Actions `Deploy production` logs and Wrangler error, then rerun after fixing credentials/routes/config.
 - If production smoke fails after deploy, use Cloudflare deployment history to roll back to the previous known-good Worker version or push a small revert/fix commit.
-- If D1 migration, waitlist/account persistence, Clerk authentication/webhook verification, security headers, or the canonical `www` redirect fail, treat the release as incomplete and stop paid traffic until fixed or rolled back.
+- If D1 migration/account persistence, Clerk authentication/webhook verification, security headers, or the canonical `www` redirect fail, treat the release as incomplete and stop paid traffic until fixed or rolled back.
 
 ## Secrets strategy
 
@@ -210,7 +208,7 @@ Do not store secrets in the repo, docs, wiki, logs, screenshots, or chat output.
 
 ## Cloudflare resources
 
-The approved D1 binding is declared without a committed external identifier. It contains separate schemas for consented waitlist email and authenticated account data; account rows are keyed by the server-verified Clerk user ID. Current Wrangler provisions the resource during inactive version upload:
+The approved D1 binding is declared without a committed external identifier. Active application rows contain only explicitly consented authenticated account data keyed by the server-verified Clerk user ID. Current Wrangler provisions the resource during inactive version upload:
 
 ```jsonc
 "d1_databases": [
@@ -225,7 +223,7 @@ bun run d1:migrate:local
 bun run d1:migrate:remote
 ```
 
-`0001_create_waitlist_signups.sql` owns the email-only waitlist. `0002_create_account_trip_snapshots.sql` owns authenticated snapshots and records `clerk_user_id`, optimistic revision, validated trip JSON, `consent_version`, and `consented_at`. Do not join or repurpose the waitlist as an account identity table.
+Fresh databases start with `0002_create_account_trip_snapshots.sql`, which owns authenticated snapshots and records `clerk_user_id`, optimistic revision, validated trip JSON, `consent_version`, and `consented_at`. The numbering gap is intentional: the retired `0001` creation migration was removed because there is no production data to preserve. `0005_drop_waitlist_signups.sql` is the idempotent forward cleanup for any database that was already provisioned with the old table.
 
 ## Release policy
 

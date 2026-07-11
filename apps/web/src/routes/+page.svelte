@@ -6,7 +6,6 @@
 
   let locale = $derived(localeFromPath(page.url.pathname));
   let t = $derived(createTranslator(locale));
-  const english = createTranslator('en');
   let homePath = $derived(localizedPath('/', locale));
   let appPath = $derived(`${localizedPath('/app', locale)}?market=uk`);
   let accuracyPath = $derived(localizedPath('/accuracy', locale));
@@ -66,8 +65,7 @@
         <a class="primary" href={appPath}>{t('landing.primaryAction')}</a>
         <a class="secondary" href={appPath}>{t('common.openCalculator')}</a>
       </div>
-      <p class="trust-line" lang="en" dir="ltr">{english('landing.trust')}</p>
-      {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
+      <p class="trust-line">{t('landing.trust')}</p>
       <a class="evidence-link" href={accuracyPath}>{t('landing.evidence')}</a>
     </div>
 
@@ -246,14 +244,6 @@
     color: var(--muted);
     font-size: 0.96rem;
     line-height: 1.45;
-  }
-
-  .translation-note {
-    max-width: 520px;
-    margin: 8px 0 0;
-    color: var(--muted);
-    font-size: 0.84rem;
-    line-height: 1.4;
   }
 
   .evidence-link {

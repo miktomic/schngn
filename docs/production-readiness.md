@@ -17,16 +17,19 @@ The release is blocked unless all three commands pass. The checks cover engine a
 Manual browser verification must also confirm:
 
 - a new browser starts with no fictional trips or verdict;
+- the first-run history step requires either a previous trip or an explicit no-history confirmation before showing a safe allowance;
+- the continuous workspace restores its selected hash anchor after refresh, including localized and RTL routes;
 - optional entry/exit countries accept only current Schengen choices and never alter the count;
 - a trip that leaves and re-enters Schengen shows the correct counted days and visible timeline gap;
 - a what-if trip cannot make a later booked trip unsafe without warning;
 - timeline, proof, risk, and returning-day dates match the entered itinerary;
+- every saved trip can be adjusted from the canonical timeline without changing its identity or mutating an unrelated planner scenario;
 - keyboard focus reaches every action, visible controls meet the 44px project target, and 200% zoom does not hide content;
 - offline reload retains the calculator shell and locally saved trips;
 - the approved wordmark renders without a white canvas, browser favicon links resolve, and regular plus maskable PWA icons survive install masking;
 - observed analytics requests contain no trip dates, labels, email, or travel history;
-- the waitlist request contains only email, consent, source, and an optional approved price bucket.
 - a guest remains local-only and emits no account trip request;
+- the signup action opens Clerk directly; SCHNGN exposes no separate email-capture form or endpoint;
 - signup/sign-in alone does not upload local trips; a signed-in user must give explicit sync consent;
 - version-one local storage and backups are intentionally unsupported; the schema-two D1 migration clears any pre-launch account snapshots while preserving Clerk accounts;
 - account requests contain no client-controlled owner and authorization-isolation tests prove one user cannot access another user’s rows;
@@ -89,7 +92,7 @@ Clerk's runtime CSS-in-JS and SCHNGN's data-driven inline CSS variables require 
 
 ### Cloudflare D1
 
-`apps/web/wrangler.jsonc` declares the `DB` binding without a committed database identifier. Current Wrangler provisions the resource for the binding, and migrations live under `apps/web/migrations/`. Waitlist rows and authenticated account rows must remain separate. Account data is keyed by the server-verified Clerk user ID and may exist only after explicit consent; guest trips never enter D1.
+`apps/web/wrangler.jsonc` declares the `DB` binding without a committed database identifier. Current Wrangler provisions the resource for the binding, and migrations live under `apps/web/migrations/`. Active application data is keyed by the server-verified Clerk user ID and may exist only after explicit consent; guest trips never enter D1. Fresh databases start with the account schema at `0002`. Migration `0005_drop_waitlist_signups.sql` safely drops the retired table if an already-provisioned database still has it.
 
 Local schema verification:
 
@@ -103,17 +106,11 @@ Remote migration application is part of the production workflow and can be run d
 bun run d1:migrate:remote
 ```
 
-The production smoke check fails by default unless `/api/waitlist` reports `stored: true`. For a non-production target where persistence is intentionally absent, set `SCHNGN_SMOKE_EXPECT_WAITLIST_STORAGE=false` explicitly; never disable that expectation for the real production job.
-
 Migration `0002_create_account_trip_snapshots.sql` records the verified Clerk owner, optimistic revision, validated trip JSON, and versioned sync-consent time. Migration `0003_create_account_deletion_tombstones.sql` adds a minimal replay guard containing only a one-way Clerk-ID digest and a 30-day expiry. Apply all migrations before activating account routes. Application-visible deletion removes the owner’s snapshot immediately; expired replay guards are ignored and opportunistically purged. Provider backup/time-travel retention follows Cloudflare’s configured policy and must be described accurately in public privacy copy.
 
-### Waitlist edge rate limiting
+### Authenticated-write edge rate limiting
 
-Before opening the site to public acquisition, add a Cloudflare zone rate-limiting rule for the exact `/api/waitlist` path. Match `POST` as well when the active Cloudflare plan exposes the Method field; lower plans may expose only Path. Count per client IP at the edge, use a conservative threshold/window supported by the plan, and block or challenge excess requests. The Worker must not receive, log, or persist the client IP.
-
-Verify the rule in controlled testing: ordinary submissions must still reach the endpoint, while a short burst above the configured threshold must be mitigated by Cloudflare. Do not add an in-isolate memory counter as a substitute; Worker instances do not provide a reliable global rate limit.
-
-Apply a separate authenticated-write rule to `PUT /api/account/trips` and `DELETE /api/account`. Keep its threshold high enough for normal multi-device sync bursts, key it per client IP where the active Cloudflare plan permits, and return `429` before the Worker reads a body. Clerk authentication, the 1 MB streaming body cap, and optimistic revisions remain the application controls; the edge rule is defense in depth and must not log request bodies or Clerk tokens.
+Apply a Cloudflare rate-limiting rule to `PUT /api/account/trips` and `DELETE /api/account`. Keep its threshold high enough for normal multi-device sync bursts, key it per client IP where the active Cloudflare plan permits, and return `429` before the Worker reads a body. Clerk authentication, the 1 MB streaming body cap, and optimistic revisions remain the application controls; the edge rule is defense in depth and must not log request bodies or Clerk tokens.
 
 ### Plausible Cloud
 
@@ -127,7 +124,6 @@ After deployment, confirm these events arrive with bucket/source properties only
 - `simulation_run`
 - `pdf_buy_intent`
 - `unlock_buy_intent`
-- `waitlist_signup`
 
 Do not launch paid traffic if events are absent or if any event contains a date, email, free-form trip label, country history, or calculated timeline.
 
@@ -150,7 +146,7 @@ The GitHub production workflow performs this sequence after the test/build/brows
 3. deploy the verified Worker/static assets with the same required bindings to active traffic;
 4. remove the ephemeral bindings file even if an earlier step fails;
 5. ensure the canonical `www` DNS/redirect configuration;
-6. run the production route, security-header, waitlist-persistence, account-auth, and domain smoke checks.
+6. run the production route, security-header, account-auth, and domain smoke checks.
 
 Do not deploy manually from an unverified working tree. If an emergency manual release is unavoidable, follow the same order and retain the command results in the deployment record.
 
@@ -163,8 +159,8 @@ Production traffic is allowed only when:
 - there are no known result-integrity defects;
 - Clerk production domain/redirect configuration and the signed lifecycle webhook are verified;
 - guest local-only behavior, explicit sync consent, cross-account isolation, repeat-visit sync, export, deletion, and sign-out cache isolation are verified;
-- D1 waitlist persistence is proven by smoke;
-- the waitlist and authenticated account-write edge rate limits are enabled and verified;
+- D1 account persistence is verified with a controlled, synthetic signed-in smoke;
+- the authenticated account-write edge rate limit is enabled and verified;
 - aggregate Plausible events are visible and privacy-audited;
 - `www` redirects canonically;
 - Cloudflare logs show no new Worker errors after deployment;

@@ -23,7 +23,7 @@ describe('optional account operations contract', () => {
     expect(agentContext).toContain('Never accept a client-supplied owner');
   });
 
-  test('keeps account storage, waitlist, analytics, export, and deletion boundaries explicit', () => {
+  test('keeps account storage, signup, analytics, export, and deletion boundaries explicit', () => {
     const architecture = read('docs/architecture.md');
     const readiness = read('docs/production-readiness.md');
     const readme = read('README.md');
@@ -35,7 +35,8 @@ describe('optional account operations contract', () => {
       expect(source).toContain('deletion');
     }
 
-    expect(architecture).toContain('waitlist remains separate');
+    expect(architecture).toContain('There is no SCHNGN-managed email waitlist');
+    expect(architecture).toContain('use Clerk signup directly');
     expect(architecture).toContain('no trip data in analytics or logs');
     expect(readiness).toContain('signed-in user');
   });

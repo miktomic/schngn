@@ -14,7 +14,7 @@ SCHNGN is a mobile-first web/PWA with a heavily tested pure calculation engine. 
 - **Core logic:** `@schngn/engine`, pure TypeScript with no runtime dependencies
 - **Trip data:** guest trips are browser-local only; signed-in trips enter D1 only after explicit sync consent
 - **Identity:** optional Clerk signup; Clerk is the identity source and application rows are keyed by verified Clerk user ID
-- **Server data:** authenticated account trips/settings plus a separate email-only waitlist, both in Cloudflare D1
+- **Server data:** authenticated account trips/settings in Cloudflare D1; there is no separate email waitlist
 - **Analytics:** aggregate-only events through the allowlisted Plausible adapter; never trip dates or email
 
 Read:

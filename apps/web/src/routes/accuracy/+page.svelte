@@ -7,29 +7,28 @@
   const officialCalculatorUrl = 'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en';
   let locale = $derived(localeFromPath(page.url.pathname));
   let t = $derived(createTranslator(locale));
-  const english = createTranslator('en');
   let homePath = $derived(localizedPath('/', locale));
   let appPath = $derived(localizedPath('/app', locale));
   let accuracyPath = $derived(localizedPath('/accuracy', locale));
   let canonicalUrl = $derived(`https://schngn.com${accuracyPath}`);
-  const cases = [
+  let cases = $derived([
     {
-      title: english('accuracy.caseInclusiveTitle'),
-      detail: english('accuracy.caseInclusiveCopy')
+      title: t('accuracy.caseInclusiveTitle'),
+      detail: t('accuracy.caseInclusiveCopy')
     },
     {
-      title: english('accuracy.caseWindowTitle'),
-      detail: english('accuracy.caseWindowCopy')
+      title: t('accuracy.caseWindowTitle'),
+      detail: t('accuracy.caseWindowCopy')
     },
     {
-      title: english('accuracy.caseOverlapTitle'),
-      detail: english('accuracy.caseOverlapCopy')
+      title: t('accuracy.caseOverlapTitle'),
+      detail: t('accuracy.caseOverlapCopy')
     },
     {
-      title: english('accuracy.caseExcludedTitle'),
-      detail: english('accuracy.caseExcludedCopy')
+      title: t('accuracy.caseExcludedTitle'),
+      detail: t('accuracy.caseExcludedCopy')
     }
-  ];
+  ]);
 </script>
 
 <svelte:head>
@@ -76,13 +75,12 @@
     </div>
   </section>
 
-  {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
-  <section class="notice" aria-label={t('accuracy.scope')} lang="en" dir="ltr">
-    <strong>SCHNGN is not certified, approved, or guaranteed by the EU</strong>
-    <p>The European Commission calculator is linked for independent comparison. SCHNGN's checked-in suite currently verifies published rule semantics; it does not claim captured output parity with the official calculator. It is not legal advice and does not guarantee entry.</p>
+  <section class="notice" aria-label={t('accuracy.scope')}>
+    <strong>{t('accuracy.noticeTitle')}</strong>
+    <p>{t('accuracy.noticeCopy')}</p>
   </section>
 
-  <section class="case-grid" aria-label={t('accuracy.cases')} lang="en" dir="ltr">
+  <section class="case-grid" aria-label={t('accuracy.cases')}>
     {#each cases as testCase}
       <article>
         <h2>{testCase.title}</h2>
@@ -209,14 +207,6 @@
   .case-grid article {
     border: 1px solid var(--line);
     background: var(--surface);
-  }
-
-  .translation-note {
-    max-width: 1120px;
-    margin: 0 auto 12px;
-    color: var(--muted);
-    font-size: 0.84rem;
-    line-height: 1.4;
   }
 
   .notice {

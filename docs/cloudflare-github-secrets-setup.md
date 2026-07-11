@@ -89,7 +89,7 @@ Use these permissions for the CI deploy token:
 |---|---|---|---|
 | Account | Account Settings | Read | Wrangler/account lookup |
 | Account | Workers Scripts | Edit | Create/update `schngn-web` Worker and static assets |
-| Account | D1 | Edit | Provision the waitlist database and apply migrations |
+| Account | D1 | Edit | Provision the account database and apply migrations |
 | Zone | Workers Routes | Edit | Attach custom domain route `schngn.com` |
 | Zone | DNS | Edit | Create/repair the proxied `www` record |
 | Zone | Rulesets | Edit | Create/repair the canonical HTTP 308 redirect |
@@ -247,7 +247,7 @@ Expected:
 - TLS certificate valid.
 - `/app` loads the SvelteKit app shell.
 - `www` redirects to the apex with path/query preserved.
-- `/api/waitlist` reports real D1 persistence during production smoke.
+- Clerk signup/sign-in opens successfully on the production domain.
 - A guest creates no account trip requests and remains local-only.
 - The automated production smoke confirms anonymous account GET/PUT/DELETE requests return `401 authentication_required` with `cache-control: no-store`.
 - A signed-in user can consent to sync, reload their own data, export it, and delete it.
@@ -296,7 +296,6 @@ Common failure modes:
 | DNS/custom domain creation error | Token/zone cannot create needed DNS/cert resources | Add custom domain once in dashboard or temporarily grant needed DNS permission |
 | D1 provisioning/migration fails | Token lacks D1 permission or the migration is invalid | Add Account → D1 → Edit; verify locally with `bun run d1:migrate:local` |
 | `www` setup fails | Token lacks DNS/Rulesets permission | Grant zone-scoped DNS and Rulesets Edit, then rerun the idempotent setup script |
-| Production smoke reports `stored=false` | D1 binding/schema is missing | Confirm inactive provisioning and remote migration steps completed before deploy |
 | Missing required Clerk binding | One of the three GitHub production values is absent | Add the named variable/secret; do not weaken `secrets.required` |
 | Clerk webhook returns unauthorized | Wrong endpoint signing secret or unverified request | Recreate/rotate the endpoint secret in Clerk and update only the GitHub environment secret |
 | Signed-in sync returns unauthorized | Clerk domain/session configuration mismatch | Check the production domain, allowed origins/redirects, cookie scope, and Worker secret |

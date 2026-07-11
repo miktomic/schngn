@@ -35,13 +35,12 @@ For SCHNGN this is fine, because the app is deliberately local-first:
 │   - JS/CSS/PWA manifest                                                   │
 │                                                                           │
 │ _worker.js                                                                │
-│   - /api/waitlist: separate email-only consent flow                       │
 │   - authenticated sync/export/deletion routes                             │
 │   - verifies Clerk session; derives owner server-side                     │
 │                                                                           │
 │ Cloudflare D1                                                            │
-│   - waitlist table remains separate                                       │
 │   - consented account rows keyed by verified Clerk user ID                │
+│   - account schemas plus idempotent retired-table cleanup                 │
 └───────────────────────────────────┬──────────────────────────────────────┘
                                     │
                                     ▼
@@ -93,7 +92,7 @@ Responsibilities:
 - Local trip storage and import/export.
 - Dashboard, simulator, and days-coming-back views.
 - Privacy-safe analytics hooks.
-- D1-backed waitlist endpoint and fake-door flows.
+- Paid-intent fake-door flows that never collect email or trip data.
 - Optional Clerk authentication and authenticated D1 sync.
 - Account-data export and deletion flows.
 - Aggregate-only Plausible event adapter.
@@ -126,22 +125,13 @@ markers make account reads/writes return a generic gone response; expired marker
 opportunistically purged. The user-facing “delete saved trips” action deletes only the snapshot and
 does not tombstone a still-existing Clerk account.
 
-Sign-out must not expose a previous user’s synchronized cache on a shared device. The account store and waitlist remain separate; put plainly, the waitlist remains separate, and no trip data may enter analytics or operational logs.
+Sign-out must not expose a previous user’s synchronized cache on a shared device, and no trip data may enter analytics or operational logs.
 
-### `/api/waitlist`
+### Signup boundary
 
-The separate public email-capture route.
+There is no SCHNGN-managed email waitlist. People who want an account use Clerk signup directly. Clerk remains responsible for identity data; SCHNGN stores no duplicate email/profile row in D1 and does not upload guest trips merely because signup completed.
 
-Responsibilities:
-
-- Validate email.
-- Store email in the approved Cloudflare D1 database once configured.
-- Return an honest success/queued response.
-
-Constraints:
-
-- Never mix waitlist/email data with trip data.
-- No trip payloads accepted.
+Because there is no production waitlist data to preserve, `0001_create_waitlist_signups.sql` is removed. Fresh databases begin the active account schema at migration `0002`. Forward migration `0005_drop_waitlist_signups.sql` uses `DROP TABLE IF EXISTS` to clean any already-provisioned database safely; it never creates or repurposes an identity table.
 
 ## Data boundaries
 
@@ -152,7 +142,6 @@ Constraints:
 | Identity/session | Clerk | Yes, on optional signup/sign-in | Clerk remains identity source of truth |
 | Calculation results | Browser memory/UI | No by default | May be shown/exported locally |
 | Analytics | Plausible Cloud | Yes, aggregate only | Allowlisted buckets only; no trip data or PII |
-| Waitlist email | Separate Cloudflare D1 table | Yes, on explicit consent | Waitlist remains separate from account storage |
 | Fake-door buy intent | Analytics/provider | Yes, event only | No trip details |
 
 ## Deployment target
@@ -188,9 +177,9 @@ Implemented:
 
 - Pure TypeScript engine with deterministic fixtures, boundary cases, a golden scenario, and independent-oracle property checks.
 - Local trip CRUD, semantic validation, persistence, and JSON backup/restore.
-- Dashboard, planner, proof, returning-days, report fake door, waitlist, and privacy surfaces.
+- A continuous calculator workspace with trips, planning, proof, returning-days, report, and account surfaces.
 - Installable offline PWA shell.
-- Aggregate-only analytics adapter and D1 waitlist route.
+- Aggregate-only analytics adapter with no email capture.
 - Unit, type, build, browser, privacy-network, and post-deploy smoke gates.
 
 The checked-in suite verifies the published 90/180-day rule semantics. It does not claim captured output parity with the European Commission calculator until provenance-backed official outputs are added. Optional accounts are the explicit DEC-10/US-22 scope expansion. External Clerk/D1/Plausible/Cloudflare configuration is tracked in `docs/production-readiness.md`.

@@ -1,6 +1,6 @@
 # SCHNGN Pencil screen buildout plan
 
-> Historical screen-planning context. DEC-11 superseded this file's constellation-logo lock on 2026-07-10; current product surfaces use the supplied production wordmark and euro-star favicon artwork.
+> Historical screen-planning context. DEC-11 superseded this file's constellation-logo lock on 2026-07-10; current product surfaces use the supplied production wordmark and euro-star favicon artwork. The waitlist frames below are also retired: account creation now goes directly through Clerk.
 
 This plan assumes the visual identity direction in `docs/pencil-visual-identity-results.md` is approved or lightly adjusted.
 

@@ -3,7 +3,6 @@
 const BASE_URL = process.env.SCHNGN_BASE_URL ?? 'https://schngn.com';
 const WWW_URL = process.env.SCHNGN_WWW_URL ?? 'https://www.schngn.com';
 const timeoutMs = Number(process.env.SCHNGN_SMOKE_TIMEOUT_MS ?? 15000);
-const expectWaitlistStorage = parseBooleanEnv('SCHNGN_SMOKE_EXPECT_WAITLIST_STORAGE', true);
 const expectWwwRedirect = parseBooleanEnv('SCHNGN_SMOKE_EXPECT_WWW_REDIRECT', true);
 
 const checks = [];
@@ -81,15 +80,6 @@ async function fetchWithTimeout(url, init = {}) {
   }
 }
 
-function assertNoTripDataPayload(body) {
-  const forbiddenKeys = ['trips', 'tripDates', 'entryDate', 'exitDate', 'travelHistory', 'countries', 'timeline'];
-  for (const key of forbiddenKeys) {
-    if (Object.hasOwn(body, key)) {
-      throw new Error(`smoke payload must not contain ${key}`);
-    }
-  }
-}
-
 function documentContentSecurityPolicy(response, text) {
   const header = response.headers.get('content-security-policy');
   if (header) return header;
@@ -144,36 +134,6 @@ async function checkPublicAsset({ path, type, contains }) {
     if (type === 'text/html') assertDocumentContentSecurityPolicy(response, text);
     if (text.includes('www.schngn.com')) return fail(name, 'contains non-canonical www.schngn.com');
     pass(name, `${response.status} ${contentType}`);
-  } catch (error) {
-    fail(name, error.message);
-  }
-}
-
-async function checkWaitlistPrivacy() {
-  const name = 'POST /api/waitlist smoke payload';
-  const body = {
-    email: 'production-smoke@schngn.invalid',
-    consent: true,
-    source: 'production_smoke'
-  };
-
-  try {
-    assertNoTripDataPayload(body);
-    const response = await fetchWithTimeout(new URL('/api/waitlist', BASE_URL), {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const result = await response.json().catch(() => ({}));
-    if (response.status !== 202 && response.status !== 200) return fail(name, `expected 200/202, got ${response.status}`);
-    if (result && result.ok !== true) return fail(name, `expected ok response, got ${JSON.stringify(result)}`);
-    if (expectWaitlistStorage && result.stored !== true) {
-      return fail(name, `waitlist storage is required but the endpoint reported stored=${result.stored ?? 'unknown'}`);
-    }
-    if (!expectWaitlistStorage && result.stored !== true) {
-      warnings.push({ name, message: 'Waitlist storage check explicitly disabled; the email-only request was accepted but not persisted.' });
-    }
-    pass(name, `accepted deterministic email-only smoke request; stored=${result.stored ?? 'unknown'}`);
   } catch (error) {
     fail(name, error.message);
   }
@@ -252,7 +212,6 @@ for (const check of publicChecks) {
 for (const check of anonymousAccountChecks) {
   await checkAnonymousAccountBoundary(check);
 }
-await checkWaitlistPrivacy();
 await checkWwwRedirect();
 
 for (const check of checks) {

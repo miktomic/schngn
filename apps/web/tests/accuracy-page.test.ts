@@ -12,18 +12,19 @@ describe('public accuracy trust signal', () => {
 
     expect(messagesSource).toContain('Tested with 50 deterministic rule fixtures');
     expect(messagesSource).toContain('independent day-set oracle');
-    expect(source).toContain('does not claim captured output parity with the official calculator');
+    expect(messagesSource).toContain('does not claim captured output parity with the official calculator');
     expect(source).not.toContain('Validated against the European Commission');
     expect(source).toContain('https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en');
     expect(messagesSource).toContain('Inclusive entry and exit days');
     expect(messagesSource).toContain('Rolling 180-day window');
     expect(messagesSource).toContain('Overlapping trips are de-duplicated');
-    expect(source).toContain('SCHNGN is not certified, approved, or guaranteed by the EU');
+    expect(messagesSource).toContain('SCHNGN is not certified, approved, or guaranteed by the EU');
+    expect(source).toContain("t('accuracy.noticeCopy')");
   });
 
   test('does not use unsafe guarantee language outside the explicit non-endorsement sentence', () => {
     const source = readFileSync(accuracyPath, 'utf8');
-    const normalized = source.replace('SCHNGN is not certified, approved, or guaranteed by the EU', '');
+    const normalized = messagesSource.replace('SCHNGN is not certified, approved, or guaranteed by the EU', '');
 
     expect(normalized).not.toMatch(/\bcertified\b/i);
     expect(normalized).not.toMatch(/\bapproved\b/i);

@@ -14,9 +14,9 @@ export interface PdfReportFakeDoorState {
 export function buildPdfReportFakeDoorState(showIntentMessage: boolean): PdfReportFakeDoorState {
   return {
     buttonLabel: `Generate border-ready PDF — ${PDF_REPORT_PRICE_LABEL}`,
-    helperCopy: 'PDF export is an early-access fake door. Clicking records interest only; no payment is taken.',
+    helperCopy: 'PDF export is not live yet. Sign up to save your trips; no payment is taken.',
     messageTitle: 'PDF export is not live yet',
-    messageCopy: 'You can join the early-access list. SCHNGN records intent only and does not charge you.',
+    messageCopy: 'Sign up to keep your trips for repeat visits. SCHNGN records aggregate PDF interest only and does not charge you.',
     showIntentMessage
   };
 }

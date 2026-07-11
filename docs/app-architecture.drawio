@@ -45,12 +45,12 @@ workerd V8 isolate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;st
 SvelteKit/Vite output" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#059669;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="455" y="300" width="155" height="70" as="geometry" />
     </mxCell>
-    <mxCell id="waitlist" value="Worker APIs
-waitlist + authenticated account" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#059669;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+    <mxCell id="accountApi" value="Worker APIs
+account + Clerk webhook" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#059669;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="625" y="300" width="135" height="70" as="geometry" />
     </mxCell>
     <mxCell id="store" value="Cloudflare D1
-separate waitlist/account rows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f3ff;strokeColor=#7c3aed;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+consented account rows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f3ff;strokeColor=#7c3aed;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="520" y="395" width="190" height="55" as="geometry" />
     </mxCell>
     <mxCell id="ui" value="Svelte UI
@@ -87,10 +87,10 @@ local files only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffedd5;stro
     <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748b;fontColor=#64748b;fontSize=11;" edge="1" parent="1" source="worker" target="assets">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
-    <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748b;fontColor=#64748b;fontSize=11;" edge="1" parent="1" source="worker" target="waitlist">
+    <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748b;fontColor=#64748b;fontSize=11;" edge="1" parent="1" source="worker" target="accountApi">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
-    <mxCell id="e8" value="future binding" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7c3aed;fontColor=#7c3aed;fontSize=11;dashed=1;" edge="1" parent="1" source="waitlist" target="store">
+    <mxCell id="e8" value="consented sync" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7c3aed;fontColor=#7c3aed;fontSize=11;dashed=1;" edge="1" parent="1" source="accountApi" target="store">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
     <mxCell id="e9" value="serves app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#059669;fontColor=#059669;fontSize=11;" edge="1" parent="1" source="assets" target="ui">
@@ -105,13 +105,13 @@ local files only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffedd5;stro
     <mxCell id="e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748b;fontColor=#64748b;fontSize=11;" edge="1" parent="1" source="ui" target="export">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
-    <mxCell id="e13" value="email only" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#ea580c;fontColor=#ea580c;fontSize=11;" edge="1" parent="1" source="ui" target="waitlist">
+    <mxCell id="e13" value="signed-in only" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#ea580c;fontColor=#ea580c;fontSize=11;" edge="1" parent="1" source="ui" target="accountApi">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
     <mxCell id="e14" value="stays local" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#e11d48;fontColor=#e11d48;fontSize=11;dashed=1;" edge="1" parent="1" source="local" target="privacy">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
-    <mxCell id="e15" value="blocks trip data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#e11d48;fontColor=#e11d48;fontSize=11;dashed=1;" edge="1" parent="1" source="privacy" target="waitlist">
+    <mxCell id="e15" value="blocks anonymous trip data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#e11d48;fontColor=#e11d48;fontSize=11;dashed=1;" edge="1" parent="1" source="privacy" target="accountApi">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
       </root>

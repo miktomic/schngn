@@ -54,7 +54,7 @@ Production: Cloudflare Workers + Static Assets
 Core logic: packages/engine, pure TypeScript
 Trip data: guest browser storage; consented signed-in sync in Cloudflare D1
 Identity: optional Clerk accounts; Clerk is the identity source of truth
-Dynamic Worker routes: waitlist plus authenticated account/sync/export/deletion endpoints
+Dynamic Worker routes: authenticated account/sync/export/deletion endpoints plus Clerk lifecycle webhook
 ```
 
 Important consequence:
@@ -70,12 +70,11 @@ schngn/
 │   └── web/                         # SvelteKit app, Cloudflare Worker/static assets target
 │       ├── src/routes/+page.svelte  # SEO landing page
 │       ├── src/routes/app/+page.svelte
-│       ├── src/routes/api/waitlist/+server.ts
 │       ├── src/routes/api/account/   # authenticated account trip API
 │       ├── src/routes/api/webhooks/  # verified Clerk lifecycle webhook
 │       ├── src/lib/account/          # consent, repository, reconciliation
 │       ├── src/lib/auth/             # Clerk browser and Worker auth boundaries
-│       └── migrations/               # waitlist, snapshots, deletion replay guard
+│       └── migrations/               # account schemas plus idempotent retired-table cleanup
 ├── packages/
 │   └── engine/                      # Pure TS Schengen calculation engine
 │       ├── src/index.ts
@@ -98,6 +97,8 @@ apps/web/src/lib/auth/          # Clerk client/server integration
 apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
+
+`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `trips`, `timeline`, `plan`, `details`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`. The saved-trip timeline is canonical, while planner and adjustment previews remain unsaved until explicitly committed.
 
 ## Commands
 
@@ -210,19 +211,19 @@ Allowed:
 - Browser local storage / IndexedDB.
 - PWA/offline support.
 - Privacy-safe analytics wrappers.
-- Tiny Worker endpoints for waitlist/fake-door flows.
+- Authenticated account and Clerk lifecycle Worker endpoints.
 - Optional Clerk authentication and authenticated D1 trip sync.
 - User-initiated account-data export and deletion.
 
 Forbidden:
 
-- Sending trip dates to analytics, logs, the waitlist, or any anonymous endpoint.
+- Sending trip dates to analytics, logs, or any anonymous endpoint.
 - Persisting trips server-side for guests or before explicit sync consent.
 - Trusting a user/owner ID supplied by the client; derive ownership from the verified Clerk session.
 - Duplicating Clerk identity/profile data in D1 without an application-specific need.
 - AI-generated legal explanations.
 
-The `/api/waitlist` endpoint may accept email only. It must not accept trip data and remains separate from account storage. Authenticated sync endpoints may accept validated trip records only after consent and must scope every query by the server-verified Clerk user ID.
+There is no SCHNGN-managed email waitlist. Repeat visitors sign up through Clerk; signup alone never uploads guest trips or creates a duplicate identity row in D1. Authenticated sync endpoints may accept validated trip records only after consent and must scope every query by the server-verified Clerk user ID. Fresh D1 databases start with the account schema at migration `0002`; migration `0005_drop_waitlist_signups.sql` idempotently removes the retired table from any database that had already been provisioned.
 
 ## Product/backlog priority
 
@@ -313,13 +314,12 @@ Allowed analytics events must be aggregate only:
 - `simulation_run` without dates
 - `pdf_buy_intent`
 - `unlock_buy_intent`
-- `waitlist_signup`
 
 Never include:
 
 - trip dates
 - country sequence/history if it can reconstruct travel
-- email except in explicit waitlist provider flow
+- email or other Clerk-owned identity fields
 - names, passports, residence details, visas, or legal status
 
 These exclusions apply equally to guest and signed-in users. Authentication does not make trip data safe for telemetry or operational logs.
@@ -329,7 +329,7 @@ These exclusions apply equally to guest and signed-in users. Authentication does
 Approved MVP services:
 
 - Cloudflare Workers + Static Assets for deployment.
-- Cloudflare D1 for the separate consented waitlist and for authenticated, explicitly consented account data keyed by Clerk user ID.
+- Cloudflare D1 for authenticated, explicitly consented account data keyed by Clerk user ID. Migration `0005` provides forward cleanup of the retired waitlist table only.
 - Plausible Cloud for aggregate-only analytics.
 - Clerk for optional authentication and identity lifecycle webhooks.
 

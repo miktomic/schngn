@@ -15,9 +15,16 @@ import { appDeepCatalogLengths, createAppDeepUiTranslator } from '../src/lib/i18
 import { appRuntimeCatalogLengths, createAppRuntimeUiTranslator } from '../src/lib/i18n/appRuntimeUi';
 import { createWhatIfUiTranslator, whatIfCatalogLengths } from '../src/lib/i18n/whatIfUi';
 import { createTripOnboardingTranslator, tripOnboardingCatalogLengths } from '../src/lib/i18n/tripOnboardingUi';
-import { localizeDashboardState, stateCatalogKeyCount } from '../src/lib/i18n/stateUi';
+import {
+  localizeDashboardState,
+  localizePdfState,
+  localizeUnlockState,
+  stateCatalogKeyCount
+} from '../src/lib/i18n/stateUi';
 import { buildDashboardState } from '../src/lib/dashboard/dashboardState';
 import { createTranslator } from '../src/lib/i18n';
+import { buildPdfReportFakeDoorState } from '../src/lib/fake-door/pdfReportFakeDoor';
+import { buildUnlockFakeDoorState } from '../src/lib/fake-door/unlockFakeDoor';
 
 describe('whole-site localization', () => {
   test('supports all approved locales and both RTL languages', () => {
@@ -56,21 +63,42 @@ describe('whole-site localization', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(createTranslator(locale)('landing.primaryAction').trim().length).toBeGreaterThan(0);
       expect(createTranslator(locale)('accuracy.hero').trim().length).toBeGreaterThan(0);
+      expect(createTranslator(locale)('accuracy.noticeTitle').trim().length).toBeGreaterThan(0);
+      expect(createTranslator(locale)('accuracy.noticeCopy').trim().length).toBeGreaterThan(0);
       expect(createAppUiTranslator(locale)('navOverview').trim().length).toBeGreaterThan(0);
       expect(createAppUiTranslator(locale)('accountReady').trim().length).toBeGreaterThan(0);
-      expect(createAppDeepUiTranslator(locale)('waitlistTitle').trim().length).toBeGreaterThan(0);
+      expect(createAppDeepUiTranslator(locale)('signUp').trim().length).toBeGreaterThan(0);
       expect(createAppRuntimeUiTranslator(locale)('browserData').trim().length).toBeGreaterThan(0);
-      expect(createAppRuntimeUiTranslator(locale)('waitlistConsent').trim().length).toBeGreaterThan(0);
+      expect(createAppRuntimeUiTranslator(locale)('guestCopy').trim().length).toBeGreaterThan(0);
       expect(createWhatIfUiTranslator(locale)('adjust').trim().length).toBeGreaterThan(0);
       expect(createTripOnboardingTranslator(locale)('title').trim().length).toBeGreaterThan(0);
     }
     expect(new Set(Object.values(appDeepCatalogLengths())).size).toBe(1);
-    expect(appDeepCatalogLengths().en).toBeGreaterThan(80);
+    expect(appDeepCatalogLengths().en).toBeGreaterThan(70);
     expect(new Set(Object.values(appRuntimeCatalogLengths())).size).toBe(1);
     expect(appRuntimeCatalogLengths().en).toBeGreaterThan(90);
     expect(new Set(Object.values(stateCatalogKeyCount())).size).toBe(1);
     expect(new Set(Object.values(whatIfCatalogLengths())).size).toBe(1);
     expect(new Set(Object.values(tripOnboardingCatalogLengths())).size).toBe(1);
+  });
+
+  test('renders public safety and evidence copy in the selected locale without English-only fallback blocks', () => {
+    const english = createTranslator('en');
+    for (const locale of SUPPORTED_LOCALES.filter((candidate) => candidate !== 'en')) {
+      const localized = createTranslator(locale);
+      expect(localized('landing.trust')).not.toBe(english('landing.trust'));
+      expect(localized('accuracy.noticeTitle')).not.toBe(english('accuracy.noticeTitle'));
+      expect(localized('accuracy.noticeCopy')).not.toBe(english('accuracy.noticeCopy'));
+      expect(localized('accuracy.caseInclusiveCopy')).not.toBe(english('accuracy.caseInclusiveCopy'));
+    }
+
+    for (const routePath of ['apps/web/src/routes/+page.svelte', 'apps/web/src/routes/accuracy/+page.svelte']) {
+      const source = readFileSync(routePath, 'utf8');
+      expect(source).not.toContain('const english =');
+      expect(source).not.toContain("english('");
+      expect(source).not.toContain("t('common.reviewedEnglishNotice')");
+      expect(source).not.toContain('lang="en"');
+    }
   });
 
   test('localizes calculated state labels and dates instead of leaking English formatting', () => {
@@ -79,14 +107,22 @@ describe('whole-site localization', () => {
     expect(localizeDashboardState('ar', raw).statusLabel).toBe('إضافة رحلة');
     expect(createAppRuntimeUiTranslator('de')('checkingSignIn')).toBe('Anmeldung wird geprüft…');
     expect(createAppRuntimeUiTranslator('he')('needPlanningPower')).toContain('תכנון');
+    expect(localizePdfState('he', buildPdfReportFakeDoorState(true)).messageCopy).toContain('הירשמו');
+    expect(
+      localizeUnlockState(
+        'ar',
+        buildUnlockFakeDoorState({ bucket: 'eur_9', label: '€9' }, true),
+        '€9'
+      ).messageCopy
+    ).toContain('أنشئ حسابًا');
   });
 
-  test('keeps app copy behind translators except reviewed English legal content', () => {
+  test('keeps app copy behind translators without reviewed-English fallback notices', () => {
     const source = readFileSync('apps/web/src/routes/app/+page.svelte', 'utf8');
     for (const literal of ['Checking sign-in…', 'Need more planning power?', 'No days return during this forecast', 'Browser trip data', 'Analytics never include trip dates']) {
       expect(source).not.toContain(`>${literal}<`);
     }
-    expect(source).toContain("t('common.reviewedEnglishNotice')");
+    expect(source).not.toContain("t('common.reviewedEnglishNotice')");
   });
 
   test('keeps localized navigation offline-safe and declares language alternates', () => {

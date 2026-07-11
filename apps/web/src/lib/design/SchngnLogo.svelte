@@ -29,7 +29,6 @@
     width: clamp(130px, 16vw, 164px);
     height: auto;
     flex: 0 0 auto;
-    mix-blend-mode: multiply;
   }
 
   .schngn-logo.small {

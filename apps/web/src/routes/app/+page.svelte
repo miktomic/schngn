@@ -1,9 +1,10 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { pushState, replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
-  import { FactCard, SchngnLogo, StatusChip, TimelineLedger, WhatIfAdjuster } from '$lib/design';
+  import { FactCard, SchngnLogo, StatusChip, TimelineLedger, TripAdjustPanel } from '$lib/design';
   import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
   import { createTranslator, intlLocale, localeFromPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
@@ -11,6 +12,7 @@
   import { createAppRuntimeUiTranslator, formatLocalizedCount } from '$lib/i18n/appRuntimeUi';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
   import { createTripOnboardingTranslator } from '$lib/i18n/tripOnboardingUi';
+  import { createSinglePageUiTranslator } from '$lib/i18n/singlePageUi';
   import {
     localizeDashboardState,
     localizePdfState,
@@ -20,7 +22,13 @@
   } from '$lib/i18n/stateUi';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import { buildTripSimulationState, emptyProposedTrip, type ProposedTripInput } from '$lib/simulator/tripSimulator';
-  import { addIsoDays, buildAdjustmentRange, type AdjustmentRange, type DateAdjustment } from '$lib/simulator/whatIfDates';
+  import { type AdjustmentRange, type DateAdjustment } from '$lib/simulator/whatIfDates';
+  import {
+    applySavedTripDateAdjustment,
+    commitSavedTripAdjustment,
+    createSavedTripAdjustmentDraft,
+    savedTripAdjustmentBounds
+  } from '$lib/simulator/savedTripAdjustment';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
   import { localizedLegalCopy, localizedOfficialSourceLinks } from '$lib/legal/legalCopy';
@@ -54,7 +62,6 @@
     statusForTripDates,
     tripEntryDate,
     tripExitDate,
-    tripRouteLabel,
     tripToForm,
     upsertTrip,
     type EditableTrip,
@@ -65,12 +72,7 @@
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
   import { initializeClerkBrowserAuth, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
-  import {
-    appSectionFromUrl,
-    appSectionUrl,
-    isAppSectionAvailable,
-    type AppSection
-  } from '$lib/navigation/appSection';
+  import { APP_ANCHORS, appAnchorFromUrl, appAnchorUrl, canonicalAppAnchorUrl, type AppAnchor } from '$lib/navigation/appAnchor';
   import {
     deleteAccountData,
     getAccountTrips,
@@ -88,9 +90,6 @@
     type AccountTripSnapshot
   } from '$lib/account/accountSync';
 
-  type ScreenKey = AppSection;
-  type NavScreen = Exclude<ScreenKey, 'trip' | 'waitlist'>;
-  type WaitlistState = 'idle' | 'submitting' | 'stored' | 'not_configured' | 'error';
   type AccountState =
     | 'loading'
     | 'unavailable'
@@ -103,6 +102,7 @@
     | 'error';
   type AccountIdentity = { userId: string; sessionId: string; epoch: number };
   type AccountRequestContext = AccountIdentity & { token: string };
+  const EMPTY_HISTORY_STORAGE_KEY = 'schngn-no-previous-history-v1';
 
   $: locale = localeFromPath(page.url.pathname);
   $: t = createTranslator(locale);
@@ -111,20 +111,24 @@
   $: rt = createAppRuntimeUiTranslator(locale);
   $: whatIfUi = createWhatIfUiTranslator(locale);
   $: tripOnboarding = createTripOnboardingTranslator(locale);
+  $: singlePage = createSinglePageUiTranslator(locale);
   $: legal = localizedLegalCopy(locale);
   $: officialSourceLinks = localizedOfficialSourceLinks(locale);
-  $: screens = [
-    { key: 'dashboard' as const, label: ui('navOverview') },
-    { key: 'trips' as const, label: tripOnboarding('nav') },
-    { key: 'proof' as const, label: ui('navProof'), requiresTrips: true },
-    { key: 'returns' as const, label: ui('navReturns'), requiresTrips: true },
-    { key: 'report' as const, label: ui('navReport'), requiresTrips: true },
-    { key: 'privacy' as const, label: ui('navAccount') }
-  ] satisfies { key: NavScreen; label: string; requiresTrips?: boolean }[];
+  $: anchorLinks = APP_ANCHORS.map((anchor) => ({
+    anchor,
+    label: singlePage(anchor === 'status' ? 'answer' : anchor)
+  }));
 
-  let active: ScreenKey = 'dashboard';
+  let currentAnchor: AppAnchor = 'status';
   let hasLoadedTrips = false;
   let trips: EditableTrip[] = [];
+  let tripEditorVisible = false;
+  let historyConfirmedEmpty = false;
+  let olderTripsVisible = false;
+  let proofDetailsOpen = false;
+  let returnsDetailsOpen = false;
+  let reportDetailsOpen = false;
+  let accountDetailsOpen = false;
   let editingTripId: string | null = null;
   let pendingDeleteTripId: string | null = null;
   let clearConfirmationVisible = false;
@@ -143,10 +147,6 @@
   let unlockIntentMessageVisible = false;
   let market: UnlockMarket = 'eu';
   let unlockPrice = chooseUnlockPriceBucket('eu', 0.34);
-  let waitlistEmail = '';
-  let waitlistConsent = false;
-  let waitlistState: WaitlistState = 'idle';
-  let waitlistError = '';
   let simulationSubmitted = false;
   let simulationSaveNotice = '';
   let simulationOutsideWindowConfirmationVisible = false;
@@ -154,6 +154,9 @@
   let quickAdjustVisible = false;
   let quickAdjustSourceId: string | null = null;
   let quickAdjustRange: AdjustmentRange | null = null;
+  let quickAdjustForm: ProposedTripInput = emptySimulationForm();
+  let quickAdjustNotice = '';
+  let quickAdjustError = '';
   let clerkAuth: ClerkBrowserAuth | null = null;
   let accountState: AccountState = 'loading';
   let accountError = '';
@@ -177,15 +180,18 @@
   let accountDeleteInProgress = false;
   let accountSignOutInProgress = false;
 
-  $: visibleScreens = screens.filter((screen) => !screen.requiresTrips || trips.length > 0);
   $: dashboardState = localizeDashboardState(locale, buildDashboardState(trips));
   $: dashboardStatusTone = (dashboardState.statusTone === 'risk' ? 'risk' : dashboardState.statusTone === 'close' ? 'whatif' : 'safe') as
     | 'safe'
     | 'risk'
     | 'whatif';
   $: dashboardTextClass = dashboardState.statusTone === 'risk' ? 'risk-text' : dashboardState.statusTone === 'close' ? 'close-text' : 'safe-text';
-  $: simulationBaseTrips = quickAdjustSourceId ? trips.filter((trip) => trip.id !== quickAdjustSourceId) : trips;
+  $: simulationBaseTrips = trips;
   $: simulationState = localizeSimulationState(locale, buildTripSimulationState(simulationBaseTrips, simulatorForm));
+  $: quickAdjustSourceTrip = quickAdjustSourceId ? trips.find((trip) => trip.id === quickAdjustSourceId) ?? null : null;
+  $: quickAdjustBaseTrips = quickAdjustSourceId ? trips.filter((trip) => trip.id !== quickAdjustSourceId) : trips;
+  $: quickAdjustState = localizeSimulationState(locale, buildTripSimulationState(quickAdjustBaseTrips, quickAdjustForm));
+  $: quickAdjustBounds = savedTripAdjustmentBounds(quickAdjustForm);
   $: tripFormPreviewResult = upsertTrip([], { ...tripForm, id: 'preview' });
   $: tripFormPreview = tripFormPreviewResult.trips[0] ?? null;
   $: tripFormToday = currentLocalIsoDate();
@@ -196,6 +202,10 @@
     ? tripExitDate(tripFormPreview)
     : tripFormToday;
   $: tripFormWindowStartDate = rollingWindowStartDate(tripFormToday);
+  $: currentTrips = trips.filter((trip) => !isTripBeforeRollingWindow(trip, tripFormToday));
+  $: olderTrips = trips.filter((trip) => isTripBeforeRollingWindow(trip, tripFormToday));
+  $: visibleTrips = olderTripsVisible ? [...currentTrips, ...olderTrips] : currentTrips;
+  $: historyReady = trips.some((trip) => trip.status === 'past') || historyConfirmedEmpty;
   $: resolvedTripFormStatus = statusForTripDates(tripForm.status, tripForm.exitDate);
   $: tripFormIsPast = resolvedTripFormStatus === 'past';
   $: simulationSaveStatus = statusForTripDates('booked', simulatorForm.exitDate);
@@ -203,8 +213,12 @@
     | 'safe'
     | 'risk'
     | 'whatif';
+  $: quickAdjustStatusTone = (quickAdjustState.statusTone === 'risk' ? 'risk' : quickAdjustState.statusTone === 'close' ? 'whatif' : 'safe') as
+    | 'safe'
+    | 'risk'
+    | 'whatif';
   $: returningForecast = localizeReturningForecast(locale, buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 30 }));
-  $: explanationState = buildExplanationState(trips, dashboardState.referenceDate);
+  $: explanationState = buildExplanationState(trips, dashboardState.referenceDate, locale);
   $: pdfFakeDoorState = localizePdfState(locale, buildPdfReportFakeDoorState(pdfIntentMessageVisible));
   $: unlockFakeDoorState = localizeUnlockState(locale, buildUnlockFakeDoorState(unlockPrice, unlockIntentMessageVisible), unlockPrice.label);
   $: pendingDeleteTrip = trips.find((trip) => trip.id === pendingDeleteTripId) ?? null;
@@ -216,16 +230,30 @@
   onMount(() => {
     const result = loadTripsFromStorage(window.localStorage);
     trips = result.trips;
+    historyConfirmedEmpty = !result.trips.some((trip) => trip.status === 'past')
+      && window.localStorage.getItem(EMPTY_HISTORY_STORAGE_KEY) === 'true';
     storageSource = result.source;
     storageWarning = result.warning ?? '';
     localTripsDurable = result.warning === undefined;
     market = new URL(window.location.href).searchParams.get('market') === 'uk' ? 'uk' : 'eu';
     unlockPrice = loadOrAssignUnlockPriceBucket(window.localStorage, { market });
-    restoreActiveScreenFromUrl(false);
+    const initialUrl = new URL(window.location.href);
+    const shouldRestoreAnchor = Boolean(initialUrl.hash || initialUrl.searchParams.has('section'));
+    const canonicalUrl = canonicalAppAnchorUrl(initialUrl);
+    currentAnchor = appAnchorFromUrl(initialUrl);
+    openAnchorDisclosure(currentAnchor);
+    if (`${initialUrl.pathname}${initialUrl.search}${initialUrl.hash}` !== canonicalUrl) {
+      window.requestAnimationFrame(() => replaceState(canonicalUrl, page.state));
+    }
     hasLoadedTrips = true;
-    trackPageView('app');
+    trackPageView();
     void initializeAccount();
-    const handlePopState = () => restoreActiveScreenFromUrl(true);
+    if (shouldRestoreAnchor) window.requestAnimationFrame(() => scrollToAnchor(currentAnchor, false, false));
+    const handlePopState = () => {
+      currentAnchor = appAnchorFromUrl(new URL(window.location.href));
+      openAnchorDisclosure(currentAnchor);
+      scrollToAnchor(currentAnchor, false, false);
+    };
     window.addEventListener('popstate', handlePopState);
     return () => {
       accountIdentityEpoch += 1;
@@ -240,8 +268,11 @@
     options: { skipAccountSync?: boolean; fromAccount?: boolean } = {}
   ): boolean {
     trips = nextTrips;
+    const hasPastTrips = nextTrips.some((trip) => trip.status === 'past');
+    if (hasPastTrips) historyConfirmedEmpty = false;
     if (!options.fromAccount) hasLocalTripMutations = true;
     if (!browser) return true;
+    if (hasPastTrips) window.localStorage.removeItem(EMPTY_HISTORY_STORAGE_KEY);
 
     const result = saveTripsToStorage(window.localStorage, nextTrips);
     if (result.ok === true) {
@@ -621,6 +652,8 @@
     }
 
     trips = [];
+    historyConfirmedEmpty = false;
+    window.localStorage.removeItem(EMPTY_HISTORY_STORAGE_KEY);
     hasLocalTripMutations = true;
     localTripsDurable = true;
     storageSource = 'empty';
@@ -691,32 +724,40 @@
   function accountReturnUrl(): string {
     if (!browser) return '/app';
     const url = new URL(window.location.href);
+    url.searchParams.delete('section');
     url.searchParams.set('account', 'connected');
-    return `${url.pathname}${url.search}`;
+    url.hash = 'account';
+    return `${url.pathname}${url.search}${url.hash}`;
   }
 
-  function setActiveScreen(screen: ScreenKey): void {
-    if (screen === active) return;
-    active = screen;
-    if (browser) {
-      window.history.pushState(window.history.state, '', appSectionUrl(new URL(window.location.href), screen));
-    }
-    trackPageView(screen);
-    if (screen === 'trip') trackCalculatorStart('trip_form');
+  function navigateToAnchor(anchor: AppAnchor, openDisclosure = false): void {
+    currentAnchor = anchor;
+    if (openDisclosure || anchor === 'details' || anchor === 'report' || anchor === 'account') openAnchorDisclosure(anchor);
+    if (browser) pushState(appAnchorUrl(new URL(window.location.href), anchor), page.state);
+    scrollToAnchor(anchor, true, true);
   }
 
-  function restoreActiveScreenFromUrl(trackView: boolean): void {
+  function scrollToAnchor(anchor: AppAnchor, focus = true, smooth = true): void {
     if (!browser) return;
-    const currentUrl = new URL(window.location.href);
-    const requested = appSectionFromUrl(currentUrl);
-    const restored = isAppSectionAvailable(requested, trips.length > 0) ? requested : 'dashboard';
-    const restoredUrl = appSectionUrl(currentUrl, restored);
-    const currentPath = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+    window.requestAnimationFrame(() => {
+      const section = document.getElementById(anchor);
+      if (!section) return;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      section.scrollIntoView({ behavior: smooth && !reducedMotion ? 'smooth' : 'auto', block: 'start' });
+      const headingId = anchor === 'account' ? 'account-section-heading' : `${anchor}-heading`;
+      if (focus) document.getElementById(headingId)?.focus({ preventScroll: true });
+    });
+  }
 
-    if (restoredUrl !== currentPath) window.history.replaceState(window.history.state, '', restoredUrl);
-    if (active === restored) return;
-    active = restored;
-    if (trackView) trackPageView(restored);
+  function openAnchorDisclosure(anchor: AppAnchor): void {
+    if (anchor === 'details') proofDetailsOpen = true;
+    if (anchor === 'report') reportDetailsOpen = true;
+    if (anchor === 'account') accountDetailsOpen = true;
+  }
+
+  function selectAnchor(event: Event): void {
+    const anchor = (event.currentTarget as HTMLSelectElement).value;
+    if (APP_ANCHORS.includes(anchor as AppAnchor)) navigateToAnchor(anchor as AppAnchor);
   }
 
   function startAddTrip(): void {
@@ -724,7 +765,10 @@
     tripForm = emptyTripForm('booked');
     formErrors = {};
     outsideWindowConfirmationVisible = false;
-    setActiveScreen('trip');
+    tripEditorVisible = true;
+    navigateToAnchor('trips');
+    trackCalculatorStart('trip_form');
+    focusElementAfterRender('trip-heading');
   }
 
   function startEditTrip(trip: EditableTrip): void {
@@ -734,15 +778,19 @@
     formErrors = {};
     outsideWindowConfirmationVisible = false;
     pendingDeleteTripId = null;
-    setActiveScreen('trip');
+    tripEditorVisible = true;
+    navigateToAnchor('trips');
+    focusElementAfterRender('trip-heading');
   }
 
   function cancelTripForm(): void {
+    const returnId = editingTripId ? `trip-row-${editingTripId}` : 'add-trip-button';
     editingTripId = null;
     tripForm = emptyTripForm('booked');
     formErrors = {};
     outsideWindowConfirmationVisible = false;
-    setActiveScreen(trips.length > 0 ? 'trips' : 'dashboard');
+    tripEditorVisible = false;
+    focusElementAfterRender(returnId);
   }
 
   function saveTrip(confirmOutsideWindow = false): void {
@@ -764,6 +812,8 @@
     }
 
     const wasAdding = editingTripId === null;
+    const savedTripId = result.trips.find((trip) => trip.id === (editingTripId ?? tripForm.id))?.id
+      ?? result.trips.find((trip) => tripEntryDate(trip) === tripForm.entryDate && tripExitDate(trip) === tripForm.exitDate)?.id;
     outsideWindowConfirmationVisible = false;
     persistTrips(result.trips);
     if (wasAdding) {
@@ -774,7 +824,8 @@
     }
     editingTripId = null;
     tripForm = emptyTripForm('booked');
-    setActiveScreen('trips');
+    tripEditorVisible = false;
+    focusElementAfterRender(savedTripId ? `trip-row-${savedTripId}` : 'trips-heading');
   }
 
   function updateTripExitDate(event: Event): void {
@@ -804,7 +855,6 @@
     if (!pendingDeleteTripId) return;
     persistTrips(deleteTripById(trips, pendingDeleteTripId));
     pendingDeleteTripId = null;
-    if (trips.length === 0) setActiveScreen('trips');
   }
 
   function exportTrips(): void {
@@ -894,7 +944,10 @@
     pendingDeleteTripId = null;
     importMessage = rt('cleared');
     importError = '';
-    setActiveScreen('privacy');
+    historyConfirmedEmpty = false;
+    if (browser) window.localStorage.removeItem(EMPTY_HISTORY_STORAGE_KEY);
+    accountDetailsOpen = true;
+    navigateToAnchor('account');
   }
 
   function statusLabel(status: EditableTrip['status']): string {
@@ -925,58 +978,56 @@
     simulationSubmitted = false;
     simulationSaveNotice = '';
     simulationOutsideWindowConfirmationVisible = false;
-    quickAdjustSourceId = null;
-    quickAdjustVisible = false;
-    quickAdjustRange = null;
   }
 
-  function openQuickAdjuster(): void {
-    const target = dashboardState.targetTrip;
+  function openQuickAdjuster(target: EditableTrip | null = dashboardState.targetTrip): void {
     if (!target) return;
-    simulationSaveNotice = '';
-    simulationOutsideWindowConfirmationVisible = false;
-    const form = tripToForm(target);
-    simulatorForm = {
-      label: form.label || displayRoute(target),
-      entryCountryCode: form.entryCountryCode,
-      exitCountryCode: form.exitCountryCode,
-      entryDate: form.entryDate,
-      exitDate: form.exitDate,
-      outsideBreaks: form.outsideBreaks
-    };
+    const draft = createSavedTripAdjustmentDraft(target);
+    quickAdjustForm = draft.form;
     quickAdjustSourceId = target.id;
-    quickAdjustRange = buildAdjustmentRange(form.entryDate, form.exitDate);
+    quickAdjustRange = draft.range;
     quickAdjustVisible = true;
-    simulationSubmitted = true;
+    quickAdjustNotice = '';
+    quickAdjustError = '';
     trackSimulationRun('dashboard');
+    if (currentAnchor === 'timeline') scrollToAnchor('timeline', false, true);
+    else navigateToAnchor('timeline');
+    focusElementAfterRender('quick-adjust-heading');
   }
 
   function closeQuickAdjuster(): void {
     quickAdjustVisible = false;
     quickAdjustSourceId = null;
     quickAdjustRange = null;
-    simulatorForm = emptySimulationForm();
-    simulationSubmitted = false;
-    simulationSaveNotice = '';
-    simulationOutsideWindowConfirmationVisible = false;
+    quickAdjustForm = emptySimulationForm();
+    quickAdjustError = '';
+    focusElementAfterRender('canonical-timeline-heading-trip-picker');
   }
 
   function adjustQuickTrip(adjustment: DateAdjustment): void {
-    simulationSaveNotice = '';
-    simulationOutsideWindowConfirmationVisible = false;
-    simulatorForm = {
-      ...simulatorForm,
-      entryDate: adjustment.entryDate,
-      exitDate: adjustment.exitDate,
-      outsideBreaks: adjustment.mode === 'move' && adjustment.moveDays !== 0
-        ? simulatorForm.outsideBreaks.map((outsideBreak) => ({
-            ...outsideBreak,
-            leftDate: outsideBreak.leftDate ? addIsoDays(outsideBreak.leftDate, adjustment.moveDays) : '',
-            reentryDate: outsideBreak.reentryDate ? addIsoDays(outsideBreak.reentryDate, adjustment.moveDays) : ''
-          }))
-        : simulatorForm.outsideBreaks
-    };
-    simulationSubmitted = true;
+    quickAdjustNotice = '';
+    quickAdjustError = '';
+    quickAdjustForm = applySavedTripDateAdjustment(quickAdjustForm, adjustment);
+  }
+
+  function saveQuickAdjustment(): void {
+    if (!quickAdjustSourceId || !quickAdjustState.valid) return;
+    const result = commitSavedTripAdjustment(trips, quickAdjustSourceId, quickAdjustForm, tripFormToday);
+    if (!result.updated) {
+      quickAdjustError = whatIfUi('unavailable');
+      return;
+    }
+
+    const persisted = persistTrips(result.trips);
+    quickAdjustVisible = false;
+    quickAdjustSourceId = null;
+    quickAdjustRange = null;
+    quickAdjustForm = emptySimulationForm();
+    quickAdjustError = '';
+    quickAdjustNotice = persisted
+      ? whatIfUi('updated')
+      : rt('importedTemporary', { count: tripCount(result.trips.length) });
+    focusElementAfterRender('canonical-timeline-heading-trip-picker');
   }
 
   function simulationChanged(): void {
@@ -985,12 +1036,23 @@
     simulationOutsideWindowConfirmationVisible = false;
   }
 
-  function openCombinedPlanner(): void {
-    setActiveScreen('trips');
+  function focusElementAfterRender(id: string): void {
     if (!browser) return;
     window.requestAnimationFrame(() => {
-      document.getElementById('planner')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const element = document.getElementById(id);
+      element?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      element?.focus({ preventScroll: true });
     });
+  }
+
+  function openCombinedPlanner(): void {
+    navigateToAnchor('plan');
+  }
+
+  function confirmNoPreviousTrips(): void {
+    historyConfirmedEmpty = true;
+    if (browser) window.localStorage.setItem(EMPTY_HISTORY_STORAGE_KEY, 'true');
+    navigateToAnchor('plan');
   }
 
   function continueSimulation(): void {
@@ -1008,34 +1070,26 @@
     const savedStatus = simulationSaveStatus;
     const result = upsertTrip(trips, {
       ...simulatorForm,
-      id: quickAdjustSourceId ?? undefined,
       status: savedStatus
     });
     if (Object.keys(result.errors).length > 0) return;
 
     if (
       !confirmOutsideWindow &&
-      quickAdjustSourceId === null &&
       isTripBeforeRollingWindow(simulationState.simulatedTrip, tripFormToday)
     ) {
       simulationOutsideWindowConfirmationVisible = true;
       return;
     }
 
-    const wasAdding = quickAdjustSourceId === null;
     const persisted = persistTrips(result.trips);
-    if (wasAdding) {
-      trackAnalyticsEvent('trip_added', {
-        source: 'planner',
-        trip_count_bucket: buildTripCountBucket(result.trips.length)
-      });
-    }
+    trackAnalyticsEvent('trip_added', {
+      source: 'planner',
+      trip_count_bucket: buildTripCountBucket(result.trips.length)
+    });
     simulatorForm = emptySimulationForm();
     simulationSubmitted = false;
     simulationOutsideWindowConfirmationVisible = false;
-    quickAdjustSourceId = null;
-    quickAdjustVisible = false;
-    quickAdjustRange = null;
     simulationSaveNotice = persisted
       ? tripOnboarding(savedStatus === 'past' ? 'savedPast' : 'savedBooked')
       : rt('importedTemporary', { count: tripCount(result.trips.length) });
@@ -1083,15 +1137,15 @@
     if (entry && exit) return `${entry} → ${exit}`;
     if (entry) return `${deep('enteredVia')} ${entry}`;
     if (exit) return `${deep('leftVia')} ${exit}`;
-    return tripRouteLabel(trip);
+    return formatLocalizedCount(locale, 1, 'trip').label;
   }
 
   function displayTripName(trip: EditableTrip): string {
     return trip.label || displayRoute(trip);
   }
 
-  function trackPageView(screen: ScreenKey | 'app'): void {
-    trackAnalyticsEvent('page_view', { source: screenToAnalyticsSource(screen) });
+  function trackPageView(): void {
+    trackAnalyticsEvent('page_view', { source: 'app' });
   }
 
   function trackCalculatorStart(source: AnalyticsSource): void {
@@ -1110,54 +1164,18 @@
     });
   }
 
-  async function submitWaitlist(): Promise<void> {
-    if (!waitlistEmail.trim() || !waitlistConsent || waitlistState === 'submitting') return;
-    waitlistState = 'submitting';
-    waitlistError = '';
-
-    try {
-      const response = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: waitlistEmail.trim(), consent: true, source: 'waitlist' })
-      });
-
-      if (!response.ok) {
-        waitlistState = 'error';
-        waitlistError = waitlistRecoveryCopy(response.status);
-        return;
-      }
-
-      const result = (await response.json().catch(() => ({ stored: false }))) as { stored?: boolean };
-      if (result.stored === true) {
-        waitlistState = 'stored';
-        trackAnalyticsEvent('waitlist_signup', { source: 'waitlist' });
-      } else {
-        waitlistState = 'not_configured';
-      }
-    } catch {
-      waitlistState = 'error';
-      waitlistError = rt('waitlistNetwork');
-    }
-  }
-
-  function waitlistRecoveryCopy(status: number): string {
-    if (status === 400) return rt('waitlistInvalid');
-    if (status === 429) return rt('waitlistRate');
-    if (status >= 500) return rt('waitlistUnavailable');
-    return rt('waitlistFailed');
-  }
-
   function recordPdfBuyIntent(): void {
     const event = buildPdfBuyIntentEvent();
     trackAnalyticsEvent(event.name, event.props);
     pdfIntentMessageVisible = true;
+    if (!accountSignedIn) void startAccountSignUp();
   }
 
   function recordUnlockBuyIntent(): void {
     const event = buildUnlockBuyIntentEvent(unlockPrice, 'planner');
     trackAnalyticsEvent(event.name, event.props);
     unlockIntentMessageVisible = true;
+    if (!accountSignedIn) void startAccountSignUp();
   }
 
   function analyticsVerdict(): AnalyticsVerdict {
@@ -1165,15 +1183,6 @@
     if (simulationState.usage.overLimit) return 'over_limit';
     if (simulationState.usage.daysRemaining === 0) return 'at_limit';
     return simulationState.statusTone === 'close' ? 'close' : 'safe';
-  }
-
-  function screenToAnalyticsSource(screen: ScreenKey | 'app'): AnalyticsSource {
-    if (screen === 'trip') return 'trip_form';
-    if (screen === 'dashboard') return 'dashboard';
-    if (screen === 'report') return 'report';
-    if (screen === 'waitlist') return 'waitlist';
-    if (screen === 'privacy') return 'privacy';
-    return 'app';
   }
 
   function formatDate(isoDate: string): string {
@@ -1233,6 +1242,7 @@
 </svelte:head>
 
 <main class="app-shell">
+  <a class="skip-link" href="#status">{singlePage('skipToContent')}</a>
   <section class="workspace" aria-labelledby="app-title">
     <header class="app-header">
       <div class="brand" id="app-title">
@@ -1246,24 +1256,30 @@
         class="account-chip"
         type="button"
         aria-label={`${ui('openAccount')} — ${accountStatusLabel}`}
-        onclick={() => setActiveScreen('privacy')}
+        onclick={() => { accountDetailsOpen = true; navigateToAnchor('account'); }}
       >
         <span aria-hidden="true"></span>{accountStatusLabel}
         </button>
       </div>
     </header>
 
-    <nav class="screen-tabs" aria-label={ui('appSections')}>
-      {#each visibleScreens as screen}
-        <button
-          type="button"
-          class:active={active === screen.key}
-          aria-current={active === screen.key ? 'page' : undefined}
-          onclick={() => setActiveScreen(screen.key)}
-        >
-          {screen.label}
-        </button>
-      {/each}
+    <nav class="anchor-nav" aria-label={ui('appSections')}>
+      <div class="anchor-links">
+        <span>{singlePage('jumpTo')}</span>
+        {#each anchorLinks as link}
+          <a
+            href={appAnchorUrl(page.url, link.anchor)}
+            aria-current={currentAnchor === link.anchor ? 'location' : undefined}
+            onclick={(event) => { event.preventDefault(); navigateToAnchor(link.anchor); }}
+          >{link.label}</a>
+        {/each}
+      </div>
+      <label class="anchor-select" for="app-anchor-select">
+        <span>{singlePage('jumpTo')}</span>
+        <select id="app-anchor-select" value={currentAnchor} onchange={selectAnchor}>
+          {#each anchorLinks as link}<option value={link.anchor}>{link.label}</option>{/each}
+        </select>
+      </label>
     </nav>
 
     {#if storageWarning}
@@ -1277,28 +1293,32 @@
       <aside class="disclaimer-notice" aria-labelledby="disclaimer-heading">
         <div>
           <h2 id="disclaimer-heading">{ui('planningOnly')}</h2>
-          <p>{legal.full}</p>
-          <div class="official-links" aria-label={ui('officialSources')}>
-            {#each officialSourceLinks as source}
-              <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
-            {/each}
-          </div>
+          <p>{legal.footer}</p>
+          <details class="disclaimer-details">
+            <summary>{ui('officialSources')}</summary>
+            <p>{legal.full}</p>
+            <div class="official-links" aria-label={ui('officialSources')}>
+              {#each officialSourceLinks as source}
+                <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
+              {/each}
+            </div>
+          </details>
         </div>
         <button class="secondary-button compact" type="button" onclick={() => (disclaimerNoticeVisible = false)}>{ui('dismiss')}</button>
       </aside>
     {/if}
 
-    {#if active === 'dashboard'}
-      <section class="screen" aria-labelledby="overview-heading">
+    <div class="single-page-content" id="main-content">
+      <section class="screen answer-section" id="status" aria-labelledby="status-heading">
         {#if !hasLoadedTrips}
           <div class="loading-state" aria-live="polite">
             <span class="loading-line" aria-hidden="true"></span>
-            <h1 id="overview-heading" class="screen-title">{ui('loadingTrips')}</h1>
+            <h1 id="status-heading" class="screen-title" tabindex="-1">{ui('loadingTrips')}</h1>
             <p>{ui('readingLocal')}</p>
           </div>
-        {:else if trips.length === 0}
+        {:else if !historyReady}
           <StatusChip tone="safe" label={tripOnboarding('step')} />
-          <h1 id="overview-heading" class="screen-title">{tripOnboarding('title')}</h1>
+          <h1 id="status-heading" class="screen-title" tabindex="-1">{tripOnboarding('title')}</h1>
           <p class="intro-copy">{tripOnboarding('copy')}</p>
           <section class="panel mint onboarding-steps" aria-labelledby="first-step-heading">
             <h2 id="first-step-heading">{ui('firstResult')}</h2>
@@ -1309,71 +1329,37 @@
           </section>
           <div class="button-row">
             <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
-            <button class="text-button" type="button" onclick={openCombinedPlanner}>{tripOnboarding('noHistory')}</button>
+            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
           </div>
         {:else}
           <StatusChip tone={dashboardStatusTone} label={dashboardState.statusLabel} />
-          <h1 id="overview-heading" class={`verdict ${dashboardTextClass}`}>{dashboardState.heroMetric}</h1>
+          <h1 id="status-heading" class={`verdict ${dashboardTextClass}`} tabindex="-1">{dashboardState.heroMetric}</h1>
           <div class="facts two">
             <FactCard label={ui('latestSafeExit')} value={dashboardState.latestSafeExitLabel} />
             <FactCard label={ui('daysUsed')} value={dashboardState.daysUsedLabel} tone={dashboardState.statusTone === 'risk' ? 'ink' : 'safe'} />
           </div>
-          <TimelineLedger
-            label={ui('rollingWindow')}
-            {locale}
-            mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
-            {trips}
-            referenceDate={dashboardState.referenceDate}
-          />
           <section class:risk-panel={dashboardState.statusTone === 'risk'} class:mint={dashboardState.statusTone !== 'risk'} class="panel" aria-labelledby="why-heading">
             <h2 id="why-heading">{dashboardState.statusTone === 'risk' ? ui('needsAttention') : ui('whyAnswer')}</h2>
             <p>{dashboardState.whyCopy}</p>
             <p class:micro-risk={dashboardState.statusTone === 'risk'} class:micro-safe={dashboardState.statusTone !== 'risk'}>{dashboardState.actionCopy}</p>
           </section>
-          {#if quickAdjustVisible && quickAdjustRange && simulationState.valid && simulationState.usage && simulationState.simulatedTrip}
-            <section class="quick-adjust-panel" aria-labelledby="quick-adjust-heading">
-              <div class="quick-adjust-heading">
-                <div>
-                  <p>{deep('unsavedWhatIf')}</p>
-                  <h2 id="quick-adjust-heading">{whatIfUi('title')}</h2>
-                </div>
-                <button class="text-button" type="button" onclick={closeQuickAdjuster}>{whatIfUi('close')}</button>
-              </div>
-              <StatusChip tone={simulatorStatusTone} label={simulationState.statusLabel} />
-              <div class="quick-adjust-answer" aria-live="polite" aria-atomic="true">
-                <strong class:quick-risk={simulationState.statusTone === 'risk'}>{simulationState.latestSafeExitLabel}</strong>
-                <span>{simulationState.summaryCopy}</span>
-              </div>
-              <WhatIfAdjuster
-                entryDate={simulatorForm.entryDate}
-                exitDate={simulatorForm.exitDate}
-                range={quickAdjustRange}
-                {locale}
-                onDatesChange={adjustQuickTrip}
-              />
-              <TimelineLedger
-                label={deep('whatIfWindow')}
-                {locale}
-                mode={simulationState.statusTone === 'risk' ? 'risk' : 'planner'}
-                trips={simulationBaseTrips}
-                simulation={simulationState.simulatedTrip}
-                referenceDate={simulationState.usage.referenceDate}
-              />
-            </section>
+          {#if trips.length === 0}
+            <p class="history-assumption">{singlePage('historyAssumption')}</p>
           {/if}
           <div class="button-row">
             <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addTrip')}</button>
-            {#if dashboardState.targetTrip && !quickAdjustVisible}<button class="secondary-button what-if-action" type="button" onclick={openQuickAdjuster}>{whatIfUi('adjust')}</button>{/if}
-            <button class="secondary-button" type="button" onclick={() => setActiveScreen('proof')}>{ui('showCalculation')}</button>
+            {#if dashboardState.targetTrip && !quickAdjustVisible}<button class="secondary-button what-if-action" type="button" onclick={() => openQuickAdjuster()}>{whatIfUi('adjust')}</button>{/if}
+            <button class="secondary-button" type="button" onclick={() => navigateToAnchor('details', true)}>{ui('showCalculation')}</button>
             <button class="secondary-button" type="button" onclick={openCombinedPlanner}>{ui('planAnother')}</button>
           </div>
         {/if}
       </section>
-    {:else if active === 'trip'}
-      <section class="screen" aria-labelledby="trip-heading">
+
+      {#if tripEditorVisible}
+      <section class="screen inline-trip-editor" id="trip-editor" aria-labelledby="trip-heading">
         <div class="section-heading">
           <p>{ui('navTrips')}</p>
-          <h1 id="trip-heading" class="screen-title">{editingTripId ? deep('editStay') : deep('addStay')}</h1>
+          <h2 id="trip-heading" class="screen-title" tabindex="-1">{editingTripId ? deep('editStay') : deep('addStay')}</h2>
         </div>
         <p class="intro-copy">{deep('tripIntro')}</p>
         <form class="trip-form" aria-label={rt('tripFormAria')} novalidate onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
@@ -1501,12 +1487,13 @@
           {#if formErrors.status}<strong id="status-error" class="field-error">{formErrors.status}</strong>{/if}
           {#if tripFormPreview}
             <section class="trip-form-summary" aria-live="polite">
-              <strong>{displayRoute(tripFormPreview)}</strong>
-              <span>{formatDateRange(tripEntryDate(tripFormPreview), tripExitDate(tripFormPreview))} · {countTripSchengenDays(tripFormPreview)} {rt('schengen')} {pluralize('day', countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${countTripOutsideDays(tripFormPreview)} ${pluralize('day', countTripOutsideDays(tripFormPreview))} ${rt('outside')}` : ''}</span>
+              <strong><bdi>{displayRoute(tripFormPreview)}</bdi></strong>
+              <span><bdi>{formatDateRange(tripEntryDate(tripFormPreview), tripExitDate(tripFormPreview))}</bdi> · <bdi>{countTripSchengenDays(tripFormPreview)} {rt('schengen')} {pluralize('day', countTripSchengenDays(tripFormPreview))}{countTripOutsideDays(tripFormPreview) > 0 ? ` · ${countTripOutsideDays(tripFormPreview)} ${pluralize('day', countTripOutsideDays(tripFormPreview))} ${rt('outside')}` : ''}</bdi></span>
             </section>
           {/if}
           <div class="trip-form-timeline">
             <TimelineLedger
+              headingId="trip-form-timeline-heading"
               label={deep('allocation')}
               {locale}
               mode="planner"
@@ -1535,27 +1522,23 @@
           {/if}
         </form>
       </section>
-    {:else if active === 'trips'}
-      <section class="screen" aria-labelledby="trips-heading">
+      {/if}
+
+      <section class="screen trips-section" id="trips" aria-labelledby="trips-heading">
         <div class="section-heading with-action">
           <div>
             <p>{accountState === 'synced' || accountState === 'syncing' ? deep('syncedHistory') : deep('deviceHistory')}</p>
-            <h1 id="trips-heading" class="screen-title">{tripOnboarding('nav')}</h1>
+            <h2 id="trips-heading" class="screen-title" tabindex="-1">{tripOnboarding('nav')}</h2>
           </div>
           <button class="primary-button" type="button" onclick={startAddTrip} disabled={trips.length >= MAX_TRIP_COUNT}>{ui('addTrip')}</button>
         </div>
         {#if trips.length === 0}
           <section class="empty-state" aria-labelledby="empty-trips-heading">
-            <p class="onboarding-kicker">{tripOnboarding('step')}</p>
-            <h2 id="empty-trips-heading">{tripOnboarding('title')}</h2>
+            <h2 id="empty-trips-heading">{singlePage('noPreviousTrips')}</h2>
             <p>{tripOnboarding('copy')}</p>
-            <ol class="onboarding-list">
-              <li>{tripOnboarding('pastAction')}</li>
-              <li>{tripOnboarding('bookedAction')}</li>
-            </ol>
             <div class="button-row">
-              <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
-              <button class="text-button" type="button" onclick={openCombinedPlanner}>{tripOnboarding('noHistory')}</button>
+              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
+              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
             </div>
           </section>
         {:else}
@@ -1563,16 +1546,17 @@
             {rt('storedSummary', { count: tripCount(trips.length), synced: accountState === 'synced' || accountState === 'syncing' ? rt('syncedSuffix') : '.' })}
           </p>
           <div class="trip-list">
-            {#each trips as trip (trip.id)}
-              <article class:booked={trip.status === 'booked'} class:past={trip.status === 'past'} class:whatif={trip.status === 'what-if'}>
+            {#each visibleTrips as trip (trip.id)}
+              <article id={`trip-row-${trip.id}`} tabindex="-1" class:booked={trip.status === 'booked'} class:past={trip.status === 'past'} class:whatif={trip.status === 'what-if'}>
                 <span class="state-strip {trip.status}" aria-hidden="true"></span>
                 <div class="trip-copy">
-                  <h2>{displayTripName(trip)}</h2>
-                  {#if trip.label}<p class="trip-route">{displayRoute(trip)}</p>{/if}
-                  <p>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))} · {countTripSchengenDays(trip)} {rt('schengen')} {pluralize('day', countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${countTripOutsideDays(trip)} ${pluralize('day', countTripOutsideDays(trip))} ${rt('outside')}` : ''}</p>
+                  <h2><bdi>{displayTripName(trip)}</bdi></h2>
+                  {#if trip.label}<p class="trip-route"><bdi>{displayRoute(trip)}</bdi></p>{/if}
+                  <p><bdi>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))}</bdi> · <bdi>{countTripSchengenDays(trip)} {rt('schengen')} {pluralize('day', countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${countTripOutsideDays(trip)} ${pluralize('day', countTripOutsideDays(trip))} ${rt('outside')}` : ''}</bdi></p>
                   <strong>{statusLabel(trip.status)}</strong>
                 </div>
                 <div class="trip-actions">
+                  <button class="adjust" type="button" aria-label={`${whatIfUi('adjust')} ${displayTripName(trip)}`} onclick={() => openQuickAdjuster(trip)}>{whatIfUi('adjust')}</button>
                   <button type="button" aria-label={`${deep('edit')} ${displayTripName(trip)}`} onclick={() => startEditTrip(trip)}>{deep('edit')}</button>
                   <button class="delete" type="button" aria-label={`${deep('delete')} ${displayTripName(trip)}`} onclick={() => requestDeleteTrip(trip.id)}>{deep('delete')}</button>
                 </div>
@@ -1591,29 +1575,74 @@
               {/if}
             {/each}
           </div>
+          {#if olderTrips.length > 0}
+            <button class="secondary-button older-trips-toggle" type="button" aria-expanded={olderTripsVisible} onclick={() => (olderTripsVisible = !olderTripsVisible)}>
+              {olderTripsVisible ? singlePage('hideOlder') : singlePage('showOlder')}
+            </button>
+          {/if}
           {#if trips.length >= MAX_TRIP_COUNT}
             <p class="storage-warning">{rt('limitReached', { max: MAX_TRIP_COUNT })}</p>
           {/if}
         {/if}
-        <section class="trips-timeline" aria-labelledby="trips-timeline-heading">
+      </section>
+
+      <section class="screen timeline-section" id="timeline" aria-labelledby="timeline-heading">
           <div>
-            <h2 id="trips-timeline-heading">{tripOnboarding('timelineTitle')}</h2>
+            <p>{singlePage('savedResult')}</p>
+            <h2 id="timeline-heading" class="screen-title" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
             <p>{tripOnboarding('timelineHelp')}</p>
           </div>
+          {#if historyReady}
           <TimelineLedger
+            headingId="canonical-timeline-heading"
             label={ui('rollingWindow')}
             {locale}
             mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
             {trips}
             referenceDate={dashboardState.referenceDate}
+            onTripSelect={openQuickAdjuster}
+            selectedTripId={quickAdjustSourceId}
+            tripName={displayTripName}
           />
-        </section>
-        <section class="combined-planner" id="planner" aria-labelledby="planner-heading">
+          {#if quickAdjustNotice}<p class="micro-safe" aria-live="polite">{quickAdjustNotice}</p>{/if}
+          {#if quickAdjustError}<p class="storage-warning" aria-live="polite">{quickAdjustError}</p>{/if}
+          {#if quickAdjustVisible && quickAdjustRange && quickAdjustSourceTrip}
+            <TripAdjustPanel
+              panelId="quick-adjust-panel"
+              headingId="quick-adjust-heading"
+              entryDate={quickAdjustForm.entryDate}
+              entryMax={quickAdjustBounds.entryMax}
+              exitDate={quickAdjustForm.exitDate}
+              exitMin={quickAdjustBounds.exitMin}
+              locale={locale}
+              range={quickAdjustRange}
+              state={quickAdjustState}
+              baseTrips={quickAdjustBaseTrips}
+              sourceName={displayTripName(quickAdjustSourceTrip)}
+              onDatesChange={adjustQuickTrip}
+              onSave={saveQuickAdjustment}
+              onClose={closeQuickAdjuster}
+            />
+          {/if}
+          {:else}
+            <section class="history-gate panel" aria-labelledby="timeline-history-gate-heading">
+              <h2 id="timeline-history-gate-heading">{tripOnboarding('title')}</h2>
+              <p>{tripOnboarding('copy')}</p>
+              <div class="button-row">
+                <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
+                <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
+              </div>
+            </section>
+          {/if}
+      </section>
+
+      <section class="screen plan-section combined-planner" id="plan" aria-labelledby="plan-heading">
         <div class="section-heading">
           <p>{deep('unsavedWhatIf')}</p>
-          <h2 id="planner-heading" class="combined-section-title">{tripOnboarding('plannerTitle')}</h2>
+          <h2 id="plan-heading" class="screen-title" tabindex="-1">{tripOnboarding('plannerTitle')}</h2>
         </div>
         <p class="intro-copy">{deep('plannerIntro')}</p>
+        {#if historyReady}
         <form class="trip-form" aria-label={rt('futureSimulatorAria')} novalidate onsubmit={(event) => { event.preventDefault(); runSimulation(); }}>
           <label for="simulation-label"><span>{deep('simulationLabel')} <small>{deep('optional')}</small></span></label>
           <input
@@ -1741,6 +1770,7 @@
               <p class:micro-risk={simulationState.statusTone === 'risk'} class:micro-safe={simulationState.statusTone !== 'risk'}>{simulationState.firstFixCopy}</p>
             </section>
             <TimelineLedger
+              headingId="planner-preview-timeline-heading"
               label={deep('whatIfWindow')}
               {locale}
               mode={simulationState.statusTone === 'risk' ? 'risk' : 'planner'}
@@ -1764,10 +1794,13 @@
                   class:secondary-button={simulationState.statusTone !== 'safe'}
                   type="button"
                   onclick={() => saveSimulationAsBooked()}
-                  disabled={quickAdjustSourceId === null && trips.length >= MAX_TRIP_COUNT}
+                  disabled={trips.length >= MAX_TRIP_COUNT}
                 >{tripOnboarding(simulationSaveStatus === 'past' ? 'savePast' : 'saveBooked')}</button>
                 <button class="secondary-button" type="button" onclick={continueSimulation}>{tripOnboarding('keepExperimenting')}</button>
               </div>
+              {#if trips.length >= MAX_TRIP_COUNT}
+                <p class="storage-warning">{rt('limitReached', { max: MAX_TRIP_COUNT })}</p>
+              {/if}
             {/if}
           </section>
         {:else if simulationSubmitted}
@@ -1780,7 +1813,7 @@
         <section class="panel whatif-panel">
           <h2>{rt('needPlanningPower')}</h2>
           <p>{unlockFakeDoorState.helperCopy}</p>
-          <button class="secondary-button" type="button" onclick={recordUnlockBuyIntent}>{unlockFakeDoorState.buttonLabel}</button>
+          <button class="secondary-button" type="button" onclick={recordUnlockBuyIntent}>{accountSignedIn ? unlockFakeDoorState.buttonLabel : deep('signUp')}</button>
         </section>
         {#if unlockFakeDoorState.showIntentMessage}
           <section class="panel mint" aria-live="polite">
@@ -1789,31 +1822,44 @@
             <p class="micro-safe">{rt('noPaymentPlanner')}</p>
           </section>
         {/if}
-        </section>
+        {:else}
+          <section class="history-gate panel" aria-labelledby="plan-history-gate-heading">
+            <h2 id="plan-history-gate-heading">{tripOnboarding('title')}</h2>
+            <p>{tripOnboarding('copy')}</p>
+            <div class="button-row">
+              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
+              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
+            </div>
+          </section>
+        {/if}
       </section>
-    {:else if active === 'proof'}
-      <section class="screen" id="proof" aria-labelledby="proof-heading">
-        <div class="section-heading">
-          <p>{deep('proofEyebrow')}</p>
-          <h1 id="proof-heading" class="screen-title">{deep('proofTitle')}</h1>
-        </div>
-        {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
-        <section class="panel mint" aria-labelledby="explanation-heading" lang="en" dir="ltr">
+
+      <section class="screen details-section" id="details" aria-labelledby="details-heading">
+        <details class="section-disclosure" bind:open={proofDetailsOpen}>
+          <summary class="disclosure-summary">
+            <div class="section-heading">
+              <p>{singlePage('detailsSummary')}</p>
+              <h2 id="details-heading" class="screen-title" tabindex="-1">{deep('proofTitle')}</h2>
+            </div>
+          </summary>
+          <div class="disclosure-body">
+        {#if historyReady}
+        <section class="panel mint" aria-labelledby="explanation-heading">
           <h2 id="explanation-heading">{explanationState.heading}</h2>
           <p>{explanationState.summary}</p>
           <p class="micro-safe">{explanationState.verdictLine}</p>
         </section>
         <div>
           <p class="window-label">{deep('activeWindow')}</p>
-          <p class="mono-range">{formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</p>
+          <p class="mono-range"><bdi>{formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</bdi></p>
         </div>
-        <TimelineLedger label={deep('countedEvidence')} {locale} mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'} {trips} referenceDate={dashboardState.referenceDate} />
+        <TimelineLedger headingId="calculation-timeline-heading" label={deep('countedEvidence')} {locale} mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'} {trips} referenceDate={dashboardState.referenceDate} />
         <div class="ledger">
           {#each explanationState.countedTripRows as row}
             <article>
               <div>
-                <h2>{row.label}</h2>
-                <p>{row.rangeLabel}</p>
+                <h2><bdi>{row.label}</bdi></h2>
+                <p><bdi>{row.rangeLabel}</bdi></p>
               </div>
               <strong>{row.daysLabel}</strong>
             </article>
@@ -1824,22 +1870,40 @@
             </section>
           {/each}
         </div>
-        <section class="panel paper-panel" lang="en" dir="ltr">
+        <section class="panel paper-panel">
           <h2>{deep('rulesUsed')}</h2>
           <ul class="rule-list">
             {#each explanationState.ruleBullets as bullet}<li>{bullet}</li>{/each}
           </ul>
         </section>
-        <button class="secondary-button" type="button" onclick={() => setActiveScreen('returns')}>{deep('seeReturns')}</button>
+        <button class="secondary-button" type="button" onclick={() => { returnsDetailsOpen = true; focusElementAfterRender('returns-heading'); }}>{deep('seeReturns')}</button>
+        {:else}
+          <section class="history-gate panel" aria-labelledby="details-history-gate-heading">
+            <h2 id="details-history-gate-heading">{tripOnboarding('title')}</h2>
+            <p>{tripOnboarding('copy')}</p>
+            <div class="button-row">
+              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
+              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
+            </div>
+          </section>
+        {/if}
+          </div>
+        </details>
       </section>
-    {:else if active === 'returns'}
-      <section class="screen" aria-labelledby="returns-heading">
-        <div class="section-heading">
-          <p>{rt('allowanceFrom', { date: formatDate(dashboardState.referenceDate) })}</p>
-          <h1 id="returns-heading" class="screen-title">{returningForecast.summaryLabel}</h1>
-        </div>
+
+      <section class="screen returns-section" aria-labelledby="returns-heading">
+        <details class="section-disclosure" bind:open={returnsDetailsOpen}>
+          <summary class="disclosure-summary">
+            <div class="section-heading">
+              <p>{historyReady ? rt('allowanceFrom', { date: formatDate(dashboardState.referenceDate) }) : singlePage('detailsSummary')}</p>
+              <h2 id="returns-heading" class="screen-title" tabindex="-1">{historyReady ? returningForecast.summaryLabel : deep('returnsForecast')}</h2>
+            </div>
+          </summary>
+          <div class="disclosure-body">
+        {#if historyReady}
         <p class="window-label">{rt('usedOn', { used: returningForecast.currentUsedLabel, date: formatDate(dashboardState.referenceDate) })}</p>
         <TimelineLedger
+          headingId="returns-timeline-heading"
           label={deep('returnsForecast')}
           {locale}
           mode="returns"
@@ -1855,7 +1919,7 @@
         <div class="return-list">
           {#each returningForecast.rows as row}
             <article>
-              <strong>{row.dateLabel}</strong>
+              <strong><bdi>{row.dateLabel}</bdi></strong>
               <span>{row.daysLabel}</span>
               <p>{row.source}</p>
             </article>
@@ -1866,25 +1930,41 @@
             </section>
           {/each}
         </div>
+        {:else}
+          <section class="history-gate panel" aria-labelledby="returns-history-gate-heading">
+            <h2 id="returns-history-gate-heading">{tripOnboarding('title')}</h2>
+            <p>{tripOnboarding('copy')}</p>
+            <div class="button-row">
+              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
+              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
+            </div>
+          </section>
+        {/if}
+          </div>
+        </details>
       </section>
-    {:else if active === 'report'}
-      <section class="screen" aria-labelledby="report-heading">
-        <div class="section-heading">
-          <p>{deep('reportEyebrow')}</p>
-          <h1 id="report-heading" class="screen-title">{deep('reportTitle')}</h1>
-        </div>
-        {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
-        <article class="report-preview" aria-label={deep('reportTitle')} lang="en" dir="ltr">
+
+      <section class="screen report-section" id="report" aria-labelledby="report-heading">
+        <details class="section-disclosure" bind:open={reportDetailsOpen}>
+          <summary class="disclosure-summary">
+            <div class="section-heading">
+              <p>{singlePage('reportSummary')}</p>
+              <h2 id="report-heading" class="screen-title" tabindex="-1">{deep('reportTitle')}</h2>
+            </div>
+          </summary>
+          <div class="disclosure-body">
+        {#if historyReady}
+        <article class="report-preview" aria-label={deep('reportTitle')}>
           <div class="brand report-brand"><SchngnLogo small /></div>
           <h2>{dashboardState.statusLabel} · {dashboardState.heroMetric}</h2>
-          <p class="mono-range">{dashboardState.daysUsedLabel} days used · {formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</p>
+          <p class="mono-range">{ui('daysUsed')}: <bdi>{dashboardState.daysUsedLabel}</bdi> · <bdi>{formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</bdi></p>
           <p>{explanationState.summary}</p>
           <p>{legal.footer}</p>
         </article>
         <section class="panel whatif-panel">
           <h2>{pdfFakeDoorState.messageTitle}</h2>
           <p>{pdfFakeDoorState.helperCopy}</p>
-          <button class="primary-button" type="button" onclick={recordPdfBuyIntent}>{pdfFakeDoorState.buttonLabel}</button>
+          <button class="primary-button" type="button" onclick={recordPdfBuyIntent}>{accountSignedIn ? pdfFakeDoorState.buttonLabel : deep('signUp')}</button>
         </section>
         {#if pdfFakeDoorState.showIntentMessage}
           <section class="panel mint" aria-live="polite">
@@ -1893,16 +1973,29 @@
             <p class="micro-safe">{rt('noPaymentReport')}</p>
           </section>
         {/if}
-        <button class="secondary-button" type="button" onclick={() => setActiveScreen('waitlist')}>{rt('joinPdf')}</button>
+        {:else}
+          <section class="history-gate panel" aria-labelledby="report-history-gate-heading">
+            <h2 id="report-history-gate-heading">{tripOnboarding('title')}</h2>
+            <p>{tripOnboarding('copy')}</p>
+            <div class="button-row">
+              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
+              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
+            </div>
+          </section>
+        {/if}
+          </div>
+        </details>
       </section>
-    {:else if active === 'privacy'}
-      <section class="screen" aria-labelledby="privacy-heading">
-        <div class="section-heading">
-          <p>{deep('accountEyebrow')}</p>
-          <h1 id="privacy-heading" class="screen-title">{deep('accountTitle')}</h1>
-        </div>
-        {#if locale !== 'en'}<p class="translation-note">{t('common.reviewedEnglishNotice')}</p>{/if}
 
+      <section class="screen account-section" id="account" aria-labelledby="account-section-heading">
+        <details class="section-disclosure" bind:open={accountDetailsOpen}>
+          <summary class="disclosure-summary">
+            <div class="section-heading">
+              <p>{singlePage('accountSummary')}</p>
+              <h2 id="account-section-heading" class="screen-title" tabindex="-1">{deep('accountTitle')}</h2>
+            </div>
+          </summary>
+          <div class="disclosure-body">
         <section
           class:mint={accountState === 'synced'}
           class:whatif-panel={accountState === 'offer_sync' || accountState === 'conflict' || accountState === 'paused'}
@@ -2107,36 +2200,10 @@
           <h2>{rt('analyticsTitle')}</h2>
           <p>{rt('analyticsCopy')}</p>
         </section>
+          </div>
+        </details>
       </section>
-    {:else if active === 'waitlist'}
-      <section class="screen narrow-screen" aria-labelledby="waitlist-heading">
-        <button class="text-button" type="button" onclick={() => setActiveScreen('report')}>{rt('backReport')}</button>
-        <div class="brand report-brand"><SchngnLogo small /></div>
-        <h1 id="waitlist-heading" class="screen-title">{deep('waitlistTitle')}</h1>
-        <p class="intro-copy">{deep('waitlistIntro')}</p>
-        <form class="trip-form" onsubmit={(event) => { event.preventDefault(); submitWaitlist(); }}>
-          <label for="waitlist-email"><span>{deep('email')}</span></label>
-          <input id="waitlist-email" bind:value={waitlistEmail} autocomplete="email" maxlength="254" placeholder="name@example.com" type="email" required />
-          <label class="consent-row" for="waitlist-consent">
-            <input id="waitlist-consent" bind:checked={waitlistConsent} type="checkbox" required />
-            <span>{rt('waitlistConsent')}</span>
-          </label>
-          <button class="primary-button" disabled={!waitlistEmail.trim() || !waitlistConsent || waitlistState === 'submitting' || waitlistState === 'stored'} type="submit">
-            {waitlistState === 'submitting' ? deep('joining') : waitlistState === 'error' || waitlistState === 'not_configured' ? deep('tryAgain') : waitlistState === 'stored' ? deep('joined') : deep('join')}
-          </button>
-        </form>
-        {#if waitlistState === 'stored'}
-          <section class="panel mint" aria-live="polite"><h2>{deep('onList')}</h2><p>{deep('emailSaved')}</p></section>
-        {:else if waitlistState === 'not_configured'}
-          <section class="panel whatif-panel" aria-live="polite">
-            <h2>{rt('emailNotConfirmed')}</h2>
-            <p>{rt('waitlistUnconfigured')}</p>
-          </section>
-        {:else if waitlistState === 'error'}
-          <section class="panel risk-panel" aria-live="polite"><h2>{deep('notSaved')}</h2><p>{waitlistError}</p></section>
-        {/if}
-      </section>
-    {/if}
+    </div>
 
     <aside class="legal-footer" aria-label={rt('disclaimerAria')}><p>{legal.footer}</p></aside>
   </section>
@@ -2149,7 +2216,7 @@
   }
 
   .workspace {
-    width: min(100%, 960px);
+    width: min(100%, 1180px);
     margin: 0 auto;
     border: 1px solid var(--control-line);
     border-radius: 14px;
@@ -2158,7 +2225,7 @@
 
   .app-header,
   .brand,
-  .screen-tabs,
+  .anchor-links,
   .facts,
   .button-row,
   .form-actions,
@@ -2224,46 +2291,109 @@
 
   .account-chip.attention > span { background: var(--whatif); }
 
-  .screen-tabs {
+  .skip-link {
+    position: fixed;
+    z-index: 100;
+    inset-block-start: 8px;
+    inset-inline-start: 8px;
+    translate: 0 -160%;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    padding: 10px 14px;
+    font-weight: 760;
+  }
+
+  .skip-link:focus { translate: 0; }
+
+  .anchor-nav {
+    position: sticky;
+    z-index: 20;
+    top: 0;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface), transparent 3%);
+  }
+
+  .anchor-links {
     gap: 4px;
     overflow-x: auto;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--line);
+    padding: 8px 14px;
     scrollbar-width: thin;
   }
 
-  .screen-tabs button {
-    min-height: 44px;
+  .anchor-links > span {
     flex: 0 0 auto;
+    color: var(--muted);
+    padding-inline: 6px;
+    font-size: 0.78rem;
+    font-weight: 760;
+    text-transform: uppercase;
+  }
+
+  .anchor-links a {
+    display: inline-flex;
+    min-height: 40px;
+    flex: 0 0 auto;
+    align-items: center;
     border: 1px solid transparent;
     border-radius: 8px;
-    background: transparent;
     color: var(--muted);
-    padding: 10px 12px;
-    font-size: 0.94rem;
+    padding: 8px 10px;
+    font-size: 0.9rem;
     font-weight: 720;
+    text-decoration: none;
   }
 
-  .screen-tabs button:hover {
-    background: var(--paper);
-    color: var(--ink);
-  }
+  .anchor-links a:hover { background: var(--paper); color: var(--ink); }
 
-  .screen-tabs button.active {
+  .anchor-links a[aria-current='location'] {
     border-color: var(--ink);
     background: var(--ink);
     color: var(--surface);
   }
 
+  .anchor-select { display: none; }
+
+  .single-page-content {
+    display: grid;
+    grid-template-columns: minmax(290px, 0.72fr) minmax(0, 1.35fr);
+    align-items: start;
+  }
+
   .screen {
     display: grid;
-    width: min(100%, 760px);
+    width: 100%;
     min-width: 0;
-    margin: 0 auto;
     align-content: start;
     gap: 20px;
     padding: 28px 24px 36px;
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 72px;
   }
+
+  .answer-section {
+    position: sticky;
+    top: 72px;
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    border-inline-end: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .inline-trip-editor,
+  .trips-section,
+  .timeline-section,
+  .plan-section { grid-column: 2; }
+
+  .details-section,
+  .returns-section,
+  .report-section,
+  .account-section { grid-column: 1 / -1; }
+
+  .inline-trip-editor { background: var(--paper); }
+  .timeline-section { background: color-mix(in srgb, var(--paper), var(--surface) 42%); }
+  .plan-section { border-top: 2px solid var(--whatif); }
 
   .narrow-screen {
     width: min(100%, 600px);
@@ -2272,7 +2402,7 @@
   .disclaimer-notice,
   .storage-alert,
   .legal-footer {
-    width: min(calc(100% - 32px), 760px);
+    width: min(calc(100% - 32px), 1120px);
     margin: 16px auto 0;
     border-radius: 10px;
     padding: 14px;
@@ -2308,7 +2438,6 @@
 
   .disclaimer-notice h2,
   .legal-footer p,
-  .section-heading h1,
   .section-heading p {
     margin: 0;
   }
@@ -2322,9 +2451,19 @@
     text-wrap: pretty;
   }
 
-  .translation-note {
-    font-size: 0.82rem;
+  .disclaimer-details { margin-top: 8px; }
+
+  .disclaimer-details > summary {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    cursor: pointer;
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 760;
   }
+
+  .disclaimer-details[open] > summary { color: var(--whatif); }
 
   .official-links {
     display: flex;
@@ -2374,6 +2513,55 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
+  }
+
+  .section-disclosure {
+    min-width: 0;
+  }
+
+  .disclosure-summary {
+    display: flex;
+    min-height: 64px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .disclosure-summary::-webkit-details-marker { display: none; }
+
+  .disclosure-summary::after {
+    content: '+';
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 1.35rem;
+    font-weight: 620;
+  }
+
+  .section-disclosure[open] > .disclosure-summary::after { content: '−'; }
+
+  .disclosure-body {
+    display: grid;
+    gap: 20px;
+    padding-top: 20px;
+  }
+
+  .history-assumption {
+    margin: -8px 0 0;
+    border-radius: 6px;
+    background: var(--safe-bg);
+    color: var(--muted);
+    padding: 8px 10px;
+    font-size: 0.88rem;
+    line-height: 1.45;
   }
 
   .screen-title,
@@ -2476,61 +2664,6 @@
   .whatif-panel {
     border-color: color-mix(in srgb, var(--whatif), var(--line) 30%);
     background: var(--whatif-bg);
-  }
-
-  .quick-adjust-panel {
-    display: grid;
-    gap: 16px;
-    min-width: 0;
-    border: 1px solid color-mix(in srgb, var(--whatif), var(--line) 30%);
-    border-radius: 12px;
-    background: var(--whatif-bg);
-    padding: 16px;
-  }
-
-  .quick-adjust-heading {
-    display: flex;
-    min-width: 0;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .quick-adjust-heading p,
-  .quick-adjust-heading h2 {
-    margin: 0;
-  }
-
-  .quick-adjust-heading p {
-    margin-bottom: 3px;
-    color: var(--whatif);
-    font-size: 0.78rem;
-    font-weight: 760;
-  }
-
-  .quick-adjust-heading h2 {
-    font-size: 1.25rem;
-    line-height: 1.25;
-  }
-
-  .quick-adjust-answer {
-    display: grid;
-    grid-template-columns: minmax(140px, auto) 1fr;
-    align-items: baseline;
-    gap: 8px 16px;
-  }
-
-  .quick-adjust-answer strong {
-    color: var(--safe);
-    font-size: 1.35rem;
-    line-height: 1.15;
-  }
-
-  .quick-adjust-answer strong.quick-risk { color: var(--risk); }
-
-  .quick-adjust-answer span {
-    color: var(--muted);
-    line-height: 1.45;
   }
 
   .what-if-action {
@@ -3008,16 +3141,14 @@
   .trip-list article.whatif { background: var(--whatif-bg); }
   .trip-list article.past { background: var(--surface); }
 
-  .onboarding-steps ol,
-  .onboarding-list {
+  .onboarding-steps ol {
     display: grid;
     gap: 8px;
     margin: 12px 0 0;
     padding-inline-start: 24px;
   }
 
-  .onboarding-steps li::marker,
-  .onboarding-list li::marker {
+  .onboarding-steps li::marker {
     color: var(--safe);
     font-weight: 800;
   }
@@ -3028,40 +3159,9 @@
     font-weight: 750;
   }
 
-  .trips-timeline {
-    display: grid;
-    gap: 12px;
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid var(--line);
-  }
-
-  .trips-timeline h2,
-  .trips-timeline p {
-    margin: 0;
-  }
-
-  .trips-timeline p {
-    margin-top: 4px;
-    color: var(--muted);
-  }
-
   .combined-planner {
     display: grid;
     gap: 16px;
-    scroll-margin-top: 16px;
-    margin-top: 30px;
-    border-top: 2px solid var(--whatif);
-    padding-top: 26px;
-  }
-
-  .combined-section-title {
-    margin: 0;
-    color: var(--whatif);
-    font-size: 1.65rem;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    text-wrap: balance;
   }
 
   .simulation-save-actions {
@@ -3102,6 +3202,19 @@
 
   .trip-list article.whatif .trip-copy strong { color: var(--whatif); }
 
+  .timeline-section > div > p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .timeline-section > div > p:first-child {
+    margin: 0 0 5px;
+    color: var(--safe);
+    font-size: 0.82rem;
+    font-weight: 760;
+  }
+
   .trip-actions {
     flex: 0 0 auto;
     gap: 4px;
@@ -3115,6 +3228,9 @@
   }
 
   .trip-actions button.delete { color: var(--risk); }
+  .trip-actions button.adjust { color: var(--whatif); }
+
+  .older-trips-toggle { justify-self: start; }
 
   .state-strip {
     width: 5px;
@@ -3215,7 +3331,27 @@
     .workspace { min-height: 100svh; border-width: 0; border-radius: 0; }
     .app-header { align-items: flex-start; flex-direction: column; padding: 14px 16px; }
     .app-header-actions { width: 100%; flex-wrap: wrap; justify-content: space-between; }
-    .screen { padding: 24px 16px 32px; }
+    .anchor-links { display: none; }
+    .anchor-select {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+    }
+    .anchor-select > span {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 760;
+      text-transform: uppercase;
+    }
+    .anchor-select select { min-height: 42px; padding-block: 7px; }
+    .single-page-content { display: block; }
+    .screen { padding: 24px 16px 32px; scroll-margin-top: 66px; }
+    .answer-section {
+      position: static;
+      border-inline-end: 0;
+    }
     .screen-title { font-size: 2rem; }
     .verdict { font-size: 2.6rem; }
     .disclaimer-notice { flex-direction: column; }
@@ -3229,8 +3365,14 @@
     .account-choice-grid { grid-template-columns: 1fr; }
     .return-list article { align-items: flex-start; flex-wrap: wrap; }
     .return-list p { width: 100%; max-width: none; }
-    .quick-adjust-answer { grid-template-columns: 1fr; }
     .simulation-save-actions { grid-template-columns: 1fr; }
+  }
+
+  @media (min-width: 641px) and (max-width: 900px) {
+    .single-page-content { grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1.2fr); }
+    .screen { padding-inline: 18px; }
+    .verdict { font-size: 2.75rem; }
+    .anchor-links > span { display: none; }
   }
 
   @media (max-width: 380px) {

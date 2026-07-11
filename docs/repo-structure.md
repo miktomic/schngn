@@ -14,13 +14,12 @@ schngn/
 │       │   ├── routes/
 │       │   │   ├── +page.svelte              # SEO landing
 │       │   │   ├── app/+page.svelte          # calculator shell
-│       │   │   ├── api/waitlist/+server.ts   # separate email-only Worker route
 │       │   │   ├── api/account/              # authenticated account-data deletion route
 │       │   │   ├── api/account/trips/        # authenticated trip sync/export route
 │       │   │   └── api/webhooks/clerk/       # signed identity lifecycle cleanup
 │       │   ├── app.css
 │       │   └── app.html
-│       ├── migrations/                     # separate D1 waitlist and authenticated account schemas
+│       ├── migrations/                     # authenticated account schemas plus retired-table cleanup
 │       ├── static/                         # PWA manifest, worker, favicon/icons, brand/social assets, SEO files
 │       ├── e2e/                            # Playwright mobile browser coverage
 │       ├── svelte.config.js
@@ -50,7 +49,7 @@ schngn/
 | `bun run build` | engine build + web build | Build deployable app |
 | `bun run check` | test + typecheck + build | Core release gate; pair with `test:e2e` |
 | `bun run test:e2e` | Playwright mobile Chromium | Critical browser/privacy/offline gate |
-| `bun run d1:migrate:local` | Wrangler D1 local migrations | Verify waitlist schema locally |
+| `bun run d1:migrate:local` | Wrangler D1 local migrations | Verify account schema and forward cleanup locally |
 | `bun run d1:migrate:remote` | Wrangler D1 remote migrations | Production migration step after inactive provisioning |
 | `bun run deploy` | `cd apps/web && bun run deploy` | Build and deploy through Wrangler |
 
@@ -80,14 +79,14 @@ Allowed:
 - Browser local storage / IndexedDB.
 - PWA/service worker and offline shell.
 - Privacy-safe analytics wrappers.
-- Tiny Worker endpoints for waitlist/fake-door flows.
+- Authenticated account and Clerk lifecycle Worker endpoints.
 - Optional Clerk authentication.
 - D1-backed sync for signed-in users after explicit consent.
 - Authenticated account-data export and deletion.
 
 Forbidden:
 
-- Sending trip dates to analytics, logs, the waitlist, or anonymous endpoints.
+- Sending trip dates to analytics, logs, or anonymous endpoints.
 - Server-side trip persistence for guests or before explicit consent.
 - Accepting an account owner from the client instead of deriving the Clerk user ID from the verified session.
 - Legal advice generation.

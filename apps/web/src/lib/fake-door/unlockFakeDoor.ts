@@ -53,9 +53,9 @@ export function loadOrAssignUnlockPriceBucket(
 export function buildUnlockFakeDoorState(price: UnlockPriceAssignment, showIntentMessage: boolean): UnlockFakeDoorState {
   return {
     buttonLabel: `Unlock full trip planner — ${price.label}`,
-    helperCopy: 'One-time unlock signal only. Clicking records interest and opens early access; no payment is taken.',
+    helperCopy: 'The full planner is not live yet. Sign up to save your trips; no payment is taken.',
     messageTitle: 'Full planner is not live yet',
-    messageCopy: 'You can join early access. SCHNGN records the selected price bucket only and does not charge you.',
+    messageCopy: 'Sign up to keep your trips for repeat visits. SCHNGN records the selected price bucket only and does not charge you.',
     showIntentMessage
   };
 }

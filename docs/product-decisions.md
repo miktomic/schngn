@@ -1,6 +1,6 @@
 # SCHNGN Product Decisions
 
-> Last updated: 2026-07-10
+> Last updated: 2026-07-11
 > Scope: original MVP validation plus the approved optional-account scope change for SCHNGN.
 
 This file records product, privacy, infrastructure, and launch decisions that unblock the MVP Kanban board. It is intentionally concise: durable decisions, rationale, and implementation constraints. Not a graveyard for every passing thought with a hat.
@@ -11,7 +11,7 @@ This file records product, privacy, infrastructure, and launch decisions that un
 |---|---|---|---|
 | DEC-01 | Use Plausible Cloud for MVP analytics | Approved | US-15, US-13, US-14, US-16, US-20 |
 | DEC-02 | Use one-time fake-door price buckets: €5/€9/€19 default, £5/£9/£19 for UK pages | Approved | US-13, US-14 |
-| DEC-03 | Use Cloudflare D1 for MVP waitlist/email capture | Approved | US-18 |
+| DEC-03 | Historical Cloudflare D1 waitlist/email capture experiment | Retired; superseded by DEC-10 | US-18 |
 | DEC-04 | Use fixed planning-aid/not-legal-advice disclaimer copy | Approved | US-10, US-11 |
 | DEC-05 | Use official EC short-stay calculator, EES, and ETIAS references | Approved | US-10, US-12 |
 | DEC-06 | Include public `/accuracy` validation page in MVP after US-01 is robust | Approved | US-12 |
@@ -20,6 +20,9 @@ This file records product, privacy, infrastructure, and launch decisions that un
 | DEC-09 | First ad/landing angle: UK second-home owners and frequent EU travelers post-Brexit | Approved | US-16 |
 | DEC-10 | Optional Clerk accounts with consented, authenticated D1 trip sync | Approved scope change | US-22 |
 | DEC-11 | Use the supplied cobalt SCHNGN wordmark and euro-star mark as the production identity | Approved | Production brand surfaces |
+| DEC-12 | Model trips as journeys made of explicit Schengen stays | Approved | US-04, US-19 |
+| DEC-13 | Localize the whole site in nine languages, including RTL Hebrew and Arabic | Approved | Whole-site UI |
+| DEC-14 | Use one continuous anchored calculator workspace with one canonical saved timeline | Approved | Core app UX |
 
 ## DEC-01 — Analytics provider
 
@@ -42,7 +45,6 @@ This file records product, privacy, infrastructure, and launch decisions that un
   - `simulation_run`
   - `pdf_buy_intent`
   - `unlock_buy_intent`
-  - `waitlist_signup`
 - Never include:
   - trip dates
   - country sequences/history
@@ -71,11 +73,11 @@ This file records product, privacy, infrastructure, and launch decisions that un
 - No payment capture unless explicitly enabled later.
 - No trip data in analytics payloads.
 
-## DEC-03 — Email/waitlist provider
+## DEC-03 — Retired email/waitlist experiment
 
-**Decision:** Use **Cloudflare D1** for MVP waitlist/email capture.
+**Historical decision:** The original MVP used **Cloudflare D1** for a separate waitlist/email-capture experiment.
 
-**Store only in the waitlist store:**
+The retired implementation stored only:
 
 - email
 - `created_at`
@@ -83,17 +85,19 @@ This file records product, privacy, infrastructure, and launch decisions that un
 - source/context string
 - optional price bucket or fake-door source
 
-**Rationale:**
+**Original rationale:**
 
 - SCHNGN already deploys on Cloudflare.
 - D1 gives queryable rows and exportability.
-- Cleaner than KV for real waitlist management.
+- Cleaner than KV for the original waitlist experiment.
 
-**Implementation constraints:**
+**Retirement decision (2026-07-11):** The active waitlist screen, public email-capture route, and `waitlist_signup` analytics event are removed. People who want repeat-visit access sign up through Clerk. SCHNGN does not maintain a second email funnel or copy Clerk-owned identity fields into D1.
 
-- Never store trip dates, travel history, or calculated results in the waitlist flow.
-- Keep waitlist data separate from both guest storage and authenticated account storage.
-- Consent/privacy copy must be visible at capture point.
+**Retirement constraints:**
+
+- There is no production waitlist data to retain, so the obsolete `0001` creation migration is removed rather than carried into fresh databases.
+- Fresh databases start with the authenticated account schema at `0002`.
+- `0005_drop_waitlist_signups.sql` performs an idempotent `DROP TABLE IF EXISTS` for any already-provisioned database. Do not accept new waitlist writes or repurpose the retired table as account identity.
 
 ## DEC-04 — Legal/disclaimer copy
 
@@ -200,7 +204,7 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - Signup is optional; the calculator remains usable without an account.
 - Guest trips never leave browser storage and have no server fallback.
 - Signing in does not automatically upload existing local trips. Show a separate, explicit consent action before the first sync.
-- Waitlist consent and account-sync consent are separate purposes and separate records.
+- Clerk signup and account-sync consent are separate actions: creating a session never uploads guest trips.
 
 **Lifecycle requirements:**
 
@@ -255,11 +259,25 @@ This is an approved **scope change** after the original no-account MVP cards. It
 **Implementation constraints:**
 
 - Locale selection lives in the URL and a non-sensitive preference cookie. It is never added to trip snapshots or analytics payloads.
-- Locale switching preserves the current page, app section query, and other safe URL context.
+- Locale switching preserves the current page, app anchor, and other safe URL context.
 - Dates use locale-aware `Intl` formatting. ISO trip dates and engine inputs remain unchanged.
 - Localized routes are included in canonical/alternate metadata, the sitemap, and the offline navigation allowlist.
-- Approved legal, safety, and rule-explanation copy remains in reviewed English until human-reviewed translations are supplied. Non-English pages label this fallback explicitly; generated legal explanations remain forbidden.
+- Fixed legal, safety, rule-explanation, and official-source labels are localized in every supported pack and remain deterministic; generated legal explanations remain forbidden.
 - Hebrew and Arabic use semantic RTL document direction while ISO values, email addresses, and other inherently left-to-right data retain appropriate directionality.
+
+## DEC-14 — One continuous calculator workspace
+
+**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, trip history, canonical timeline, planner, calculation details, report, and account/data controls are addressable by stable URL hashes.
+
+**Implementation constraints:**
+
+- A first-time user sees the previous-trip step before any safe verdict. They may either add history or explicitly confirm that no prior Schengen trips exist; that assumption persists locally.
+- Desktop keeps the current answer visible beside the working surface. Mobile uses one reading column with a compact sticky jump control.
+- The saved-trip timeline is canonical. Planner and edit previews may show contextual timelines, but they never replace or mutate the saved result until the user saves.
+- Every saved trip can open the same draggable/resizable adjuster. Saving preserves the trip ID, status semantics, countries, and outside-Schengen breaks.
+- Future planning and saved-trip adjustment keep independent state so experimenting with one cannot silently alter the other.
+- `#status`, `#trips`, `#timeline`, `#plan`, `#details`, `#report`, and `#account` restore on refresh and browser navigation. Old `?section=` links are canonicalized to the matching anchor.
+- Calculation details, returns, report, and account/data controls use accessible progressive disclosure so the primary workflow stays compact without hiding evidence.
 
 ## Board state
 

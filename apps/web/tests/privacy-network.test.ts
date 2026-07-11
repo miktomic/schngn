@@ -11,7 +11,7 @@ describe('privacy network payload assertions', () => {
   test('passes when requests do not contain trip dates, email, names, or labels', () => {
     const requests: ObservedNetworkRequest[] = [
       { url: 'https://plausible.io/api/event', method: 'POST', postData: '{"name":"page_view","props":{"route":"/app"}}' },
-      { url: 'https://schngn.com/api/waitlist', method: 'POST', postData: '{"source":"footer"}' }
+      { url: 'https://schngn.com/api/account/trips', method: 'GET' }
     ];
 
     expect(findForbiddenNetworkPayloads(requests, privateTripValues)).toEqual([]);

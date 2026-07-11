@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import {
   createAccountDeletionHandler,
   createAccountTripHandlers
@@ -728,5 +728,26 @@ describe('authenticated account trip API', () => {
     expect(tombstoneMigration).not.toContain('trips_json');
     expect(tombstoneMigration).not.toContain('email');
     expect(tombstoneMigration).not.toContain('clerk_user_id text');
+  });
+
+  test('keeps account migration numbers stable while removing the obsolete waitlist schema', () => {
+    const migrationFiles = readdirSync('apps/web/migrations').sort();
+    const cleanupMigrationPath = 'apps/web/migrations/0005_drop_waitlist_signups.sql';
+    const cleanupMigration = readFileSync(cleanupMigrationPath, 'utf8');
+    const wrangler = readFileSync('apps/web/wrangler.jsonc', 'utf8');
+
+    expect(existsSync('apps/web/migrations/0001_create_waitlist_signups.sql')).toBe(false);
+    expect(migrationFiles).toEqual([
+      '0002_create_account_trip_snapshots.sql',
+      '0003_create_account_deletion_tombstones.sql',
+      '0004_reset_account_trip_snapshots_v2.sql',
+      '0005_drop_waitlist_signups.sql'
+    ]);
+    expect(cleanupMigration).toContain('drop table if exists waitlist_signups;');
+    expect(cleanupMigration).not.toContain('account_trip_snapshots');
+    expect(cleanupMigration).not.toContain('account_deletion_tombstones');
+    expect(cleanupMigration).not.toContain('create table');
+    expect(wrangler).toContain('"binding": "DB"');
+    expect(wrangler).toContain('"migrations_dir": "migrations"');
   });
 });

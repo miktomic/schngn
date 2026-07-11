@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { buildExplanationState } from '../src/lib/explanation/explanationState';
+import { SUPPORTED_LOCALES, intlLocale } from '../src/lib/i18n';
 import { makeTrip } from './trip-fixtures';
 
 const sampleTrips = [
@@ -23,5 +24,70 @@ describe('plain-English calculation explanation', () => {
       makeTrip('italy', 'Italy', '2026-06-29', '2026-06-29', 'booked', 'IT')
     ], '2026-06-29');
     expect(state.summary).toBe('91 counted days between Jan 1 and Jun 29. That is 1 day over the 90-day limit.');
+  });
+});
+
+describe('localized calculation explanation', () => {
+  test('localizes every generated field for all approved non-English locales', () => {
+    const english = buildExplanationState(sampleTrips, '2026-10-13');
+
+    for (const locale of SUPPORTED_LOCALES.filter((candidate) => candidate !== 'en')) {
+      const state = buildExplanationState(sampleTrips, '2026-10-13', locale);
+      const output = [
+        state.heading,
+        state.summary,
+        state.verdictLine,
+        state.windowLabel,
+        ...state.ruleBullets,
+        ...state.countedTripRows.flatMap((row) => [row.rangeLabel, row.daysLabel])
+      ].join(' ');
+
+      expect(state.heading).not.toBe(english.heading);
+      expect(state.summary).not.toContain('counted days');
+      expect(state.summary).not.toContain('safe buffer');
+      expect(state.verdictLine).not.toContain('Calculation result');
+      expect(state.ruleBullets).not.toContain(english.ruleBullets[0]);
+      expect(state.countedTripRows.at(-1)?.rangeLabel).not.toContain(' to ');
+      expect(state.countedTripRows.at(-1)?.daysLabel).not.toContain('counted');
+      expect(output).toContain(new Intl.NumberFormat(intlLocale(locale)).format(75));
+    }
+  });
+
+  test('uses locale-aware dates, numbers, plural forms, and fallback trip labels', () => {
+    const unlabeledTrip = makeTrip('unlabeled', '', '2026-06-29', '2026-06-29', 'booked', 'IT');
+    delete unlabeledTrip.label;
+    unlabeledTrip.exitCountryCode = undefined;
+
+    const french = buildExplanationState(sampleTrips, '2026-10-13', 'fr');
+    expect(french.heading).toBe('Pourquoi ce nombre ?');
+    expect(french.summary).toBe('75 jours comptés entre le 17 avr. et le 13 oct. Il reste 15 jours de marge de sécurité.');
+    expect(french.countedTripRows.at(-1)).toEqual({
+      label: 'Italy',
+      rangeLabel: '15 sept. au 13 oct.',
+      daysLabel: '29 jours comptés'
+    });
+
+    const hebrew = buildExplanationState([unlabeledTrip], '2026-06-29', 'he');
+    expect(hebrew.heading).toBe('איך התקבל המספר הזה?');
+    expect(hebrew.countedTripRows[0]?.label).toBe('כניסה דרך IT');
+    expect(hebrew.countedTripRows[0]?.daysLabel).toBe('1 יום שנספר');
+
+    const arabic = buildExplanationState(sampleTrips, '2026-10-13', 'ar');
+    expect(arabic.summary).toContain(`${new Intl.NumberFormat(intlLocale('ar')).format(75)} يومًا محتسبًا`);
+    expect(arabic.summary).toContain(`${new Intl.NumberFormat(intlLocale('ar')).format(15)} يومًا`);
+    expect(arabic.countedTripRows.at(-1)?.rangeLabel).toContain('سبتمبر');
+    expect(arabic.verdictLine).toContain('المصادر الرسمية');
+  });
+
+  test('localizes over-limit summaries while keeping the official-source caution', () => {
+    const trips = [
+      makeTrip('past', 'Prior Schengen', '2026-01-01', '2026-03-31'),
+      makeTrip('italy', 'Italy', '2026-06-29', '2026-06-29', 'booked', 'IT')
+    ];
+
+    expect(buildExplanationState(trips, '2026-06-29', 'ru').summary)
+      .toBe('91 учтённый день в период с 1 янв. по 29 июня. Это на 1 день больше лимита в 90 дней.');
+    expect(buildExplanationState(trips, '2026-06-29', 'tr').verdictLine).toContain('resmî kaynakları');
+    expect(buildExplanationState(trips, '2026-06-29', 'de').verdictLine).toContain('offizielle Quellen');
   });
 });
