@@ -94,6 +94,44 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'Doğruluk kanıtı' })).toBeVisible();
   });
 
+  test('keeps desktop workspace sections beside the sticky answer rail', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await installFakeClerk(page, null);
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.goto('/app');
+
+    await page.locator('#status').getByRole('button', { name: 'No previous Schengen trips? Go straight to planning.' }).click();
+    await page.locator('#details').evaluate((section) => section.scrollIntoView());
+
+    const answerBox = await page.locator('#status').boundingBox();
+    const detailsBox = await page.locator('#details').boundingBox();
+    expect(answerBox).not.toBeNull();
+    expect(detailsBox).not.toBeNull();
+
+    const answerRight = answerBox!.x + answerBox!.width;
+    const verticalOverlap = Math.min(answerBox!.y + answerBox!.height, detailsBox!.y + detailsBox!.height)
+      - Math.max(answerBox!.y, detailsBox!.y);
+    expect(verticalOverlap).toBeGreaterThan(0);
+    expect(detailsBox!.x).toBeGreaterThanOrEqual(answerRight - 1);
+
+    await page.setViewportSize({ width: 900, height: 900 });
+    await page.locator('#details').evaluate((section) => section.scrollIntoView());
+    const tabletAnswerBox = await page.locator('#status').boundingBox();
+    const tabletDetailsBox = await page.locator('#details').boundingBox();
+    expect(tabletDetailsBox!.x).toBeGreaterThanOrEqual(tabletAnswerBox!.x + tabletAnswerBox!.width - 1);
+
+    await page.setViewportSize({ width: 640, height: 900 });
+    expect(await page.locator('#status').evaluate((section) => getComputedStyle(section).position)).toBe('static');
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/he/app#details');
+    await page.locator('#details').evaluate((section) => section.scrollIntoView());
+    const rtlAnswerBox = await page.locator('#status').boundingBox();
+    const rtlDetailsBox = await page.locator('#details').boundingBox();
+    expect(await page.locator('html').getAttribute('dir')).toBe('rtl');
+    expect(rtlDetailsBox!.x + rtlDetailsBox!.width).toBeLessThanOrEqual(rtlAnswerBox!.x + 1);
+  });
+
   test('installed PWA shell serves locally saved trips and a cached shell offline', async ({ page, context }) => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => {

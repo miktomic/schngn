@@ -1350,6 +1350,7 @@
         {/if}
       </section>
 
+      <div class="workspace-flow">
       {#if tripEditorVisible}
       <section class="screen inline-trip-editor" id="trip-editor" aria-labelledby="trip-heading">
         <div class="section-heading">
@@ -2198,6 +2199,7 @@
           </div>
         </details>
       </section>
+      </div>
     </div>
 
     <aside class="legal-footer" aria-label={rt('disclaimerAria')}><p>{legal.footer}</p></aside>
@@ -2371,20 +2373,16 @@
     position: sticky;
     top: 72px;
     grid-column: 1;
-    grid-row: 1 / span 4;
+    grid-row: 1;
     border-inline-end: 1px solid var(--line);
     background: var(--surface);
   }
 
-  .inline-trip-editor,
-  .trips-section,
-  .timeline-section,
-  .plan-section { grid-column: 2; }
-
-  .details-section,
-  .returns-section,
-  .report-section,
-  .account-section { grid-column: 1 / -1; }
+  .workspace-flow {
+    min-width: 0;
+    grid-column: 2;
+    grid-row: 1;
+  }
 
   .inline-trip-editor { background: var(--paper); }
   .timeline-section { background: color-mix(in srgb, var(--paper), var(--surface) 42%); }
