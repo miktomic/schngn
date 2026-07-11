@@ -61,6 +61,20 @@ describe('saved trip adjustment', () => {
     expect(hasSavedTripAdjustmentChanges(source, restored)).toBe(false);
   });
 
+  test('also detects inline label, country, and outside-Schengen detail changes', () => {
+    const source = trip('details', 'booked', '2026-04-01', '2026-04-10', 'Original label');
+    const draft = createSavedTripAdjustmentDraft(source).form;
+
+    expect(hasSavedTripAdjustmentChanges(source, { ...draft, label: 'Corrected label' })).toBe(true);
+    expect(hasSavedTripAdjustmentChanges(source, { ...draft, entryCountryCode: 'IT' })).toBe(true);
+    expect(hasSavedTripAdjustmentChanges(source, { ...draft, exitCountryCode: 'AT' })).toBe(true);
+    expect(hasSavedTripAdjustmentChanges(source, {
+      ...draft,
+      outsideBreaks: [{ id: 'break-1', leftDate: '2026-04-04', reentryDate: '2026-04-06' }]
+    })).toBe(true);
+    expect(hasSavedTripAdjustmentChanges(source, draft)).toBe(false);
+  });
+
   test('updates only the selected trip and preserves its identity', () => {
     const first = trip('first', 'booked', '2026-08-01', '2026-08-05');
     const second = trip('second', 'booked', '2026-09-01', '2026-09-05');
@@ -79,6 +93,30 @@ describe('saved trip adjustment', () => {
       { entryDate: '2026-08-02', exitDate: '2026-08-06' }
     ]);
     expect(result.trips.find((value) => value.id === second.id)).toEqual(second);
+  });
+
+  test('commits corrected inline trip details without changing identity', () => {
+    const source = trip('details-save', 'booked', '2026-08-01', '2026-08-10', 'Old label');
+    const draft = createSavedTripAdjustmentDraft(source).form;
+    const result = commitSavedTripAdjustment([source], source.id, {
+      ...draft,
+      label: 'Corrected label',
+      entryCountryCode: 'IT',
+      exitCountryCode: 'AT',
+      outsideBreaks: [{ id: 'break-1', leftDate: '2026-08-04', reentryDate: '2026-08-06' }]
+    }, '2026-07-01');
+
+    expect(result.updated).toBe(true);
+    expect(result.trips[0]).toMatchObject({
+      id: source.id,
+      label: 'Corrected label',
+      entryCountryCode: 'IT',
+      exitCountryCode: 'AT'
+    });
+    expect(result.trips[0].stays).toEqual([
+      { entryDate: '2026-08-01', exitDate: '2026-08-04' },
+      { entryDate: '2026-08-06', exitDate: '2026-08-10' }
+    ]);
   });
 
   test('preserves planned status while still inferring past trips', () => {

@@ -12,6 +12,7 @@
   } from '$lib/simulator/whatIfDates';
 
   interface Props {
+    accentColor?: string;
     cutoffDate?: string | null;
     entryDate: string;
     entryMax?: string;
@@ -25,6 +26,7 @@
   }
 
   let {
+    accentColor = 'var(--whatif)',
     cutoffDate = null,
     entryDate,
     entryMax,
@@ -94,7 +96,7 @@
   }
 </script>
 
-<section class="adjuster" aria-label={copy('title')}>
+<section class="adjuster" style={`--adjust-accent:${accentColor}`} aria-label={copy('title')}>
   <p>{copy('hint')}</p>
 
   <div class="rail-shell" dir="ltr">
@@ -171,13 +173,12 @@
     </div>
   </div>
 
-  <details>
-    <summary>{copy('exact')}</summary>
+  <div class="exact-date-area">
     <div class="exact-dates">
       <label><span>{copy('entry')}</span><input type="date" min={range.minDate} max={entryMaximum} value={entryDate} onchange={(event) => updateExactDate(event, 'entry')} /></label>
       <label><span>{copy('exit')}</span><input type="date" min={exitMinimum} max={range.maxDate} value={exitDate} onchange={(event) => updateExactDate(event, 'exit')} /></label>
     </div>
-  </details>
+  </div>
 </section>
 
 <style>
@@ -188,14 +189,14 @@
   .rail-labels { display: flex; justify-content: space-between; color: var(--muted); font: 500 0.72rem/1.3 'IBM Plex Mono', ui-monospace, monospace; }
   .rail { position: relative; height: 128px; touch-action: none; }
   .rail-line { position: absolute; inset: 52px 0 auto; height: 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
-  .trip-block { position: absolute; top: 42px; z-index: 2; min-width: 22px; height: 28px; border: 1px solid var(--whatif); border-radius: 7px; background: var(--whatif-bg); color: var(--whatif); cursor: grab; touch-action: none; }
+  .trip-block { position: absolute; top: 42px; z-index: 2; min-width: 22px; height: 28px; border: 1px solid var(--adjust-accent); border-radius: 7px; background: color-mix(in srgb, var(--surface), var(--adjust-accent) 12%); color: var(--ink); cursor: grab; touch-action: none; }
   .trip-block::before { content: ''; position: absolute; inset: -8px -11px; }
-  .trip-block:active, .trip-block.dragging { cursor: grabbing; background: color-mix(in srgb, var(--whatif-bg), var(--whatif) 12%); }
+  .trip-block:active, .trip-block.dragging { cursor: grabbing; background: color-mix(in srgb, var(--surface), var(--adjust-accent) 22%); }
   .trip-block span { font: 700 0.72rem/1 'IBM Plex Mono', ui-monospace, monospace; pointer-events: none; }
   .handle { position: absolute; top: 34px; z-index: 4; width: 44px; height: 44px; margin-left: -22px; border: 0; background: transparent; cursor: ew-resize; touch-action: none; }
-  .handle::before { content: ''; position: absolute; inset: 2px 8px; border: 2px solid var(--whatif); border-radius: 8px; background: var(--surface); }
-  .handle::after { content: ''; position: absolute; inset: 13px auto auto 21px; width: 2px; height: 18px; border-radius: 2px; background: var(--whatif); }
-  .handle.dragging::before { background: var(--whatif-bg); }
+  .handle::before { content: ''; position: absolute; inset: 2px 8px; border: 2px solid var(--adjust-accent); border-radius: 8px; background: var(--surface); }
+  .handle::after { content: ''; position: absolute; inset: 13px auto auto 21px; width: 2px; height: 18px; border-radius: 2px; background: var(--adjust-accent); }
+  .handle.dragging::before { background: color-mix(in srgb, var(--surface), var(--adjust-accent) 14%); }
   .entry-handle.compact { margin-left: -46px; }
   .exit-handle.compact { margin-left: 2px; }
   .handle-date {
@@ -256,17 +257,19 @@
   .range-feedback.safe { background: var(--safe-bg); color: var(--safe); }
   .range-feedback.limit { background: var(--whatif-bg); color: var(--whatif); }
   .range-feedback.risk { background: var(--risk-bg); color: var(--risk); }
-  button:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid color-mix(in srgb, var(--whatif), transparent 35%); outline-offset: 2px; }
-  details { border-top: 1px solid color-mix(in srgb, var(--whatif), transparent 65%); padding-top: 10px; }
-  summary { width: fit-content; min-height: 36px; color: var(--ink); cursor: pointer; font-weight: 700; }
-  .exact-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 10px; }
+  button:focus-visible, input:focus-visible { outline: 3px solid color-mix(in srgb, var(--adjust-accent), transparent 35%); outline-offset: 2px; }
+  .exact-date-area { display: grid; gap: 8px; border-top: 1px solid color-mix(in srgb, var(--adjust-accent), transparent 65%); padding-top: 12px; }
+  .exact-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   label { display: grid; gap: 5px; color: var(--ink); font-weight: 700; }
   input { min-width: 0; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); padding: 8px 10px; font: inherit; }
+  input[type='date'] { max-inline-size: 100%; padding-inline: 0; }
   @media (max-width: 520px) {
     .exact-dates { grid-template-columns: 1fr; }
     .rail-labels { font-size: 0.65rem; }
+    .rail { height: 154px; }
     .handle-date { font-size: 0.65rem; }
-    .cutoff-marker > span { min-width: 0; width: 96px; text-align: center; }
+    .cutoff-marker > span { min-width: 0; width: 120px; text-align: center; }
+    .range-feedback { top: 122px; max-width: min(190px, 72vw); min-width: 0; text-align: center; }
   }
   @media (prefers-reduced-motion: reduce) { .trip-block, .handle { transition: none; } }
 </style>

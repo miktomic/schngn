@@ -151,6 +151,8 @@ Do not use the older prototype blues/greens directly in timeline segments unless
 
 **The No Purple Rule.** Purple is not a SCHNGN simulation state. The synthesis mock's purple what-if segment must be replaced with amber.
 
+**The Trip Identity Palette Rule.** A saved trip may receive one stable, contrast-checked identity color so a traveler can match its card, dot, mini timeline, and inline adjuster. These colors identify trips only; they never mean safe, booked, completed, or over limit. Semantic status still requires text and the established safe/risk treatments.
+
 **The Color Plus Shape Rule.** Status must use text and shape or icon, not color alone.
 
 ## 3. Typography
@@ -224,10 +226,10 @@ SCHNGN is flat by default. Depth comes from paper layers, borders, spacing, and 
 
 ### Schengen Stay Form
 
-- Lead with `Entered Schengen` and `Left Schengen`; these dates determine the continuous outer journey.
-- `Entered via` and `Left via` are optional context fields and must explicitly say they do not affect the calculation.
+- Lead with `Entry date` and `Exit date`; these dates determine the continuous outer journey.
+- `Entry country` and `Exit country` are optional context fields and must explicitly say they do not affect the calculation.
 - Keep `Time outside Schengen` collapsed by default. Add breaks inline, never in a modal or wizard.
-- Each break asks `Left Schengen` and `Re-entered Schengen`; require at least one full calendar day outside.
+- Each break asks for an `Exit date` and a `Re-entry date`; require at least one full calendar day outside.
 - Show an immediate ledger summary such as `Italy → Austria · 10 Schengen days · 2 days outside` before save.
 - Do not ask users to list every Schengen country visited.
 
@@ -252,13 +254,15 @@ The production identity is the supplied cobalt **SCHNGN wordmark** with the euro
 
 The timeline is SCHNGN's signature component. It should show the active 180-day window, trip segments, returning days, and usage ratio in one inspectable composition.
 
-- Past trips: muted gray.
-- Booked trips: blue.
-- What-if trips: amber.
+- The canonical combined timeline uses one neutral trip color plus red over-limit evidence; it does not ask the traveler to classify saved trips.
+- Each saved-trip card always includes a compact 180-day timeline in that trip's stable identity color and a matching dot.
+- Clicking anywhere on the card's main surface expands inline sliders and direct entry/exit date fields. A secondary details disclosure inside the expanded card holds label, optional border-country context, and outside-Schengen-break corrections. Do not add a separate expand icon, Edit button, or saved-trip editing modal.
+- Do not silently collapse or switch away from a dirty card. Require the explicit `Save changes` or `Keep original` action first.
 - Safe buffer or returned days: green.
 - Risk/over-limit extension: red.
 - Active 180-day frame: ink or ledger line, visible but not heavy.
 - Labels: use IBM Plex Mono for dates and ratios, Source Sans 3 for human labels.
+- Completed over-limit trips use calm historical copy (`Completed · N days over at the time`) rather than prospective fix instructions. Their dates still count in every affected rolling window until they age out.
 
 ### Answer Card
 

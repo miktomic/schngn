@@ -7,12 +7,13 @@ import {
   parseISODate,
   type UsageResult,
 } from "@schngn/engine";
-import { type EditableTrip, sortTrips, toEngineTrips, tripEntryDate, tripExitDate, tripRouteLabel } from "../trips/tripCrud";
+import { currentLocalIsoDate, type EditableTrip, sortTrips, toEngineTrips, tripEntryDate, tripExitDate, tripRouteLabel } from "../trips/tripCrud";
 
 export type DashboardStatusTone = "safe" | "close" | "risk";
 
 export interface DashboardState {
   actionCopy: string;
+  completed: boolean;
   daysUsedLabel: string;
   heroMetric: string;
   latestSafeExitLabel: string;
@@ -28,25 +29,28 @@ export interface DashboardState {
 
 export function buildDashboardState(
   trips: EditableTrip[],
-  referenceDate?: string
+  referenceDate?: string,
+  currentDate: string = currentLocalIsoDate()
 ): DashboardState {
   const sortedTrips = sortTrips(trips);
   const earliestConflict = findEarliestPlannedConflict(sortedTrips);
   const targetTrip = earliestConflict?.trip ?? chooseTargetTrip(sortedTrips);
   const effectiveReferenceDate =
-    referenceDate ?? earliestConflict?.date ?? (targetTrip ? tripExitDate(targetTrip) : undefined) ?? todayISODate();
+    referenceDate ?? earliestConflict?.date ?? (targetTrip ? tripExitDate(targetTrip) : undefined) ?? currentDate;
   const usage = calculateUsageOnDate(
     toEngineTrips(sortedTrips),
     effectiveReferenceDate
   );
   const targetName = targetTrip?.label ?? (targetTrip ? tripRouteLabel(targetTrip) : "Trip");
+  const completed = targetTrip !== null && tripExitDate(targetTrip) < currentDate;
   const statusTone = toDashboardTone(usage);
   const latestSafeExit = targetTrip
     ? calculateLatestSafeExit(sortedTrips, targetTrip)
     : null;
 
   return {
-    actionCopy: formatActionCopy(usage, targetName, targetTrip, latestSafeExit),
+    actionCopy: formatActionCopy(usage, targetName, targetTrip, latestSafeExit, completed),
+    completed,
     daysUsedLabel: `${usage.daysUsed} / 90`,
     heroMetric: formatHeroMetric(usage),
     latestSafeExitLabel: latestSafeExit
@@ -56,7 +60,7 @@ export function buildDashboardState(
         : "Add dates",
     latestSafeExitDate: latestSafeExit,
     referenceDate: effectiveReferenceDate,
-    statusLabel: formatStatusLabel(statusTone, targetName, targetTrip),
+    statusLabel: formatStatusLabel(statusTone, targetName, targetTrip, completed),
     statusTone,
     targetTrip,
     usage,
@@ -134,10 +138,14 @@ function formatHeroMetric(usage: UsageResult): string {
 function formatStatusLabel(
   tone: DashboardStatusTone,
   targetName: string,
-  targetTrip: EditableTrip | null
+  targetTrip: EditableTrip | null,
+  completed: boolean
 ): string {
   if (!targetTrip) {
     return "Add a trip";
+  }
+  if (completed) {
+    return `${targetName} · Completed`;
   }
   if (tone === "risk") {
     return `${targetName} needs changes`;
@@ -168,10 +176,14 @@ function formatActionCopy(
   usage: UsageResult,
   targetName: string,
   targetTrip: EditableTrip | null,
-  latestSafeExit: string | null
+  latestSafeExit: string | null,
+  completed: boolean
 ): string {
   if (!targetTrip) {
     return "Add your next Schengen trip to get a clear safe/risk answer.";
+  }
+  if (completed) {
+    return "This completed trip is included in your history. Review the counted days against your travel records.";
   }
   if (usage.overLimit) {
     return `First fix: shorten or move ${targetName}, then recalculate before booking.`;
@@ -219,8 +231,4 @@ function monthName(month: number): string {
     "Nov",
     "Dec",
   ][month - 1];
-}
-
-function todayISODate(): string {
-  return new Date().toISOString().slice(0, 10);
 }

@@ -267,14 +267,17 @@ This is an approved **scope change** after the original no-account MVP cards. It
 
 ## DEC-14 — One continuous calculator workspace
 
-**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, combined Trips workspace, report, and account/data controls are addressable by stable URL hashes. Trips contains the canonical master timeline followed by saved-trip rows; selecting a row expands its adjuster in place, and one bottom “Add new trip” action opens the trip editor as a dialog.
+**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, combined Trips workspace, report, and account/data controls are addressable by stable URL hashes. Trips contains the canonical master timeline followed by saved-trip cards. Every card always shows its own color-coded 180-day timeline; selecting the card expands sliders and direct date inputs inside it. One bottom “Add new trip” action opens the new-trip editor as a dialog.
 
 **Implementation constraints:**
 
 - A first-time user sees the previous-trip step before any safe verdict. They may either add history or explicitly confirm that no prior Schengen trips exist; that assumption persists locally.
 - Desktop keeps the current answer visible beside the working surface. Mobile uses one reading column with a compact sticky jump control.
 - The master timeline at the top of Trips is canonical. Editor and adjustment previews may show contextual timelines, but they never replace or mutate the saved result until the user saves.
-- Every saved-trip row opens the same draggable/resizable adjuster directly beneath that row. Saving preserves the trip ID, status semantics, countries, and outside-Schengen breaks.
+- Every saved-trip card is the edit affordance: there is no separate expand icon, Edit button, or saved-trip edit dialog. The expanded card exposes the draggable/resizable adjuster and direct date inputs together; a compact details disclosure allows corrections to its label, border-country context, and outside-Schengen breaks. Saving preserves the trip ID, and whether a trip is completed is derived from its dates.
+- A card with unsaved changes stays open. Opening another card or the new-trip dialog is blocked until the traveler explicitly saves the changes or chooses “Keep original,” preventing silent loss of an in-progress adjustment.
+- Card timeline colors distinguish trips, not safety or booking state. Text labels and the aggregate red over-limit evidence carry status meaning, so the cards remain understandable without color.
+- A completed trip that exceeded the allowance is historical evidence, not a plan that still “needs changes.” It is labeled “Completed · N days over at the time,” remains fully counted in any rolling window it affects, and offers correction only if its recorded dates are inaccurate. If that completed history would make a later plan exceed the limit, the later plan is identified as the affected item rather than misattributing the overage to the completed trip.
 - The single “Add new trip” action at the bottom of Trips opens the trip editor as a modal dialog; the workspace has no second trip-entry surface.
 - Future planning and saved-trip adjustment keep independent state so experimenting with one cannot silently alter the other.
 - `#status`, `#trips`, `#report`, and `#account` restore on refresh and browser navigation. Retired `#timeline` and `#details` hashes canonicalize to `#trips`; old planner, proof, and returning-days `?section=` destinations also map to `#trips`.

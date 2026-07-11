@@ -26,10 +26,12 @@ import {
   localizeDashboardState,
   localizePdfState,
   localizeReturningForecast,
+  localizeSimulationState,
   localizeUnlockState,
   stateCatalogKeyCount
 } from '../src/lib/i18n/stateUi';
 import { buildDashboardState } from '../src/lib/dashboard/dashboardState';
+import { buildTripSimulationState } from '../src/lib/simulator/tripSimulator';
 import { createTranslator } from '../src/lib/i18n';
 import { buildPdfReportFakeDoorState } from '../src/lib/fake-door/pdfReportFakeDoor';
 import { buildUnlockFakeDoorState } from '../src/lib/fake-door/unlockFakeDoor';
@@ -87,6 +89,8 @@ describe('whole-site localization', () => {
       expect(createAppRuntimeUiTranslator(locale)('browserData').trim().length).toBeGreaterThan(0);
       expect(createAppRuntimeUiTranslator(locale)('guestCopy').trim().length).toBeGreaterThan(0);
       expect(createWhatIfUiTranslator(locale)('adjust').trim().length).toBeGreaterThan(0);
+      expect(createWhatIfUiTranslator(locale)('details').trim().length).toBeGreaterThan(0);
+      expect(createWhatIfUiTranslator(locale)('finishEditing').trim().length).toBeGreaterThan(0);
       expect(createTripOnboardingTranslator(locale)('title').trim().length).toBeGreaterThan(0);
     }
     expect(new Set(Object.values(appDeepCatalogLengths())).size).toBe(1);
@@ -96,6 +100,26 @@ describe('whole-site localization', () => {
     expect(new Set(Object.values(stateCatalogKeyCount())).size).toBe(1);
     expect(new Set(Object.values(whatIfCatalogLengths())).size).toBe(1);
     expect(new Set(Object.values(tripOnboardingCatalogLengths())).size).toBe(1);
+  });
+
+  test('uses neutral entry and exit labels in every deep app locale', () => {
+    const expected = {
+      en: ['Entry date', 'Exit date', 'Entry country', 'Exit country', 'Re-entry date'],
+      fr: ['Date d’entrée', 'Date de sortie', 'Pays d’entrée', 'Pays de sortie', 'Date de retour'],
+      de: ['Einreisedatum', 'Ausreisedatum', 'Einreiseland', 'Ausreiseland', 'Wiedereinreisedatum'],
+      es: ['Fecha de entrada', 'Fecha de salida', 'País de entrada', 'País de salida', 'Fecha de reentrada'],
+      it: ['Data di ingresso', 'Data di uscita', 'Paese di ingresso', 'Paese di uscita', 'Data di rientro'],
+      ru: ['Дата въезда', 'Дата выезда', 'Страна въезда', 'Страна выезда', 'Дата повторного въезда'],
+      tr: ['Giriş tarihi', 'Çıkış tarihi', 'Giriş ülkesi', 'Çıkış ülkesi', 'Yeniden giriş tarihi'],
+      he: ['תאריך כניסה', 'תאריך יציאה', 'מדינת כניסה', 'מדינת יציאה', 'תאריך כניסה מחדש'],
+      ar: ['تاريخ الدخول', 'تاريخ الخروج', 'دولة الدخول', 'دولة الخروج', 'تاريخ إعادة الدخول']
+    } as const;
+
+    for (const locale of SUPPORTED_LOCALES) {
+      const deep = createAppDeepUiTranslator(locale);
+      expect([deep('entered'), deep('left'), deep('enteredVia'), deep('leftVia'), deep('reentered')])
+        .toEqual(expected[locale]);
+    }
   });
 
   test('renders public safety and evidence copy in the selected locale without English-only fallback blocks', () => {
@@ -163,6 +187,51 @@ describe('whole-site localization', () => {
     expect(localizeReturningForecast('he', oneDayReturns).summaryLabel).toBe('1 יום חוזר · 1 יום');
     expect(localizeReturningForecast('ar', oneDayReturns).summaryLabel)
       .toBe(`${new Intl.NumberFormat(intlLocale('ar')).format(1)} يوم يعود · ${new Intl.NumberFormat(intlLocale('ar')).format(1)} يوم`);
+  });
+
+  test('localizes completed trip status and completed adjuster feedback', () => {
+    const completed = buildDashboardState([
+      makeTrip('completed-spain', 'Spain', '2026-05-01', '2026-05-05', 'booked', 'ES')
+    ], undefined, '2026-05-06');
+    const completedSimulation = buildTripSimulationState([], {
+      label: 'Spain',
+      entryCountryCode: 'ES',
+      exitCountryCode: 'ES',
+      entryDate: '2026-05-01',
+      exitDate: '2026-05-05',
+      outsideBreaks: []
+    }, '2026-05-06');
+    const completedLabels = {
+      en: 'Spain · Completed',
+      fr: 'Spain · Terminé',
+      de: 'Spain · Abgeschlossen',
+      es: 'Spain · Completado',
+      it: 'Spain · Completato',
+      ru: 'Spain · Завершена',
+      tr: 'Spain · Tamamlandı',
+      he: 'Spain · הושלמה',
+      ar: 'Spain · مكتملة'
+    } as const;
+    const withinLimit = {
+      en: 'Within limit · 2 days',
+      fr: 'Dans la limite · 2 jours',
+      de: 'Im Limit · 2 Tage',
+      es: 'Dentro del límite · 2 días',
+      it: 'Entro il limite · 2 giorni',
+      ru: 'В пределах лимита · 2 дня',
+      tr: 'Sınır içinde · 2 gün',
+      he: 'בתוך המגבלה · יומיים',
+      ar: 'ضمن الحد · يومان'
+    } as const;
+
+    for (const locale of SUPPORTED_LOCALES) {
+      const dashboard = localizeDashboardState(locale, completed);
+      const simulation = localizeSimulationState(locale, completedSimulation);
+      expect(dashboard.statusLabel).toBe(completedLabels[locale]);
+      expect(simulation.statusLabel).toBe(completedLabels[locale]);
+      expect(simulation.firstFixCopy).toBe(dashboard.actionCopy);
+      expect(formatAdjusterFeedback(locale, 0, 2, true)).toBe(withinLimit[locale]);
+    }
   });
 
   test('keeps app copy behind translators without reviewed-English fallback notices', () => {

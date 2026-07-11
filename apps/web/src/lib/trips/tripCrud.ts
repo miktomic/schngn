@@ -75,13 +75,13 @@ export function validateTripInput(input: TripFormInput): TripValidationErrors {
 
   validateOptionalCountry(input.entryCountryCode, 'entryCountryCode', errors);
   validateOptionalCountry(input.exitCountryCode, 'exitCountryCode', errors);
-  validateRequiredDate(input.entryDate, 'entryDate', 'entered-Schengen', errors);
-  validateRequiredDate(input.exitDate, 'exitDate', 'left-Schengen', errors);
+  validateRequiredDate(input.entryDate, 'entryDate', 'entry', errors);
+  validateRequiredDate(input.exitDate, 'exitDate', 'exit', errors);
 
   if (!isTripStatus(input.status)) errors.status = 'Choose past, booked, or what-if.';
 
   if (!errors.entryDate && !errors.exitDate && dayNumber(input.exitDate) < dayNumber(input.entryDate)) {
-    errors.exitDate = 'The date you left Schengen cannot be before the date you entered.';
+    errors.exitDate = 'The exit date cannot be before the entry date.';
   }
 
   validateOutsideBreaks(input, errors);
@@ -287,7 +287,7 @@ function validateRequiredDate(
   errors: TripValidationErrors
 ): void {
   if (!value) errors[field] = `The ${description} date is required.`;
-  else if (!isRealIsoDate(value)) errors[field] = `Enter a real ${description} date.`;
+  else if (!isRealIsoDate(value)) errors[field] = `Enter a valid ${description} date.`;
 }
 
 function validateOutsideBreaks(input: TripFormInput, errors: TripValidationErrors): void {
@@ -309,10 +309,10 @@ function validateOutsideBreaks(input: TripFormInput, errors: TripValidationError
       continue;
     }
     ids.add(outsideBreak.id);
-    if (!outsideBreak.leftDate) fieldErrors.leftDate = 'Enter when you left Schengen.';
-    else if (!isRealIsoDate(outsideBreak.leftDate)) fieldErrors.leftDate = 'Enter a real date.';
-    if (!outsideBreak.reentryDate) fieldErrors.reentryDate = 'Enter when you re-entered Schengen.';
-    else if (!isRealIsoDate(outsideBreak.reentryDate)) fieldErrors.reentryDate = 'Enter a real date.';
+    if (!outsideBreak.leftDate) fieldErrors.leftDate = 'Enter an exit date.';
+    else if (!isRealIsoDate(outsideBreak.leftDate)) fieldErrors.leftDate = 'Enter a valid exit date.';
+    if (!outsideBreak.reentryDate) fieldErrors.reentryDate = 'Enter a re-entry date.';
+    else if (!isRealIsoDate(outsideBreak.reentryDate)) fieldErrors.reentryDate = 'Enter a valid re-entry date.';
 
     if (!fieldErrors.leftDate && !fieldErrors.reentryDate) {
       if (dayNumber(outsideBreak.reentryDate) - dayNumber(outsideBreak.leftDate) < 2) {
@@ -332,10 +332,10 @@ function validateOutsideBreaks(input: TripFormInput, errors: TripValidationError
   for (const outsideBreak of sorted) {
     const fieldErrors = errors.breakFields?.[outsideBreak.id] ?? {};
     if (outsideBreak.leftDate < input.entryDate || outsideBreak.leftDate > input.exitDate) {
-      fieldErrors.leftDate = 'This date must fall within the trip.';
+      fieldErrors.leftDate = 'The exit date must fall within the trip.';
     }
     if (outsideBreak.reentryDate < input.entryDate || outsideBreak.reentryDate > input.exitDate) {
-      fieldErrors.reentryDate = 'This date must fall within the trip.';
+      fieldErrors.reentryDate = 'The re-entry date must fall within the trip.';
     }
     if (outsideBreak.leftDate < previousReentry) {
       fieldErrors.leftDate = 'Outside-Schengen breaks cannot overlap.';

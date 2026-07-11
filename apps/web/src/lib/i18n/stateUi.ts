@@ -30,6 +30,45 @@ const labels: Record<Locale, StateLabels> = {
   ar: {addDates:'إضافة تواريخ',addTrip:'إضافة رحلة',atLimit:'عند الحد',countedDays:'أيام محتسبة',countedDayLeaves:'يخرج يوم محتسب من النافذة',currentExit:'الخروج الحالي',day:'يوم',days:'أيام',daysAcrossTrip:'خلال هذه الرحلة',daysOver:'أيام فوق الحد',daysRemain:'أيام متبقية',daysReturn:'أيام تعود',firstOverLimit:'أول يوم فوق الحد',fits:'مناسبة',fixPlan:'قصّر الرحلة أو انقلها ثم أعد الحساب',highestWindow:'أعلى نافذة متأثرة',laterTripAffected:'ستتأثر رحلة لاحقة',latestSafeExit:'آخر خروج آمن',needsChanges:'تحتاج إلى تعديل',nextReturn:'العودة التالية',noDaysReturn:'لا تعود أيام محتسبة',noReturning:'لا توجد أيام عائدة في هذه النافذة',noSafeContinuous:'لا توجد إقامة نهائية متصلة وآمنة من تاريخ الدخول هذا',noSafeStay:'لا توجد إقامة آمنة',notApplicable:'غير منطبق',proposalPrompt:'أضف رحلة مقترحة للتحقق من الالتزامات اللاحقة',safeBuffer:'أيام كهامش آمن',safeUntil:'آمن حتى',simulateDetails:'أدخل بيانات إقامة شنغن صالحة',thisTrip:'هذه الرحلة',trip:'رحلة',used:'مستخدمة',pdfButton:'إنشاء PDF للحدود',pdfHelper:'تصدير PDF غير متاح بعد. أنشئ حسابًا لحفظ رحلاتك؛ لن يُحصّل أي دفع.',pdfTitle:'تصدير PDF غير متاح بعد',pdfMessage:'أنشئ حسابًا للاحتفاظ برحلاتك للزيارات المتكررة. يسجل SCHNGN الاهتمام المجمع بميزة PDF فقط ولا يفرض رسومًا.',unlockButton:'فتح المخطط الكامل',unlockHelper:'المخطط الكامل غير متاح بعد. أنشئ حسابًا لحفظ رحلاتك؛ لن يُحصّل أي دفع.',unlockTitle:'المخطط الكامل قريبًا',unlockMessage:'أنشئ حسابًا للاحتفاظ برحلاتك للزيارات المتكررة. يسجل SCHNGN السعر المختار فقط ولا يفرض رسومًا.'}
 };
 
+const completedCopy: Record<Locale, { history: string; label: string }> = {
+  en: {
+    history: 'This completed trip is included in your history. Review the counted days against your travel records.',
+    label: 'Completed'
+  },
+  fr: {
+    history: 'Ce voyage terminé est inclus dans votre historique. Vérifiez les jours comptés par rapport à vos documents de voyage.',
+    label: 'Terminé'
+  },
+  de: {
+    history: 'Diese abgeschlossene Reise ist in Ihrem Verlauf enthalten. Gleichen Sie die gezählten Tage mit Ihren Reiseunterlagen ab.',
+    label: 'Abgeschlossen'
+  },
+  es: {
+    history: 'Este viaje completado está incluido en tu historial. Contrasta los días contados con tus documentos de viaje.',
+    label: 'Completado'
+  },
+  it: {
+    history: 'Questo viaggio completato è incluso nella cronologia. Verifica i giorni conteggiati rispetto ai documenti di viaggio.',
+    label: 'Completato'
+  },
+  ru: {
+    history: 'Эта завершённая поездка включена в вашу историю. Сверьте учтённые дни с данными о поездке.',
+    label: 'Завершена'
+  },
+  tr: {
+    history: 'Bu tamamlanmış seyahat geçmişinize dahildir. Sayılan günleri seyahat kayıtlarınızla karşılaştırın.',
+    label: 'Tamamlandı'
+  },
+  he: {
+    history: 'הנסיעה שהושלמה נכללת בהיסטוריה שלכם. השוו את הימים שנספרו לרישומי הנסיעה שלכם.',
+    label: 'הושלמה'
+  },
+  ar: {
+    history: 'هذه الرحلة المكتملة مدرجة في سجلك. راجع الأيام المحتسبة مقابل سجلات سفرك.',
+    label: 'مكتملة'
+  }
+};
+
 const shortDate = (locale: Locale, iso: string) => formatDate(locale, iso, { day:'numeric', month:'short' });
 const fullRange = (locale: Locale, start: string, end: string) => `${formatDate(locale,start,{day:'numeric',month:'short'})}–${formatDate(locale,end,{day:'numeric',month:'short',year:'numeric'})}`;
 
@@ -132,13 +171,14 @@ function localizeMaxStayLabel(locale: Locale, label: string, l: StateLabels): st
 export function localizeDashboardState(locale: Locale, state: DashboardState): DashboardState {
   if (locale === 'en') return state;
   const l = labels[locale];
+  const completed = completedCopy[locale];
   const name = state.targetTrip?.label || l.trip;
   const over = state.usage.overLimit;
   return {...state,
-    actionCopy: !state.targetTrip ? l.proposalPrompt : over ? l.fixPlan : state.latestSafeExitDate ? `${l.currentExit}: ${shortDate(locale,state.targetTrip.stays.at(-1)?.exitDate ?? state.referenceDate)} · ${l.latestSafeExit}: ${shortDate(locale,state.latestSafeExitDate)}` : l.noSafeContinuous,
+    actionCopy: !state.targetTrip ? l.proposalPrompt : state.completed ? completed.history : over ? l.fixPlan : state.latestSafeExitDate ? `${l.currentExit}: ${shortDate(locale,state.targetTrip.stays.at(-1)?.exitDate ?? state.referenceDate)} · ${l.latestSafeExit}: ${shortDate(locale,state.latestSafeExitDate)}` : l.noSafeContinuous,
     heroMetric: formatDayMetric(locale, over ? state.usage.overBy : state.usage.daysRemaining, over ? 'over' : 'safeBuffer'),
     latestSafeExitLabel: state.latestSafeExitDate ? shortDate(locale,state.latestSafeExitDate) : state.targetTrip ? l.noSafeStay : l.addDates,
-    statusLabel: !state.targetTrip ? l.addTrip : `${name} · ${over ? l.needsChanges : state.statusTone === 'close' ? l.atLimit : l.fits}`,
+    statusLabel: !state.targetTrip ? l.addTrip : `${name} · ${state.completed ? completed.label : over ? l.needsChanges : state.statusTone === 'close' ? l.atLimit : l.fits}`,
     whyCopy: `${shortDate(locale,state.referenceDate)} · ${formatCountedRatio(locale,state.usage.daysUsed)} · ${formatDayMetric(locale,over ? state.usage.overBy : state.usage.daysRemaining,over ? 'over' : 'remaining')}`,
     windowLabel: fullRange(locale,state.usage.windowStart,state.usage.windowEnd)
   };
@@ -147,19 +187,21 @@ export function localizeDashboardState(locale: Locale, state: DashboardState): D
 export function localizeSimulationState(locale: Locale, state: TripSimulationState): TripSimulationState {
   if (locale === 'en') return state;
   const l = labels[locale];
+  const completed = completedCopy[locale];
   const errors = Object.fromEntries(Object.entries(state.errors).map(([key,value]) => [key, key === 'breakFields' && value && typeof value === 'object'
     ? Object.fromEntries(Object.entries(value).map(([id,fields]) => [id,Object.fromEntries(Object.keys(fields as object).map((field)=>[field,l.simulateDetails]))]))
     : l.simulateDetails])) as TripSimulationState['errors'];
   if (!state.valid || !state.usage) return {...state,errors,firstFixCopy:l.simulateDetails,latestSafeExitLabel:l.addDates,maxStayLabel:l.addDates,statusLabel:l.addDates,summaryCopy:l.proposalPrompt};
   const name = state.simulatedTrip?.label || l.thisTrip;
   const over = state.statusTone === 'risk';
+  const laterConflict = state.completed && Boolean(state.conflict && state.conflict.tripStatus !== 'proposal');
   const latest = state.latestSafeExitDate ? shortDate(locale,state.latestSafeExitDate) : l.noSafeStay;
   return {...state,
-    firstFixCopy: over ? l.fixPlan : `${l.safeUntil}: ${latest}`,
+    firstFixCopy: laterConflict ? `${l.laterTripAffected}. ${completed.history}` : state.completed ? completed.history : over ? l.fixPlan : `${l.safeUntil}: ${latest}`,
     latestSafeExitLabel: latest,
     maxStayLabel: localizeMaxStayLabel(locale,state.maxStayLabel,l),
-    statusLabel: `${name} · ${over ? l.needsChanges : state.statusTone === 'close' ? l.atLimit : l.fits}`,
-    summaryCopy: `${formatCountedRatio(locale,state.usage.daysUsed)} · ${over ? l.firstOverLimit : formatDayMetric(locale,state.usage.daysRemaining,'remaining')}`
+    statusLabel: `${name} · ${state.completed ? completed.label : over ? l.needsChanges : state.statusTone === 'close' ? l.atLimit : l.fits}`,
+    summaryCopy: `${laterConflict ? `${l.laterTripAffected} · ` : ''}${formatCountedRatio(locale,state.usage.daysUsed)} · ${over ? l.firstOverLimit : formatDayMetric(locale,state.usage.daysRemaining,'remaining')}`
   };
 }
 

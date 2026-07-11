@@ -1,26 +1,29 @@
 <script lang="ts">
   import { addDays, formatISODate, parseISODate } from '@schngn/engine';
-  import type { Locale } from '$lib/i18n';
+  import { intlLocale, type Locale } from '$lib/i18n';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
   import { createWhatIfUiTranslator, formatAdjusterFeedback } from '$lib/i18n/whatIfUi';
   import type { AdjustmentRange, DateAdjustment } from '$lib/simulator/whatIfDates';
-  import type { TripSimulationState } from '$lib/simulator/tripSimulator';
-  import type { EditableTrip } from '$lib/trips/tripCrud';
+  import type { ProposedTripInput, TripSimulationState } from '$lib/simulator/tripSimulator';
+  import { SCHENGEN_COUNTRY_OPTIONS } from '$lib/trips/countries';
+  import { createOutsideBreak, MAX_OUTSIDE_BREAKS, MAX_TRIP_LABEL_LENGTH } from '$lib/trips/tripCrud';
   import StatusChip from './StatusChip.svelte';
-  import TimelineLedger from './TimelineLedger.svelte';
   import WhatIfAdjuster from './WhatIfAdjuster.svelte';
 
   interface Props {
-    baseTrips: EditableTrip[];
+    accentColor?: string;
+    blockingMessage?: string;
     entryDate: string;
     entryMax?: string;
     exitDate: string;
     exitMin?: string;
     hasChanges: boolean;
+    form: ProposedTripInput;
     headingId?: string;
     locale?: Locale;
     onClose: () => void;
     onDatesChange: (adjustment: DateAdjustment) => void;
+    onFormChange: (form: ProposedTripInput) => void;
     onSave: () => void | Promise<void>;
     panelId?: string;
     range: AdjustmentRange;
@@ -29,16 +32,19 @@
   }
 
   let {
-    baseTrips,
+    accentColor = 'var(--whatif)',
+    blockingMessage = '',
     entryDate,
     entryMax,
     exitDate,
     exitMin,
     hasChanges,
+    form,
     headingId: requestedHeadingId,
     locale = 'en',
     onClose,
     onDatesChange,
+    onFormChange,
     onSave,
     panelId,
     range,
@@ -49,10 +55,9 @@
   const instanceId = $props.id();
   let headingId = $derived(requestedHeadingId ?? `${instanceId}-heading`);
   const resultId = `${instanceId}-result`;
-  const timelineHeadingId = `${instanceId}-timeline-heading`;
 
-  let deep = $derived(createAppDeepUiTranslator(locale));
   let whatIf = $derived(createWhatIfUiTranslator(locale));
+  let deep = $derived(createAppDeepUiTranslator(locale));
   let hasValidResult = $derived(state.valid && state.usage !== null && state.simulatedTrip !== null);
   let canSave = $derived(hasChanges && hasValidResult);
   let tone = $derived<'safe' | 'risk' | 'whatif'>(
@@ -60,7 +65,7 @@
   );
   let cutoffDate = $derived(firstOverLimitDate(state));
   let rangeFeedback = $derived(state.usage
-    ? formatAdjusterFeedback(locale, state.usage.overBy, state.usage.daysRemaining)
+    ? formatAdjusterFeedback(locale, state.usage.overBy, state.usage.daysRemaining, state.completed)
     : '');
 
   function firstOverLimitDate(simulationState: TripSimulationState): string | null {
@@ -68,9 +73,41 @@
     if (!simulationState.latestSafeExitDate) return null;
     return formatISODate(addDays(parseISODate(simulationState.latestSafeExitDate), 1));
   }
+
+  function countryName(code: string): string {
+    return new Intl.DisplayNames([intlLocale(locale)], { type: 'region' }).of(code) ?? code;
+  }
+
+  function updateField<K extends keyof ProposedTripInput>(field: K, value: ProposedTripInput[K]): void {
+    onFormChange({ ...form, [field]: value });
+  }
+
+  function updateEntryCountry(event: Event): void {
+    const entryCountryCode = (event.currentTarget as HTMLSelectElement).value;
+    onFormChange({
+      ...form,
+      entryCountryCode,
+      exitCountryCode: form.exitCountryCode || entryCountryCode
+    });
+  }
+
+  function addOutsideBreak(): void {
+    if (form.outsideBreaks.length >= MAX_OUTSIDE_BREAKS) return;
+    updateField('outsideBreaks', [...form.outsideBreaks, createOutsideBreak(form.outsideBreaks.length)]);
+  }
+
+  function updateOutsideBreak(id: string, field: 'leftDate' | 'reentryDate', value: string): void {
+    updateField('outsideBreaks', form.outsideBreaks.map((outsideBreak) =>
+      outsideBreak.id === id ? { ...outsideBreak, [field]: value } : outsideBreak
+    ));
+  }
+
+  function removeOutsideBreak(id: string): void {
+    updateField('outsideBreaks', form.outsideBreaks.filter((outsideBreak) => outsideBreak.id !== id));
+  }
 </script>
 
-<section id={panelId} class="trip-adjust-panel" aria-labelledby={headingId} aria-describedby={resultId}>
+<section id={panelId} class="trip-adjust-panel" style={`--adjust-accent:${accentColor}`} aria-labelledby={headingId} aria-describedby={resultId}>
   <header>
     <div>
       <p class="source-name">{sourceName}</p>
@@ -79,6 +116,7 @@
   </header>
 
   <WhatIfAdjuster
+    {accentColor}
     {entryDate}
     {entryMax}
     {exitDate}
@@ -91,6 +129,86 @@
     {onDatesChange}
   />
 
+  <details class="trip-details-editor">
+    <summary>{whatIf('details')}</summary>
+    <div class="details-content">
+      <label for={`${instanceId}-label`}>
+        <span>{deep('tripLabel')} <small>{deep('optional')}</small></span>
+        <input
+          id={`${instanceId}-label`}
+          type="text"
+          maxlength={MAX_TRIP_LABEL_LENGTH}
+          value={form.label ?? ''}
+          oninput={(event) => updateField('label', (event.currentTarget as HTMLInputElement).value)}
+        />
+      </label>
+
+      <div class="detail-grid">
+        <label for={`${instanceId}-entry-country`}>
+          <span>{deep('enteredVia')} <small>{deep('optional')}</small></span>
+          <select id={`${instanceId}-entry-country`} value={form.entryCountryCode ?? ''} onchange={updateEntryCountry}>
+            <option value="">{deep('chooseUseful')}</option>
+            {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
+          </select>
+        </label>
+        <label for={`${instanceId}-exit-country`}>
+          <span>{deep('leftVia')} <small>{deep('optional')}</small></span>
+          <select
+            id={`${instanceId}-exit-country`}
+            value={form.exitCountryCode ?? ''}
+            onchange={(event) => updateField('exitCountryCode', (event.currentTarget as HTMLSelectElement).value)}
+          >
+            <option value="">{deep('chooseUseful')}</option>
+            {#each SCHENGEN_COUNTRY_OPTIONS as country}<option value={country.code}>{countryName(country.code)}</option>{/each}
+          </select>
+        </label>
+      </div>
+      <small class="detail-help">{deep('borderContext')}</small>
+
+      <section class="outside-details" aria-labelledby={`${instanceId}-outside-heading`}>
+        <div class="outside-heading">
+          <div>
+            <h3 id={`${instanceId}-outside-heading`}>{deep('outsideTime')}</h3>
+            <p>{deep('outsideTripHelp')}</p>
+          </div>
+          {#if form.outsideBreaks.length < MAX_OUTSIDE_BREAKS}
+            <button class="detail-action" type="button" onclick={addOutsideBreak}>{deep('addOutside')}</button>
+          {/if}
+        </div>
+        {#each form.outsideBreaks as outsideBreak, index (outsideBreak.id)}
+          <fieldset>
+            <legend>{deep('outsideTime')} {index + 1}</legend>
+            <div class="detail-grid">
+              <label for={`${instanceId}-${outsideBreak.id}-left`}>
+                <span>{deep('left')}</span>
+                <input
+                  id={`${instanceId}-${outsideBreak.id}-left`}
+                  type="date"
+                  min={entryDate}
+                  max={exitDate}
+                  value={outsideBreak.leftDate}
+                  onchange={(event) => updateOutsideBreak(outsideBreak.id, 'leftDate', (event.currentTarget as HTMLInputElement).value)}
+                />
+              </label>
+              <label for={`${instanceId}-${outsideBreak.id}-reentry`}>
+                <span>{deep('reentered')}</span>
+                <input
+                  id={`${instanceId}-${outsideBreak.id}-reentry`}
+                  type="date"
+                  min={entryDate}
+                  max={exitDate}
+                  value={outsideBreak.reentryDate}
+                  onchange={(event) => updateOutsideBreak(outsideBreak.id, 'reentryDate', (event.currentTarget as HTMLInputElement).value)}
+                />
+              </label>
+            </div>
+            <button class="remove-detail" type="button" onclick={() => removeOutsideBreak(outsideBreak.id)}>{deep('removeBreak')}</button>
+          </fieldset>
+        {/each}
+      </section>
+    </div>
+  </details>
+
   {#if hasValidResult && state.usage && state.simulatedTrip}
     <div id={resultId} class="live-result" aria-live="polite" aria-atomic="true">
       <div class="result-heading">
@@ -101,20 +219,15 @@
       <p>{state.summaryCopy}</p>
     </div>
 
-    <TimelineLedger
-      headingId={timelineHeadingId}
-      label={deep('whatIfWindow')}
-      {locale}
-      mode={state.statusTone === 'risk' ? 'risk' : 'planner'}
-      trips={baseTrips}
-      simulation={state.simulatedTrip}
-      referenceDate={state.usage.referenceDate}
-    />
   {:else}
     <div id={resultId} class="invalid-result" role="status" aria-live="polite">
       <strong>{deep('validDates')}</strong>
       <p>{deep('fixFields')}</p>
     </div>
+  {/if}
+
+  {#if blockingMessage}
+    <p class="blocking-message" role="status" aria-live="polite">{blockingMessage}</p>
   {/if}
 
   <div class="actions">
@@ -129,10 +242,9 @@
   .trip-adjust-panel {
     display: grid;
     gap: 18px;
-    border: 1px solid var(--whatif);
-    border-radius: 12px;
-    background: var(--whatif-bg);
-    padding: clamp(16px, 3vw, 24px);
+    border-top: 1px solid color-mix(in srgb, var(--adjust-accent), transparent 58%);
+    background: transparent;
+    padding: 18px 4px 4px;
     box-shadow: none;
   }
 
@@ -158,7 +270,7 @@
 
   .source-name {
     margin-bottom: 3px;
-    color: var(--whatif);
+    color: var(--adjust-accent);
     font-size: 0.9rem;
     font-weight: 700;
     line-height: 1.3;
@@ -177,10 +289,137 @@
   .invalid-result {
     display: grid;
     gap: 8px;
-    border: 1px solid color-mix(in srgb, var(--whatif), transparent 54%);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--surface), var(--whatif-bg) 28%);
+    border-block: 1px solid color-mix(in srgb, var(--adjust-accent), transparent 66%);
+    background: color-mix(in srgb, var(--surface), var(--adjust-accent) 6%);
     padding: 14px;
+  }
+
+  .trip-details-editor {
+    border-block: 1px solid color-mix(in srgb, var(--adjust-accent), transparent 66%);
+    padding-block: 10px;
+  }
+
+  summary {
+    width: fit-content;
+    color: var(--ink);
+    font-weight: 760;
+    cursor: pointer;
+  }
+
+  summary:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--adjust-accent), transparent 35%);
+    outline-offset: 3px;
+  }
+
+  .details-content {
+    display: grid;
+    gap: 14px;
+    padding-top: 14px;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  label {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  label small,
+  .detail-help {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  input,
+  select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    padding: 8px 10px;
+    font: inherit;
+  }
+
+  input[type='date'] {
+    max-inline-size: 100%;
+    padding-inline: 0;
+  }
+
+  .outside-details,
+  .outside-heading {
+    display: grid;
+    gap: 10px;
+  }
+
+  .outside-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  h3,
+  .outside-heading p {
+    margin: 0;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  .outside-heading p {
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  fieldset {
+    display: grid;
+    min-width: 0;
+    gap: 10px;
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  legend {
+    padding-inline: 4px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .detail-action,
+  .remove-detail {
+    min-height: 40px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 7px 10px;
+  }
+
+  .remove-detail {
+    justify-self: start;
+    border: 0;
+    background: transparent;
+    color: var(--risk);
+  }
+
+  .blocking-message {
+    margin: 0;
+    border: 1px solid color-mix(in srgb, var(--whatif), var(--line) 35%);
+    border-radius: 8px;
+    background: var(--whatif-bg);
+    color: var(--whatif);
+    padding: 9px 10px;
+    font-weight: 700;
   }
 
   .result-heading > span {
@@ -251,7 +490,7 @@
   }
 
   button:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--whatif), transparent 30%);
+    outline: 3px solid color-mix(in srgb, var(--adjust-accent), transparent 30%);
     outline-offset: 2px;
   }
 
@@ -272,6 +511,15 @@
     .actions {
       align-items: stretch;
       flex-direction: column;
+    }
+
+    .detail-grid,
+    .outside-heading {
+      grid-template-columns: 1fr;
+    }
+
+    .detail-action {
+      width: 100%;
     }
 
     button {

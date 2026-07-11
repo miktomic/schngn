@@ -67,7 +67,13 @@ export function applySavedTripDateAdjustment(
 
 export function hasSavedTripAdjustmentChanges(trip: EditableTrip, form: ProposedTripInput): boolean {
   const original = createSavedTripAdjustmentDraft(trip).form;
-  if (form.entryDate !== original.entryDate || form.exitDate !== original.exitDate) return true;
+  if (
+    form.label !== original.label
+    || form.entryCountryCode !== original.entryCountryCode
+    || form.exitCountryCode !== original.exitCountryCode
+    || form.entryDate !== original.entryDate
+    || form.exitDate !== original.exitDate
+  ) return true;
 
   const originalBreaks = comparableBreakDates(original);
   const adjustedBreaks = comparableBreakDates(form);

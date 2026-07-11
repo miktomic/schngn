@@ -9,6 +9,7 @@ import {
 } from '@schngn/engine';
 import {
   countTripSchengenDays,
+  currentLocalIsoDate,
   emptyTripForm,
   inclusiveTripDays,
   toEngineTrips,
@@ -40,6 +41,7 @@ export interface TripSimulationConflict {
 }
 
 export interface TripSimulationState {
+  completed: boolean;
   conflict: TripSimulationConflict | null;
   daysUsedLabel: string;
   errors: TripValidationErrors;
@@ -87,16 +89,17 @@ export function emptyProposedTrip(): ProposedTripInput {
 
 export function buildTripSimulationState(
   savedTrips: EditableTrip[],
-  proposed: ProposedTripInput
+  proposed: ProposedTripInput,
+  currentDate: string = currentLocalIsoDate()
 ): TripSimulationState {
-  // Simulations are hypothetical regardless of when the chosen dates fall.
-  // Using the proposed entry as the status reference keeps this path independent
-  // from the real-world clock while the saved-trip form infers Past from today.
+  // Keep the persisted status hypothetical; presentation separately derives
+  // whether the proposed dates have already elapsed.
   const result = upsertTrip([], { ...proposed, id: 'simulation', status: 'what-if' }, proposed.entryDate);
   if (Object.keys(result.errors).length > 0) return emptySimulation(result.errors);
 
   const simulatedTrip = result.trips[0];
   const targetName = simulatedTrip.label || 'This trip';
+  const completed = tripExitDate(simulatedTrip) < currentDate;
   const assessment = assessAffectedItinerary(savedTrips, simulatedTrip, targetName);
   const usage = assessment.conflict?.usage ?? assessment.peakUsage;
   const verdict = assessment.conflict ? { state: 'over' as const } : classifyVerdict(usage);
@@ -105,17 +108,18 @@ export function buildTripSimulationState(
   const conflict = assessment.conflict ? publicConflict(assessment.conflict) : null;
 
   return {
+    completed,
     conflict,
     daysUsedLabel: `${usage.daysUsed} / 90`,
     errors: {},
-    firstFixCopy: formatFirstFixCopy(tone, latestSafeExit, targetName, conflict),
+    firstFixCopy: formatFirstFixCopy(tone, latestSafeExit, targetName, conflict, completed),
     latestSafeExitLabel: latestSafeExit ? formatShortDate(latestSafeExit) : 'No safe stay',
     latestSafeExitDate: latestSafeExit,
     maxStayLabel: formatMaxStayLabel(simulatedTrip, latestSafeExit),
     simulatedTrip,
-    statusLabel: formatStatusLabel(tone, targetName),
+    statusLabel: formatStatusLabel(tone, targetName, completed),
     statusTone: tone,
-    summaryCopy: formatSummaryCopy(tone, usage, targetName, conflict),
+    summaryCopy: formatSummaryCopy(tone, usage, targetName, conflict, completed),
     usage,
     valid: true
   };
@@ -123,6 +127,7 @@ export function buildTripSimulationState(
 
 function emptySimulation(errors: TripValidationErrors): TripSimulationState {
   return {
+    completed: false,
     conflict: null,
     daysUsedLabel: '- / 90',
     errors,
@@ -237,13 +242,32 @@ function publicConflict(conflict: InternalConflict): TripSimulationConflict {
   return { date: conflict.date, tripId: conflict.tripId, tripLabel: conflict.tripLabel, tripStatus: conflict.tripStatus };
 }
 
-function formatStatusLabel(tone: SimulationTone, targetName: string): string {
+function formatStatusLabel(tone: SimulationTone, targetName: string, completed: boolean): string {
+  if (completed) return `${targetName} · Completed`;
   if (tone === 'risk') return `${targetName} needs changes`;
   if (tone === 'close') return `${targetName} at limit`;
   return `${targetName} fits`;
 }
 
-function formatSummaryCopy(tone: SimulationTone, usage: UsageResult, targetName: string, conflict: TripSimulationConflict | null): string {
+function formatSummaryCopy(
+  tone: SimulationTone,
+  usage: UsageResult,
+  targetName: string,
+  conflict: TripSimulationConflict | null,
+  completed: boolean
+): string {
+  if (completed && conflict && conflict.tripStatus !== 'proposal') {
+    return `${conflict.tripLabel} would reach ${usage.daysUsed} / 90 on ${formatShortDate(conflict.date)} because ${targetName} remains in the rolling history. Adjust the later plan, or correct ${targetName} only if its recorded dates are wrong.`;
+  }
+  if (completed) {
+    if (usage.overLimit) {
+      return `${targetName} reached ${usage.daysUsed} / 90 counted days in its highest affected window, ${usage.overBy} ${usage.overBy === 1 ? 'day' : 'days'} over the limit.`;
+    }
+    if (usage.daysRemaining === 0) {
+      return `${targetName} reached the 90-day limit in its highest affected window.`;
+    }
+    return `${targetName} used ${usage.daysUsed} / 90 counted days in its highest affected window. ${usage.daysRemaining} ${usage.daysRemaining === 1 ? 'day remained' : 'days remained'} under the limit.`;
+  }
   if (tone === 'risk' && conflict?.tripStatus !== 'proposal') {
     return `${conflict?.tripLabel ?? 'A later trip'} would reach ${usage.daysUsed} / 90 on ${formatShortDate(conflict?.date ?? usage.referenceDate)} if ${targetName} were added. Change the proposal to protect that commitment.`;
   }
@@ -253,7 +277,19 @@ function formatSummaryCopy(tone: SimulationTone, usage: UsageResult, targetName:
   return `${targetName} fits with ${usage.daysRemaining} safe buffer ${usage.daysRemaining === 1 ? 'day' : 'days'}. Highest affected-day window shows ${usage.daysUsed} counted days.`;
 }
 
-function formatFirstFixCopy(tone: SimulationTone, latestSafeExit: string | null, targetName: string, conflict: TripSimulationConflict | null): string {
+function formatFirstFixCopy(
+  tone: SimulationTone,
+  latestSafeExit: string | null,
+  targetName: string,
+  conflict: TripSimulationConflict | null,
+  completed: boolean
+): string {
+  if (completed && conflict && conflict.tripStatus !== 'proposal') {
+    return `${conflict.tripLabel} is the later plan affected by this completed history. Change that plan, or correct ${targetName} only if the saved dates are inaccurate.`;
+  }
+  if (completed) {
+    return 'This completed trip is included in your history. Review the counted days against your travel records.';
+  }
   if (tone === 'risk' && conflict?.tripStatus !== 'proposal') {
     return latestSafeExit
       ? `First fix: shorten ${targetName} to ${formatShortDate(latestSafeExit)} to protect ${conflict?.tripLabel ?? 'the later trip'}.`

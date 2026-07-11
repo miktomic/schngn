@@ -59,7 +59,18 @@ describe('trip CRUD model', () => {
 
   test('rejects the final exit before the first entry', () => {
     expect(validateTripInput(form({ entryDate: '2026-10-14', exitDate: '2026-10-13' }))).toEqual({
-      exitDate: 'The date you left Schengen cannot be before the date you entered.'
+      exitDate: 'The exit date cannot be before the entry date.'
+    });
+  });
+
+  test('uses neutral entry and exit date validation messages', () => {
+    expect(validateTripInput(form({ entryDate: '', exitDate: '' }))).toEqual({
+      entryDate: 'The entry date is required.',
+      exitDate: 'The exit date is required.'
+    });
+    expect(validateTripInput(form({ entryDate: '2026-02-30', exitDate: '2026-13-01' }))).toEqual({
+      entryDate: 'Enter a valid entry date.',
+      exitDate: 'Enter a valid exit date.'
     });
   });
 
@@ -125,8 +136,39 @@ describe('trip CRUD model', () => {
     ] }))).toMatchObject({ breakFields: { two: { leftDate: 'Outside-Schengen breaks cannot overlap.' } } });
   });
 
+  test('uses neutral exit and re-entry messages for outside-Schengen breaks', () => {
+    expect(validateTripInput(form({ outsideBreaks: [{ id: 'missing', leftDate: '', reentryDate: '' }] }))).toMatchObject({
+      breakFields: {
+        missing: {
+          leftDate: 'Enter an exit date.',
+          reentryDate: 'Enter a re-entry date.'
+        }
+      }
+    });
+    expect(validateTripInput(form({
+      outsideBreaks: [{ id: 'invalid', leftDate: '2026-02-30', reentryDate: '2026-13-01' }]
+    }))).toMatchObject({
+      breakFields: {
+        invalid: {
+          leftDate: 'Enter a valid exit date.',
+          reentryDate: 'Enter a valid re-entry date.'
+        }
+      }
+    });
+    expect(validateTripInput(form({
+      outsideBreaks: [{ id: 'outside-trip', leftDate: '2026-07-13', reentryDate: '2026-07-15' }]
+    }))).toMatchObject({
+      breakFields: {
+        'outside-trip': {
+          leftDate: 'The exit date must fall within the trip.',
+          reentryDate: 'The re-entry date must fall within the trip.'
+        }
+      }
+    });
+  });
+
   test('trims optional labels and rejects impossible dates, statuses, and oversized labels', () => {
-    expect(validateTripInput(form({ entryDate: '2026-02-30' }))).toEqual({ entryDate: 'Enter a real entered-Schengen date.' });
+    expect(validateTripInput(form({ entryDate: '2026-02-30' }))).toEqual({ entryDate: 'Enter a valid entry date.' });
     expect(validateTripInput(form({ status: 'confirmed' as EditableTrip['status'] }))).toEqual({ status: 'Choose past, booked, or what-if.' });
     expect(validateTripInput(form({ label: 'a'.repeat(81) }))).toEqual({ label: 'Keep the trip label to 80 characters or fewer.' });
     expect(upsertTrip([], form({ label: '  Summer trip  ' })).trips[0].label).toBe('Summer trip');
