@@ -1465,6 +1465,56 @@
       </section>
       {/if}
 
+      <section class="screen timeline-section" id="timeline" aria-labelledby="timeline-heading">
+          <div>
+            <p>{singlePage('savedResult')}</p>
+            <h2 id="timeline-heading" class="screen-title" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
+            <p>{tripOnboarding('timelineHelp')}</p>
+          </div>
+          {#if historyReady}
+          <TimelineLedger
+            headingId="canonical-timeline-heading"
+            label={ui('rollingWindow')}
+            {locale}
+            mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
+            {trips}
+            referenceDate={dashboardState.referenceDate}
+            returnDates={timelineReturningForecast.rows.map((row) => row.date)}
+            horizonDays={timelineReturningForecast.horizonDays}
+            onTripSelect={openQuickAdjuster}
+            selectedTripId={quickAdjustSourceId}
+            tripName={displayTripName}
+          />
+          {#if quickAdjustNotice}<p class="micro-safe" aria-live="polite">{quickAdjustNotice}</p>{/if}
+          {#if quickAdjustError}<p class="storage-warning" aria-live="polite">{quickAdjustError}</p>{/if}
+          {#if quickAdjustVisible && quickAdjustRange && quickAdjustSourceTrip}
+            <TripAdjustPanel
+              panelId="quick-adjust-panel"
+              headingId="quick-adjust-heading"
+              entryDate={quickAdjustForm.entryDate}
+              entryMax={quickAdjustBounds.entryMax}
+              exitDate={quickAdjustForm.exitDate}
+              exitMin={quickAdjustBounds.exitMin}
+              hasChanges={quickAdjustHasChanges}
+              locale={locale}
+              range={quickAdjustRange}
+              state={quickAdjustState}
+              baseTrips={quickAdjustBaseTrips}
+              sourceName={displayTripName(quickAdjustSourceTrip)}
+              onDatesChange={adjustQuickTrip}
+              onSave={saveQuickAdjustment}
+              onClose={closeQuickAdjuster}
+            />
+          {/if}
+          {:else}
+            <section class="history-gate panel" aria-labelledby="timeline-history-gate-heading">
+              <h2 id="timeline-history-gate-heading">{tripOnboarding('title')}</h2>
+              <p>{tripOnboarding('copy')}</p>
+              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
+            </section>
+          {/if}
+      </section>
+
       <section class="screen trips-section" id="trips" aria-labelledby="trips-heading">
         <div class="section-heading">
           <div>
@@ -1520,56 +1570,6 @@
             <p class="storage-warning">{rt('limitReached', { max: MAX_TRIP_COUNT })}</p>
           {/if}
         {/if}
-      </section>
-
-      <section class="screen timeline-section" id="timeline" aria-labelledby="timeline-heading">
-          <div>
-            <p>{singlePage('savedResult')}</p>
-            <h2 id="timeline-heading" class="screen-title" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
-            <p>{tripOnboarding('timelineHelp')}</p>
-          </div>
-          {#if historyReady}
-          <TimelineLedger
-            headingId="canonical-timeline-heading"
-            label={ui('rollingWindow')}
-            {locale}
-            mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
-            {trips}
-            referenceDate={dashboardState.referenceDate}
-            returnDates={timelineReturningForecast.rows.map((row) => row.date)}
-            horizonDays={timelineReturningForecast.horizonDays}
-            onTripSelect={openQuickAdjuster}
-            selectedTripId={quickAdjustSourceId}
-            tripName={displayTripName}
-          />
-          {#if quickAdjustNotice}<p class="micro-safe" aria-live="polite">{quickAdjustNotice}</p>{/if}
-          {#if quickAdjustError}<p class="storage-warning" aria-live="polite">{quickAdjustError}</p>{/if}
-          {#if quickAdjustVisible && quickAdjustRange && quickAdjustSourceTrip}
-            <TripAdjustPanel
-              panelId="quick-adjust-panel"
-              headingId="quick-adjust-heading"
-              entryDate={quickAdjustForm.entryDate}
-              entryMax={quickAdjustBounds.entryMax}
-              exitDate={quickAdjustForm.exitDate}
-              exitMin={quickAdjustBounds.exitMin}
-              hasChanges={quickAdjustHasChanges}
-              locale={locale}
-              range={quickAdjustRange}
-              state={quickAdjustState}
-              baseTrips={quickAdjustBaseTrips}
-              sourceName={displayTripName(quickAdjustSourceTrip)}
-              onDatesChange={adjustQuickTrip}
-              onSave={saveQuickAdjustment}
-              onClose={closeQuickAdjuster}
-            />
-          {/if}
-          {:else}
-            <section class="history-gate panel" aria-labelledby="timeline-history-gate-heading">
-              <h2 id="timeline-history-gate-heading">{tripOnboarding('title')}</h2>
-              <p>{tripOnboarding('copy')}</p>
-              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-            </section>
-          {/if}
       </section>
 
       {#if SECOND_PLANNER_ENABLED}

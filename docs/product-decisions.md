@@ -267,7 +267,7 @@ This is an approved **scope change** after the original no-account MVP cards. It
 
 ## DEC-14 — One continuous calculator workspace
 
-**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, trip history, canonical timeline, calculation details, report, and account/data controls are addressable by stable URL hashes. Trip entry uses one collapsed-by-default editor; saved trips use one user-facing model and are adjusted from the canonical timeline.
+**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, canonical timeline, trip history, calculation details, report, and account/data controls are addressable by stable URL hashes. Trip entry uses one collapsed-by-default editor; the timeline precedes the saved-trip list, and saved trips use one user-facing model and are adjusted from that canonical timeline.
 
 **Implementation constraints:**
 
@@ -276,7 +276,7 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - The saved-trip timeline is canonical. Planner and edit previews may show contextual timelines, but they never replace or mutate the saved result until the user saves.
 - Every saved trip can open the same draggable/resizable adjuster. Saving preserves the trip ID, status semantics, countries, and outside-Schengen breaks.
 - Future planning and saved-trip adjustment keep independent state so experimenting with one cannot silently alter the other.
-- `#status`, `#trips`, `#timeline`, `#details`, `#report`, and `#account` restore on refresh and browser navigation. Old `?section=` links are canonicalized to the matching anchor, with the retired planner destination mapping to `#trips`.
+- `#status`, `#timeline`, `#trips`, `#details`, `#report`, and `#account` restore on refresh and browser navigation. Old `?section=` links are canonicalized to the matching anchor, with the retired planner destination mapping to `#trips`.
 - Calculation details, returns, report, and account/data controls use accessible progressive disclosure so the primary workflow stays compact without hiding evidence.
 
 ## Board state

@@ -1,7 +1,7 @@
 export const APP_ANCHORS = [
   'status',
-  'trips',
   'timeline',
+  'trips',
   'details',
   'report',
   'account'

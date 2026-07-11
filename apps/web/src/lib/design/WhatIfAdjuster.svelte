@@ -12,16 +12,30 @@
   } from '$lib/simulator/whatIfDates';
 
   interface Props {
+    cutoffDate?: string | null;
     entryDate: string;
     entryMax?: string;
     exitDate: string;
     exitMin?: string;
+    feedback?: string;
+    feedbackTone?: 'safe' | 'limit' | 'risk';
     range: AdjustmentRange;
     locale?: Locale;
     onDatesChange: (adjustment: DateAdjustment) => void;
   }
 
-  let { entryDate, entryMax, exitDate, exitMin, range, locale = 'en', onDatesChange }: Props = $props();
+  let {
+    cutoffDate = null,
+    entryDate,
+    entryMax,
+    exitDate,
+    exitMin,
+    feedback = '',
+    feedbackTone = 'safe',
+    range,
+    locale = 'en',
+    onDatesChange
+  }: Props = $props();
   let rail: HTMLDivElement;
   let drag = $state<{ entryDate: string; exitDate: string; mode: AdjustmentMode; pointerX: number; width: number } | null>(null);
   let copy = $derived(createWhatIfUiTranslator(locale));
@@ -31,6 +45,10 @@
   let right = $derived((exitOffset / range.totalDays) * 100);
   let width = $derived(Math.max(1.5, right - left));
   let compact = $derived(right - left < 8);
+  let midpoint = $derived(Math.max(12, Math.min(88, (left + right) / 2)));
+  let cutoffOffset = $derived(cutoffDate ? differenceInDays(range.minDate, cutoffDate) : -1);
+  let cutoffPosition = $derived((cutoffOffset / range.totalDays) * 100);
+  let cutoffVisible = $derived(cutoffDate !== null && cutoffOffset >= 0 && cutoffOffset <= range.totalDays);
   let entryMaximum = $derived(entryMax ?? exitDate);
   let exitMinimum = $derived(exitMin ?? entryDate);
   let entryMaximumOffset = $derived(differenceInDays(range.minDate, entryMaximum));
@@ -83,6 +101,17 @@
     <div class="rail-labels" aria-hidden="true"><span>{labelDate(range.minDate)}</span><span>{labelDate(range.maxDate)}</span></div>
     <div class="rail" bind:this={rail}>
       <span class="rail-line" aria-hidden="true"></span>
+      <span class="handle-date entry-date" class:compact style={`left:${left}%`}>
+        <small>{copy('entry')}</small><bdi>{labelDate(entryDate)}</bdi>
+      </span>
+      <span class="handle-date exit-date" class:compact style={`left:${right}%`}>
+        <small>{copy('exit')}</small><bdi>{labelDate(exitDate)}</bdi>
+      </span>
+      {#if cutoffVisible && cutoffDate}
+        <span class="cutoff-marker" style={`left:${cutoffPosition}%`} aria-label={`${copy('overFrom')} ${labelDate(cutoffDate)}`}>
+          <span>{copy('overFrom')} <bdi>{labelDate(cutoffDate)}</bdi></span>
+        </span>
+      {/if}
       <button
         class="trip-block"
         class:dragging={drag?.mode === 'move'}
@@ -131,6 +160,14 @@
         onpointercancel={endDrag}
         onkeydown={(event) => handleKey(event, 'exit')}
       ></button>
+      {#if feedback}
+        <output
+          class="range-feedback {feedbackTone}"
+          style={`left:${midpoint}%`}
+          aria-live="polite"
+          aria-atomic="true"
+        >{feedback}</output>
+      {/if}
     </div>
   </div>
 
@@ -149,24 +186,89 @@
   p { max-width: 65ch; color: var(--muted); line-height: 1.45; }
   .rail-shell { display: grid; gap: 6px; }
   .rail-labels { display: flex; justify-content: space-between; color: var(--muted); font: 500 0.72rem/1.3 'IBM Plex Mono', ui-monospace, monospace; }
-  .rail { position: relative; height: 64px; touch-action: none; }
-  .rail-line { position: absolute; inset: 28px 0 auto; height: 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
-  .trip-block { position: absolute; top: 18px; z-index: 1; min-width: 22px; height: 28px; border: 1px solid var(--whatif); border-radius: 7px; background: var(--whatif-bg); color: var(--whatif); cursor: grab; touch-action: none; }
+  .rail { position: relative; height: 128px; touch-action: none; }
+  .rail-line { position: absolute; inset: 52px 0 auto; height: 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
+  .trip-block { position: absolute; top: 42px; z-index: 2; min-width: 22px; height: 28px; border: 1px solid var(--whatif); border-radius: 7px; background: var(--whatif-bg); color: var(--whatif); cursor: grab; touch-action: none; }
   .trip-block::before { content: ''; position: absolute; inset: -8px -11px; }
   .trip-block:active, .trip-block.dragging { cursor: grabbing; background: color-mix(in srgb, var(--whatif-bg), var(--whatif) 12%); }
   .trip-block span { font: 700 0.72rem/1 'IBM Plex Mono', ui-monospace, monospace; pointer-events: none; }
-  .handle { position: absolute; top: 10px; z-index: 2; width: 44px; height: 44px; margin-left: -22px; border: 0; background: transparent; cursor: ew-resize; touch-action: none; }
+  .handle { position: absolute; top: 34px; z-index: 4; width: 44px; height: 44px; margin-left: -22px; border: 0; background: transparent; cursor: ew-resize; touch-action: none; }
   .handle::before { content: ''; position: absolute; inset: 2px 8px; border: 2px solid var(--whatif); border-radius: 8px; background: var(--surface); }
   .handle::after { content: ''; position: absolute; inset: 13px auto auto 21px; width: 2px; height: 18px; border-radius: 2px; background: var(--whatif); }
   .handle.dragging::before { background: var(--whatif-bg); }
   .entry-handle.compact { margin-left: -46px; }
   .exit-handle.compact { margin-left: 2px; }
+  .handle-date {
+    position: absolute;
+    top: 0;
+    z-index: 3;
+    display: grid;
+    gap: 1px;
+    min-width: max-content;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    pointer-events: none;
+    text-align: center;
+    transform: translateX(-50%);
+  }
+  .handle-date small { color: var(--muted); font: inherit; font-size: 0.62rem; font-weight: 650; }
+  .entry-date.compact { transform: translateX(calc(-100% - 24px)); }
+  .exit-date.compact { transform: translateX(24px); }
+  .cutoff-marker {
+    position: absolute;
+    top: 39px;
+    bottom: 42px;
+    z-index: 3;
+    width: 2px;
+    background: var(--risk);
+    pointer-events: none;
+  }
+  .cutoff-marker::before { position: absolute; top: -3px; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--risk); content: ''; }
+  .cutoff-marker > span {
+    position: absolute;
+    top: 43px;
+    left: 50%;
+    min-width: max-content;
+    border-radius: 5px;
+    background: var(--risk-bg);
+    color: var(--risk);
+    padding: 3px 6px;
+    font-size: 0.65rem;
+    font-weight: 750;
+    transform: translateX(-50%);
+  }
+  .range-feedback {
+    position: absolute;
+    top: 91px;
+    z-index: 5;
+    min-width: max-content;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.2;
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+  .range-feedback.safe { background: var(--safe-bg); color: var(--safe); }
+  .range-feedback.limit { background: var(--whatif-bg); color: var(--whatif); }
+  .range-feedback.risk { background: var(--risk-bg); color: var(--risk); }
   button:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid color-mix(in srgb, var(--whatif), transparent 35%); outline-offset: 2px; }
   details { border-top: 1px solid color-mix(in srgb, var(--whatif), transparent 65%); padding-top: 10px; }
   summary { width: fit-content; min-height: 36px; color: var(--ink); cursor: pointer; font-weight: 700; }
   .exact-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 10px; }
   label { display: grid; gap: 5px; color: var(--ink); font-weight: 700; }
   input { min-width: 0; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); padding: 8px 10px; font: inherit; }
-  @media (max-width: 520px) { .exact-dates { grid-template-columns: 1fr; } .rail-labels { font-size: 0.65rem; } }
+  @media (max-width: 520px) {
+    .exact-dates { grid-template-columns: 1fr; }
+    .rail-labels { font-size: 0.65rem; }
+    .handle-date { font-size: 0.65rem; }
+    .cutoff-marker > span { min-width: 0; width: 96px; text-align: center; }
+  }
   @media (prefers-reduced-motion: reduce) { .trip-block, .handle { transition: none; } }
 </style>
+    feedback?: string;
+    feedbackTone?: 'safe' | 'limit' | 'risk';

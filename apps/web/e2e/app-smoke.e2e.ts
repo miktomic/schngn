@@ -153,7 +153,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await expect(page.getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
     await expect(page.getByRole('img', { name: /0 counted days in this inclusive 180-day window/i })).toHaveCount(0);
-    expect(await sectionComesBefore(page, 'trips', 'timeline')).toBe(true);
+    expect(await sectionComesBefore(page, 'timeline', 'trips')).toBe(true);
     await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await tripForm.getByLabel(/Trip label/).fill('Offline Spain stay');
@@ -330,7 +330,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await tripForm.getByLabel(/Trip label/).fill('Quick-adjust booking');
     await tripForm.getByLabel('Entered Schengen').fill('2026-07-01');
-    await tripForm.getByLabel('Left Schengen').fill('2026-07-05');
+    await tripForm.getByLabel('Left Schengen').fill('2026-09-28');
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
     await page.reload();
     await expect(page.locator('#status').getByRole('heading', { name: /safe buffer days/i })).toBeVisible();
@@ -341,8 +341,18 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page).toHaveURL(/\/app#timeline$/);
     await expect(quickAdjuster.getByRole('heading', { name: 'Adjust trip dates' })).toBeFocused();
     const moveTrip = quickAdjuster.getByRole('button', { name: /Move trip:/ });
+    const exitHandle = quickAdjuster.getByRole('slider', { name: /Departure:/ });
     const saveChanges = quickAdjuster.getByRole('button', { name: 'Save changes' });
     await expect(quickAdjuster.getByText('Live what-if result')).toBeVisible();
+    await expect(quickAdjuster.locator('.entry-date')).toContainText('1 Jul 2026');
+    await expect(quickAdjuster.locator('.exit-date')).toContainText('28 Sept 2026');
+    await expect(quickAdjuster.locator('.range-feedback')).toHaveText('At the limit');
+    await expect(quickAdjuster.locator('.cutoff-marker')).toContainText('Over limit from 29 Sept 2026');
+    await exitHandle.press('ArrowRight');
+    await expect(quickAdjuster.locator('.exit-date')).toContainText('29 Sept 2026');
+    await expect(quickAdjuster.locator('.range-feedback')).toHaveText('Over by 1 day');
+    await expect(quickAdjuster.locator('.cutoff-marker')).toContainText('Over limit from 29 Sept 2026');
+    await exitHandle.press('ArrowLeft');
     await expect(saveChanges).toBeDisabled();
     await moveTrip.press('ArrowRight');
     await expect(saveChanges).toBeEnabled();
@@ -356,7 +366,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByText('1 trip stored on this device.')).toBeVisible();
     await page.getByRole('button', { name: 'Edit Quick-adjust booking' }).click();
     await expect(page.locator('#trip-entry')).toHaveValue('2026-07-02');
-    await expect(page.locator('#trip-exit')).toHaveValue('2026-07-06');
+    await expect(page.locator('#trip-exit')).toHaveValue('2026-09-29');
   });
 
   test('records a multi-country journey with an outside-Schengen break', async ({ page }) => {
@@ -504,6 +514,11 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
     await expect(page.locator('#trips').getByRole('heading', { name: 'Your trips', exact: true })).toBeVisible();
     await expect(page.locator('#trips').getByRole('heading', { name: 'Spain booking', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => {
+      const timeline = document.querySelector('#timeline');
+      const trips = document.querySelector('#trips');
+      return Boolean(timeline && trips && (timeline.compareDocumentPosition(trips) & Node.DOCUMENT_POSITION_FOLLOWING));
+    })).toBe(true);
 
     await addTrip(page, {
       countryCode: 'FR',

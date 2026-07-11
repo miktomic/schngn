@@ -20,7 +20,7 @@ import {
   formatLocalizedOutsideDays,
   formatLocalizedSchengenDays
 } from '../src/lib/i18n/appRuntimeUi';
-import { createWhatIfUiTranslator, whatIfCatalogLengths } from '../src/lib/i18n/whatIfUi';
+import { createWhatIfUiTranslator, formatAdjusterFeedback, whatIfCatalogLengths } from '../src/lib/i18n/whatIfUi';
 import { createTripOnboardingTranslator, tripOnboardingCatalogLengths } from '../src/lib/i18n/tripOnboardingUi';
 import {
   localizeDashboardState,
@@ -210,6 +210,10 @@ describe('whole-site localization', () => {
     }
     expect(returnStartLabel('he')).toBe('ימים מתחילים לחזור');
     expect(returnStartLabel('ar')).toBe('تبدأ الأيام بالعودة');
+    expect(formatAdjusterFeedback('en', 1, 0)).toBe('Over by 1 day');
+    expect(formatAdjusterFeedback('en', 0, 0)).toBe('At the limit');
+    expect(formatAdjusterFeedback('he', 2, 0)).toBe('יומיים מעל למגבלה');
+    expect(formatAdjusterFeedback('ar', 0, 2)).toContain('يومان');
   });
 
   test('keeps localized navigation offline-safe and declares language alternates', () => {

@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { addDays, formatISODate, parseISODate } from '@schngn/engine';
   import type { Locale } from '$lib/i18n';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
-  import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
+  import { createWhatIfUiTranslator, formatAdjusterFeedback } from '$lib/i18n/whatIfUi';
   import type { AdjustmentRange, DateAdjustment } from '$lib/simulator/whatIfDates';
   import type { TripSimulationState } from '$lib/simulator/tripSimulator';
   import type { EditableTrip } from '$lib/trips/tripCrud';
@@ -57,6 +58,16 @@
   let tone = $derived<'safe' | 'risk' | 'whatif'>(
     state.statusTone === 'risk' ? 'risk' : state.statusTone === 'safe' ? 'safe' : 'whatif'
   );
+  let cutoffDate = $derived(firstOverLimitDate(state));
+  let rangeFeedback = $derived(state.usage
+    ? formatAdjusterFeedback(locale, state.usage.overBy, state.usage.daysRemaining)
+    : '');
+
+  function firstOverLimitDate(simulationState: TripSimulationState): string | null {
+    if (simulationState.conflict?.date) return simulationState.conflict.date;
+    if (!simulationState.latestSafeExitDate) return null;
+    return formatISODate(addDays(parseISODate(simulationState.latestSafeExitDate), 1));
+  }
 </script>
 
 <section id={panelId} class="trip-adjust-panel" aria-labelledby={headingId} aria-describedby={resultId}>
@@ -74,6 +85,9 @@
     {exitMin}
     {range}
     {locale}
+    {cutoffDate}
+    feedback={rangeFeedback}
+    feedbackTone={state.statusTone === 'risk' ? 'risk' : state.statusTone === 'close' ? 'limit' : 'safe'}
     {onDatesChange}
   />
 

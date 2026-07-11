@@ -12,8 +12,8 @@ describe('single-page app anchors', () => {
   test('recognizes only the supported workspace anchors', () => {
     const expected: AppAnchor[] = [
       'status',
-      'trips',
       'timeline',
+      'trips',
       'details',
       'report',
       'account'
