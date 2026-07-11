@@ -35,6 +35,7 @@ import { buildPdfReportFakeDoorState } from '../src/lib/fake-door/pdfReportFakeD
 import { buildUnlockFakeDoorState } from '../src/lib/fake-door/unlockFakeDoor';
 import { buildReturningDaysForecast } from '../src/lib/returns/returningDays';
 import { makeTrip } from './trip-fixtures';
+import { formatReturnsTimelineSummary, formatRollingTimelineSummary } from '../src/lib/i18n/timelineUi';
 
 describe('whole-site localization', () => {
   test('supports all approved locales and both RTL languages', () => {
@@ -193,6 +194,11 @@ describe('whole-site localization', () => {
     expect(formatLocalizedOutsideDays('he', 2)).toBe('יומיים מחוץ לשנגן');
     expect(formatLocalizedSchengenDays('ru', 2)).toBe('2 дня в Шенгене');
     expect(formatLocalizedOutsideDays('ar', 3)).toBe(`${arabicThree} أيام خارج شنغن`);
+
+    expect(formatRollingTimelineSummary('he', 89, 1, 0)).toContain('נותר 1 יום של מרווח בטוח.');
+    expect(formatRollingTimelineSummary('he', 88, 2, 0)).toContain('נותרו יומיים של מרווח בטוח.');
+    expect(formatRollingTimelineSummary('ar', 88, 2, 0)).toContain('يومان');
+    expect(formatReturnsTimelineSummary('ru', 2, 30)).toContain('2 дня вернутся');
   });
 
   test('keeps localized navigation offline-safe and declares language alternates', () => {

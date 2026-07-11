@@ -9,6 +9,7 @@
   import { tripEntryDate, tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
   import { intlLocale, type Locale } from '$lib/i18n';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
+  import { formatReturnsTimelineSummary, formatRollingTimelineSummary } from '$lib/i18n/timelineUi';
 
   type TimelineMode = 'safe' | 'risk' | 'planner' | 'returns';
   type SegmentKind = 'past' | 'booked' | 'whatif' | 'risk' | 'return' | 'empty';
@@ -124,7 +125,7 @@
       rangeLabel: formatDateRange(startDate, endDate, input.locale ?? 'en'),
       segments,
       startDate,
-      summary: rollingSummary(input.locale ?? 'en', usage.daysUsed, usage.daysRemaining, usage.overBy)
+      summary: formatRollingTimelineSummary(input.locale ?? 'en', usage.daysUsed, usage.daysRemaining, usage.overBy)
     };
   }
 
@@ -142,38 +143,8 @@
       rangeLabel: formatDateRange(startDate, endDate, input.locale ?? 'en'),
       segments,
       startDate,
-      summary: returnsSummary(input.locale ?? 'en', returned, days.length)
+      summary: formatReturnsTimelineSummary(input.locale ?? 'en', returned, days.length)
     };
-  }
-
-  function rollingSummary(summaryLocale: Locale, used: number, remaining: number, overBy: number): string {
-    const values: Record<Locale, string> = {
-      en: `${used} counted ${used === 1 ? 'day' : 'days'} in this inclusive 180-day window. ${overBy > 0 ? `${overBy} ${overBy === 1 ? 'day is' : 'days are'} over the 90-day limit.` : `${remaining} safe buffer ${remaining === 1 ? 'day remains' : 'days remain'}.`}`,
-      fr: `${used} ${used === 1 ? 'jour compté' : 'jours comptés'} dans cette fenêtre inclusive de 180 jours. ${overBy > 0 ? `${overBy} au-delà de la limite de 90 jours.` : `${remaining} ${remaining === 1 ? 'jour de marge sûre restant' : 'jours de marge sûre restants'}.`}`,
-      de: `${used} ${used === 1 ? 'gezählter Tag' : 'gezählte Tage'} in diesem inklusiven 180-Tage-Fenster. ${overBy > 0 ? `${overBy} über dem 90-Tage-Limit.` : `${remaining} ${remaining === 1 ? 'sicherer Puffertag verbleibt' : 'sichere Puffertage verbleiben'}.`}`,
-      es: `${used} ${used === 1 ? 'día contado' : 'días contados'} en esta ventana inclusiva de 180 días. ${overBy > 0 ? `${overBy} por encima del límite de 90 días.` : `Quedan ${remaining} ${remaining === 1 ? 'día de margen seguro' : 'días de margen seguro'}.`}`,
-      it: `${used} ${used === 1 ? 'giorno conteggiato' : 'giorni conteggiati'} nella finestra inclusiva di 180 giorni. ${overBy > 0 ? `${overBy} oltre il limite di 90 giorni.` : `Restano ${remaining} ${remaining === 1 ? 'giorno di margine sicuro' : 'giorni di margine sicuro'}.`}`,
-      ru: `${used} ${used === 1 ? 'учтённый день' : 'учтённых дней'} в этом 180-дневном окне. ${overBy > 0 ? `Превышение лимита 90 дней: ${overBy}.` : `Безопасный запас: ${remaining} дн.`}`,
-      tr: `Bu 180 günlük pencerede ${used} gün sayıldı. ${overBy > 0 ? `90 günlük sınır ${overBy} gün aşıldı.` : `${remaining} güvenli tampon gün kaldı.`}`,
-      he: `${used} ימים נספרו בחלון הכולל של 180 יום. ${overBy > 0 ? `חריגה של ${overBy} ימים ממגבלת 90 הימים.` : `נותרו ${remaining} ימי מרווח בטוח.`}`,
-      ar: `احتُسب ${used} يومًا في نافذة 180 يومًا الشاملة. ${overBy > 0 ? `تجاوز حد 90 يومًا بمقدار ${overBy}.` : `يتبقى هامش آمن قدره ${remaining} يومًا.`}`
-    };
-    return values[summaryLocale];
-  }
-
-  function returnsSummary(summaryLocale: Locale, returned: number, forecastDays: number): string {
-    const values: Record<Locale, string> = {
-      en: returned > 0 ? `${returned} counted ${returned === 1 ? 'day returns' : 'days return'} to the allowance during this ${forecastDays}-day forecast.` : `No counted days return to the allowance during this ${forecastDays}-day forecast.`,
-      fr: returned > 0 ? `${returned} ${returned === 1 ? 'jour revient' : 'jours reviennent'} pendant cette prévision de ${forecastDays} jours.` : `Aucun jour ne revient pendant cette prévision de ${forecastDays} jours.`,
-      de: returned > 0 ? `${returned} ${returned === 1 ? 'Tag kehrt' : 'Tage kehren'} in dieser ${forecastDays}-Tage-Prognose zurück.` : `In dieser ${forecastDays}-Tage-Prognose kehren keine Tage zurück.`,
-      es: returned > 0 ? `${returned} ${returned === 1 ? 'día vuelve' : 'días vuelven'} durante esta previsión de ${forecastDays} días.` : `No vuelve ningún día durante esta previsión de ${forecastDays} días.`,
-      it: returned > 0 ? `${returned} ${returned === 1 ? 'giorno torna' : 'giorni tornano'} nella previsione di ${forecastDays} giorni.` : `Nessun giorno torna nella previsione di ${forecastDays} giorni.`,
-      ru: returned > 0 ? `За прогнозные ${forecastDays} дней вернётся дней: ${returned}.` : `За прогнозные ${forecastDays} дней учтённые дни не вернутся.`,
-      tr: returned > 0 ? `${forecastDays} günlük tahminde ${returned} gün geri döner.` : `${forecastDays} günlük tahminde sayılan gün geri dönmez.`,
-      he: returned > 0 ? `${returned} ימים חוזרים במהלך תחזית של ${forecastDays} יום.` : `לא חוזרים ימים במהלך תחזית של ${forecastDays} יום.`,
-      ar: returned > 0 ? `يعود ${returned} يومًا خلال توقع ${forecastDays} يومًا.` : `لا تعود أيام خلال توقع ${forecastDays} يومًا.`
-    };
-    return values[summaryLocale];
   }
 
   function addTripDays(
