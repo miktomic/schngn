@@ -84,9 +84,16 @@ describe('localized calculation explanation', () => {
       makeTrip('past', 'Prior Schengen', '2026-01-01', '2026-03-31'),
       makeTrip('italy', 'Italy', '2026-06-29', '2026-06-29', 'booked', 'IT')
     ];
+    const russianDate = new Intl.DateTimeFormat(intlLocale('ru'), {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC'
+    });
+    const windowStart = russianDate.format(new Date('2026-01-01T00:00:00.000Z'));
+    const windowEnd = russianDate.format(new Date('2026-06-29T00:00:00.000Z'));
 
     expect(buildExplanationState(trips, '2026-06-29', 'ru').summary)
-      .toBe('91 учтённый день в период с 1 янв. по 29 июня. Это на 1 день больше лимита в 90 дней.');
+      .toBe(`91 учтённый день в период с ${windowStart} по ${windowEnd}. Это на 1 день больше лимита в 90 дней.`);
     expect(buildExplanationState(trips, '2026-06-29', 'tr').verdictLine).toContain('resmî kaynakları');
     expect(buildExplanationState(trips, '2026-06-29', 'de').verdictLine).toContain('offizielle Quellen');
   });
