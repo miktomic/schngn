@@ -270,5 +270,3 @@
   }
   @media (prefers-reduced-motion: reduce) { .trip-block, .handle { transition: none; } }
 </style>
-    feedback?: string;
-    feedbackTone?: 'safe' | 'limit' | 'risk';

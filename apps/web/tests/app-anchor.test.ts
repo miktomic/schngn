@@ -10,13 +10,7 @@ import {
 
 describe('single-page app anchors', () => {
   test('recognizes only the supported workspace anchors', () => {
-    const expected: AppAnchor[] = [
-      'status',
-      'timeline',
-      'trips',
-      'report',
-      'account'
-    ];
+    const expected: AppAnchor[] = ['status', 'trips', 'report', 'account'];
 
     expect(APP_ANCHORS).toEqual(expected);
     for (const anchor of expected) expect(isAppAnchor(anchor)).toBe(true);
@@ -25,9 +19,10 @@ describe('single-page app anchors', () => {
   });
 
   test('restores a valid hash and defaults missing or invalid hashes to status', () => {
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app#timeline'))).toBe('timeline');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#trips'))).toBe('trips');
     expect(appAnchorFromUrl(new URL('https://schngn.com/he/app#account'))).toBe('account');
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app#details'))).toBe('timeline');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#timeline'))).toBe('trips');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#details'))).toBe('trips');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#unknown'))).toBe('status');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app'))).toBe('status');
   });
@@ -37,8 +32,8 @@ describe('single-page app anchors', () => {
     ['trip', 'trips'],
     ['trips', 'trips'],
     ['planner', 'trips'],
-    ['proof', 'timeline'],
-    ['returns', 'timeline'],
+    ['proof', 'trips'],
+    ['returns', 'trips'],
     ['report', 'report'],
     ['waitlist', 'report'],
     ['privacy', 'account']
@@ -57,8 +52,8 @@ describe('single-page app anchors', () => {
       'https://schngn.com/he/app?market=uk&account=connected&campaign=summer#status'
     );
 
-    expect(appAnchorUrl(current, 'timeline')).toBe(
-      '/he/app?market=uk&account=connected&campaign=summer#timeline'
+    expect(appAnchorUrl(current, 'trips')).toBe(
+      '/he/app?market=uk&account=connected&campaign=summer#trips'
     );
   });
 
@@ -68,7 +63,7 @@ describe('single-page app anchors', () => {
     );
 
     expect(canonicalAppAnchorUrl(legacy)).toBe(
-      '/fr/app?market=uk&account=connected#timeline'
+      '/fr/app?market=uk&account=connected#trips'
     );
     expect(legacy.href).toBe(
       'https://schngn.com/fr/app?market=uk&section=returns&account=connected#plan'
@@ -84,6 +79,13 @@ describe('single-page app anchors', () => {
 
     expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app?market=uk#invalid'))).toBe(
       '/app?market=uk#status'
+    );
+
+    expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app#timeline'))).toBe(
+      '/app#trips'
+    );
+    expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app#details'))).toBe(
+      '/app#trips'
     );
   });
 });

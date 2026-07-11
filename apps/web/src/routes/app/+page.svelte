@@ -143,6 +143,7 @@
   let importMessage = '';
   let importError = '';
   let importInput: HTMLInputElement;
+  let tripDialog: HTMLDialogElement;
   let pdfIntentMessageVisible = false;
   let unlockIntentMessageVisible = false;
   let market: UnlockMarket = 'eu';
@@ -247,17 +248,24 @@
     trackPageView();
     void initializeAccount();
     if (shouldRestoreAnchor) window.requestAnimationFrame(() => scrollToAnchor(currentAnchor, false, false));
-    const handlePopState = () => {
-      currentAnchor = appAnchorFromUrl(new URL(window.location.href));
+    const handleLocationChange = () => {
+      const nextUrl = new URL(window.location.href);
+      const nextCanonicalUrl = canonicalAppAnchorUrl(nextUrl);
+      currentAnchor = appAnchorFromUrl(nextUrl);
       openAnchorDisclosure(currentAnchor);
+      if (`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}` !== nextCanonicalUrl) {
+        replaceState(nextCanonicalUrl, page.state);
+      }
       scrollToAnchor(currentAnchor, false, false);
     };
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
     return () => {
       accountIdentityEpoch += 1;
       unsubscribeClerk?.();
       unsubscribeClerk = null;
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
     };
   });
 
@@ -758,6 +766,8 @@
   }
 
   function startAddTrip(): void {
+    resetQuickAdjuster();
+    pendingDeleteTripId = null;
     editingTripId = null;
     tripForm = emptyTripForm('booked');
     formErrors = {};
@@ -765,10 +775,11 @@
     tripEditorVisible = true;
     navigateToAnchor('trips');
     trackCalculatorStart('trip_form');
-    focusElementAfterRender('trip-heading');
+    openTripDialogAfterRender();
   }
 
   function startEditTrip(trip: EditableTrip): void {
+    resetQuickAdjuster();
     editingTripId = trip.id;
     const form = tripToForm(trip);
     tripForm = { ...form, status: statusForTripDates(form.status, form.exitDate) };
@@ -777,17 +788,18 @@
     pendingDeleteTripId = null;
     tripEditorVisible = true;
     navigateToAnchor('trips');
-    focusElementAfterRender('trip-heading');
+    openTripDialogAfterRender();
   }
 
   function cancelTripForm(): void {
-    const returnId = editingTripId ? `trip-row-${editingTripId}` : 'add-trip-button';
+    const returnId = editingTripId ? `trip-trigger-${editingTripId}` : 'add-trip-button';
     editingTripId = null;
     tripForm = emptyTripForm('booked');
     formErrors = {};
     outsideWindowConfirmationVisible = false;
+    if (tripDialog?.open) tripDialog.close();
     tripEditorVisible = false;
-    focusElementAfterRender(returnId);
+    focusElementAfterRender(returnId, 'trips-heading');
   }
 
   function saveTrip(confirmOutsideWindow = false): void {
@@ -821,8 +833,9 @@
     }
     editingTripId = null;
     tripForm = emptyTripForm('booked');
+    if (tripDialog?.open) tripDialog.close();
     tripEditorVisible = false;
-    focusElementAfterRender(savedTripId ? `trip-row-${savedTripId}` : 'trips-heading');
+    focusElementAfterRender(savedTripId ? `trip-trigger-${savedTripId}` : 'trips-heading', 'trips-heading');
   }
 
   function updateTripExitDate(event: Event): void {
@@ -850,6 +863,7 @@
 
   function deletePendingTrip(): void {
     if (!pendingDeleteTripId) return;
+    if (quickAdjustSourceId === pendingDeleteTripId) resetQuickAdjuster();
     persistTrips(deleteTripById(trips, pendingDeleteTripId));
     pendingDeleteTripId = null;
   }
@@ -979,6 +993,7 @@
 
   function openQuickAdjuster(target: EditableTrip | null = dashboardState.targetTrip): void {
     if (!target) return;
+    if (isTripBeforeRollingWindow(target, tripFormToday)) olderTripsVisible = true;
     const draft = createSavedTripAdjustmentDraft(target);
     quickAdjustForm = draft.form;
     quickAdjustSourceId = target.id;
@@ -987,18 +1002,32 @@
     quickAdjustNotice = '';
     quickAdjustError = '';
     trackSimulationRun('dashboard');
-    if (currentAnchor === 'timeline') scrollToAnchor('timeline', false, true);
-    else navigateToAnchor('timeline');
+    if (currentAnchor === 'trips') scrollToAnchor('trips', false, true);
+    else navigateToAnchor('trips');
     focusElementAfterRender('quick-adjust-heading');
   }
 
+  function toggleQuickAdjuster(target: EditableTrip): void {
+    if (quickAdjustVisible && quickAdjustSourceId === target.id) {
+      closeQuickAdjuster();
+      return;
+    }
+    openQuickAdjuster(target);
+  }
+
   function closeQuickAdjuster(): void {
+    const returnId = quickAdjustSourceId ? `trip-trigger-${quickAdjustSourceId}` : 'trips-heading';
+    resetQuickAdjuster();
+    focusElementAfterRender(returnId, 'trips-heading');
+  }
+
+  function resetQuickAdjuster(): void {
     quickAdjustVisible = false;
     quickAdjustSourceId = null;
     quickAdjustRange = null;
     quickAdjustForm = emptySimulationForm();
     quickAdjustError = '';
-    focusElementAfterRender('canonical-timeline-heading-trip-picker');
+    quickAdjustNotice = '';
   }
 
   function adjustQuickTrip(adjustment: DateAdjustment): void {
@@ -1009,6 +1038,8 @@
 
   function saveQuickAdjustment(): void {
     if (!quickAdjustSourceId || !quickAdjustState.valid || !quickAdjustHasChanges) return;
+    const adjustedTripId = quickAdjustSourceId;
+    const returnId = `trip-trigger-${adjustedTripId}`;
     const result = commitSavedTripAdjustment(trips, quickAdjustSourceId, quickAdjustForm, tripFormToday);
     if (!result.updated) {
       quickAdjustError = whatIfUi('unavailable');
@@ -1016,6 +1047,8 @@
     }
 
     const persisted = persistTrips(result.trips);
+    const adjustedTrip = result.trips.find((trip) => trip.id === adjustedTripId);
+    if (adjustedTrip && isTripBeforeRollingWindow(adjustedTrip, tripFormToday)) olderTripsVisible = true;
     quickAdjustVisible = false;
     quickAdjustSourceId = null;
     quickAdjustRange = null;
@@ -1024,7 +1057,7 @@
     quickAdjustNotice = persisted
       ? whatIfUi('updated')
       : rt('importedTemporary', { count: tripCount(result.trips.length) });
-    focusElementAfterRender('canonical-timeline-heading-trip-picker');
+    focusElementAfterRender(returnId, 'trips-heading');
   }
 
   function simulationChanged(): void {
@@ -1033,12 +1066,27 @@
     simulationOutsideWindowConfirmationVisible = false;
   }
 
-  function focusElementAfterRender(id: string): void {
+  function toggleOlderTrips(): void {
+    if (olderTripsVisible && quickAdjustSourceTrip && isTripBeforeRollingWindow(quickAdjustSourceTrip, tripFormToday)) {
+      resetQuickAdjuster();
+    }
+    olderTripsVisible = !olderTripsVisible;
+  }
+
+  function focusElementAfterRender(id: string, fallbackId?: string): void {
     if (!browser) return;
     window.requestAnimationFrame(() => {
-      const element = document.getElementById(id);
+      const element = document.getElementById(id) ?? (fallbackId ? document.getElementById(fallbackId) : null);
       element?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
       element?.focus({ preventScroll: true });
+    });
+  }
+
+  function openTripDialogAfterRender(): void {
+    if (!browser) return;
+    window.requestAnimationFrame(() => {
+      if (!tripDialog?.open) tripDialog?.showModal();
+      document.getElementById('trip-heading')?.focus({ preventScroll: true });
     });
   }
 
@@ -1135,6 +1183,15 @@
 
   function displayTripName(trip: EditableTrip): string {
     return trip.label || displayRoute(trip);
+  }
+
+  function tripDisclosureLabel(trip: EditableTrip): string {
+    return [
+      whatIfUi('adjust'),
+      displayTripName(trip),
+      trip.label ? displayRoute(trip) : null,
+      formatDateRange(tripEntryDate(trip), tripExitDate(trip))
+    ].filter(Boolean).join(' · ');
   }
 
   function trackPageView(): void {
@@ -1290,7 +1347,6 @@
           <h1 id="status-heading" class="screen-title" tabindex="-1">{tripOnboarding('title')}</h1>
           <p class="intro-copy">{tripOnboarding('copy')}</p>
           <div class="button-row">
-            <button id="add-trip-button" class="primary-button" type="button" aria-expanded={tripEditorVisible} aria-controls="trip-editor" onclick={startAddTrip}>{ui('addFirst')}</button>
             <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
           </div>
         {:else}
@@ -1309,7 +1365,6 @@
             <p class="history-assumption">{singlePage('historyAssumption')}</p>
           {/if}
           <div class="button-row">
-            <button id="add-trip-button" class="primary-button" type="button" aria-expanded={tripEditorVisible} aria-controls="trip-editor" onclick={startAddTrip}>{ui('addTrip')}</button>
             {#if dashboardState.targetTrip && !quickAdjustVisible}<button class="secondary-button what-if-action" type="button" onclick={() => openQuickAdjuster()}>{whatIfUi('adjust')}</button>{/if}
           </div>
         {/if}
@@ -1317,7 +1372,13 @@
 
       <div class="workspace-flow">
       {#if tripEditorVisible}
-      <section class="screen inline-trip-editor" id="trip-editor" aria-labelledby="trip-heading">
+      <dialog
+        bind:this={tripDialog}
+        class="trip-dialog"
+        id="trip-editor"
+        aria-labelledby="trip-heading"
+        oncancel={(event) => { event.preventDefault(); cancelTripForm(); }}
+      >
         <div class="section-heading">
           <p>{ui('navTrips')}</p>
           <h2 id="trip-heading" class="screen-title" tabindex="-1">{editingTripId ? deep('editStay') : deep('addStay')}</h2>
@@ -1459,58 +1520,8 @@
             </div>
           {/if}
         </form>
-      </section>
+      </dialog>
       {/if}
-
-      <section class="screen timeline-section" id="timeline" aria-labelledby="timeline-heading">
-          <div>
-            <p>{singlePage('savedResult')}</p>
-            <h2 id="timeline-heading" class="screen-title" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
-            <p>{tripOnboarding('timelineHelp')}</p>
-          </div>
-          {#if historyReady}
-          <TimelineLedger
-            headingId="canonical-timeline-heading"
-            label={ui('rollingWindow')}
-            {locale}
-            mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
-            {trips}
-            referenceDate={dashboardState.referenceDate}
-            returnDates={timelineReturningForecast.rows.map((row) => row.date)}
-            horizonDays={timelineReturningForecast.horizonDays}
-            onTripSelect={openQuickAdjuster}
-            selectedTripId={quickAdjustSourceId}
-            tripName={displayTripName}
-          />
-          {#if quickAdjustNotice}<p class="micro-safe" aria-live="polite">{quickAdjustNotice}</p>{/if}
-          {#if quickAdjustError}<p class="storage-warning" aria-live="polite">{quickAdjustError}</p>{/if}
-          {#if quickAdjustVisible && quickAdjustRange && quickAdjustSourceTrip}
-            <TripAdjustPanel
-              panelId="quick-adjust-panel"
-              headingId="quick-adjust-heading"
-              entryDate={quickAdjustForm.entryDate}
-              entryMax={quickAdjustBounds.entryMax}
-              exitDate={quickAdjustForm.exitDate}
-              exitMin={quickAdjustBounds.exitMin}
-              hasChanges={quickAdjustHasChanges}
-              locale={locale}
-              range={quickAdjustRange}
-              state={quickAdjustState}
-              baseTrips={quickAdjustBaseTrips}
-              sourceName={displayTripName(quickAdjustSourceTrip)}
-              onDatesChange={adjustQuickTrip}
-              onSave={saveQuickAdjustment}
-              onClose={closeQuickAdjuster}
-            />
-          {/if}
-          {:else}
-            <section class="history-gate panel" aria-labelledby="timeline-history-gate-heading">
-              <h2 id="timeline-history-gate-heading">{tripOnboarding('title')}</h2>
-              <p>{tripOnboarding('copy')}</p>
-              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-            </section>
-          {/if}
-      </section>
 
       <section class="screen trips-section" id="trips" aria-labelledby="trips-heading">
         <div class="section-heading">
@@ -1519,6 +1530,27 @@
             <h2 id="trips-heading" class="screen-title" tabindex="-1">{tripOnboarding('nav')}</h2>
           </div>
         </div>
+        <section class="embedded-timeline" aria-labelledby="timeline-heading">
+          <div class="timeline-intro">
+            <p>{singlePage('savedResult')}</p>
+            <h2 id="timeline-heading" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
+            <p>{tripOnboarding('timelineHelp')}</p>
+          </div>
+          {#if historyReady}
+            <TimelineLedger
+              headingId="canonical-timeline-heading"
+              label={ui('rollingWindow')}
+              {locale}
+              mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
+              {trips}
+              referenceDate={dashboardState.referenceDate}
+              returnDates={timelineReturningForecast.rows.map((row) => row.date)}
+              horizonDays={timelineReturningForecast.horizonDays}
+            />
+            {#if quickAdjustNotice}<p class="micro-safe" aria-live="polite">{quickAdjustNotice}</p>{/if}
+            {#if quickAdjustError}<p class="storage-warning" aria-live="polite">{quickAdjustError}</p>{/if}
+          {/if}
+        </section>
         {#if trips.length === 0}
           <section class="empty-state" aria-labelledby="empty-trips-heading">
             <h2 id="empty-trips-heading">{singlePage('noPreviousTrips')}</h2>
@@ -1531,19 +1563,48 @@
           </p>
           <div class="trip-list">
             {#each visibleTrips as trip (trip.id)}
-              <article id={`trip-row-${trip.id}`} tabindex="-1" class="booked">
+              <article id={`trip-row-${trip.id}`} class:expanded={quickAdjustVisible && quickAdjustSourceId === trip.id} class="booked">
                 <span class="state-strip booked" aria-hidden="true"></span>
-                <div class="trip-copy">
-                  <h2><bdi>{displayTripName(trip)}</bdi></h2>
-                  {#if trip.label}<p class="trip-route"><bdi>{displayRoute(trip)}</bdi></p>{/if}
-                  <p><bdi>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))}</bdi> · <bdi>{formatLocalizedSchengenDays(locale, countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${formatLocalizedOutsideDays(locale, countTripOutsideDays(trip))}` : ''}</bdi></p>
-                </div>
+                <button
+                  id={`trip-trigger-${trip.id}`}
+                  class="trip-summary-trigger"
+                  type="button"
+                  aria-label={tripDisclosureLabel(trip)}
+                  aria-expanded={quickAdjustVisible && quickAdjustSourceId === trip.id}
+                  aria-controls={quickAdjustVisible && quickAdjustSourceId === trip.id ? 'quick-adjust-panel' : undefined}
+                  onclick={() => toggleQuickAdjuster(trip)}
+                >
+                  <span class="trip-copy">
+                    <strong><bdi>{displayTripName(trip)}</bdi></strong>
+                    {#if trip.label}<span class="trip-route"><bdi>{displayRoute(trip)}</bdi></span>{/if}
+                    <span><bdi>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))}</bdi> · <bdi>{formatLocalizedSchengenDays(locale, countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${formatLocalizedOutsideDays(locale, countTripOutsideDays(trip))}` : ''}</bdi></span>
+                  </span>
+                  <span class="expand-trip-icon" aria-hidden="true">{quickAdjustVisible && quickAdjustSourceId === trip.id ? '−' : '+'}</span>
+                </button>
                 <div class="trip-actions">
-                  <button class="adjust" type="button" aria-label={`${whatIfUi('adjust')} ${displayTripName(trip)}`} onclick={() => openQuickAdjuster(trip)}>{whatIfUi('adjust')}</button>
                   <button type="button" aria-label={`${deep('edit')} ${displayTripName(trip)}`} onclick={() => startEditTrip(trip)}>{deep('edit')}</button>
                   <button class="delete" type="button" aria-label={`${deep('delete')} ${displayTripName(trip)}`} onclick={() => requestDeleteTrip(trip.id)}>{deep('delete')}</button>
                 </div>
               </article>
+              {#if quickAdjustVisible && quickAdjustSourceId === trip.id && quickAdjustRange && quickAdjustSourceTrip}
+                <TripAdjustPanel
+                  panelId="quick-adjust-panel"
+                  headingId="quick-adjust-heading"
+                  entryDate={quickAdjustForm.entryDate}
+                  entryMax={quickAdjustBounds.entryMax}
+                  exitDate={quickAdjustForm.exitDate}
+                  exitMin={quickAdjustBounds.exitMin}
+                  hasChanges={quickAdjustHasChanges}
+                  locale={locale}
+                  range={quickAdjustRange}
+                  state={quickAdjustState}
+                  baseTrips={quickAdjustBaseTrips}
+                  sourceName={displayTripName(quickAdjustSourceTrip)}
+                  onDatesChange={adjustQuickTrip}
+                  onSave={saveQuickAdjustment}
+                  onClose={closeQuickAdjuster}
+                />
+              {/if}
               {#if pendingDeleteTrip?.id === trip.id}
                 <section class="confirm-panel" aria-live="polite" aria-labelledby={`delete-${trip.id}-heading`}>
                   <div>
@@ -1559,7 +1620,7 @@
             {/each}
           </div>
           {#if olderTrips.length > 0}
-            <button class="secondary-button older-trips-toggle" type="button" aria-expanded={olderTripsVisible} onclick={() => (olderTripsVisible = !olderTripsVisible)}>
+            <button class="secondary-button older-trips-toggle" type="button" aria-expanded={olderTripsVisible} onclick={toggleOlderTrips}>
               {olderTripsVisible ? singlePage('hideOlder') : singlePage('showOlder')}
             </button>
           {/if}
@@ -1567,6 +1628,9 @@
             <p class="storage-warning">{rt('limitReached', { max: MAX_TRIP_COUNT })}</p>
           {/if}
         {/if}
+        <div class="add-trip-footer">
+          <button id="add-trip-button" class="primary-button" type="button" aria-haspopup="dialog" aria-controls="trip-editor" onclick={startAddTrip} disabled={trips.length >= MAX_TRIP_COUNT}>{tripOnboarding('addNew')}</button>
+        </div>
       </section>
 
       {#if SECOND_PLANNER_ENABLED}
@@ -2257,8 +2321,62 @@
     grid-row: 1;
   }
 
-  .inline-trip-editor { background: var(--paper); }
-  .timeline-section { background: color-mix(in srgb, var(--paper), var(--surface) 42%); }
+  .trip-dialog {
+    width: min(calc(100% - 32px), 760px);
+    max-width: none;
+    max-height: min(90dvh, 900px);
+    margin: auto;
+    overflow-y: auto;
+    border: 1px solid var(--control-line);
+    border-radius: 12px;
+    background: var(--paper);
+    color: var(--ink);
+    padding: clamp(18px, 3vw, 28px);
+  }
+
+  .trip-dialog::backdrop {
+    background: rgb(10 32 27 / 56%);
+  }
+
+  .trip-dialog > .intro-copy {
+    margin-top: 10px;
+  }
+
+  .embedded-timeline {
+    display: grid;
+    min-width: 0;
+    gap: 14px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .timeline-intro {
+    display: grid;
+    gap: 4px;
+  }
+
+  .timeline-intro > p {
+    max-width: 70ch;
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .timeline-intro > p:first-child {
+    color: var(--safe);
+    font-size: 0.82rem;
+    font-weight: 760;
+  }
+
+  .timeline-intro h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.55rem;
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+
   .plan-section { border-top: 2px solid var(--whatif); }
 
   .narrow-screen {
@@ -2920,6 +3038,11 @@
 
   .trip-list article.booked { background: var(--booked-bg); }
 
+  .trip-list article.expanded {
+    border-color: color-mix(in srgb, var(--whatif), var(--line) 28%);
+    background: color-mix(in srgb, var(--booked-bg), var(--whatif-bg) 32%);
+  }
+
   .onboarding-kicker {
     margin: 0;
     color: var(--safe);
@@ -2938,36 +3061,70 @@
   }
 
   .trip-copy {
+    display: grid;
     min-width: 0;
     flex: 1;
+    gap: 2px;
   }
 
-  .trip-list p {
-    margin: 3px 0 0;
+  .trip-copy > span {
     color: var(--muted);
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
     font-size: 0.8rem;
+    line-height: 1.4;
     overflow-wrap: anywhere;
   }
 
-  .trip-list .trip-route {
+  .trip-copy > strong {
+    color: var(--ink);
+    font-size: 1.05rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .trip-copy .trip-route {
     color: var(--ink);
     font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
     font-size: 0.85rem;
     font-weight: 650;
   }
 
-  .timeline-section > div > p {
-    margin: 4px 0 0;
-    color: var(--muted);
-    line-height: 1.45;
+  .trip-summary-trigger {
+    display: flex;
+    min-width: 0;
+    min-height: 52px;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink);
+    padding: 4px;
+    text-align: start;
   }
 
-  .timeline-section > div > p:first-child {
-    margin: 0 0 5px;
-    color: var(--safe);
-    font-size: 0.82rem;
-    font-weight: 760;
+  .trip-summary-trigger:hover {
+    background: color-mix(in srgb, var(--surface), transparent 42%);
+  }
+
+  .trip-summary-trigger:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--booked), transparent 42%);
+    outline-offset: 2px;
+  }
+
+  .expand-trip-icon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 1.2rem;
+    font-weight: 650;
   }
 
   .trip-actions {
@@ -2983,9 +3140,15 @@
   }
 
   .trip-actions button.delete { color: var(--risk); }
-  .trip-actions button.adjust { color: var(--whatif); }
 
   .older-trips-toggle { justify-self: start; }
+
+  .add-trip-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
 
   .state-strip {
     width: 5px;
@@ -3114,7 +3277,14 @@
     .outside-breaks-heading .compact-button { width: 100%; }
     .section-heading.with-action { align-items: flex-start; flex-direction: column; }
     .trip-list article { align-items: flex-start; flex-wrap: wrap; }
+    .trip-summary-trigger { width: calc(100% - 18px); align-items: flex-start; }
     .trip-actions { width: 100%; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 6px; }
+    .add-trip-footer > button { width: 100%; }
+    .trip-dialog {
+      width: calc(100% - 20px);
+      max-height: calc(100dvh - 20px);
+      padding: 18px 16px;
+    }
     .confirm-panel { align-items: stretch; flex-direction: column; }
     .account-choice-grid { grid-template-columns: 1fr; }
     .return-list article { align-items: flex-start; flex-wrap: wrap; }

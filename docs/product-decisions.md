@@ -267,16 +267,17 @@ This is an approved **scope change** after the original no-account MVP cards. It
 
 ## DEC-14 — One continuous calculator workspace
 
-**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, canonical timeline, trip history, report, and account/data controls are addressable by stable URL hashes. Trip entry uses one collapsed-by-default editor; the timeline precedes the saved-trip list, and saved trips use one user-facing model and are adjusted from that canonical timeline.
+**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The answer, combined Trips workspace, report, and account/data controls are addressable by stable URL hashes. Trips contains the canonical master timeline followed by saved-trip rows; selecting a row expands its adjuster in place, and one bottom “Add new trip” action opens the trip editor as a dialog.
 
 **Implementation constraints:**
 
 - A first-time user sees the previous-trip step before any safe verdict. They may either add history or explicitly confirm that no prior Schengen trips exist; that assumption persists locally.
 - Desktop keeps the current answer visible beside the working surface. Mobile uses one reading column with a compact sticky jump control.
-- The saved-trip timeline is canonical. Planner and edit previews may show contextual timelines, but they never replace or mutate the saved result until the user saves.
-- Every saved trip can open the same draggable/resizable adjuster. Saving preserves the trip ID, status semantics, countries, and outside-Schengen breaks.
+- The master timeline at the top of Trips is canonical. Editor and adjustment previews may show contextual timelines, but they never replace or mutate the saved result until the user saves.
+- Every saved-trip row opens the same draggable/resizable adjuster directly beneath that row. Saving preserves the trip ID, status semantics, countries, and outside-Schengen breaks.
+- The single “Add new trip” action at the bottom of Trips opens the trip editor as a modal dialog; the workspace has no second trip-entry surface.
 - Future planning and saved-trip adjustment keep independent state so experimenting with one cannot silently alter the other.
-- `#status`, `#timeline`, `#trips`, `#report`, and `#account` restore on refresh and browser navigation. Old `?section=` links are canonicalized to the matching anchor, with the retired planner destination mapping to `#trips` and retired calculation-detail destinations mapping to `#timeline`.
+- `#status`, `#trips`, `#report`, and `#account` restore on refresh and browser navigation. Retired `#timeline` and `#details` hashes canonicalize to `#trips`; old planner, proof, and returning-days `?section=` destinations also map to `#trips`.
 - Returning-days, report, and account/data controls use accessible progressive disclosure so the primary workflow stays compact.
 
 ## Board state

@@ -98,7 +98,7 @@ apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
 
-`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `timeline`, `trips`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, with retired planner links mapping to `trips` and retired calculation-detail links mapping to `timeline`. There is one collapsed-by-default trip-entry flow at the top of the workspace. The canonical timeline is the primary view and appears before the saved-trip list. Saved trips share one user-facing model regardless of whether their dates are past or future, and every saved trip can be adjusted from the canonical timeline before changes are explicitly committed.
+`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `trips`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, and retired `#timeline`/`#details` hashes plus planner, proof, and returning-days destinations map to `trips`. The combined Trips workspace contains the canonical master timeline followed by saved-trip rows. Clicking a row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
 
 ## Commands
 
