@@ -144,7 +144,6 @@
   let importMessage = '';
   let importError = '';
   let importInput: HTMLInputElement;
-  let disclaimerNoticeVisible = true;
   let pdfIntentMessageVisible = false;
   let unlockIntentMessageVisible = false;
   let market: UnlockMarket = 'eu';
@@ -1280,25 +1279,6 @@
       </aside>
     {/if}
 
-    {#if disclaimerNoticeVisible}
-      <aside class="disclaimer-notice" aria-labelledby="disclaimer-heading">
-        <div>
-          <h2 id="disclaimer-heading">{ui('planningOnly')}</h2>
-          <p>{legal.footer}</p>
-          <details class="disclaimer-details">
-            <summary>{ui('officialSources')}</summary>
-            <p>{legal.full}</p>
-            <div class="official-links" aria-label={ui('officialSources')}>
-              {#each officialSourceLinks as source}
-                <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
-              {/each}
-            </div>
-          </details>
-        </div>
-        <button class="secondary-button compact" type="button" onclick={() => (disclaimerNoticeVisible = false)}>{ui('dismiss')}</button>
-      </aside>
-    {/if}
-
     <div class="single-page-content" id="main-content">
       <section class="screen answer-section" id="status" aria-labelledby="status-heading">
         {#if !hasLoadedTrips}
@@ -2342,22 +2322,12 @@
     width: min(100%, 600px);
   }
 
-  .disclaimer-notice,
   .storage-alert,
   .legal-footer {
     width: min(calc(100% - 32px), 1120px);
     margin: 16px auto 0;
     border-radius: 10px;
     padding: 14px;
-  }
-
-  .disclaimer-notice {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 18px;
-    border: 1px solid color-mix(in srgb, var(--whatif), var(--line) 35%);
-    background: var(--whatif-bg);
   }
 
   .storage-alert {
@@ -2379,13 +2349,11 @@
     background: var(--paper);
   }
 
-  .disclaimer-notice h2,
   .legal-footer p,
   .section-heading p {
     margin: 0;
   }
 
-  .disclaimer-notice p,
   .legal-footer p {
     max-width: 72ch;
     margin: 6px 0 0;
@@ -2393,20 +2361,6 @@
     line-height: 1.45;
     text-wrap: pretty;
   }
-
-  .disclaimer-details { margin-top: 8px; }
-
-  .disclaimer-details > summary {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    cursor: pointer;
-    color: var(--ink);
-    font-size: 0.9rem;
-    font-weight: 760;
-  }
-
-  .disclaimer-details[open] > summary { color: var(--whatif); }
 
   .official-links {
     display: flex;
@@ -3224,7 +3178,6 @@
     }
     .screen-title { font-size: 2rem; }
     .verdict { font-size: 2.6rem; }
-    .disclaimer-notice { flex-direction: column; }
     .date-fields { grid-template-columns: 1fr; }
     .outside-breaks-heading { align-items: stretch; flex-direction: column; }
     .outside-breaks-heading .compact-button { width: 100%; }

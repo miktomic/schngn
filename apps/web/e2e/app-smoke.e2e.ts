@@ -151,7 +151,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
     expect(offlineReady).toBe(true);
 
-    await page.getByRole('button', { name: 'Dismiss' }).click();
     await expect(page.getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
     await expect(page.getByRole('img', { name: /0 counted days in this inclusive 180-day window/i })).toHaveCount(0);
     expect(await sectionComesBefore(page, 'trips', 'timeline')).toBe(true);
@@ -241,8 +240,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       window.sessionStorage.setItem('schngn.e2e.history-initialized', 'true');
     });
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
-
     const answer = page.locator('#status');
     await expect(answer.getByRole('heading', { name: 'Add your Schengen trips' })).toBeVisible();
     await expect(answer.getByRole('button', { name: 'Add your first trip' })).toBeVisible();
@@ -272,8 +269,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app?market=uk');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
-
     await navigateToAppAnchor(page, 'timeline');
     await page.reload();
     await expect(page.locator('#app-anchor-select')).toHaveValue('timeline');
@@ -308,8 +303,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
-
     await navigateToAppAnchor(page, 'account');
     const account = page.locator('#account');
     await expect(account.getByRole('heading', { name: 'Keep using SCHNGN without an account' })).toBeVisible();
@@ -328,7 +321,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       window.sessionStorage.setItem('schngn.e2e.quick-adjust-initialized', 'true');
     });
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
     await page
       .locator('#status')
       .getByRole('button', { name: 'I don’t have a trip to add yet.' })
@@ -372,7 +364,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
     await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
 
     const form = page.getByRole('form', { name: 'Trip form' });
@@ -411,7 +402,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
     await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
 
     const form = page.getByRole('form', { name: 'Trip form' });
@@ -435,7 +425,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
     await page
       .locator('#status')
       .getByRole('button', { name: 'I don’t have a trip to add yet.' })
@@ -495,7 +484,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('#status').getByRole('heading', { name: 'Add your Schengen trips' })).toBeVisible();
     await expect(page.locator('#status').getByRole('heading', { name: /safe buffer days/i })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Dismiss' }).click();
     await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
     const tripForm = page.getByRole('form', { name: 'Trip form' });
     await expect(tripForm.getByLabel(/Trip label/)).toHaveAttribute('maxlength', '80');
@@ -727,7 +715,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
 
     await page.goto('/app');
-    await page.getByRole('button', { name: 'Dismiss' }).click();
     await page.locator('#status').getByRole('button', { name: 'Add your first trip' }).click();
     const firstTripForm = page.getByRole('form', { name: 'Trip form' });
     await firstTripForm.getByLabel(/Trip label/).fill('Account Italy stay');

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import { OFFICIAL_SOURCE_LINKS, localizedLegalCopy, localizedOfficialSourceLinks } from '../src/lib/legal/legalCopy';
 import { SUPPORTED_LOCALES } from '../src/lib/i18n';
 
@@ -33,5 +34,13 @@ describe('fixed legal/disclaimer copy', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(localizedOfficialSourceLinks(locale)).toHaveLength(3);
     }
+  });
+
+  test('keeps the workspace disclaimer compact instead of repeating it in a dismissible banner', () => {
+    const app = readFileSync('apps/web/src/routes/app/+page.svelte', 'utf8');
+    expect(app).not.toContain('class="disclaimer-notice"');
+    expect(app).not.toContain('disclaimerNoticeVisible');
+    expect(app).toContain('class="legal-footer"');
+    expect(app).toContain("rt('officialSources')");
   });
 });
