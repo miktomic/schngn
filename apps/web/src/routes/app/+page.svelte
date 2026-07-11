@@ -104,6 +104,7 @@
   type AccountIdentity = { userId: string; sessionId: string; epoch: number };
   type AccountRequestContext = AccountIdentity & { token: string };
   const EMPTY_HISTORY_STORAGE_KEY = 'schngn-no-previous-history-v1';
+  const SECOND_PLANNER_ENABLED = false;
 
   $: locale = localeFromPath(page.url.pathname);
   $: t = createTranslator(locale);
@@ -203,7 +204,7 @@
   $: currentTrips = trips.filter((trip) => !isTripBeforeRollingWindow(trip, tripFormToday));
   $: olderTrips = trips.filter((trip) => isTripBeforeRollingWindow(trip, tripFormToday));
   $: visibleTrips = olderTripsVisible ? [...currentTrips, ...olderTrips] : currentTrips;
-  $: historyReady = trips.some((trip) => trip.status === 'past') || historyConfirmedEmpty;
+  $: historyReady = trips.length > 0 || historyConfirmedEmpty;
   $: resolvedTripFormStatus = statusForTripDates(tripForm.status, tripForm.exitDate);
   $: tripFormIsPast = resolvedTripFormStatus === 'past';
   $: simulationSaveStatus = statusForTripDates('booked', simulatorForm.exitDate);
@@ -1043,14 +1044,10 @@
     });
   }
 
-  function openCombinedPlanner(): void {
-    navigateToAnchor('plan');
-  }
-
   function confirmNoPreviousTrips(): void {
     historyConfirmedEmpty = true;
     if (browser) window.localStorage.setItem(EMPTY_HISTORY_STORAGE_KEY, 'true');
-    navigateToAnchor('plan');
+    navigateToAnchor('status');
   }
 
   function continueSimulation(): void {
@@ -1313,15 +1310,8 @@
           <StatusChip tone="safe" label={tripOnboarding('step')} />
           <h1 id="status-heading" class="screen-title" tabindex="-1">{tripOnboarding('title')}</h1>
           <p class="intro-copy">{tripOnboarding('copy')}</p>
-          <section class="panel mint onboarding-steps" aria-labelledby="first-step-heading">
-            <h2 id="first-step-heading">{ui('firstResult')}</h2>
-            <ol>
-              <li>{tripOnboarding('pastAction')}</li>
-              <li>{tripOnboarding('bookedAction')}</li>
-            </ol>
-          </section>
           <div class="button-row">
-            <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addFirst')}</button>
+            <button id="add-trip-button" class="primary-button" type="button" aria-expanded={tripEditorVisible} aria-controls="trip-editor" onclick={startAddTrip}>{ui('addFirst')}</button>
             <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
           </div>
         {:else}
@@ -1340,10 +1330,9 @@
             <p class="history-assumption">{singlePage('historyAssumption')}</p>
           {/if}
           <div class="button-row">
-            <button class="primary-button" type="button" onclick={startAddTrip}>{ui('addTrip')}</button>
+            <button id="add-trip-button" class="primary-button" type="button" aria-expanded={tripEditorVisible} aria-controls="trip-editor" onclick={startAddTrip}>{ui('addTrip')}</button>
             {#if dashboardState.targetTrip && !quickAdjustVisible}<button class="secondary-button what-if-action" type="button" onclick={() => openQuickAdjuster()}>{whatIfUi('adjust')}</button>{/if}
             <button class="secondary-button" type="button" onclick={() => navigateToAnchor('details', true)}>{ui('showCalculation')}</button>
-            <button class="secondary-button" type="button" onclick={openCombinedPlanner}>{ui('planAnother')}</button>
           </div>
         {/if}
       </section>
@@ -1466,19 +1455,6 @@
             {#if formErrors.outsideBreaks}<strong class="field-error">{formErrors.outsideBreaks}</strong>{/if}
           </section>
 
-          {#if tripFormIsPast}
-            <section class="inferred-trip-status" aria-live="polite">
-              <strong>{deep('pastTrip')}</strong>
-              <span>{deep('pastAuto')}</span>
-            </section>
-          {:else}
-            <fieldset class="trip-status-options" aria-describedby={formErrors.status ? 'status-error' : undefined}>
-              <legend>{deep('tripStatus')}</legend>
-              <label class:selected={tripForm.status === 'booked'} class="toggle"><input type="radio" bind:group={tripForm.status} value="booked" /> {deep('booked')}</label>
-              <label class:selected={tripForm.status === 'what-if'} class="toggle what-if-toggle"><input type="radio" bind:group={tripForm.status} value="what-if" /> {deep('whatIf')}</label>
-            </fieldset>
-          {/if}
-          {#if formErrors.status}<strong id="status-error" class="field-error">{formErrors.status}</strong>{/if}
           {#if tripFormPreview}
             <section class="trip-form-summary" aria-live="polite">
               <strong><bdi>{displayRoute(tripFormPreview)}</bdi></strong>
@@ -1509,21 +1485,17 @@
       {/if}
 
       <section class="screen trips-section" id="trips" aria-labelledby="trips-heading">
-        <div class="section-heading with-action">
+        <div class="section-heading">
           <div>
             <p>{accountState === 'synced' || accountState === 'syncing' ? deep('syncedHistory') : deep('deviceHistory')}</p>
             <h2 id="trips-heading" class="screen-title" tabindex="-1">{tripOnboarding('nav')}</h2>
           </div>
-          <button class="primary-button" type="button" onclick={startAddTrip} disabled={trips.length >= MAX_TRIP_COUNT}>{ui('addTrip')}</button>
         </div>
         {#if trips.length === 0}
           <section class="empty-state" aria-labelledby="empty-trips-heading">
             <h2 id="empty-trips-heading">{singlePage('noPreviousTrips')}</h2>
             <p>{tripOnboarding('copy')}</p>
-            <div class="button-row">
-              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
-              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
-            </div>
+            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
           </section>
         {:else}
           <p class="list-summary">
@@ -1531,13 +1503,12 @@
           </p>
           <div class="trip-list">
             {#each visibleTrips as trip (trip.id)}
-              <article id={`trip-row-${trip.id}`} tabindex="-1" class:booked={trip.status === 'booked'} class:past={trip.status === 'past'} class:whatif={trip.status === 'what-if'}>
-                <span class="state-strip {trip.status}" aria-hidden="true"></span>
+              <article id={`trip-row-${trip.id}`} tabindex="-1" class="booked">
+                <span class="state-strip booked" aria-hidden="true"></span>
                 <div class="trip-copy">
                   <h2><bdi>{displayTripName(trip)}</bdi></h2>
                   {#if trip.label}<p class="trip-route"><bdi>{displayRoute(trip)}</bdi></p>{/if}
                   <p><bdi>{formatDateRange(tripEntryDate(trip), tripExitDate(trip))}</bdi> · <bdi>{formatLocalizedSchengenDays(locale, countTripSchengenDays(trip))}{countTripOutsideDays(trip) > 0 ? ` · ${formatLocalizedOutsideDays(locale, countTripOutsideDays(trip))}` : ''}</bdi></p>
-                  <strong>{statusLabel(trip.status)}</strong>
                 </div>
                 <div class="trip-actions">
                   <button class="adjust" type="button" aria-label={`${whatIfUi('adjust')} ${displayTripName(trip)}`} onclick={() => openQuickAdjuster(trip)}>{whatIfUi('adjust')}</button>
@@ -1613,14 +1584,12 @@
             <section class="history-gate panel" aria-labelledby="timeline-history-gate-heading">
               <h2 id="timeline-history-gate-heading">{tripOnboarding('title')}</h2>
               <p>{tripOnboarding('copy')}</p>
-              <div class="button-row">
-                <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
-                <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-              </div>
+              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
             </section>
           {/if}
       </section>
 
+      {#if SECOND_PLANNER_ENABLED}
       <section class="screen plan-section combined-planner" id="plan" aria-labelledby="plan-heading">
         <div class="section-heading">
           <p>{deep('unsavedWhatIf')}</p>
@@ -1811,13 +1780,11 @@
           <section class="history-gate panel" aria-labelledby="plan-history-gate-heading">
             <h2 id="plan-history-gate-heading">{tripOnboarding('title')}</h2>
             <p>{tripOnboarding('copy')}</p>
-            <div class="button-row">
-              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
-              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-            </div>
+            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
           </section>
         {/if}
       </section>
+      {/if}
 
       <section class="screen details-section" id="details" aria-labelledby="details-heading">
         <details class="section-disclosure" bind:open={proofDetailsOpen}>
@@ -1866,10 +1833,7 @@
           <section class="history-gate panel" aria-labelledby="details-history-gate-heading">
             <h2 id="details-history-gate-heading">{tripOnboarding('title')}</h2>
             <p>{tripOnboarding('copy')}</p>
-            <div class="button-row">
-              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
-              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-            </div>
+            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
           </section>
         {/if}
           </div>
@@ -1919,10 +1883,7 @@
           <section class="history-gate panel" aria-labelledby="returns-history-gate-heading">
             <h2 id="returns-history-gate-heading">{tripOnboarding('title')}</h2>
             <p>{tripOnboarding('copy')}</p>
-            <div class="button-row">
-              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
-              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-            </div>
+            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
           </section>
         {/if}
           </div>
@@ -1962,10 +1923,7 @@
           <section class="history-gate panel" aria-labelledby="report-history-gate-heading">
             <h2 id="report-history-gate-heading">{tripOnboarding('title')}</h2>
             <p>{tripOnboarding('copy')}</p>
-            <div class="button-row">
-              <button class="primary-button" type="button" onclick={startAddTrip}>{singlePage('addPreviousTrip')}</button>
-              <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-            </div>
+            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
           </section>
         {/if}
           </div>
@@ -2945,24 +2903,6 @@
 
   .compact-actions { margin-top: 2px; }
 
-  .inferred-trip-status {
-    display: grid;
-    gap: 3px;
-    margin-top: 10px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--paper);
-    padding: 12px;
-  }
-
-  .inferred-trip-status strong { color: var(--ink); }
-
-  .inferred-trip-status span {
-    color: var(--muted);
-    font-size: 0.88rem;
-    line-height: 1.45;
-  }
-
   .trip-form > label,
   .field-group label {
     margin-top: 6px;
@@ -3016,46 +2956,10 @@
     padding: 8px;
   }
 
-  fieldset.trip-status-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
   legend {
     padding: 0 5px;
     color: var(--muted);
     font-weight: 740;
-  }
-
-  .toggle {
-    display: flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    color: var(--muted);
-    font-weight: 720;
-  }
-
-  .toggle.selected {
-    border-color: var(--booked);
-    background: var(--booked-bg);
-    color: var(--booked);
-  }
-
-  .toggle.what-if-toggle.selected {
-    border-color: var(--whatif);
-    background: var(--whatif-bg);
-    color: var(--whatif);
-  }
-
-  .toggle:has(input:focus-visible) { outline: 3px solid var(--safe); outline-offset: 2px; }
-  .toggle input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    min-height: 0;
-    margin: -1px;
-    overflow: hidden;
-    opacity: 0;
   }
 
   .consent-row {
@@ -3118,20 +3022,6 @@
   }
 
   .trip-list article.booked { background: var(--booked-bg); }
-  .trip-list article.whatif { background: var(--whatif-bg); }
-  .trip-list article.past { background: var(--surface); }
-
-  .onboarding-steps ol {
-    display: grid;
-    gap: 8px;
-    margin: 12px 0 0;
-    padding-inline-start: 24px;
-  }
-
-  .onboarding-steps li::marker {
-    color: var(--safe);
-    font-weight: 800;
-  }
 
   .onboarding-kicker {
     margin: 0;
@@ -3172,15 +3062,12 @@
     font-weight: 650;
   }
 
-  .trip-copy strong,
   .ledger strong {
     display: block;
     margin-top: 5px;
     color: var(--booked);
     font-size: 0.8rem;
   }
-
-  .trip-list article.whatif .trip-copy strong { color: var(--whatif); }
 
   .timeline-section > div > p {
     margin: 4px 0 0;

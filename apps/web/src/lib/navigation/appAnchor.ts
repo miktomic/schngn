@@ -2,7 +2,6 @@ export const APP_ANCHORS = [
   'status',
   'trips',
   'timeline',
-  'plan',
   'details',
   'report',
   'account'
@@ -16,7 +15,7 @@ const LEGACY_SECTION_ANCHORS: Readonly<Record<string, AppAnchor>> = {
   dashboard: 'status',
   trip: 'trips',
   trips: 'trips',
-  planner: 'plan',
+  planner: 'trips',
   proof: 'details',
   returns: 'details',
   report: 'report',

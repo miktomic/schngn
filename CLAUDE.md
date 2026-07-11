@@ -98,7 +98,7 @@ apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
 
-`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `trips`, `timeline`, `plan`, `details`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`. The saved-trip timeline is canonical, while planner and adjustment previews remain unsaved until explicitly committed.
+`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `trips`, `timeline`, `details`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, with the retired planner destination mapping to `trips`. There is one collapsed-by-default trip-entry flow at the top of the workspace. Saved trips share one user-facing model regardless of whether their dates are past or future, and every saved trip can be adjusted from the canonical timeline before changes are explicitly committed.
 
 ## Commands
 

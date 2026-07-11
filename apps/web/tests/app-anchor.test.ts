@@ -14,7 +14,6 @@ describe('single-page app anchors', () => {
       'status',
       'trips',
       'timeline',
-      'plan',
       'details',
       'report',
       'account'
@@ -37,7 +36,7 @@ describe('single-page app anchors', () => {
     ['dashboard', 'status'],
     ['trip', 'trips'],
     ['trips', 'trips'],
-    ['planner', 'plan'],
+    ['planner', 'trips'],
     ['proof', 'details'],
     ['returns', 'details'],
     ['report', 'report'],
@@ -48,7 +47,7 @@ describe('single-page app anchors', () => {
   });
 
   test('an explicit legacy section wins over an existing valid hash', () => {
-    expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=planner#timeline'))).toBe('plan');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=planner#timeline'))).toBe('trips');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=unknown#timeline'))).toBe('status');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app?section=#timeline'))).toBe('status');
   });

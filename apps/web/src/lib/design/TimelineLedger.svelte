@@ -90,15 +90,15 @@
   let tripLanes = $derived(buildTripLanes(trips, model.startDate, model.endDate));
 
   const legendCatalog: Record<Locale, string[]> = {
-    en: ['Past trip', 'Booked trip', 'What-if trip', 'Over the limit', 'Day returned', 'Not counted'],
-    fr: ['Voyage passé', 'Voyage réservé', 'Simulation', 'Limite dépassée', 'Jour récupéré', 'Non compté'],
-    de: ['Vergangene Reise', 'Gebuchte Reise', 'Was-wäre-wenn', 'Über dem Limit', 'Tag zurück', 'Nicht gezählt'],
-    es: ['Viaje pasado', 'Viaje reservado', 'Simulación', 'Sobre el límite', 'Día recuperado', 'No contado'],
-    it: ['Viaggio passato', 'Viaggio prenotato', 'Simulazione', 'Oltre il limite', 'Giorno recuperato', 'Non conteggiato'],
-    ru: ['Прошлая поездка', 'Забронированная поездка', 'Сценарий', 'Сверх лимита', 'День возвращён', 'Не учитывается'],
-    tr: ['Geçmiş seyahat', 'Rezerve seyahat', 'Senaryo', 'Sınırın üzerinde', 'Gün geri döndü', 'Sayılmadı'],
-    he: ['נסיעה קודמת', 'נסיעה מוזמנת', 'תרחיש', 'מעל למגבלה', 'יום חזר', 'לא נספר'],
-    ar: ['رحلة سابقة', 'رحلة محجوزة', 'سيناريو', 'فوق الحد', 'يوم مستعاد', 'غير محسوب']
+    en: ['Past trip', 'Trip', 'What-if trip', 'Over the limit', 'Day returned', 'Not counted'],
+    fr: ['Voyage passé', 'Voyage', 'Simulation', 'Limite dépassée', 'Jour récupéré', 'Non compté'],
+    de: ['Vergangene Reise', 'Reise', 'Was-wäre-wenn', 'Über dem Limit', 'Tag zurück', 'Nicht gezählt'],
+    es: ['Viaje pasado', 'Viaje', 'Simulación', 'Sobre el límite', 'Día recuperado', 'No contado'],
+    it: ['Viaggio passato', 'Viaggio', 'Simulazione', 'Oltre il limite', 'Giorno recuperato', 'Non conteggiato'],
+    ru: ['Прошлая поездка', 'Поездка', 'Сценарий', 'Сверх лимита', 'День возвращён', 'Не учитывается'],
+    tr: ['Geçmiş seyahat', 'Seyahat', 'Senaryo', 'Sınırın üzerinde', 'Gün geri döndü', 'Sayılmadı'],
+    he: ['נסיעה קודמת', 'נסיעה', 'תרחיש', 'מעל למגבלה', 'יום חזר', 'לא נספר'],
+    ar: ['رحلة سابقة', 'رحلة', 'سيناريو', 'فوق الحد', 'يوم مستعاد', 'غير محسوب']
   };
   const timelineAriaLabel: Record<Locale, string> = { en:'Timeline legend',fr:'Légende de la chronologie',de:'Zeitachsenlegende',es:'Leyenda de la cronología',it:'Legenda della cronologia',ru:'Легенда шкалы времени',tr:'Zaman çizelgesi açıklaması',he:'מקרא ציר הזמן',ar:'مفتاح المخطط الزمني' };
   const dateRangeLabel: Record<Locale, string> = { en:'Date range',fr:'Plage de dates',de:'Datumsbereich',es:'Intervalo de fechas',it:'Intervallo di date',ru:'Диапазон дат',tr:'Tarih aralığı',he:'טווח תאריכים',ar:'نطاق التاريخ' };
@@ -178,10 +178,8 @@
     }
   }
 
-  function statusKind(status: EditableTrip['status']): SegmentKind {
-    if (status === 'booked') return 'booked';
-    if (status === 'what-if') return 'whatif';
-    return 'past';
+  function statusKind(_status: EditableTrip['status']): SegmentKind {
+    return 'booked';
   }
 
   function segmentPriority(kind: SegmentKind): number {
