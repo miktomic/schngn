@@ -35,7 +35,12 @@ import { buildPdfReportFakeDoorState } from '../src/lib/fake-door/pdfReportFakeD
 import { buildUnlockFakeDoorState } from '../src/lib/fake-door/unlockFakeDoor';
 import { buildReturningDaysForecast } from '../src/lib/returns/returningDays';
 import { makeTrip } from './trip-fixtures';
-import { formatReturnsTimelineSummary, formatRollingTimelineSummary } from '../src/lib/i18n/timelineUi';
+import {
+  formatReturnsTimelineSummary,
+  formatReturnStartAria,
+  formatRollingTimelineSummary,
+  returnStartLabel
+} from '../src/lib/i18n/timelineUi';
 
 describe('whole-site localization', () => {
   test('supports all approved locales and both RTL languages', () => {
@@ -199,6 +204,12 @@ describe('whole-site localization', () => {
     expect(formatRollingTimelineSummary('he', 88, 2, 0)).toContain('נותרו יומיים של מרווח בטוח.');
     expect(formatRollingTimelineSummary('ar', 88, 2, 0)).toContain('يومان');
     expect(formatReturnsTimelineSummary('ru', 2, 30)).toContain('2 дня вернутся');
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(returnStartLabel(locale).length).toBeGreaterThan(0);
+      expect(formatReturnStartAria(locale, '24 Jul 2026')).toContain('24 Jul 2026');
+    }
+    expect(returnStartLabel('he')).toBe('ימים מתחילים לחזור');
+    expect(returnStartLabel('ar')).toBe('تبدأ الأيام بالعودة');
   });
 
   test('keeps localized navigation offline-safe and declares language alternates', () => {

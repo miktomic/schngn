@@ -17,6 +17,14 @@ describe('days-coming-back forecast', () => {
     expect(forecast.rows[0]).toMatchObject({ date: '2026-10-28', source: 'France May 1 leaves the window' });
   });
 
+  test('finds the first returning day across the full future window used by the canonical timeline', () => {
+    const forecast = buildReturningDaysForecast(
+      [makeTrip('spring', 'Spring trip', '2026-03-01', '2026-03-03')],
+      { referenceDate: '2026-03-03', horizonDays: 180 }
+    );
+    expect(forecast.rows.map((row) => row.date)).toEqual(['2026-08-28', '2026-08-29', '2026-08-30']);
+  });
+
   test('reports no returning days when the window is empty', () => {
     expect(buildReturningDaysForecast([], { referenceDate: '2026-10-13', horizonDays: 30 }).rows).toEqual([]);
   });

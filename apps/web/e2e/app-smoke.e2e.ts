@@ -538,6 +538,10 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const overviewTimeline = page.getByRole('img', { name: /Rolling 180-day window\. 51 counted days/i });
     await expect(overviewTimeline).toBeVisible();
     await expect(page.locator('#timeline .timeline-head > bdi')).toHaveText('21 Jan–19 Jul 2026');
+    const returnStart = page.locator('#timeline .return-start-forecast');
+    await expect(returnStart.getByText('Days start returning')).toBeVisible();
+    await expect(returnStart.getByText('24 Jul 2026')).toBeVisible();
+    await expect(returnStart.getByRole('img', { name: /First counted day returns on 24 Jul 2026/i })).toBeVisible();
 
     await page.locator('#timeline').getByRole('button', { name: /Adjust this trip Spain booking\./ }).click();
     const quickAdjuster = page.locator('.trip-adjust-panel');

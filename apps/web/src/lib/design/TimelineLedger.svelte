@@ -9,7 +9,12 @@
   import { tripEntryDate, tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
   import { intlLocale, type Locale } from '$lib/i18n';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
-  import { formatReturnsTimelineSummary, formatRollingTimelineSummary } from '$lib/i18n/timelineUi';
+  import {
+    formatReturnsTimelineSummary,
+    formatReturnStartAria,
+    formatRollingTimelineSummary,
+    returnStartLabel
+  } from '$lib/i18n/timelineUi';
 
   type TimelineMode = 'safe' | 'risk' | 'planner' | 'returns';
   type SegmentKind = 'past' | 'booked' | 'whatif' | 'risk' | 'return' | 'empty';
@@ -88,6 +93,9 @@
   let visibleKinds = $derived(new Set(model.segments.map((segment) => segment.kind)));
   let adjustmentCopy = $derived(createWhatIfUiTranslator(locale));
   let tripLanes = $derived(buildTripLanes(trips, model.startDate, model.endDate));
+  let firstReturnDate = $derived(findFirstReturnDate(returnDates, referenceDate, horizonDays));
+  let returnForecastEndDate = $derived(formatISODate(addDays(parseISODate(referenceDate), horizonDays)));
+  let returnMarkerPosition = $derived(firstReturnDate ? markerPosition(referenceDate, firstReturnDate, horizonDays) : 0);
 
   const legendCatalog: Record<Locale, string[]> = {
     en: ['Past trip', 'Trip', 'What-if trip', 'Over the limit', 'Day returned', 'Not counted'],
@@ -278,6 +286,16 @@
   function dayDistance(startDate: string, endDate: string): number {
     return Math.round((parseISODate(endDate).getTime() - parseISODate(startDate).getTime()) / 86_400_000);
   }
+
+  function findFirstReturnDate(dates: string[], startDate: string, days: number): string | null {
+    const endDate = formatISODate(addDays(parseISODate(startDate), days));
+    return [...dates].sort().find((date) => date > startDate && date <= endDate) ?? null;
+  }
+
+  function markerPosition(startDate: string, date: string, days: number): number {
+    if (days <= 1) return 0;
+    return Math.max(0, Math.min(100, ((dayDistance(startDate, date) - 1) / (days - 1)) * 100));
+  }
 </script>
 
 <section class="timeline-card" aria-labelledby={headingId}>
@@ -304,6 +322,27 @@
     <bdi>{formatDateRange(model.endDate, model.endDate)}</bdi>
   </div>
   <p class="timeline-summary">{model.summary}</p>
+  {#if mode !== 'returns' && firstReturnDate}
+    <section class="return-start-forecast" aria-label={returnStartLabel(locale)}>
+      <div class="return-start-head">
+        <strong>{returnStartLabel(locale)}</strong>
+        <bdi>{formatDateRange(firstReturnDate, firstReturnDate)}</bdi>
+      </div>
+      <div
+        class="return-start-track"
+        style={`--return-position: ${returnMarkerPosition}%`}
+        role="img"
+        aria-label={formatReturnStartAria(locale, formatDateRange(firstReturnDate, firstReturnDate))}
+      >
+        <span class="return-start-active" aria-hidden="true"></span>
+        <span class="return-start-marker" title={formatReturnStartAria(locale, formatDateRange(firstReturnDate, firstReturnDate))} aria-hidden="true"></span>
+      </div>
+      <div class="return-start-ticks" aria-hidden="true">
+        <bdi>{formatDateRange(referenceDate, referenceDate)}</bdi>
+        <bdi>{formatDateRange(returnForecastEndDate, returnForecastEndDate)}</bdi>
+      </div>
+    </section>
+  {/if}
   {#if onTripSelect && tripLanes.length > 0}
     <section class="timeline-trip-lanes" aria-label={adjustmentCopy('tripToAdjust')}>
       <p>{adjustmentCopy('chooseTrip')}</p>
@@ -427,6 +466,73 @@
     font-size: 0.9rem;
     line-height: 1.45;
     text-wrap: pretty;
+  }
+
+  .return-start-forecast {
+    display: grid;
+    gap: 6px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+
+  .return-start-head,
+  .return-start-ticks {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .return-start-head {
+    font-size: 0.85rem;
+  }
+
+  .return-start-head > bdi,
+  .return-start-ticks {
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+
+  .return-start-track {
+    position: relative;
+    height: 14px;
+    overflow: visible;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface);
+  }
+
+  .return-start-active {
+    position: absolute;
+    inset-block: 2px;
+    inset-inline: var(--return-position) 2px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--safe), transparent 76%);
+  }
+
+  .return-start-marker {
+    position: absolute;
+    inset-block: -4px;
+    inset-inline-start: var(--return-position);
+    width: 2px;
+    border-radius: 2px;
+    background: var(--safe);
+    transform: translateX(-1px);
+  }
+
+  .return-start-marker::before {
+    position: absolute;
+    inset-block-start: -1px;
+    inset-inline-start: 50%;
+    width: 8px;
+    height: 8px;
+    border: 2px solid var(--paper);
+    border-radius: 50%;
+    background: var(--safe);
+    content: '';
+    transform: translate(-50%, -50%);
   }
 
   .timeline-trip-lanes {

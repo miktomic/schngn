@@ -1,6 +1,37 @@
 import type { Locale } from './locales';
 import { formatLocalizedCount, formatLocalizedNumber } from './countUi';
 
+const returnStartLabels: Record<Locale, string> = {
+  en: 'Days start returning',
+  fr: 'Les jours commencent à revenir',
+  de: 'Tage werden wieder frei',
+  es: 'Empiezas a recuperar días',
+  it: 'Inizi a recuperare giorni',
+  ru: 'Дни начинают возвращаться',
+  tr: 'Günler geri dönmeye başlar',
+  he: 'ימים מתחילים לחזור',
+  ar: 'تبدأ الأيام بالعودة'
+};
+
+export function returnStartLabel(locale: Locale): string {
+  return returnStartLabels[locale];
+}
+
+export function formatReturnStartAria(locale: Locale, dateLabel: string): string {
+  const values: Record<Locale, string> = {
+    en: `First counted day returns on ${dateLabel}.`,
+    fr: `Le premier jour compté revient le ${dateLabel}.`,
+    de: `Der erste gezählte Tag wird am ${dateLabel} wieder frei.`,
+    es: `El primer día contado se recupera el ${dateLabel}.`,
+    it: `Il primo giorno conteggiato torna disponibile il ${dateLabel}.`,
+    ru: `Первый учтённый день вернётся ${dateLabel}.`,
+    tr: `İlk sayılan gün ${dateLabel} tarihinde geri döner.`,
+    he: `היום הראשון שנספר חוזר ב־${dateLabel}.`,
+    ar: `يعود أول يوم محتسب في ${dateLabel}.`
+  };
+  return values[locale];
+}
+
 export function formatRollingTimelineSummary(
   locale: Locale,
   used: number,

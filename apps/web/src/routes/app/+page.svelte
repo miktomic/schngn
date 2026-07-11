@@ -217,6 +217,7 @@
     | 'risk'
     | 'whatif';
   $: returningForecast = localizeReturningForecast(locale, buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 30 }));
+  $: timelineReturningForecast = buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 180 });
   $: explanationState = buildExplanationState(trips, dashboardState.referenceDate, locale);
   $: pdfFakeDoorState = localizePdfState(locale, buildPdfReportFakeDoorState(pdfIntentMessageVisible));
   $: unlockFakeDoorState = localizeUnlockState(locale, buildUnlockFakeDoorState(unlockPrice, unlockIntentMessageVisible), unlockPrice.label);
@@ -1555,6 +1556,8 @@
             mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}
             {trips}
             referenceDate={dashboardState.referenceDate}
+            returnDates={timelineReturningForecast.rows.map((row) => row.date)}
+            horizonDays={timelineReturningForecast.horizonDays}
             onTripSelect={openQuickAdjuster}
             selectedTripId={quickAdjustSourceId}
             tripName={displayTripName}
