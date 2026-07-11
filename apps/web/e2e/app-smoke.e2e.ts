@@ -98,10 +98,10 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.goto('/app');
 
     await page.locator('#status').getByRole('button', { name: 'I don’t have a trip to add yet.' }).click();
-    await page.locator('#details').evaluate((section) => section.scrollIntoView());
+    await page.locator('#timeline').evaluate((section) => section.scrollIntoView());
 
     const answerBox = await page.locator('#status').boundingBox();
-    const detailsBox = await page.locator('#details').boundingBox();
+    const detailsBox = await page.locator('#timeline').boundingBox();
     expect(answerBox).not.toBeNull();
     expect(detailsBox).not.toBeNull();
 
@@ -112,9 +112,9 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(detailsBox!.x).toBeGreaterThanOrEqual(answerRight - 1);
 
     await page.setViewportSize({ width: 900, height: 900 });
-    await page.locator('#details').evaluate((section) => section.scrollIntoView());
+    await page.locator('#timeline').evaluate((section) => section.scrollIntoView());
     const tabletAnswerBox = await page.locator('#status').boundingBox();
-    const tabletDetailsBox = await page.locator('#details').boundingBox();
+    const tabletDetailsBox = await page.locator('#timeline').boundingBox();
     expect(tabletDetailsBox!.x).toBeGreaterThanOrEqual(tabletAnswerBox!.x + tabletAnswerBox!.width - 1);
 
     await page.setViewportSize({ width: 640, height: 900 });
@@ -122,9 +122,10 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/he/app#details');
-    await page.locator('#details').evaluate((section) => section.scrollIntoView());
+    await expect(page).toHaveURL(/\/he\/app#timeline$/);
+    await page.locator('#timeline').evaluate((section) => section.scrollIntoView());
     const rtlAnswerBox = await page.locator('#status').boundingBox();
-    const rtlDetailsBox = await page.locator('#details').boundingBox();
+    const rtlDetailsBox = await page.locator('#timeline').boundingBox();
     expect(await page.locator('html').getAttribute('dir')).toBe('rtl');
     expect(rtlDetailsBox!.x + rtlDetailsBox!.width).toBeLessThanOrEqual(rtlAnswerBox!.x + 1);
   });
@@ -245,9 +246,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(answer.getByRole('button', { name: 'Add your first trip' })).toBeVisible();
     await expect(page.getByRole('form', { name: 'Trip form' })).toHaveCount(0);
 
-    await navigateToAppAnchor(page, 'details');
-    await expect(page.locator('#details').getByRole('heading', { name: 'Add your Schengen trips' })).toBeVisible();
-    await expect(page.locator('#details .ledger')).toHaveCount(0);
+    await navigateToAppAnchor(page, 'timeline');
+    await expect(page.locator('#timeline').getByRole('heading', { name: 'Add your Schengen trips' })).toBeVisible();
     await navigateToAppAnchor(page, 'report');
     await expect(page.locator('#report').getByRole('heading', { name: 'Add your Schengen trips' })).toBeVisible();
     await expect(page.locator('#report .report-preview')).toHaveCount(0);
@@ -470,7 +470,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(franceLane).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('app completes real local-first planning, proof, error, and recovery flows', async ({ page }) => {
+  test('app completes real local-first planning, forecast, error, and recovery flows', async ({ page }) => {
     test.setTimeout(90_000);
     await page.clock.setFixedTime(new Date('2026-02-01T12:00:00Z'));
     const requests = observeNetwork(page);
@@ -558,15 +558,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await quickAdjuster.getByRole('button', { name: 'Keep original' }).click();
     await expect(quickAdjuster).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Show calculation' }).click();
-    const details = page.locator('#details');
-    await expect(details.getByRole('heading', { name: 'Calculation proof' })).toBeVisible();
-    await expect(details.getByText('51 counted days between Jan 21 and Jul 19. That leaves 39 safe buffer days.')).toBeVisible();
-    await expect(details.getByText(/The app looks back 180 calendar days from Jul 19/i)).toBeVisible();
-    await expect(details.locator('p.mono-range').filter({ hasText: '21 Jan–19 Jul 2026' })).toBeVisible();
-
-    await details.getByRole('button', { name: 'See when days return' }).click();
     const returns = page.locator('.returns-section');
+    await returns.locator('summary').click();
     await expect(returns.getByRole('heading', { name: '2 days return in the next 30 days' })).toBeVisible();
     await expect(returns.getByText('51 / 90 used on 19 Jul 2026')).toBeVisible();
     await expect(returns.getByText('Next return: Jul 24')).toBeVisible();

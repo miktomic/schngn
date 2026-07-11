@@ -2,7 +2,6 @@ export const APP_ANCHORS = [
   'status',
   'timeline',
   'trips',
-  'details',
   'report',
   'account'
 ] as const;
@@ -16,8 +15,8 @@ const LEGACY_SECTION_ANCHORS: Readonly<Record<string, AppAnchor>> = {
   trip: 'trips',
   trips: 'trips',
   planner: 'trips',
-  proof: 'details',
-  returns: 'details',
+  proof: 'timeline',
+  returns: 'timeline',
   report: 'report',
   waitlist: 'report',
   privacy: 'account'
@@ -33,6 +32,7 @@ export function appAnchorFromUrl(url: URL): AppAnchor {
   }
 
   const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+  if (hash === 'details') return 'timeline';
   return isAppAnchor(hash) ? hash : 'status';
 }
 

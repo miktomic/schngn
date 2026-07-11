@@ -98,7 +98,7 @@ apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
 
-`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `timeline`, `trips`, `details`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, with the retired planner destination mapping to `trips`. There is one collapsed-by-default trip-entry flow at the top of the workspace. The canonical timeline is the primary view and appears before the saved-trip list. Saved trips share one user-facing model regardless of whether their dates are past or future, and every saved trip can be adjusted from the canonical timeline before changes are explicitly committed.
+`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `status`, `timeline`, `trips`, `report`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, with retired planner links mapping to `trips` and retired calculation-detail links mapping to `timeline`. There is one collapsed-by-default trip-entry flow at the top of the workspace. The canonical timeline is the primary view and appears before the saved-trip list. Saved trips share one user-facing model regardless of whether their dates are past or future, and every saved trip can be adjusted from the canonical timeline before changes are explicitly committed.
 
 ## Commands
 
@@ -266,7 +266,7 @@ Core UI language:
 - “must exit by”
 - “committed/booked”
 - “what-if”
-- “Why safe?” / “Show calculation”
+- “Why this answer”
 - “Border-ready report”
 
 Avoid:

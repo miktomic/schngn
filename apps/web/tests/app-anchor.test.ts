@@ -14,7 +14,6 @@ describe('single-page app anchors', () => {
       'status',
       'timeline',
       'trips',
-      'details',
       'report',
       'account'
     ];
@@ -28,6 +27,7 @@ describe('single-page app anchors', () => {
   test('restores a valid hash and defaults missing or invalid hashes to status', () => {
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#timeline'))).toBe('timeline');
     expect(appAnchorFromUrl(new URL('https://schngn.com/he/app#account'))).toBe('account');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#details'))).toBe('timeline');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#unknown'))).toBe('status');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app'))).toBe('status');
   });
@@ -37,8 +37,8 @@ describe('single-page app anchors', () => {
     ['trip', 'trips'],
     ['trips', 'trips'],
     ['planner', 'trips'],
-    ['proof', 'details'],
-    ['returns', 'details'],
+    ['proof', 'timeline'],
+    ['returns', 'timeline'],
     ['report', 'report'],
     ['waitlist', 'report'],
     ['privacy', 'account']
@@ -68,7 +68,7 @@ describe('single-page app anchors', () => {
     );
 
     expect(canonicalAppAnchorUrl(legacy)).toBe(
-      '/fr/app?market=uk&account=connected#details'
+      '/fr/app?market=uk&account=connected#timeline'
     );
     expect(legacy.href).toBe(
       'https://schngn.com/fr/app?market=uk&section=returns&account=connected#plan'

@@ -127,7 +127,6 @@
   let tripEditorVisible = false;
   let historyConfirmedEmpty = false;
   let olderTripsVisible = false;
-  let proofDetailsOpen = false;
   let returnsDetailsOpen = false;
   let reportDetailsOpen = false;
   let accountDetailsOpen = false;
@@ -731,7 +730,7 @@
 
   function navigateToAnchor(anchor: AppAnchor, openDisclosure = false): void {
     currentAnchor = anchor;
-    if (openDisclosure || anchor === 'details' || anchor === 'report' || anchor === 'account') openAnchorDisclosure(anchor);
+    if (openDisclosure || anchor === 'report' || anchor === 'account') openAnchorDisclosure(anchor);
     if (browser) pushState(appAnchorUrl(new URL(window.location.href), anchor), page.state);
     scrollToAnchor(anchor, true, true);
   }
@@ -749,7 +748,6 @@
   }
 
   function openAnchorDisclosure(anchor: AppAnchor): void {
-    if (anchor === 'details') proofDetailsOpen = true;
     if (anchor === 'report') reportDetailsOpen = true;
     if (anchor === 'account') accountDetailsOpen = true;
   }
@@ -1313,7 +1311,6 @@
           <div class="button-row">
             <button id="add-trip-button" class="primary-button" type="button" aria-expanded={tripEditorVisible} aria-controls="trip-editor" onclick={startAddTrip}>{ui('addTrip')}</button>
             {#if dashboardState.targetTrip && !quickAdjustVisible}<button class="secondary-button what-if-action" type="button" onclick={() => openQuickAdjuster()}>{whatIfUi('adjust')}</button>{/if}
-            <button class="secondary-button" type="button" onclick={() => navigateToAnchor('details', true)}>{ui('showCalculation')}</button>
           </div>
         {/if}
       </section>
@@ -1768,60 +1765,6 @@
         {/if}
       </section>
       {/if}
-
-      <section class="screen details-section" id="details" aria-labelledby="details-heading">
-        <details class="section-disclosure" bind:open={proofDetailsOpen}>
-          <summary class="disclosure-summary">
-            <div class="section-heading">
-              <p>{singlePage('detailsSummary')}</p>
-              <h2 id="details-heading" class="screen-title" tabindex="-1">{deep('proofTitle')}</h2>
-            </div>
-          </summary>
-          <div class="disclosure-body">
-        {#if historyReady}
-        <section class="panel mint" aria-labelledby="explanation-heading">
-          <h2 id="explanation-heading">{explanationState.heading}</h2>
-          <p>{explanationState.summary}</p>
-          <p class="micro-safe">{explanationState.verdictLine}</p>
-        </section>
-        <div>
-          <p class="window-label">{deep('activeWindow')}</p>
-          <p class="mono-range"><bdi>{formatDateRange(dashboardState.usage.windowStart, dashboardState.usage.windowEnd)}</bdi></p>
-        </div>
-        <TimelineLedger headingId="calculation-timeline-heading" label={deep('countedEvidence')} {locale} mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'} {trips} referenceDate={dashboardState.referenceDate} />
-        <div class="ledger">
-          {#each explanationState.countedTripRows as row}
-            <article>
-              <div>
-                <h2><bdi>{row.label}</bdi></h2>
-                <p><bdi>{row.rangeLabel}</bdi></p>
-              </div>
-              <strong>{row.daysLabel}</strong>
-            </article>
-          {:else}
-            <section class="empty-state compact-empty">
-              <h2>{deep('noCounted')}</h2>
-              <p>{rt('noCountedCopy')}</p>
-            </section>
-          {/each}
-        </div>
-        <section class="panel paper-panel">
-          <h2>{deep('rulesUsed')}</h2>
-          <ul class="rule-list">
-            {#each explanationState.ruleBullets as bullet}<li>{bullet}</li>{/each}
-          </ul>
-        </section>
-        <button class="secondary-button" type="button" onclick={() => { returnsDetailsOpen = true; focusElementAfterRender('returns-heading'); }}>{deep('seeReturns')}</button>
-        {:else}
-          <section class="history-gate panel" aria-labelledby="details-history-gate-heading">
-            <h2 id="details-history-gate-heading">{tripOnboarding('title')}</h2>
-            <p>{tripOnboarding('copy')}</p>
-            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{singlePage('noPreviousTrips')}</button>
-          </section>
-        {/if}
-          </div>
-        </details>
-      </section>
 
       <section class="screen returns-section" aria-labelledby="returns-heading">
         <details class="section-disclosure" bind:open={returnsDetailsOpen}>
@@ -2527,8 +2470,7 @@
   .report-preview h2,
   .empty-state h2,
   .confirm-panel h2,
-  .trip-list h2,
-  .ledger h2 {
+  .trip-list h2 {
     margin: 0;
     font-size: 1.08rem;
     line-height: 1.3;
@@ -2956,7 +2898,6 @@
   }
 
   .trip-list,
-  .ledger,
   .return-list,
   .simulation-result {
     display: grid;
@@ -2964,8 +2905,7 @@
     min-width: 0;
   }
 
-  .trip-list article,
-  .ledger article {
+  .trip-list article {
     display: flex;
     min-width: 0;
     align-items: center;
@@ -2997,14 +2937,12 @@
     gap: 10px;
   }
 
-  .trip-copy,
-  .ledger article > div {
+  .trip-copy {
     min-width: 0;
     flex: 1;
   }
 
-  .trip-list p,
-  .ledger p {
+  .trip-list p {
     margin: 3px 0 0;
     color: var(--muted);
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -3017,13 +2955,6 @@
     font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
     font-size: 0.85rem;
     font-weight: 650;
-  }
-
-  .ledger strong {
-    display: block;
-    margin-top: 5px;
-    color: var(--booked);
-    font-size: 0.8rem;
   }
 
   .timeline-section > div > p {

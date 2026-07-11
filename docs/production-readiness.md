@@ -22,7 +22,7 @@ Manual browser verification must also confirm:
 - optional entry/exit countries accept only current Schengen choices and never alter the count;
 - a trip that leaves and re-enters Schengen shows the correct counted days and visible timeline gap;
 - a what-if trip cannot make a later booked trip unsafe without warning;
-- timeline, proof, risk, and returning-day dates match the entered itinerary;
+- timeline, risk, report, and returning-day dates match the entered itinerary;
 - every saved trip can be adjusted from the canonical timeline without changing its identity or mutating another trip;
 - keyboard focus reaches every action, visible controls meet the 44px project target, and 200% zoom does not hide content;
 - offline reload retains the calculator shell and locally saved trips;
