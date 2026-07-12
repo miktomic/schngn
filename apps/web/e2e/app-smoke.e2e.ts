@@ -600,7 +600,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('#account details')).toHaveAttribute('open', '');
   });
 
-  test('opens signup immediately from the header and create-account CTA while auth is still loading', async ({ page }) => {
+  test('redirects to signup immediately from the header and create-account CTA while auth is still loading', async ({ page }) => {
     const requests = observeNetwork(page);
     await installFakeClerk(page, null, 700);
     await page.addInitScript(() => window.localStorage.clear());
@@ -1403,8 +1403,8 @@ async function installFakeClerk(page: Page, identity: FakeClerkIdentity | null, 
         listeners.add(listener);
         return () => listeners.delete(listener);
       },
-      openSignUp(options?: { forceRedirectUrl?: string | null }) {
-        redirects.signUp.push(options?.forceRedirectUrl ?? null);
+      async redirectToSignUp(options?: { redirectUrl?: string | null }) {
+        redirects.signUp.push(options?.redirectUrl ?? null);
       },
       async redirectToSignIn(options?: { redirectUrl?: string | null }) {
         redirects.signIn.push(options?.redirectUrl ?? null);
