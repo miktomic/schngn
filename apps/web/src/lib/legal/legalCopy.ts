@@ -1,5 +1,5 @@
 import type { Locale } from '$lib/i18n';
-import { translateExtended } from '$lib/i18n/extendedLocaleStrings';
+import { translateExtended } from '../i18n/extendedLocaleStrings';
 
 const FULL_DISCLAIMER_COPY =
   'SCHNGN is a planning calculator, not legal advice and not a guarantee of entry. It estimates ordinary short stays under the Schengen 90/180-day rule. It does not account for residence permits, long-stay or national visas, bilateral waiver agreements, nationality-specific exceptions, work/study/asylum status, EES/ETIAS transition issues, or border-officer discretion. Always verify with official sources before booking or travelling.';
