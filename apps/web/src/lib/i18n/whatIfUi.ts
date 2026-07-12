@@ -1,10 +1,11 @@
 import { formatLocalizedCount } from './countUi';
-import type { Locale } from './locales';
+import { translateExtended, translateExtendedTemplate } from './extendedLocaleStrings';
+import { SUPPORTED_LOCALES, type Locale } from './locales';
 
 const en = { adjust:'Adjust this trip',title:'Adjust trip dates',hint:'Drag the trip to move it. Drag either edge to change arrival or departure.',move:'Move trip',entry:'Arrival',exit:'Departure',overFrom:'Over limit from',exact:'Exact dates',close:'Close adjuster',live:'Live what-if result',tripToAdjust:'Trip to adjust',chooseTrip:'Choose a saved trip to adjust its dates.',outsideWindow:'outside this window',details:'Trip details',saveChanges:'Save changes',keepOriginal:'Keep original',updated:'Trip updated.',finishEditing:'Save changes or keep the original before opening another trip.',unavailable:'That trip is no longer available. Choose it again.' } as const;
 type Key = keyof typeof en;
 type Catalog = Record<Key,string>;
-const catalogs: Record<Locale,Catalog> = {
+const catalogs: Partial<Record<Locale,Catalog>> & {en:Catalog} = {
   en,
   fr:{adjust:'Ajuster ce voyage',title:'Ajuster les dates du voyage',hint:'Faites glisser le voyage pour le déplacer, ou ses bords pour changer l’arrivée ou le départ.',move:'Déplacer le voyage',entry:'Arrivée',exit:'Départ',overFrom:'Dépassement à partir du',exact:'Dates exactes',close:'Fermer le réglage',live:'Résultat de simulation en direct',tripToAdjust:'Voyage à ajuster',chooseTrip:'Choisissez un voyage enregistré pour modifier ses dates.',outsideWindow:'hors de cette fenêtre',details:'Détails du voyage',saveChanges:'Enregistrer les modifications',keepOriginal:'Conserver l’original',updated:'Voyage mis à jour.',finishEditing:'Enregistrez les modifications ou conservez l’original avant d’ouvrir un autre voyage.',unavailable:'Ce voyage n’est plus disponible. Sélectionnez-le à nouveau.'},
   de:{adjust:'Diese Reise anpassen',title:'Reisedaten anpassen',hint:'Ziehen Sie die Reise zum Verschieben oder die Ränder für Ankunft und Abreise.',move:'Reise verschieben',entry:'Ankunft',exit:'Abreise',overFrom:'Über dem Limit ab',exact:'Genaue Daten',close:'Anpassung schließen',live:'Live-Ergebnis',tripToAdjust:'Reise zum Anpassen',chooseTrip:'Wählen Sie eine gespeicherte Reise, um ihre Daten anzupassen.',outsideWindow:'außerhalb dieses Fensters',details:'Reisedetails',saveChanges:'Änderungen speichern',keepOriginal:'Original behalten',updated:'Reise aktualisiert.',finishEditing:'Speichern Sie die Änderungen oder behalten Sie das Original, bevor Sie eine andere Reise öffnen.',unavailable:'Diese Reise ist nicht mehr verfügbar. Wählen Sie sie erneut aus.'},
@@ -16,7 +17,7 @@ const catalogs: Record<Locale,Catalog> = {
   ar:{adjust:'تعديل هذه الرحلة',title:'تعديل تواريخ الرحلة',hint:'اسحب الرحلة لنقلها أو اسحب الحافتين لتغيير الدخول أو الخروج.',move:'نقل الرحلة',entry:'الدخول',exit:'الخروج',overFrom:'تجاوز الحد ابتداءً من',exact:'التواريخ الدقيقة',close:'إغلاق أداة التعديل',live:'نتيجة مباشرة للسيناريو',tripToAdjust:'الرحلة المراد تعديلها',chooseTrip:'اختر رحلة محفوظة لتعديل تواريخها.',outsideWindow:'خارج هذه النافذة',details:'تفاصيل الرحلة',saveChanges:'حفظ التغييرات',keepOriginal:'الاحتفاظ بالأصل',updated:'تم تحديث الرحلة.',finishEditing:'احفظ التغييرات أو احتفظ بالأصل قبل فتح رحلة أخرى.',unavailable:'لم تعد هذه الرحلة متاحة. اخترها مرة أخرى.'}
 };
 
-const feedbackCatalog: Record<Locale, { atLimit: string; over: (days: string) => string; spare: (days: string) => string; within: (days: string) => string }> = {
+const feedbackCatalog: Partial<Record<Locale, { atLimit: string; over: (days: string) => string; spare: (days: string) => string; within: (days: string) => string }>> = {
   en: { atLimit:'At the limit', over:(days)=>`Over by ${days}`, spare:(days)=>`Fits · ${days} spare`, within:(days)=>`Within limit · ${days}` },
   fr: { atLimit:'À la limite', over:(days)=>`Dépassement de ${days}`, spare:(days)=>`Possible · marge de ${days}`, within:(days)=>`Dans la limite · ${days}` },
   de: { atLimit:'Am Limit', over:(days)=>`${days} über dem Limit`, spare:(days)=>`Passt · ${days} Puffer`, within:(days)=>`Im Limit · ${days}` },
@@ -28,12 +29,17 @@ const feedbackCatalog: Record<Locale, { atLimit: string; over: (days: string) =>
   ar: { atLimit:'عند الحد تمامًا', over:(days)=>`فوق الحد بمقدار ${days}`, spare:(days)=>`مناسبة · هامش ${days}`, within:(days)=>`ضمن الحد · ${days}` }
 };
 
-export function createWhatIfUiTranslator(locale:Locale):(key:Key)=>string { return (key)=>catalogs[locale][key]; }
+export function createWhatIfUiTranslator(locale:Locale):(key:Key)=>string { return (key)=>catalogs[locale]?.[key] ?? translateExtended(locale,en[key]); }
 export function formatAdjusterFeedback(locale:Locale,overBy:number,remaining:number,completed=false):string {
-  const feedback=feedbackCatalog[locale];
+  const feedback=feedbackCatalog[locale] ?? {
+    atLimit: translateExtended(locale, 'At the limit'),
+    over: (days:string)=>translateExtendedTemplate(locale,'Over by {days}',{days}),
+    spare: (days:string)=>translateExtendedTemplate(locale,'Fits · {days} spare',{days}),
+    within: (days:string)=>translateExtendedTemplate(locale,'Within limit · {days}',{days})
+  };
   if(overBy>0) return feedback.over(formatLocalizedCount(locale,overBy,'day').text);
   if(remaining===0) return feedback.atLimit;
   const days = formatLocalizedCount(locale,remaining,'day').text;
   return completed ? feedback.within(days) : feedback.spare(days);
 }
-export function whatIfCatalogLengths():Record<Locale,number>{return Object.fromEntries(Object.entries(catalogs).map(([locale,value])=>[locale,Object.keys(value).length])) as Record<Locale,number>;}
+export function whatIfCatalogLengths():Record<Locale,number>{return Object.fromEntries(SUPPORTED_LOCALES.map((locale)=>[locale,Object.keys(en).length])) as Record<Locale,number>;}

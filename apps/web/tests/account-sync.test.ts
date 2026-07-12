@@ -2,12 +2,16 @@ import { describe, expect, test } from 'bun:test';
 import type { EditableTrip } from '../src/lib/trips/tripCrud';
 import {
   ACCOUNT_SYNC_METADATA_KEY,
+  ACCOUNT_SIGNUP_SYNC_INTENT_KEY,
   buildAccountSyncMetadata,
   buildPausedAccountSyncMetadata,
   decideAccountReconciliation,
+  clearAccountSignupSyncIntent,
   fingerprintTrips,
+  hasAccountSignupSyncIntent,
   loadAccountSyncMetadata,
   saveAccountSyncMetadata,
+  saveAccountSignupSyncIntent,
   shouldRestoreMissingLocalSnapshot,
   type AccountTripSnapshot
 } from '../src/lib/account/accountSync';
@@ -24,6 +28,21 @@ const snapshot = (trips: EditableTrip[], revision: number): AccountTripSnapshot 
 });
 
 describe('authenticated account reconciliation', () => {
+  test('records signup as explicit account-storage consent until the return flow consumes it', () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key)
+    };
+
+    expect(saveAccountSignupSyncIntent(storage)).toEqual({ ok: true });
+    expect(values.get(ACCOUNT_SIGNUP_SYNC_INTENT_KEY)).toBe('account-sync-v2');
+    expect(hasAccountSignupSyncIntent(storage)).toBe(true);
+    expect(clearAccountSignupSyncIntent(storage)).toEqual({ ok: true });
+    expect(hasAccountSignupSyncIntent(storage)).toBe(false);
+  });
+
   test('offers explicit sync before the first server write', () => {
     expect(
       decideAccountReconciliation({

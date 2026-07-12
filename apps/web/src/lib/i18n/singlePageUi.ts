@@ -1,10 +1,13 @@
-import type { Locale } from './locales';
+import { SUPPORTED_LOCALES, type Locale } from './locales';
+import { translateExtended } from './extendedLocaleStrings';
 
 export type SinglePageUiKey =
   | 'skipToContent'
   | 'jumpTo'
   | 'trips'
   | 'timeline'
+  | 'explainer'
+  | 'faq'
   | 'plan'
   | 'details'
   | 'report'
@@ -29,9 +32,11 @@ type SinglePageUiCatalog = Record<SinglePageUiKey, string>;
 
 const en: SinglePageUiCatalog = {
   skipToContent: 'Skip to main content',
-  jumpTo: 'Jump to',
+  jumpTo: 'Jump to:',
   trips: 'Trips',
   timeline: 'Timeline',
+  explainer: 'Explainer',
+  faq: 'FAQ',
   plan: 'Plan',
   details: 'Calculation details',
   report: 'Report',
@@ -53,13 +58,15 @@ const en: SinglePageUiCatalog = {
   collapse: 'Collapse'
 };
 
-const catalogs: Record<Locale, SinglePageUiCatalog> = {
+const catalogs: Partial<Record<Locale, SinglePageUiCatalog>> & { en: SinglePageUiCatalog } = {
   en,
   fr: {
     skipToContent: 'Aller au contenu principal',
-    jumpTo: 'Accéder à',
+    jumpTo: 'Accéder à :',
     trips: 'Voyages',
     timeline: 'Chronologie',
+    explainer: 'Explication',
+    faq: 'Questions',
     plan: 'Planifier',
     details: 'Détails du calcul',
     report: 'Rapport',
@@ -82,9 +89,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
   },
   de: {
     skipToContent: 'Zum Hauptinhalt springen',
-    jumpTo: 'Springen zu',
+    jumpTo: 'Springen zu:',
     trips: 'Reisen',
     timeline: 'Zeitleiste',
+    explainer: 'Erklärung',
+    faq: 'Fragen',
     plan: 'Planen',
     details: 'Berechnungsdetails',
     report: 'Bericht',
@@ -107,9 +116,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
   },
   es: {
     skipToContent: 'Ir al contenido principal',
-    jumpTo: 'Ir a',
+    jumpTo: 'Ir a:',
     trips: 'Viajes',
     timeline: 'Cronología',
+    explainer: 'Explicación',
+    faq: 'Preguntas',
     plan: 'Planificar',
     details: 'Detalles del cálculo',
     report: 'Informe',
@@ -132,9 +143,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
   },
   it: {
     skipToContent: 'Vai al contenuto principale',
-    jumpTo: 'Vai a',
+    jumpTo: 'Vai a:',
     trips: 'Viaggi',
     timeline: 'Cronologia',
+    explainer: 'Spiegazione',
+    faq: 'Domande',
     plan: 'Pianifica',
     details: 'Dettagli del calcolo',
     report: 'Rapporto',
@@ -157,9 +170,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
   },
   ru: {
     skipToContent: 'Перейти к основному содержанию',
-    jumpTo: 'Перейти к разделу',
+    jumpTo: 'Перейти к разделу:',
     trips: 'Поездки',
     timeline: 'Шкала времени',
+    explainer: 'Объяснение',
+    faq: 'Вопросы',
     plan: 'Планирование',
     details: 'Подробности расчёта',
     report: 'Отчёт',
@@ -182,9 +197,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
   },
   tr: {
     skipToContent: 'Ana içeriğe geç',
-    jumpTo: 'Bölüme git',
+    jumpTo: 'Bölüme git:',
     trips: 'Seyahatler',
     timeline: 'Zaman çizelgesi',
+    explainer: 'Açıklama',
+    faq: 'Sorular',
     plan: 'Planla',
     details: 'Hesaplama ayrıntıları',
     report: 'Rapor',
@@ -207,9 +224,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
   },
   he: {
     skipToContent: 'דילוג לתוכן הראשי',
-    jumpTo: 'מעבר אל',
+    jumpTo: 'מעבר אל:',
     trips: 'נסיעות',
     timeline: 'ציר זמן',
+    explainer: 'הסבר',
+    faq: 'שאלות',
     plan: 'תכנון',
     details: 'פרטי החישוב',
     report: 'דוח',
@@ -232,9 +251,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
   },
   ar: {
     skipToContent: 'الانتقال إلى المحتوى الرئيسي',
-    jumpTo: 'الانتقال إلى',
+    jumpTo: 'الانتقال إلى:',
     trips: 'الرحلات',
     timeline: 'المخطط الزمني',
+    explainer: 'الشرح',
+    faq: 'الأسئلة',
     plan: 'التخطيط',
     details: 'تفاصيل الحساب',
     report: 'التقرير',
@@ -258,11 +279,11 @@ const catalogs: Record<Locale, SinglePageUiCatalog> = {
 };
 
 export function createSinglePageUiTranslator(locale: Locale): (key: SinglePageUiKey) => string {
-  return (key) => catalogs[locale][key];
+  return (key) => catalogs[locale]?.[key] ?? translateExtended(locale, en[key]);
 }
 
 export function singlePageCatalogLengths(): Record<Locale, number> {
   return Object.fromEntries(
-    Object.entries(catalogs).map(([locale, catalog]) => [locale, Object.keys(catalog).length])
+    SUPPORTED_LOCALES.map((locale) => [locale, Object.keys(en).length])
   ) as Record<Locale, number>;
 }

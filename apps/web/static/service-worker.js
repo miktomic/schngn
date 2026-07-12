@@ -1,9 +1,9 @@
 const SCHNGN_CACHE_PREFIX = 'schngn-';
-const SCHNGN_STATIC_CACHE = 'schngn-static-v8';
-const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v8';
+const SCHNGN_STATIC_CACHE = 'schngn-static-v10';
+const SCHNGN_RUNTIME_CACHE = 'schngn-runtime-v10';
 
-const SAFE_NAVIGATION_PATHS = new Set(['/', '/app', '/accuracy']);
-const LOCALE_PREFIXES = ['fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar'];
+const SAFE_NAVIGATION_PATHS = new Set(['/', '/app', '/accuracy', '/explainer', '/faq', '/contact']);
+const LOCALE_PREFIXES = ['fr', 'de', 'es', 'it', 'pt-br', 'ru', 'uk', 'tr', 'sr', 'sq', 'ka', 'zh-cn', 'ja', 'ko', 'he', 'ar'];
 const SAFE_STATIC_PATHS = new Set([
   '/manifest.json',
   '/favicon.ico',
@@ -26,6 +26,9 @@ const BASE_APP_SHELL_URLS = [
   '/',
   '/app',
   '/accuracy',
+  '/explainer',
+  '/faq',
+  '/contact',
   '/manifest.json',
   '/favicon.ico',
   '/favicon.png',
@@ -39,7 +42,7 @@ const BASE_APP_SHELL_URLS = [
 ];
 const APP_SHELL_URLS = [
   ...BASE_APP_SHELL_URLS,
-  ...LOCALE_PREFIXES.flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`])
+  ...LOCALE_PREFIXES.flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`, `/${locale}/explainer`, `/${locale}/faq`, `/${locale}/contact`])
 ];
 
 function isApiPath(pathname) {
@@ -80,6 +83,7 @@ function isSafeLocalDevStaticPath(pathname) {
 function isSafeLocalDevSearch(search) {
   return (
     search === '' ||
+    search === '?import' ||
     /^\?v=[a-z0-9_-]+$/i.test(search) ||
     /^\?t=\d+$/.test(search) ||
     search === '?svelte&type=style&lang.css'

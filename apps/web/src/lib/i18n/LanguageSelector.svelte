@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
-  import { LOCALE_COOKIE, LOCALE_LABELS, SUPPORTED_LOCALES, localeDirection, localizedPath, type Locale } from './locales';
+  import { LOCALE_COOKIE, LOCALE_LABELS, SUPPORTED_LOCALES, intlLocale, localeDirection, localizedPath, type Locale } from './locales';
 
   interface Props {
     label: string;
@@ -38,7 +38,7 @@
   <span class="select-wrap">
     <select aria-label={label} value={locale} disabled={!ready} onchange={switchLocale}>
     {#each SUPPORTED_LOCALES as option}
-        <option value={option} lang={option} dir={localeDirection(option)}>{LOCALE_LABELS[option]}</option>
+        <option value={option} lang={intlLocale(option)} dir={localeDirection(option)}>{LOCALE_LABELS[option]}</option>
     {/each}
     </select>
   </span>
@@ -74,6 +74,8 @@
     position: relative;
     display: inline-flex;
     align-items: center;
+    width: min(132px, 42vw);
+    min-width: 0;
   }
 
   .select-wrap::after {
@@ -86,7 +88,8 @@
   }
 
   select {
-    min-width: 108px;
+    width: 100%;
+    min-width: 0;
     min-height: 40px;
     appearance: none;
     border: 1px solid var(--line);

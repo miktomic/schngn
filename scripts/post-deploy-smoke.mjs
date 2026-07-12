@@ -33,6 +33,9 @@ const publicChecks = [
   { path: '/', type: 'text/html', contains: ['Schengen 90/180 calculator', 'https://schngn.com/'] },
   { path: '/app', type: 'text/html', contains: [] },
   { path: '/accuracy', type: 'text/html', contains: ['Accuracy evidence', 'European Commission short-stay calculator'] },
+  { path: '/explainer', type: 'text/html', contains: ['Explainer', '90 days in any 180 days'] },
+  { path: '/faq', type: 'text/html', contains: ['Frequently asked questions', 'What does “90 days in any 180 days” mean?'] },
+  { path: '/contact', type: 'text/html', contains: ['How can we help?', 'Send message'] },
   { path: '/manifest.json', type: 'application/json', contains: ['SCHNGN', '/app', '/icons/icon-192.png'] },
   { path: '/service-worker.js', type: 'text/javascript', contains: ['SCHNGN_STATIC_CACHE', '/app'] },
   { path: '/favicon.png', type: 'image/png', contains: [] },
@@ -40,7 +43,7 @@ const publicChecks = [
   { path: '/brand/schngn-social.png', type: 'image/png', contains: [] },
   { path: '/icons/icon-maskable-512.png', type: 'image/png', contains: [] },
   { path: '/robots.txt', type: 'text/plain', contains: ['Sitemap: https://schngn.com/sitemap.xml'] },
-  { path: '/sitemap.xml', type: 'application/xml', contains: ['<loc>https://schngn.com/</loc>', '<loc>https://schngn.com/app</loc>', '<loc>https://schngn.com/accuracy</loc>'] }
+  { path: '/sitemap.xml', type: 'application/xml', contains: ['<loc>https://schngn.com/</loc>', '<loc>https://schngn.com/app</loc>', '<loc>https://schngn.com/accuracy</loc>', '<loc>https://schngn.com/explainer</loc>', '<loc>https://schngn.com/faq</loc>', '<loc>https://schngn.com/contact</loc>'] }
 ];
 
 const anonymousAccountChecks = [

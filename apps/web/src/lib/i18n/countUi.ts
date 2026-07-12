@@ -8,13 +8,19 @@ interface CountFormat {
   text: string;
 }
 
-const simpleForms: Record<Exclude<Locale, 'ru' | 'he' | 'ar'>, Record<CountUnit, [string, string]>> = {
+const simpleForms: Partial<Record<Locale, Record<CountUnit, [string, string]>>> = {
   en: { trip: ['trip', 'trips'], day: ['day', 'days'] },
   fr: { trip: ['voyage', 'voyages'], day: ['jour', 'jours'] },
   de: { trip: ['Reise', 'Reisen'], day: ['Tag', 'Tage'] },
   es: { trip: ['viaje', 'viajes'], day: ['día', 'días'] },
   it: { trip: ['viaggio', 'viaggi'], day: ['giorno', 'giorni'] },
-  tr: { trip: ['seyahat', 'seyahat'], day: ['gün', 'gün'] }
+  'pt-br': { trip: ['viagem', 'viagens'], day: ['dia', 'dias'] },
+  tr: { trip: ['seyahat', 'seyahat'], day: ['gün', 'gün'] },
+  sq: { trip: ['udhëtim', 'udhëtime'], day: ['ditë', 'ditë'] },
+  ka: { trip: ['მოგზაურობა', 'მოგზაურობა'], day: ['დღე', 'დღე'] },
+  'zh-cn': { trip: ['次旅行', '次旅行'], day: ['天', '天'] },
+  ja: { trip: ['件の旅行', '件の旅行'], day: ['日', '日'] },
+  ko: { trip: ['개 여행', '개 여행'], day: ['일', '일'] }
 };
 
 export function formatLocalizedNumber(locale: Locale, count: number): string {
@@ -31,6 +37,18 @@ export function formatLocalizedCount(locale: Locale, count: number, unit: CountU
 
   if (locale === 'ru') {
     const forms = unit === 'trip' ? ['поездка', 'поездки', 'поездок'] : ['день', 'дня', 'дней'];
+    const label = forms[category === 'one' ? 0 : category === 'few' ? 1 : 2];
+    return { count, label, text: `${number} ${label}` };
+  }
+
+  if (locale === 'uk') {
+    const forms = unit === 'trip' ? ['поїздка', 'поїздки', 'поїздок'] : ['день', 'дні', 'днів'];
+    const label = forms[category === 'one' ? 0 : category === 'few' ? 1 : 2];
+    return { count, label, text: `${number} ${label}` };
+  }
+
+  if (locale === 'sr') {
+    const forms = unit === 'trip' ? ['putovanje', 'putovanja', 'putovanja'] : ['dan', 'dana', 'dana'];
     const label = forms[category === 'one' ? 0 : category === 'few' ? 1 : 2];
     return { count, label, text: `${number} ${label}` };
   }
@@ -58,7 +76,8 @@ export function formatLocalizedCount(locale: Locale, count: number, unit: CountU
     return { count, label, text: `${number} ${label}` };
   }
 
-  const forms = simpleForms[locale][unit];
+  const forms = simpleForms[locale]?.[unit] ?? simpleForms.en![unit];
   const label = forms[category === 'one' ? 0 : 1];
-  return { count, label, text: `${number} ${label}` };
+  const separator = ['zh-cn', 'ja'].includes(locale) ? '' : ' ';
+  return { count, label, text: `${number}${separator}${label}` };
 }

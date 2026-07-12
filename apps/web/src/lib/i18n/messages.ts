@@ -5,12 +5,12 @@ const en = {
   'common.openCalculator': 'Open calculator',
   'common.home': 'SCHNGN home',
 
-  'landing.title': 'Schengen 90/180 calculator for UK second-home owners | SCHNGN',
-  'landing.description': 'Plan Europe trips around the Schengen 90/180-day rule with a calculator built for UK second-home owners and frequent travellers.',
-  'landing.ogDescription': 'A Schengen 90/180 calculator for UK second-home owners planning Europe stays.',
+  'landing.title': 'Schengen 90/180-day calculator and trip planner | SCHNGN',
+  'landing.description': 'Plan Europe trips around the Schengen 90/180-day rule with a calculator for frequent travel, family visits, and longer stays.',
+  'landing.ogDescription': 'A Schengen 90/180-day calculator for planning stays in Europe.',
   'landing.twitterDescription': 'Check whether your next Europe stay fits the Schengen 90/180-day rule and see the calculation behind the answer.',
   'landing.header': 'SCHNGN landing header',
-  'landing.kicker': 'For UK second-home owners',
+  'landing.kicker': 'Schengen 90/180 trip planner',
   'landing.hero': 'Plan Europe stays without guessing your 90 days.',
   'landing.lede': 'A Schengen 90/180 calculator for frequent Europe trips, family visits, and second-home planning.',
   'landing.primaryAction': 'See if your Europe trip fits',
@@ -62,11 +62,11 @@ type Catalog = Record<MessageKey, string>;
 
 const fr: Catalog = {
   'common.language': 'Langue', 'common.openCalculator': 'Ouvrir le calculateur', 'common.home': 'Accueil SCHNGN',
-  'landing.title': 'Calculateur Schengen 90/180 pour propriétaires britanniques | SCHNGN',
+  'landing.title': 'Calculateur et planificateur Schengen 90/180 | SCHNGN',
   'landing.description': 'Planifiez vos séjours en Europe selon la règle Schengen des 90/180 jours avec un calculateur conçu pour les voyageurs fréquents.',
   'landing.ogDescription': 'Un calculateur Schengen 90/180 pour planifier vos séjours en Europe.',
   'landing.twitterDescription': 'Vérifiez si votre prochain séjour respecte la règle Schengen 90/180 et consultez le calcul.',
-  'landing.header': 'En-tête SCHNGN', 'landing.kicker': 'Pour les propriétaires britanniques en Europe',
+  'landing.header': 'En-tête SCHNGN', 'landing.kicker': 'Planificateur Schengen 90/180',
   'landing.hero': 'Planifiez vos séjours en Europe sans deviner vos 90 jours.',
   'landing.lede': 'Un calculateur Schengen 90/180 pour les voyages fréquents, les visites familiales et les résidences secondaires.',
   'landing.primaryAction': 'Vérifier si mon séjour est possible', 'landing.actions': 'Actions de la page d’accueil',
@@ -95,9 +95,9 @@ const fr: Catalog = {
 
 const de: Catalog = {
   'common.language': 'Sprache', 'common.openCalculator': 'Rechner öffnen', 'common.home': 'SCHNGN Startseite',
-  'landing.title': 'Schengen-90/180-Rechner für britische Zweitwohnsitze | SCHNGN', 'landing.description': 'Planen Sie Europa-Aufenthalte nach der Schengen-90/180-Regel mit einem Rechner für häufige Reisen.',
+  'landing.title': 'Schengen-90/180-Rechner und Reiseplaner | SCHNGN', 'landing.description': 'Planen Sie Europa-Aufenthalte nach der Schengen-90/180-Regel mit einem Rechner für häufige Reisen.',
   'landing.ogDescription': 'Ein Schengen-90/180-Rechner für Aufenthalte in Europa.', 'landing.twitterDescription': 'Prüfen Sie Ihren nächsten Europa-Aufenthalt nach der 90/180-Regel und sehen Sie die Berechnung.',
-  'landing.header': 'SCHNGN-Kopfzeile', 'landing.kicker': 'Für britische Zweitwohnsitzbesitzer', 'landing.hero': 'Planen Sie Europa-Aufenthalte, ohne Ihre 90 Tage zu schätzen.',
+  'landing.header': 'SCHNGN-Kopfzeile', 'landing.kicker': 'Schengen-90/180-Reiseplaner', 'landing.hero': 'Planen Sie Europa-Aufenthalte, ohne Ihre 90 Tage zu schätzen.',
   'landing.lede': 'Ein Schengen-90/180-Rechner für häufige Reisen, Familienbesuche und Zweitwohnsitze.', 'landing.primaryAction': 'Prüfen, ob die Reise passt',
   'landing.actions': 'Aktionen der Startseite', 'landing.trust': 'Mit 50 Regelfällen und einem unabhängigen Orakel getestet. Sehen Sie gezählte Tage und das sichere Ausreisedatum. Keine Rechtsberatung. Kein EU-Dienst.',
   'landing.evidence': 'Genauigkeitsnachweis', 'landing.exampleAnswer': 'Beispiel für ein sicheres Ergebnis', 'landing.localPrivate': 'Klare 90/180-Antwort',
@@ -121,9 +121,9 @@ const de: Catalog = {
 
 const es: Catalog = {
   'common.language': 'Idioma', 'common.openCalculator': 'Abrir calculadora', 'common.home': 'Inicio de SCHNGN',
-  'landing.title': 'Calculadora Schengen 90/180 para propietarios británicos | SCHNGN', 'landing.description': 'Planifica estancias en Europa según la regla Schengen 90/180 con una calculadora para viajeros frecuentes.',
+  'landing.title': 'Calculadora y planificador Schengen 90/180 | SCHNGN', 'landing.description': 'Planifica estancias en Europa según la regla Schengen 90/180 con una calculadora para viajeros frecuentes.',
   'landing.ogDescription': 'Una calculadora Schengen 90/180 para planificar estancias en Europa.', 'landing.twitterDescription': 'Comprueba si tu próximo viaje cumple la regla Schengen 90/180 y consulta el cálculo.',
-  'landing.header': 'Cabecera de SCHNGN', 'landing.kicker': 'Para propietarios británicos de segunda residencia', 'landing.hero': 'Planifica estancias en Europa sin adivinar tus 90 días.',
+  'landing.header': 'Cabecera de SCHNGN', 'landing.kicker': 'Planificador Schengen 90/180', 'landing.hero': 'Planifica estancias en Europa sin adivinar tus 90 días.',
   'landing.lede': 'Una calculadora Schengen 90/180 para viajes frecuentes, visitas familiares y segundas residencias.', 'landing.primaryAction': 'Comprobar si el viaje encaja',
   'landing.actions': 'Acciones de la página de inicio', 'landing.trust': 'Probado con 50 casos y un oráculo independiente. Consulta los días contados y la fecha de salida segura. No es asesoramiento legal ni un servicio de la UE.',
   'landing.evidence': 'Pruebas de precisión', 'landing.exampleAnswer': 'Ejemplo de resultado seguro', 'landing.localPrivate': 'Respuesta 90/180 clara',
@@ -147,9 +147,9 @@ const es: Catalog = {
 
 const it: Catalog = {
   'common.language': 'Lingua', 'common.openCalculator': 'Apri calcolatore', 'common.home': 'Home SCHNGN',
-  'landing.title': 'Calcolatore Schengen 90/180 per proprietari britannici | SCHNGN', 'landing.description': 'Pianifica soggiorni in Europa secondo la regola Schengen 90/180 con un calcolatore per viaggi frequenti.',
+  'landing.title': 'Calcolatore e pianificatore Schengen 90/180 | SCHNGN', 'landing.description': 'Pianifica soggiorni in Europa secondo la regola Schengen 90/180 con un calcolatore per viaggi frequenti.',
   'landing.ogDescription': 'Un calcolatore Schengen 90/180 per pianificare soggiorni in Europa.', 'landing.twitterDescription': 'Verifica il prossimo soggiorno con la regola Schengen 90/180 e consulta il calcolo.',
-  'landing.header': 'Intestazione SCHNGN', 'landing.kicker': 'Per proprietari britannici di seconde case', 'landing.hero': 'Pianifica i soggiorni in Europa senza indovinare i tuoi 90 giorni.',
+  'landing.header': 'Intestazione SCHNGN', 'landing.kicker': 'Pianificatore Schengen 90/180', 'landing.hero': 'Pianifica i soggiorni in Europa senza indovinare i tuoi 90 giorni.',
   'landing.lede': 'Un calcolatore Schengen 90/180 per viaggi frequenti, visite familiari e seconde case.', 'landing.primaryAction': 'Verifica se il viaggio è possibile',
   'landing.actions': 'Azioni della pagina iniziale', 'landing.trust': 'Testato con 50 casi e un oracolo indipendente. Consulta i giorni conteggiati e la data di uscita sicura. Non è consulenza legale né un servizio UE.',
   'landing.evidence': 'Prove di accuratezza', 'landing.exampleAnswer': 'Esempio di risultato sicuro', 'landing.localPrivate': 'Risposta 90/180 chiara',
@@ -173,9 +173,9 @@ const it: Catalog = {
 
 const ru: Catalog = {
   'common.language': 'Язык', 'common.openCalculator': 'Открыть калькулятор', 'common.home': 'Главная SCHNGN',
-  'landing.title': 'Калькулятор Шенген 90/180 для владельцев второго жилья | SCHNGN', 'landing.description': 'Планируйте поездки по Европе по правилу Шенген 90/180 с калькулятором для частых поездок.',
+  'landing.title': 'Калькулятор и планировщик Шенген 90/180 | SCHNGN', 'landing.description': 'Планируйте поездки по Европе по правилу Шенген 90/180 с калькулятором для частых поездок.',
   'landing.ogDescription': 'Калькулятор Шенген 90/180 для поездок по Европе.', 'landing.twitterDescription': 'Проверьте следующую поездку по правилу Шенген 90/180 и изучите расчёт.',
-  'landing.header': 'Шапка SCHNGN', 'landing.kicker': 'Для британских владельцев второго жилья', 'landing.hero': 'Планируйте поездки по Европе без догадок о 90 днях.',
+  'landing.header': 'Шапка SCHNGN', 'landing.kicker': 'Планировщик Шенген 90/180', 'landing.hero': 'Планируйте поездки по Европе без догадок о 90 днях.',
   'landing.lede': 'Калькулятор Шенген 90/180 для частых поездок, семейных визитов и второго жилья.', 'landing.primaryAction': 'Проверить, подходит ли поездка',
   'landing.actions': 'Действия на главной странице', 'landing.trust': 'Проверено на 50 сценариях и независимом оракуле. Смотрите учтённые дни и безопасную дату выезда. Не юридическая консультация и не сервис ЕС.',
   'landing.evidence': 'Доказательства точности', 'landing.exampleAnswer': 'Пример безопасного результата', 'landing.localPrivate': 'Чёткий ответ 90/180',
@@ -199,9 +199,9 @@ const ru: Catalog = {
 
 const he: Catalog = {
   'common.language': 'שפה', 'common.openCalculator': 'פתיחת המחשבון', 'common.home': 'דף הבית של SCHNGN',
-  'landing.title': 'מחשבון שנגן 90/180 לבעלי בית שני מבריטניה | SCHNGN', 'landing.description': 'תכנון שהיות באירופה לפי כלל שנגן 90/180 באמצעות מחשבון לנוסעים תכופים.',
+  'landing.title': 'מחשבון ומתכנן שנגן 90/180 | SCHNGN', 'landing.description': 'תכנון שהיות באירופה לפי כלל שנגן 90/180 באמצעות מחשבון לנוסעים תכופים.',
   'landing.ogDescription': 'מחשבון שנגן 90/180 לתכנון שהיות באירופה.', 'landing.twitterDescription': 'בדקו אם הנסיעה הבאה מתאימה לכלל שנגן 90/180 וצפו בחישוב.',
-  'landing.header': 'כותרת SCHNGN', 'landing.kicker': 'לבעלי בית שני מבריטניה', 'landing.hero': 'מתכננים שהיות באירופה בלי לנחש את 90 הימים.',
+  'landing.header': 'כותרת SCHNGN', 'landing.kicker': 'מתכנן שנגן 90/180', 'landing.hero': 'מתכננים שהיות באירופה בלי לנחש את 90 הימים.',
   'landing.lede': 'מחשבון שנגן 90/180 לנסיעות תכופות, ביקורי משפחה ותכנון בית שני.', 'landing.primaryAction': 'בדיקה אם הנסיעה מתאימה',
   'landing.actions': 'פעולות בדף הבית', 'landing.trust': 'נבדק מול 50 תרחישים ואורקל עצמאי. צפו בימים שנספרו ובתאריך היציאה הבטוח. אינו ייעוץ משפטי ואינו שירות של האיחוד האירופי.',
   'landing.evidence': 'ראיות לדיוק', 'landing.exampleAnswer': 'דוגמה לתוצאה בטוחה', 'landing.localPrivate': 'תשובת 90/180 ברורה',
@@ -225,9 +225,9 @@ const he: Catalog = {
 
 const tr: Catalog = {
   'common.language': 'Dil', 'common.openCalculator': 'Hesaplayıcıyı aç', 'common.home': 'SCHNGN ana sayfa',
-  'landing.title': 'Birleşik Krallık ikinci ev sahipleri için Schengen 90/180 hesaplayıcı | SCHNGN', 'landing.description': 'Sık seyahat edenler için Schengen 90/180 hesaplayıcıyla Avrupa konaklamalarını planlayın.',
+  'landing.title': 'Schengen 90/180 hesaplayıcı ve seyahat planlayıcı | SCHNGN', 'landing.description': 'Sık seyahat edenler için Schengen 90/180 hesaplayıcıyla Avrupa konaklamalarını planlayın.',
   'landing.ogDescription': 'Avrupa konaklamalarını planlamak için Schengen 90/180 hesaplayıcı.', 'landing.twitterDescription': 'Bir sonraki Avrupa seyahatinizin Schengen 90/180 kuralına uyup uymadığını kontrol edin ve hesabı görün.',
-  'landing.header': 'SCHNGN üst bilgisi', 'landing.kicker': 'Birleşik Krallık’taki ikinci ev sahipleri için', 'landing.hero': '90 gününüzü tahmin etmeden Avrupa konaklamalarını planlayın.',
+  'landing.header': 'SCHNGN üst bilgisi', 'landing.kicker': 'Schengen 90/180 seyahat planlayıcı', 'landing.hero': '90 gününüzü tahmin etmeden Avrupa konaklamalarını planlayın.',
   'landing.lede': 'Sık seyahatler, aile ziyaretleri ve ikinci ev planlaması için Schengen 90/180 hesaplayıcı.', 'landing.primaryAction': 'Seyahatin uygunluğunu kontrol et',
   'landing.actions': 'Ana sayfa işlemleri', 'landing.trust': '50 kural senaryosu ve bağımsız bir oracle ile test edilmiştir. Sayılan günleri ve güvenli çıkış tarihini görün. Hukuki tavsiye veya AB hizmeti değildir.',
   'landing.evidence': 'Doğruluk kanıtı', 'landing.exampleAnswer': 'Güvenli sonuç örneği', 'landing.localPrivate': 'Net 90/180 yanıtı',
@@ -251,9 +251,9 @@ const tr: Catalog = {
 
 const ar: Catalog = {
   'common.language': 'اللغة', 'common.openCalculator': 'فتح الحاسبة', 'common.home': 'الصفحة الرئيسية لـ SCHNGN',
-  'landing.title': 'حاسبة شنغن 90/180 لأصحاب المنازل الثانية من المملكة المتحدة | SCHNGN', 'landing.description': 'خطط للإقامات في أوروبا وفق قاعدة شنغن 90/180 باستخدام حاسبة للمسافرين المتكررين.',
+  'landing.title': 'حاسبة ومخطط رحلات شنغن 90/180 | SCHNGN', 'landing.description': 'خطط للإقامات في أوروبا وفق قاعدة شنغن 90/180 باستخدام حاسبة للمسافرين المتكررين.',
   'landing.ogDescription': 'حاسبة شنغن 90/180 لتخطيط الإقامات في أوروبا.', 'landing.twitterDescription': 'تحقق من توافق رحلتك القادمة مع قاعدة شنغن 90/180 واطّلع على الحساب.',
-  'landing.header': 'رأس صفحة SCHNGN', 'landing.kicker': 'لأصحاب المنازل الثانية من المملكة المتحدة', 'landing.hero': 'خطط لإقامتك في أوروبا من دون تخمين أيامك التسعين.',
+  'landing.header': 'رأس صفحة SCHNGN', 'landing.kicker': 'مخطط رحلات شنغن 90/180', 'landing.hero': 'خطط لإقامتك في أوروبا من دون تخمين أيامك التسعين.',
   'landing.lede': 'حاسبة شنغن 90/180 للرحلات المتكررة والزيارات العائلية وتخطيط المنزل الثاني.', 'landing.primaryAction': 'تحقق من ملاءمة الرحلة',
   'landing.actions': 'إجراءات الصفحة الرئيسية', 'landing.trust': 'جرى الاختبار باستخدام 50 حالة قواعد ومرجع مستقل. اطّلع على الأيام المحتسبة وتاريخ الخروج الآمن. ليست استشارة قانونية ولا خدمة تابعة للاتحاد الأوروبي.',
   'landing.evidence': 'دليل الدقة', 'landing.exampleAnswer': 'مثال على نتيجة آمنة', 'landing.localPrivate': 'إجابة واضحة لقاعدة 90/180',
@@ -275,4 +275,4 @@ const ar: Catalog = {
   'accuracy.caseExcludedTitle': 'استبعاد الأيام خارج شنغن', 'accuracy.caseExcludedCopy': 'تُستبعد أيرلندا وقبرص والمملكة المتحدة والولايات المتحدة، بينما تُحتسب دول شنغن غير الأعضاء في الاتحاد الأوروبي.'
 };
 
-export const catalogs: Record<Locale, Catalog> = { en, fr, de, es, it, ru, tr, he, ar };
+export const catalogs: Partial<Record<Locale, Catalog>> & { en: Catalog } = { en, fr, de, es, it, ru, tr, he, ar };

@@ -1,5 +1,7 @@
 import { addDays, calculateUsageOnDate, formatISODate, parseISODate } from '@schngn/engine';
 import { intlLocale, type Locale } from '../i18n';
+import { translateExtended, translateExtendedTemplate } from '../i18n/extendedLocaleStrings';
+import { formatLocalizedCount } from '../i18n/countUi';
 import { sortTrips, toEngineTrips, tripEntryDate, tripExitDate, type EditableTrip } from '../trips/tripCrud';
 
 export interface CountedTripRow {
@@ -33,7 +35,7 @@ interface ExplanationCopy {
   verdictSafe: string;
 }
 
-const copy: Record<Locale, ExplanationCopy> = {
+const copy: Partial<Record<Locale, ExplanationCopy>> & { en: ExplanationCopy } = {
   en: {
     countedSummary: (days, start, end) => `${days} between ${start} and ${end}.`,
     continuityRule: 'Travel between Schengen countries is one continuous stay. Full calendar days outside Schengen are not counted.',
@@ -171,6 +173,24 @@ const copy: Record<Locale, ExplanationCopy> = {
   }
 };
 
+function copyFor(locale: Locale): ExplanationCopy {
+  return copy[locale] ?? {
+    countedSummary: (days, start, end) => translateExtendedTemplate(locale, '{days} between {start} and {end}.', { days, start, end }),
+    continuityRule: translateExtended(locale, copy.en.continuityRule),
+    enteredVia: (countryCode) => translateExtendedTemplate(locale, 'Entered via {country}', { country: countryCode }),
+    heading: translateExtended(locale, copy.en.heading),
+    inclusiveRule: translateExtended(locale, copy.en.inclusiveRule),
+    leftVia: (countryCode) => translateExtendedTemplate(locale, 'Left via {country}', { country: countryCode }),
+    lookbackRule: (referenceDate, windowDays) => translateExtendedTemplate(locale, 'The app looks back {windowDays} calendar days from {referenceDate}, including {referenceDate} itself.', { referenceDate, windowDays }),
+    overSummary: (daysOver, allowanceDays) => translateExtendedTemplate(locale, 'That is {daysOver} over the {allowanceDays}-day limit.', { daysOver, allowanceDays }),
+    rangeConnector: translateExtended(locale, copy.en.rangeConnector),
+    safeSummary: (safeBuffer) => translateExtendedTemplate(locale, 'That leaves {safeBuffer}.', { safeBuffer }),
+    schengenStay: translateExtended(locale, copy.en.schengenStay),
+    verdictOver: translateExtended(locale, copy.en.verdictOver),
+    verdictSafe: translateExtended(locale, copy.en.verdictSafe)
+  };
+}
+
 export function buildExplanationState(
   trips: EditableTrip[],
   referenceDate: string,
@@ -179,7 +199,7 @@ export function buildExplanationState(
   const sortedTrips = sortTrips(trips);
   const usage = calculateUsageOnDate(toEngineTrips(sortedTrips), referenceDate);
   const countedDays = new Set(usage.countedDays);
-  const localizedCopy = copy[locale];
+  const localizedCopy = copyFor(locale);
   const referenceLabel = formatShortDate(locale, usage.referenceDate);
   const windowStartLabel = formatShortDate(locale, usage.windowStart);
   const windowEndLabel = formatShortDate(locale, usage.windowEnd);
@@ -239,7 +259,7 @@ function formatShortDate(locale: Locale, isoDate: string): string {
 }
 
 function formatDateRange(locale: Locale, startDate: string, endDate: string): string {
-  return `${formatShortDate(locale, startDate)} ${copy[locale].rangeConnector} ${formatShortDate(locale, endDate)}`;
+  return `${formatShortDate(locale, startDate)} ${copyFor(locale).rangeConnector} ${formatShortDate(locale, endDate)}`;
 }
 
 function formatTripRouteLabel(
@@ -247,9 +267,9 @@ function formatTripRouteLabel(
   locale: Locale
 ): string {
   if (trip.entryCountryCode && trip.exitCountryCode) return `${trip.entryCountryCode} → ${trip.exitCountryCode}`;
-  if (trip.entryCountryCode) return copy[locale].enteredVia(trip.entryCountryCode);
-  if (trip.exitCountryCode) return copy[locale].leftVia(trip.exitCountryCode);
-  return copy[locale].schengenStay;
+  if (trip.entryCountryCode) return copyFor(locale).enteredVia(trip.entryCountryCode);
+  if (trip.exitCountryCode) return copyFor(locale).leftVia(trip.exitCountryCode);
+  return copyFor(locale).schengenStay;
 }
 
 function formatCountedDays(locale: Locale, count: number): string {
@@ -265,6 +285,7 @@ function formatCountedDays(locale: Locale, count: number): string {
     case 'tr': return `${number} gün sayıldı`;
     case 'he': return `${number} ${category === 'one' ? 'יום שנספר' : 'ימים שנספרו'}`;
     case 'ar': return formatArabicCountedDays(number, category);
+    default: return translateExtendedTemplate(locale, category === 'one' ? '{count} counted day' : '{count} counted days', { count: number });
   }
 }
 
@@ -286,6 +307,7 @@ function formatSafeBufferDays(locale: Locale, count: number): string {
     case 'tr': return `${number} günlük güvenli pay`;
     case 'he': return `${formatPlainDays(locale, count)} של מרווח בטוח`;
     case 'ar': return `هامش أمان قدره ${formatPlainDays(locale, count)}`;
+    default: return translateExtendedTemplate(locale, category === 'one' ? '{count} safe buffer day' : '{count} safe buffer days', { count: number });
   }
 }
 
@@ -302,6 +324,7 @@ function formatPlainDays(locale: Locale, count: number): string {
     case 'tr': return `${number} gün`;
     case 'he': return `${number} ${category === 'one' ? 'יום' : 'ימים'}`;
     case 'ar': return formatArabicPlainDays(number, category);
+    default: return formatLocalizedCount(locale, count, 'day').text;
   }
 }
 

@@ -13,7 +13,8 @@ The product is **Option B Web/PWA** with an approved optional-account expansion:
 - Mobile-first web app/PWA.
 - Anonymous use without login; guest trip storage is local-only.
 - Optional Clerk signup for repeat visits and cross-device sync.
-- Signed-in trip storage in Cloudflare D1 only after explicit consent.
+- Localized help/feature-request contact form delivered through a fixed-destination Cloudflare email binding.
+- Signed-in trip storage in Cloudflare D1 after an explicit save action: completing Clerk signup from a “Sign up & save” CTA automatically stores the current trips; existing users may also enable sync after sign-in.
 - Provably-correct Schengen calculation engine.
 - Free calculator plus fake-door paid unlock/PDF validation.
 - No GPS, passport scanning, OCR, automatic guest upload, global visa/tax rule engine, or legal advice workflow.
@@ -25,7 +26,7 @@ Primary product promise:
 ## Non-negotiables
 
 1. **Correctness gates everything.** The 90/180-day engine is safety-critical. UI polish must not outrun engine correctness.
-2. **Guests stay local-only.** Never send an anonymous traveler’s trip dates, full travel history, or calculated timeline to a server. A signed-in traveler’s trips may enter D1 only after explicit sync consent; trip data still never enters analytics or logs.
+2. **Guests stay local-only.** Never send an anonymous traveler’s trip dates, full travel history, or calculated timeline to a server. Clicking a clearly labeled signup-and-save CTA is explicit storage consent: after Clerk signup completes, the current trips may enter D1. Existing-account sign-in still reconciles safely before any overwrite; trip data never enters analytics or logs.
 3. **No legal advice.** Use fixed, human-reviewed explanatory copy and clear disclaimers.
 4. **No secrets in repo/docs/logs.** Do not print or commit Cloudflare tokens, API keys, cookies, OAuth material, or `.env` contents.
 5. **Authenticated ownership is server-derived.** Account data is keyed by the verified Clerk user ID. Never accept a client-supplied owner, and never persist guest trips server-side.
@@ -52,7 +53,7 @@ Build/dev/test: Bun 1.3.14; Node 24+; TypeScript 7 engine + TypeScript 6 Svelte 
 App framework: SvelteKit + Vite
 Production: Cloudflare Workers + Static Assets
 Core logic: packages/engine, pure TypeScript
-Trip data: guest browser storage; consented signed-in sync in Cloudflare D1
+Trip data: guest browser storage; signup-and-save or separately consented signed-in sync in Cloudflare D1
 Identity: optional Clerk accounts; Clerk is the identity source of truth
 Dynamic Worker routes: authenticated account/sync/export/deletion endpoints plus Clerk lifecycle webhook
 ```
@@ -72,7 +73,7 @@ schngn/
 │       ├── src/routes/app/+page.svelte
 │       ├── src/routes/api/account/   # authenticated account trip API
 │       ├── src/routes/api/webhooks/  # verified Clerk lifecycle webhook
-│       ├── src/lib/account/          # consent, repository, reconciliation
+│       ├── src/lib/account/          # signup-save intent, repository, reconciliation
 │       ├── src/lib/auth/             # Clerk browser and Worker auth boundaries
 │       └── migrations/               # account schemas plus idempotent retired-table cleanup
 ├── packages/
@@ -98,7 +99,7 @@ apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
 
-`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `timeline`, `trips`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, retired `#status` maps to `timeline`, retired `#details` plus planner, proof, and returning-days destinations map to `trips`, and the retired report destination maps to `account`. The canonical master timeline is the first workspace section, followed immediately by the saved-trip cards under their own Trips anchor. Clicking a row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
+`/app` is one continuous responsive workspace, not a tabbed screen router. Stable hashes address `timeline`, `trips`, and `account`; legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, retired `#status` maps to `timeline`, retired `#details` plus planner, proof, and returning-days destinations map to `trips`, and the retired report destination maps to `account`. The Explainer and FAQ are dedicated localized public pages at `/explainer` and `/faq`; legacy `#rules`, `#explainer`, `#help`, and `#faq` app destinations redirect to those pages. The canonical master timeline is the first workspace section, followed immediately by the saved-trip cards under their own Trips anchor. The Explainer teaches the ordinary-short-stay calculation through a five-step walkthrough that renders the production `TimelineLedger`, `TripMiniTimeline`, and `StatusChip` components against deterministic sample trips; the teaching surface therefore stays visually and mathematically aligned with `/app`. The FAQ keeps reviewed rule answers linked to official EU sources and visibly distinguishes product behavior from legal/rule guidance. Clicking a trip row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
 
 ## Commands
 
@@ -152,7 +153,7 @@ bun run typecheck
 bun run build
 bun run test:e2e
 inactive resource provisioning + D1 migrations
-optional deploy, canonical-domain setup, and blocking smoke on main if Cloudflare credentials and required Clerk bindings exist
+optional deploy, canonical-domain setup, and blocking smoke on main if Cloudflare credentials plus required Clerk/contact bindings exist
 ```
 
 Deployment secret policy:
@@ -214,16 +215,17 @@ Allowed:
 - Authenticated account and Clerk lifecycle Worker endpoints.
 - Optional Clerk authentication and authenticated D1 trip sync.
 - User-initiated account-data export and deletion.
+- A Turnstile-protected, rate-limited contact endpoint that sends only explicitly entered support fields to the fixed support inbox.
 
 Forbidden:
 
 - Sending trip dates to analytics, logs, or any anonymous endpoint.
-- Persisting trips server-side for guests or before explicit sync consent.
+- Persisting trips server-side for guests or without an explicit signup-and-save or sync action.
 - Trusting a user/owner ID supplied by the client; derive ownership from the verified Clerk session.
 - Duplicating Clerk identity/profile data in D1 without an application-specific need.
 - AI-generated legal explanations.
 
-There is no SCHNGN-managed email waitlist. Repeat visitors sign up through Clerk; signup alone never uploads guest trips or creates a duplicate identity row in D1. Authenticated sync endpoints may accept validated trip records only after consent and must scope every query by the server-verified Clerk user ID. Fresh D1 databases start with the account schema at migration `0002`; migration `0005_drop_waitlist_signups.sql` idempotently removes the retired table from any database that had already been provisioned.
+There is no SCHNGN-managed email waitlist. Repeat visitors sign up through Clerk. The separate contact form is only for support and feature requests; it never attaches trip history or enters analytics. Signup CTAs explicitly say they save trips; completing that Clerk signup automatically stores the current validated trip snapshot in D1 without creating a duplicate identity row. Existing users who sign in through the separate sign-in action retain reconciliation safeguards.
 
 ## Product/backlog priority
 
@@ -328,9 +330,10 @@ These exclusions apply equally to guest and signed-in users. Authentication does
 Approved MVP services:
 
 - Cloudflare Workers + Static Assets for deployment.
-- Cloudflare D1 for authenticated, explicitly consented account data keyed by Clerk user ID. Migration `0005` provides forward cleanup of the retired waitlist table only.
+- Cloudflare D1 for authenticated account data saved after a signup-and-save or separate sync action, keyed by Clerk user ID. Migration `0005` provides forward cleanup of the retired waitlist table only.
 - Plausible Cloud for aggregate-only analytics.
 - Clerk for optional authentication and identity lifecycle webhooks.
+- Cloudflare Email Service plus Turnstile for fixed-destination support requests; `schngn@proton.me` must be a verified destination and the public/sender address is restricted to `support@schngn.com`.
 
 If configuring any external service, do not write secrets to files. Use GitHub secrets, Cloudflare dashboard, or local `.env` files ignored by git.
 
@@ -346,7 +349,7 @@ Before coding:
 While coding:
 
 - Keep packages separated: engine logic in `packages/engine`; UI/storage in `apps/web`.
-- Keep guest trip data local; require a verified Clerk session and explicit consent for account sync.
+- Keep guest trip data local; require a verified Clerk session plus an explicit signup-and-save or separate sync action for account storage.
 - Derive account ownership server-side and preserve export/deletion paths.
 - Prefer small vertical slices with tests.
 - Update docs when architecture or commands change.

@@ -1,4 +1,5 @@
 import type { Locale } from './locales';
+import { translateExtended } from './extendedLocaleStrings';
 
 const en = {
   navOverview: 'Overview', navTrips: 'Trips', navPlanner: 'Planner', navProof: 'Proof', navReturns: 'Returns', navReport: 'Report', navAccount: 'Account',
@@ -40,8 +41,8 @@ const ar: AppCatalog = {
   navOverview:'نظرة عامة',navTrips:'الرحلات',navPlanner:'المخطط',navProof:'الدليل',navReturns:'الأيام العائدة',navReport:'التقرير',navAccount:'الحساب',headTitle:'تطبيق SCHNGN — مخطط شنغن 90/180',headDescription:'احسب خطط شنغن 90/180 واختبر الإقامات المستقبلية واعرف موعد عودة الأيام.',appSections:'أقسام التطبيق',openAccount:'فتح الحساب',storageAttention:'تخزين المتصفح يحتاج إلى الانتباه',planningOnly:'حاسبة تخطيط فقط',officialSources:'روابط المصادر الرسمية',dismiss:'إغلاق',loadingTrips:'جارٍ تحميل رحلاتك…',readingLocal:'تتم قراءة البيانات المحلية من هذا المتصفح.',noTripData:'لا توجد بيانات رحلات محفوظة',startDates:'ابدأ بتواريخ سفرك',emptyCopy:'أضف الإقامات السابقة والمحجوزة للحصول على نتيجة 90/180 فعلية. يبدأ SCHNGN فارغًا.',firstResult:'أول نتيجة مفيدة لك',firstResultCopy:'أضف تاريخي الدخول والخروج. يُحتسب اليومان. شاهد نافذة 180 يومًا فورًا.',addFirst:'أضف رحلتك الأولى',tryWhatIf:'جرّب سيناريو',latestSafeExit:'آخر خروج آمن',daysUsed:'الأيام المستخدمة',rollingWindow:'نافذة متحركة من 180 يومًا',needsAttention:'ما يحتاج إلى الانتباه',whyAnswer:'سبب هذه النتيجة',addTrip:'إضافة رحلة',showCalculation:'عرض الحساب',planAnother:'تخطيط رحلة أخرى',accountLoading:'الحساب…',localOnly:'محلي فقط',signIn:'تسجيل الدخول',syncing:'جارٍ المزامنة…',synced:'تمت المزامنة',syncPaused:'المزامنة متوقفة',reviewSync:'مراجعة المزامنة',accountReady:'الحساب جاهز'
 };
 
-const catalogs: Record<Locale, AppCatalog> = { en, fr, de, es, it, ru, tr, he, ar };
+const catalogs: Partial<Record<Locale, AppCatalog>> & { en: AppCatalog } = { en, fr, de, es, it, ru, tr, he, ar };
 
 export function createAppUiTranslator(locale: Locale): (key: AppUiKey) => string {
-  return (key) => catalogs[locale][key];
+  return (key) => catalogs[locale]?.[key] ?? translateExtended(locale, en[key]);
 }

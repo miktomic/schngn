@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": "2026.07.12",
+  "generatedOn": "2026-07-12",
+  "calculationSupport": "none",
+  "passports": [
+    {
+      "countryCode": "AU",
+      "countryName": "Australia"
+    },
+    {
+      "countryCode": "BR",
+      "countryName": "Brazil"
+    },
+    {
+      "countryCode": "CA",
+      "countryName": "Canada"
+    },
+    {
+      "countryCode": "JP",
+      "countryName": "Japan"
+    },
+    {
+      "countryCode": "KR",
+      "countryName": "South Korea"
+    },
+    {
+      "countryCode": "UA",
+      "countryName": "Ukraine"
+    },
+    {
+      "countryCode": "US",
+      "countryName": "United States"
+    },
+    {
+      "countryCode": "IL",
+      "countryName": "Israel"
+    },
+    {
+      "countryCode": "AL",
+      "countryName": "Albania"
+    },
+    {
+      "countryCode": "AD",
+      "countryName": "Andorra"
+    },
+    {
+      "countryCode": "AG",
+      "countryName": "Antigua and Barbuda"
+    },
+    {
+      "countryCode": "AR",
+      "countryName": "Argentina"
+    },
+    {
+      "countryCode": "BS",
+      "countryName": "Bahamas"
+    },
+    {
+      "countryCode": "BB",
+      "countryName": "Barbados"
+    },
+    {
+      "countryCode": "BA",
+      "countryName": "Bosnia and Herzegovina"
+    },
+    {
+      "countryCode": "BN",
+      "countryName": "Brunei"
+    },
+    {
+      "countryCode": "CL",
+      "countryName": "Chile"
+    },
+    {
+      "countryCode": "CO",
+      "countryName": "Colombia"
+    },
+    {
+      "countryCode": "CR",
+      "countryName": "Costa Rica"
+    },
+    {
+      "countryCode": "SV",
+      "countryName": "El Salvador"
+    },
+    {
+      "countryCode": "GT",
+      "countryName": "Guatemala"
+    },
+    {
+      "countryCode": "HN",
+      "countryName": "Honduras"
+    },
+    {
+      "countryCode": "HK",
+      "countryName": "Hong Kong SAR"
+    },
+    {
+      "countryCode": "MY",
+      "countryName": "Malaysia"
+    },
+    {
+      "countryCode": "MO",
+      "countryName": "Macao SAR"
+    },
+    {
+      "countryCode": "MU",
+      "countryName": "Mauritius"
+    },
+    {
+      "countryCode": "MX",
+      "countryName": "Mexico"
+    },
+    {
+      "countryCode": "MD",
+      "countryName": "Moldova"
+    },
+    {
+      "countryCode": "MC",
+      "countryName": "Monaco"
+    },
+    {
+      "countryCode": "NZ",
+      "countryName": "New Zealand"
+    },
+    {
+      "countryCode": "NI",
+      "countryName": "Nicaragua"
+    },
+    {
+      "countryCode": "MK",
+      "countryName": "North Macedonia"
+    },
+    {
+      "countryCode": "PA",
+      "countryName": "Panama"
+    },
+    {
+      "countryCode": "PY",
+      "countryName": "Paraguay"
+    },
+    {
+      "countryCode": "PE",
+      "countryName": "Peru"
+    },
+    {
+      "countryCode": "KN",
+      "countryName": "Saint Kitts and Nevis"
+    },
+    {
+      "countryCode": "SM",
+      "countryName": "San Marino"
+    },
+    {
+      "countryCode": "SG",
+      "countryName": "Singapore"
+    },
+    {
+      "countryCode": "TT",
+      "countryName": "Trinidad and Tobago"
+    },
+    {
+      "countryCode": "UY",
+      "countryName": "Uruguay"
+    },
+    {
+      "countryCode": "VE",
+      "countryName": "Venezuela"
+    },
+    {
+      "countryCode": "GB",
+      "countryName": "United Kingdom"
+    },
+    {
+      "countryCode": "CN",
+      "countryName": "China"
+    },
+    {
+      "countryCode": "TR",
+      "countryName": "Türkiye"
+    },
+    {
+      "countryCode": "RU",
+      "countryName": "Russia"
+    },
+    {
+      "countryCode": "ZA",
+      "countryName": "South Africa"
+    },
+    {
+      "countryCode": "IN",
+      "countryName": "India"
+    },
+    {
+      "countryCode": "MA",
+      "countryName": "Morocco"
+    },
+    {
+      "countryCode": "SA",
+      "countryName": "Saudi Arabia"
+    },
+    {
+      "countryCode": "DZ",
+      "countryName": "Algeria"
+    }
+  ],
+  "sources": [
+    {
+      "id": "at-bmi-visa-exemptions-2026",
+      "title": "Visapflichten und Visabefreiungen für die Einreise in die EU und Österreich",
+      "issuer": "Austrian Federal Ministry of the Interior",
+      "url": "https://www.bmi.gv.at/202/fremdenpolizei_und_grenzkontrolle/visumpflichtige_laender/start.html",
+      "language": "de",
+      "accessedOn": "2026-07-12"
+    },
+    {
+      "id": "lv-mfa-bilateral-entry-2026",
+      "title": "Entry requirements for citizens of countries with whom Latvia has signed a bilateral visa waiver agreement",
+      "issuer": "Ministry of Foreign Affairs of Latvia",
+      "url": "https://www.mfa.gov.lv/en/entry-requirements-citizens-countries-whom-latvia-has-signed-bilateral-visa-waiver-agremeent",
+      "language": "en",
+      "accessedOn": "2026-07-12"
+    },
+    {
+      "id": "dk-immigration-travel-documents-pdf-2026",
+      "title": "Overview of travel documents, visa requirements and border crossing points",
+      "issuer": "Danish Immigration Service",
+      "url": "https://nyidanmark.dk/-/media/Files/US/Visum/Diverse-filer/Overview-of-travel-documents-visa-requirements-and-border-crossing-points130426.pdf",
+      "language": "en",
+      "accessedOn": "2026-07-12"
+    },
+    {
+      "id": "fr-diplomatie-ees-etias-de-2026",
+      "title": "Einreise in den Schengen-Raum: Einführung der Systeme EES und ETIAS",
+      "issuer": "French Ministry for Europe and Foreign Affairs",
+      "url": "https://www.diplomatie.gouv.fr/de/aufenthalt-in-frankreich/reisen-in-frankreich/einreise-in-den-schengen-raum-einfuehrung-der-systeme-ees-und-etias",
+      "language": "de",
+      "accessedOn": "2026-07-12"
+    }
+  ],
+  "verifications": [
+    {
+      "passportCountryCode": "IL",
+      "hostCountryCode": "AT",
+      "passportType": "ordinary",
+      "evidenceStatus": "confirmed_current",
+      "primaryUserSourceId": "at-bmi-visa-exemptions-2026",
+      "reviewedOn": "2026-07-12",
+      "reviewDueOn": "2026-10-12"
+    },
+    {
+      "passportCountryCode": "IL",
+      "hostCountryCode": "LV",
+      "passportType": "ordinary",
+      "evidenceStatus": "confirmed_with_procedure_gap",
+      "primaryUserSourceId": "lv-mfa-bilateral-entry-2026",
+      "reviewedOn": "2026-07-12",
+      "reviewDueOn": "2026-10-12"
+    },
+    {
+      "passportCountryCode": "IL",
+      "hostCountryCode": "DK",
+      "passportType": "ordinary",
+      "evidenceStatus": "confirmed_with_procedure_gap",
+      "primaryUserSourceId": "dk-immigration-travel-documents-pdf-2026",
+      "reviewedOn": "2026-07-12",
+      "reviewDueOn": "2026-10-12"
+    },
+    {
+      "passportCountryCode": "IL",
+      "hostCountryCode": "FR",
+      "passportType": "ordinary",
+      "evidenceStatus": "confirmed_current",
+      "primaryUserSourceId": "fr-diplomatie-ees-etias-de-2026",
+      "reviewedOn": "2026-07-12",
+      "reviewDueOn": "2026-10-12"
+    }
+  ]
+}

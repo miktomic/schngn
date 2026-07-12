@@ -14,7 +14,7 @@
       <mxGeometry x="850" y="40" width="360" height="420" as="geometry" />
     </mxCell>
     <mxCell id="privacy" value="Privacy boundary
-guest local-only; account sync needs consent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff1f2;strokeColor=#e11d48;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+guest local-only; signup-and-save is explicit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff1f2;strokeColor=#e11d48;fontColor=#0f172a;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
       <mxGeometry x="850" y="500" width="360" height="90" as="geometry" />
     </mxCell>
     <mxCell id="repo" value="GitHub repo

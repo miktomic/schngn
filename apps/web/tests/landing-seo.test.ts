@@ -4,13 +4,13 @@ import { readFileSync } from 'node:fs';
 const pageSource = readFileSync('apps/web/src/routes/+page.svelte', 'utf8');
 const messagesSource = readFileSync('apps/web/src/lib/i18n/messages.ts', 'utf8');
 
-describe('UK second-home landing SEO', () => {
-  test('targets the approved UK second-home owner long-tail search intent', () => {
-    expect(messagesSource).toContain('Schengen 90/180 calculator for UK second-home owners | SCHNGN');
+describe('inclusive Schengen-planning landing SEO', () => {
+  test('targets broad Schengen trip-planning search intent', () => {
+    expect(messagesSource).toContain('Schengen 90/180-day calculator and trip planner | SCHNGN');
     expect(messagesSource).toContain(
-      'Plan Europe trips around the Schengen 90/180-day rule with a calculator built for UK second-home owners and frequent travellers.'
+      'Plan Europe trips around the Schengen 90/180-day rule with a calculator for frequent travel, family visits, and longer stays.'
     );
-    expect(messagesSource).toContain('UK second-home owners');
+    expect(messagesSource).not.toContain('UK second-home owners');
     expect(messagesSource).toContain('Schengen 90/180 calculator');
     expect(messagesSource).toContain('See which trips count, how many days you used, and the rolling window behind the answer.');
   });
@@ -19,7 +19,7 @@ describe('UK second-home landing SEO', () => {
     expect(messagesSource).toContain('See counted days and your safe-exit date.');
     expect(messagesSource).toContain('Not legal advice. Not an EU service.');
     expect(messagesSource).toContain('See if your Europe trip fits');
-    expect(messagesSource).toContain('For UK second-home owners');
+    expect(messagesSource).toContain('Schengen 90/180 trip planner');
     expect(pageSource).not.toContain('A privacy-first Schengen 90/180-day calculator and trip planner for frequent travelers');
     expect(pageSource).not.toContain('—');
     expect(pageSource).not.toContain('–');

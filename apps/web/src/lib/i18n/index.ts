@@ -1,5 +1,6 @@
 import { catalogs, type MessageKey } from './messages';
 import { intlLocale, type Locale } from './locales';
+import { translateExtended } from './extendedLocaleStrings';
 
 export * from './locales';
 export type { MessageKey } from './messages';
@@ -8,7 +9,7 @@ export type Translate = (key: MessageKey, values?: Record<string, string | numbe
 
 export function createTranslator(locale: Locale): Translate {
   return (key, values = {}) => {
-    const template = catalogs[locale][key] ?? catalogs.en[key];
+    const template = catalogs[locale]?.[key] ?? translateExtended(locale, catalogs.en[key]);
     return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, name: string) => String(values[name] ?? match));
   };
 }

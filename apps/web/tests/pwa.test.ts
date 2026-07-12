@@ -144,6 +144,7 @@ describe('installable offline PWA shell', () => {
     expect(layoutSource).toContain("url.pathname.startsWith('/api/')");
     expect(layoutSource).toContain("url.pathname.startsWith('/_app/')");
     expect(layoutSource).toContain("isLocalDevelopment && safeLocalDevPrefixes.some");
+    expect(layoutSource).toContain("url.search === '?import'");
     expect(layoutSource).toContain('urls.add(`${url.pathname}${url.search}`)');
   });
 
@@ -223,6 +224,7 @@ describe('installable offline PWA shell', () => {
         type: 'SCHNGN_CACHE_URLS',
         urls: [
           '/src/routes/app/+page.svelte?svelte&type=style&lang.css',
+          '/src/lib/bilateral/data/runtime.v1.json?import',
           '/@fs/Users/example/packages/engine/src/index.ts?v=6ca8cddd',
           '/api/account/trips',
           '/src/private.ts?token=not-a-static-version',
@@ -238,10 +240,11 @@ describe('installable offline PWA shell', () => {
     await completion;
     expect(harness.fetchCalls.sort()).toEqual([
       '/@fs/Users/example/packages/engine/src/index.ts?v=6ca8cddd',
+      '/src/lib/bilateral/data/runtime.v1.json?import',
       '/src/routes/app/+page.svelte?svelte&type=style&lang.css'
     ]);
     expect([...harness.cachePuts.values()].flat().sort()).toEqual(harness.fetchCalls);
-    expect(replies).toEqual([{ ok: true, cached: 2 }]);
+    expect(replies).toEqual([{ ok: true, cached: 3 }]);
   });
 
   test('development source paths remain ineligible away from loopback', async () => {
@@ -345,11 +348,13 @@ describe('installable offline PWA shell', () => {
       'schngn-runtime-v5',
       'schngn-runtime-v6',
       'schngn-runtime-v7',
+      'schngn-runtime-v8',
       'schngn-static-v1',
       'schngn-static-v2',
       'schngn-static-v5',
       'schngn-static-v6',
-      'schngn-static-v7'
+      'schngn-static-v7',
+      'schngn-static-v8'
     ]);
     expect(harness.claimed).toBe(true);
   });

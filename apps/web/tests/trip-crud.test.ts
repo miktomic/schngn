@@ -57,16 +57,74 @@ describe('trip CRUD model', () => {
     expect(calculateUsageOnDate(toEngineTrips(result.trips, '2026-07-12'), '2026-07-12').daysUsed).toBe(12);
   });
 
-  test('requires an ongoing stay to have started by today', () => {
-    expect(validateTripInput(form({ entryDate: '2026-07-11', exitDate: '', ongoing: true }), '2026-07-10')).toEqual({
-      entryDate: 'An ongoing stay cannot start in the future.'
+  test('allows a future open-ended stay and projects its latest safe exit', () => {
+    const result = upsertTrip(
+      [],
+      form({ entryDate: '2026-07-11', exitDate: '', ongoing: true }),
+      '2026-07-10'
+    );
+
+    expect(result.errors).toEqual({});
+    expect(result.trips[0]).toMatchObject({
+      ongoing: true,
+      stays: [{ entryDate: '2026-07-11', exitDate: '2026-10-08' }]
+    });
+    expect(toEngineTrips(result.trips, '2026-07-10')).toEqual([
+      { entryDate: '2026-07-11', exitDate: '2026-10-08', label: undefined }
+    ]);
+  });
+
+  test('recalculates a future open-ended stay when other trips change', () => {
+    const openEnded = upsertTrip(
+      [],
+      form({ id: 'open', entryDate: '2026-07-01', exitDate: '', ongoing: true }),
+      '2026-06-01'
+    ).trips;
+    expect(openEnded[0].stays[0].exitDate).toBe('2026-09-28');
+
+    const withHistory = upsertTrip(
+      openEnded,
+      form({ id: 'history', entryDate: '2026-04-01', exitDate: '2026-05-30' }),
+      '2026-06-01'
+    ).trips;
+    expect(withHistory.find((trip) => trip.id === 'open')?.stays[0].exitDate).toBe('2026-07-30');
+
+    const withoutHistory = deleteTripById(withHistory, 'history', '2026-06-01');
+    expect(withoutHistory[0].stays[0].exitDate).toBe('2026-09-28');
+  });
+
+  test('accepts future breaks for a future open-ended stay but not for a stay already in progress', () => {
+    const futureBreak = {
+      id: 'future-break',
+      leftDate: '2026-07-15',
+      reentryDate: '2026-07-20'
+    };
+    expect(validateTripInput(form({
+      entryDate: '2026-07-11',
+      exitDate: '',
+      ongoing: true,
+      outsideBreaks: [futureBreak]
+    }), '2026-07-10')).toEqual({});
+
+    expect(validateTripInput(form({
+      entryDate: '2026-07-01',
+      exitDate: '',
+      ongoing: true,
+      outsideBreaks: [futureBreak]
+    }), '2026-07-10')).toMatchObject({
+      breakFields: {
+        'future-break': {
+          leftDate: 'The exit date must fall within the trip.',
+          reentryDate: 'The re-entry date must fall within the trip.'
+        }
+      }
     });
   });
 
   test('allows only one ongoing stay at a time', () => {
     const existing = upsertTrip([], form({ id: 'current', entryDate: '2026-07-01', exitDate: '', ongoing: true }), '2026-07-10').trips;
     const result = upsertTrip(existing, form({ id: 'second', entryDate: '2026-07-05', exitDate: '', ongoing: true }), '2026-07-10');
-    expect(result.errors).toEqual({ exitDate: 'Finish your existing ongoing stay before adding another one.' });
+    expect(result.errors).toEqual({ exitDate: 'Finish your existing open-ended stay before adding another one.' });
     expect(result.trips).toEqual(existing);
   });
 

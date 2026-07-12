@@ -62,7 +62,7 @@
 
   function collectShellUrls(): string[] {
     const urls = new Set<string>();
-    const candidates = ['/', '/app', '/accuracy', '/manifest.json', '/favicon.ico', '/favicon.png', location.pathname];
+    const candidates = ['/', '/app', '/accuracy', '/explainer', '/faq', '/contact', '/manifest.json', '/favicon.ico', '/favicon.png', location.pathname];
 
     for (const candidate of candidates) {
       const url = new URL(candidate, location.origin);
@@ -112,6 +112,7 @@
       isLocalDevelopment && safeLocalDevPrefixes.some((prefix) => url.pathname.startsWith(prefix));
     const hasSafeLocalDevSearch =
       url.search === '' ||
+      url.search === '?import' ||
       /^\?v=[a-z0-9_-]+$/i.test(url.search) ||
       /^\?t=\d+$/.test(url.search) ||
       url.search === '?svelte&type=style&lang.css';

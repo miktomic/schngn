@@ -1,23 +1,26 @@
-import type { Locale } from './locales';
+import { SUPPORTED_LOCALES, type Locale } from './locales';
+import { translateExtended } from './extendedLocaleStrings';
 
-const catalogs = {
-  en: { title: 'Keep your trips for next time', copy: 'Create an account to save your trip history for future 90/180 calculations and use it on another device. Nothing is uploaded until you choose sync.', button: 'Create account' },
-  fr: { title: 'Retrouvez vos voyages la prochaine fois', copy: 'Créez un compte pour conserver votre historique pour de futurs calculs 90/180 et l’utiliser sur un autre appareil. Rien n’est envoyé avant votre accord de synchronisation.', button: 'Créer un compte' },
-  de: { title: 'Reisen für die nächste Berechnung behalten', copy: 'Erstellen Sie ein Konto, um Ihren Reiseverlauf für künftige 90/180-Berechnungen und auf anderen Geräten zu speichern. Erst nach Ihrer Sync-Zustimmung wird etwas hochgeladen.', button: 'Konto erstellen' },
-  es: { title: 'Conserva tus viajes para la próxima vez', copy: 'Crea una cuenta para guardar tu historial para futuros cálculos de 90/180 días y usarlo en otro dispositivo. Nada se sube hasta que elijas sincronizar.', button: 'Crear cuenta' },
-  it: { title: 'Conserva i viaggi per la prossima volta', copy: 'Crea un account per salvare la cronologia per i prossimi calcoli 90/180 e usarla su un altro dispositivo. Nulla viene caricato finché non scegli la sincronizzazione.', button: 'Crea account' },
-  ru: { title: 'Сохраните поездки для будущих расчётов', copy: 'Создайте аккаунт, чтобы сохранить историю поездок для следующих расчётов 90/180 и использовать её на другом устройстве. Данные не отправляются, пока вы не включите синхронизацию.', button: 'Создать аккаунт' },
-  tr: { title: 'Seyahatlerinizi sonraki hesaplamalar için saklayın', copy: 'Gelecekteki 90/180 hesaplamalarında ve başka bir cihazda kullanmak üzere seyahat geçmişinizi kaydetmek için hesap oluşturun. Eşitlemeyi seçene kadar hiçbir veri yüklenmez.', button: 'Hesap oluştur' },
-  he: { title: 'שמרו את הנסיעות לחישובים הבאים', copy: 'צרו חשבון כדי לשמור את היסטוריית הנסיעות לחישובי 90/180 עתידיים ולהשתמש בה במכשיר אחר. דבר לא יועלה עד שתבחרו לסנכרן.', button: 'יצירת חשבון' },
-  ar: { title: 'احتفظ برحلاتك للحسابات القادمة', copy: 'أنشئ حسابًا لحفظ سجل رحلاتك لحسابات 90/180 المستقبلية واستخدامه على جهاز آخر. لن يُرفع شيء حتى تختار المزامنة.', button: 'إنشاء حساب' }
-} satisfies Record<Locale, Record<'title' | 'copy' | 'button', string>>;
+type SignupCatalog = Record<'title' | 'copy' | 'button' | 'compactButton', string>;
+
+const catalogs: Partial<Record<Locale, SignupCatalog>> & { en: SignupCatalog } = {
+  en: { title: 'Keep your trips for next time', copy: 'Create an account to save your current trip history in your SCHNGN account for future 90/180 calculations and access on another device.', button: 'Create account & save trips', compactButton: 'Sign up & save' },
+  fr: { title: 'Retrouvez vos voyages la prochaine fois', copy: 'Créez un compte pour enregistrer votre historique actuel dans votre compte SCHNGN, le réutiliser pour de futurs calculs 90/180 et y accéder sur un autre appareil.', button: 'Créer un compte et enregistrer', compactButton: 'S’inscrire et enregistrer' },
+  de: { title: 'Reisen für die nächste Berechnung behalten', copy: 'Erstellen Sie ein Konto, um Ihren aktuellen Reiseverlauf im SCHNGN-Konto für künftige 90/180-Berechnungen und andere Geräte zu speichern.', button: 'Konto erstellen und Reisen speichern', compactButton: 'Registrieren und speichern' },
+  es: { title: 'Conserva tus viajes para la próxima vez', copy: 'Crea una cuenta para guardar tu historial actual en tu cuenta SCHNGN, usarlo en futuros cálculos de 90/180 días y acceder desde otro dispositivo.', button: 'Crear cuenta y guardar viajes', compactButton: 'Registrarse y guardar' },
+  it: { title: 'Conserva i viaggi per la prossima volta', copy: 'Crea un account per salvare la cronologia attuale nel tuo account SCHNGN, riutilizzarla nei prossimi calcoli 90/180 e accedervi da un altro dispositivo.', button: 'Crea account e salva i viaggi', compactButton: 'Registrati e salva' },
+  ru: { title: 'Сохраните поездки для будущих расчётов', copy: 'Создайте аккаунт, чтобы сохранить текущую историю поездок в SCHNGN для следующих расчётов 90/180 и доступа с другого устройства.', button: 'Создать аккаунт и сохранить поездки', compactButton: 'Регистрация и сохранение' },
+  tr: { title: 'Seyahatlerinizi sonraki hesaplamalar için saklayın', copy: 'Mevcut seyahat geçmişinizi gelecekteki 90/180 hesaplamaları ve başka cihazlardan erişim için SCHNGN hesabınıza kaydetmek üzere hesap oluşturun.', button: 'Hesap oluştur ve seyahatleri kaydet', compactButton: 'Kaydol ve kaydet' },
+  he: { title: 'שמרו את הנסיעות לחישובים הבאים', copy: 'צרו חשבון כדי לשמור את היסטוריית הנסיעות הנוכחית בחשבון SCHNGN לחישובי 90/180 עתידיים ולגישה ממכשיר אחר.', button: 'יצירת חשבון ושמירת נסיעות', compactButton: 'הרשמה ושמירה' },
+  ar: { title: 'احتفظ برحلاتك للحسابات القادمة', copy: 'أنشئ حسابًا لحفظ سجل رحلاتك الحالي في حساب SCHNGN لاستخدامه في حسابات 90/180 المستقبلية والوصول إليه من جهاز آخر.', button: 'إنشاء حساب وحفظ الرحلات', compactButton: 'التسجيل والحفظ' }
+};
 
 export type SignupValueUiKey = keyof (typeof catalogs)['en'];
 
 export function createSignupValueUiTranslator(locale: Locale): (key: SignupValueUiKey) => string {
-  return (key) => catalogs[locale][key];
+  return (key) => catalogs[locale]?.[key] ?? translateExtended(locale, catalogs.en[key]);
 }
 
 export function signupValueCatalogLengths(): Record<Locale, number> {
-  return Object.fromEntries(Object.entries(catalogs).map(([locale, catalog]) => [locale, Object.keys(catalog).length])) as Record<Locale, number>;
+  return Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [locale, Object.keys(catalogs.en).length])) as Record<Locale, number>;
 }

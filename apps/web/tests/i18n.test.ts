@@ -46,7 +46,10 @@ import {
 
 describe('whole-site localization', () => {
   test('supports all approved locales and both RTL languages', () => {
-    expect(SUPPORTED_LOCALES).toEqual(['en', 'fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar']);
+    expect(SUPPORTED_LOCALES).toEqual([
+      'en', 'fr', 'de', 'es', 'it', 'pt-br', 'ru', 'uk', 'tr', 'sr', 'sq', 'ka',
+      'zh-cn', 'ja', 'ko', 'he', 'ar'
+    ]);
     expect(localeDirection('he')).toBe('rtl');
     expect(localeDirection('ar')).toBe('rtl');
     for (const locale of SUPPORTED_LOCALES.filter((candidate) => !['he', 'ar'].includes(candidate))) {
@@ -59,7 +62,10 @@ describe('whole-site localization', () => {
     expect(localeFromPath('/he/app')).toBe('he');
     expect(localeFromPath('/app')).toBe('en');
     expect(stripLocalePrefix('/ar/accuracy')).toBe('/accuracy');
+    expect(stripLocalePrefix('/he/explainer')).toBe('/explainer');
     expect(localizedPath('/ru/app', 'fr')).toBe('/fr/app');
+    expect(localizedPath('/faq', 'ar')).toBe('/ar/faq');
+    expect(localizedPath('/contact', 'uk')).toBe('/uk/contact');
     expect(localizedPath('/de', 'en')).toBe('/');
     expect(localizedUrl(new URL('https://schngn.com/he/app?section=planner#result'), 'tr')).toBe('/tr/app?section=planner#result');
   });
@@ -67,6 +73,8 @@ describe('whole-site localization', () => {
   test('reroutes locale-prefixed pages to the existing SvelteKit routes', async () => {
     expect(await reroute({ url: new URL('https://schngn.com/fr/app?section=planner'), fetch } as never)).toBe('/app');
     expect(await reroute({ url: new URL('https://schngn.com/ar/accuracy'), fetch } as never)).toBe('/accuracy');
+    expect(await reroute({ url: new URL('https://schngn.com/he/faq'), fetch } as never)).toBe('/faq');
+    expect(await reroute({ url: new URL('https://schngn.com/pt-br/contact'), fetch } as never)).toBe('/contact');
   });
 
   test('keeps hooks resolvable before SvelteKit generates path aliases in clean CI', () => {
@@ -102,6 +110,20 @@ describe('whole-site localization', () => {
     expect(new Set(Object.values(tripOnboardingCatalogLengths())).size).toBe(1);
   });
 
+  test('uses the approved past-or-future dialog title and Serbian Latin script', () => {
+    expect(createAppDeepUiTranslator('en')('addStay')).toBe('Add a past or future Schengen stay');
+
+    const serbianCopy = [
+      createTranslator('sr')('landing.hero'),
+      createAppUiTranslator('sr')('navOverview'),
+      createAppDeepUiTranslator('sr')('addStay'),
+      createAppRuntimeUiTranslator('sr')('browserData'),
+      createTripOnboardingTranslator('sr')('title')
+    ].join(' ');
+    expect(serbianCopy).not.toMatch(/[\u0400-\u04ff]/u);
+    expect(createAppDeepUiTranslator('sr')('addStay')).toContain('Šengenu');
+  });
+
   test('localizes the ongoing-stay flow in every supported language', () => {
     expect(new Set(Object.values(ongoingStayCatalogLengths()))).toEqual(new Set([5]));
     for (const locale of SUPPORTED_LOCALES) {
@@ -112,13 +134,15 @@ describe('whole-site localization', () => {
     }
     expect(createOngoingStayUiTranslator('ru')('label')).not.toContain('currently');
     expect(createOngoingStayUiTranslator('he')('leaveBy')).not.toContain('Leave');
+    expect(createOngoingStayUiTranslator('en')('label')).toBe("I don't know the exit date yet");
+    expect(createOngoingStayUiTranslator('en')('help')).toContain('current or future stay');
   });
 
   test('localizes the repeat-calculation signup value in every supported language', () => {
-    expect(new Set(Object.values(signupValueCatalogLengths()))).toEqual(new Set([3]));
+    expect(new Set(Object.values(signupValueCatalogLengths()))).toEqual(new Set([4]));
     for (const locale of SUPPORTED_LOCALES) {
       const signup = createSignupValueUiTranslator(locale);
-      for (const key of ['title', 'copy', 'button'] as const) expect(signup(key).trim().length).toBeGreaterThan(0);
+      for (const key of ['title', 'copy', 'button', 'compactButton'] as const) expect(signup(key).trim().length).toBeGreaterThan(0);
     }
   });
 
@@ -135,10 +159,17 @@ describe('whole-site localization', () => {
       ar: ['تاريخ الدخول', 'تاريخ الخروج', 'دولة الدخول', 'دولة الخروج', 'تاريخ إعادة الدخول']
     } as const;
 
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
       const deep = createAppDeepUiTranslator(locale);
       expect([deep('entered'), deep('left'), deep('enteredVia'), deep('leftVia'), deep('reentered')])
         .toEqual(expected[locale]);
+    }
+    const english = createAppDeepUiTranslator('en');
+    for (const locale of ['pt-br', 'uk', 'sr', 'sq', 'ka', 'zh-cn', 'ja', 'ko'] as const) {
+      const deep = createAppDeepUiTranslator(locale);
+      for (const key of ['entered', 'left', 'enteredVia', 'leftVia', 'reentered'] as const) {
+        expect(deep(key)).not.toBe(english(key));
+      }
     }
   });
 
@@ -243,13 +274,17 @@ describe('whole-site localization', () => {
       ar: 'ضمن الحد · يومان'
     } as const;
 
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of Object.keys(completedLabels) as Array<keyof typeof completedLabels>) {
       const dashboard = localizeDashboardState(locale, completed);
       const simulation = localizeSimulationState(locale, completedSimulation);
       expect(dashboard.statusLabel).toBe(completedLabels[locale]);
       expect(simulation.statusLabel).toBe(completedLabels[locale]);
       expect(simulation.firstFixCopy).toBe(dashboard.actionCopy);
       expect(formatAdjusterFeedback(locale, 0, 2, true)).toBe(withinLimit[locale]);
+    }
+    for (const locale of ['pt-br', 'uk', 'sr', 'sq', 'ka', 'zh-cn', 'ja', 'ko'] as const) {
+      expect(localizeDashboardState(locale, completed).statusLabel).not.toBe(completedLabels.en);
+      expect(formatAdjusterFeedback(locale, 0, 2, true)).not.toBe(withinLimit.en);
     }
   });
 
@@ -310,12 +345,18 @@ describe('whole-site localization', () => {
     const selector = readFileSync('apps/web/src/lib/i18n/LanguageSelector.svelte', 'utf8');
     const config = readFileSync('apps/web/svelte.config.js', 'utf8');
     const accuracyRoute = readFileSync('apps/web/src/routes/accuracy/+page.ts', 'utf8');
+    const explainerRoute = readFileSync('apps/web/src/routes/explainer/+page.ts', 'utf8');
+    const faqRoute = readFileSync('apps/web/src/routes/faq/+page.ts', 'utf8');
+    const contactRoute = readFileSync('apps/web/src/routes/contact/+page.ts', 'utf8');
     expect(worker).toContain("'he', 'ar'");
     expect(worker).toContain('localizedAppPath');
     expect(landing).toContain('hreflang="x-default"');
     expect(selector).toContain('window.location.assign');
     expect(config).toContain('localizedPrerenderEntries');
     expect(accuracyRoute).toContain('prerender = true');
+    expect(explainerRoute).toContain('prerender = true');
+    expect(faqRoute).toContain('prerender = true');
+    expect(contactRoute).toContain('prerender = true');
     for (const locale of SUPPORTED_LOCALES.filter((candidate) => candidate !== 'en')) {
       expect(config).toContain(`'${locale}'`);
     }
@@ -324,8 +365,8 @@ describe('whole-site localization', () => {
   test('passes the active locale into generated timeline copy and isolates RTL date ranges', () => {
     const timeline = readFileSync('apps/web/src/lib/design/TimelineLedger.svelte', 'utf8');
     expect(timeline).toContain('horizonDays,\n    locale,\n    mode');
-    expect(timeline).toContain('dateRangeLabel[locale]');
-    expect(timeline).toContain('aria-label={`${label}. ${model.summary} ${dateRangeLabel[locale]} ${model.rangeLabel}.`}');
+    expect(timeline).toContain('activeDateRangeLabel');
+    expect(timeline).toContain('aria-label={`${label}. ${model.summary} ${activeDateRangeLabel} ${model.rangeLabel}.`}');
     expect(timeline).not.toContain('<bdi>{model.rangeLabel}</bdi>');
     expect(timeline).toContain('<bdi>{formatDateRange(model.startDate, model.startDate)}</bdi>');
     expect(timeline).toContain('<bdi>{formatDateRange(model.endDate, model.endDate)}</bdi>');

@@ -1,15 +1,17 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { pushState, replaceState } from '$app/navigation';
+  import { goto, pushState, replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
   import { latestSafeExitDate } from '@schngn/engine';
-  import { FactCard, SchngnLogo, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
+  import { FactCard, SchengenCountryGuide, SchngnLogo, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
+  import BilateralPassportCheck from '$lib/design/BilateralPassportCheck.svelte';
   import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
-  import { createTranslator, intlLocale, localeFromPath } from '$lib/i18n';
+  import { createTranslator, intlLocale, localeFromPath, localizedPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
+  import { createBilateralUiTranslator } from '$lib/i18n/bilateralUi';
   import { createAppRuntimeUiTranslator, formatLocalizedCount, formatLocalizedOutsideDays, formatLocalizedSchengenDays } from '$lib/i18n/appRuntimeUi';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
   import {
@@ -21,6 +23,7 @@
   import { createSinglePageUiTranslator } from '$lib/i18n/singlePageUi';
   import { createOngoingStayUiTranslator } from '$lib/i18n/ongoingStayUi';
   import { createSignupValueUiTranslator } from '$lib/i18n/signupValueUi';
+  import { contactUi } from '$lib/i18n/contactUi';
   import {
     localizeDashboardState,
     localizeSimulationState,
@@ -38,7 +41,7 @@
   } from '$lib/simulator/savedTripAdjustment';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
-  import { localizedLegalCopy, localizedOfficialSourceLinks } from '$lib/legal/legalCopy';
+  import { localizedLegalCopy } from '$lib/legal/legalCopy';
   import {
     buildUnlockBuyIntentEvent,
     buildUnlockFakeDoorState,
@@ -78,8 +81,8 @@
   import { assignTripColors, buildTripCardStates } from '$lib/trips/tripCardState';
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
-  import { initializeClerkBrowserAuth, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
-  import { APP_ANCHORS, appAnchorFromUrl, appAnchorUrl, canonicalAppAnchorUrl, type AppAnchor } from '$lib/navigation/appAnchor';
+  import { initializeClerkBrowserAuth, openClerkSignUp, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
+  import { APP_ANCHORS, appAnchorFromUrl, appAnchorUrl, appResourceFromUrl, canonicalAppAnchorUrl, type AppAnchor } from '$lib/navigation/appAnchor';
   import {
     deleteAccountData,
     getAccountTrips,
@@ -88,9 +91,12 @@
   import {
     buildAccountSyncMetadata,
     buildPausedAccountSyncMetadata,
+    clearAccountSignupSyncIntent,
     clearAccountSyncMetadata,
     decideAccountReconciliation,
+    hasAccountSignupSyncIntent,
     loadAccountSyncMetadata,
+    saveAccountSignupSyncIntent,
     saveAccountSyncMetadata,
     shouldRestoreMissingLocalSnapshot,
     type AccountSyncMetadata,
@@ -116,6 +122,7 @@
   $: t = createTranslator(locale);
   $: ui = createAppUiTranslator(locale);
   $: deep = createAppDeepUiTranslator(locale);
+  $: bilateralUi = createBilateralUiTranslator(locale);
   $: rt = createAppRuntimeUiTranslator(locale);
   $: whatIfUi = createWhatIfUiTranslator(locale);
   $: tripOnboarding = createTripOnboardingTranslator(locale);
@@ -123,12 +130,8 @@
   $: tripCardUi = createTripCardUiTranslator(locale);
   $: ongoingStay = createOngoingStayUiTranslator(locale);
   $: signupValue = createSignupValueUiTranslator(locale);
+  $: contactCopy = contactUi(locale);
   $: legal = localizedLegalCopy(locale);
-  $: officialSourceLinks = localizedOfficialSourceLinks(locale);
-  $: anchorLinks = APP_ANCHORS.map((anchor) => ({
-    anchor,
-    label: singlePage(anchor)
-  }));
 
   let currentAnchor: AppAnchor = 'timeline';
   let hasLoadedTrips = false;
@@ -140,6 +143,7 @@
   let pendingDeleteTripId: string | null = null;
   let clearConfirmationVisible = false;
   let tripForm: TripFormInput = emptyTripForm('booked');
+  let tripExitCountryExplicit = false;
   let formErrors: TripValidationErrors = {};
   let outsideWindowConfirmationVisible = false;
   let storageWarning = '';
@@ -164,6 +168,9 @@
   let quickAdjustNotice = '';
   let quickAdjustError = '';
   let clerkAuth: ClerkBrowserAuth | null = null;
+  let clerkAuthInitialization: Promise<ClerkBrowserAuth> | null = null;
+  let signupOpening = false;
+  let signupError = '';
   let accountState: AccountState = 'loading';
   let accountError = '';
   let accountNotice = '';
@@ -241,6 +248,7 @@
   $: accountSignedIn = clerkAuth?.available === true && clerkAuth.isSignedIn && clerkAuth.userId !== null;
   $: accountEmail = clerkAuth?.available === true ? clerkAuth.email : null;
   $: accountStatusLabel = accountHeaderLabel(accountState, accountSignedIn);
+  $: headerAccountLabel = accountSignedIn ? deep('signOut') : signupValue('compactButton');
   $: localizedStorageWarning = storageWarning ? (locale === 'en' ? storageWarning : rt('accountGenericError')) : '';
 
   onMount(() => {
@@ -254,6 +262,11 @@
     market = new URL(window.location.href).searchParams.get('market') === 'uk' ? 'uk' : 'eu';
     unlockPrice = loadOrAssignUnlockPriceBucket(window.localStorage, { market });
     const initialUrl = new URL(window.location.href);
+    const resourceDestination = appResourceFromUrl(initialUrl);
+    if (resourceDestination) {
+      void goto(resourceDestinationUrl(initialUrl, resourceDestination), { replaceState: true });
+      return;
+    }
     const shouldRestoreAnchor = Boolean(initialUrl.hash || initialUrl.searchParams.has('section'));
     const canonicalUrl = canonicalAppAnchorUrl(initialUrl);
     currentAnchor = appAnchorFromUrl(initialUrl);
@@ -321,10 +334,7 @@
     accountError = '';
     accountNotice = '';
 
-    if (!clerkAuth || !clerkAuth.available) {
-      clerkAuth = await initializeClerkBrowserAuth(env.PUBLIC_CLERK_PUBLISHABLE_KEY);
-    }
-    const auth = clerkAuth;
+    const auth = await ensureClerkAuth();
     if (!auth.available) {
       accountState = 'unavailable';
       return;
@@ -346,6 +356,7 @@
 
     const identity = captureAccountIdentity();
     if (!identity) {
+      clearSignupSyncIntentOnCancelledReturn();
       accountState = 'guest';
       return;
     }
@@ -369,6 +380,15 @@
 
     accountSnapshot = result.snapshot;
     accountMetadata = browser ? loadAccountSyncMetadata(window.localStorage) : null;
+    if (signupSyncRequested()) {
+      const belongsToAnotherAccount = accountMetadata !== null && accountMetadata.userId !== context.userId;
+      if (result.snapshot.revision === 0 && !belongsToAnotherAccount && localTripsDurable) {
+        const saved = await enqueueAccountWrite(trips, 0, ui('synced'), true);
+        if (saved) clearSignupSyncIntent();
+        return;
+      }
+      clearSignupSyncIntent();
+    }
     if (shouldRestoreMissingLocalSnapshot({
       userId: context.userId,
       localTrips: trips,
@@ -412,6 +432,22 @@
 
     accountState = 'conflict';
     accountError = rt('conflictError');
+  }
+
+  async function ensureClerkAuth(): Promise<ClerkBrowserAuth> {
+    if (clerkAuth?.available) return clerkAuth;
+    if (!clerkAuthInitialization) {
+      clerkAuthInitialization = initializeClerkBrowserAuth(env.PUBLIC_CLERK_PUBLISHABLE_KEY)
+        .then((auth) => {
+          clerkAuth = auth;
+          return auth;
+        });
+    }
+    try {
+      return await clerkAuthInitialization;
+    } finally {
+      clerkAuthInitialization = null;
+    }
   }
 
   function queueAccountSync(nextTrips: EditableTrip[], localPersisted: boolean): void {
@@ -593,20 +629,47 @@
   }
 
   async function startAccountSignUp(): Promise<void> {
-    const auth = clerkAuth;
-    if (!auth?.available) return;
+    if (signupOpening) return;
+    signupOpening = true;
+    accountError = '';
+    signupError = '';
     try {
-      await auth.redirectToSignUp({ redirectUrl: accountReturnUrl() });
+      if (browser) {
+        const intent = saveAccountSignupSyncIntent(window.sessionStorage);
+        if (intent.ok === false) {
+          accountError = intent.error;
+          signupError = rt('securePageError');
+          return;
+        }
+      }
+      const result = await openClerkSignUp(
+        env.PUBLIC_CLERK_PUBLISHABLE_KEY,
+        { forceRedirectUrl: accountReturnUrl('signup') }
+      );
+      if (result.ok === false) {
+        clearSignupSyncIntent();
+        accountState = 'unavailable';
+        signupError = rt('securePageError');
+        accountError = signupError;
+      }
     } catch {
+      clearSignupSyncIntent();
       accountError = rt('securePageError');
+      signupError = accountError;
+    } finally {
+      signupOpening = false;
     }
   }
 
   async function startAccountSignIn(): Promise<void> {
     const auth = clerkAuth;
-    if (!auth?.available) return;
+    if (!auth?.available) {
+      accountDetailsOpen = true;
+      navigateToAnchor('account');
+      return;
+    }
     try {
-      await auth.redirectToSignIn({ redirectUrl: accountReturnUrl() });
+      await auth.redirectToSignIn({ redirectUrl: accountReturnUrl('signin') });
     } catch {
       accountError = rt('securePageError');
     }
@@ -744,13 +807,31 @@
     return auth.isSignedIn && auth.userId && auth.sessionId ? `${auth.userId}:${auth.sessionId}` : 'signed-out';
   }
 
-  function accountReturnUrl(): string {
+  function accountReturnUrl(mode: 'signup' | 'signin'): string {
     if (!browser) return '/app';
     const url = new URL(window.location.href);
     url.searchParams.delete('section');
-    url.searchParams.set('account', 'connected');
+    url.searchParams.set('account', mode === 'signup' ? 'signup' : 'connected');
     url.hash = 'account';
     return `${url.pathname}${url.search}${url.hash}`;
+  }
+
+  function signupSyncRequested(): boolean {
+    return Boolean(
+      browser &&
+      page.url.searchParams.get('account') === 'signup' &&
+      hasAccountSignupSyncIntent(window.sessionStorage)
+    );
+  }
+
+  function clearSignupSyncIntent(): void {
+    if (!browser) return;
+    const result = clearAccountSignupSyncIntent(window.sessionStorage);
+    if (result.ok === false) storageWarning = result.error;
+  }
+
+  function clearSignupSyncIntentOnCancelledReturn(): void {
+    if (browser && page.url.searchParams.get('account') === 'signup') clearSignupSyncIntent();
   }
 
   function navigateToAnchor(anchor: AppAnchor, openDisclosure = false): void {
@@ -786,7 +867,18 @@
 
   function selectAnchor(event: Event): void {
     const anchor = (event.currentTarget as HTMLSelectElement).value;
+    if (anchor === 'explainer' || anchor === 'faq' || anchor === 'contact') {
+      window.location.assign(localizedPath(`/${anchor}`, locale));
+      return;
+    }
     if (APP_ANCHORS.includes(anchor as AppAnchor)) navigateToAnchor(anchor as AppAnchor);
+  }
+
+  function resourceDestinationUrl(url: URL, resource: 'explainer' | 'faq'): string {
+    const query = new URLSearchParams(url.search);
+    query.delete('section');
+    const search = query.size > 0 ? `?${query.toString()}` : '';
+    return `${localizedPath(`/${resource}`, locale)}${search}`;
   }
 
   function startAddTrip(): void {
@@ -794,6 +886,7 @@
     resetQuickAdjuster();
     pendingDeleteTripId = null;
     tripForm = emptyTripForm('booked');
+    tripExitCountryExplicit = false;
     formErrors = {};
     outsideWindowConfirmationVisible = false;
     tripEditorVisible = true;
@@ -804,6 +897,7 @@
 
   function cancelTripForm(): void {
     tripForm = emptyTripForm('booked');
+    tripExitCountryExplicit = false;
     formErrors = {};
     outsideWindowConfirmationVisible = false;
     if (tripDialog?.open) tripDialog.close();
@@ -838,6 +932,7 @@
       trip_count_bucket: buildTripCountBucket(result.trips.length)
     });
     tripForm = emptyTripForm('booked');
+    tripExitCountryExplicit = false;
     if (tripDialog?.open) tripDialog.close();
     tripEditorVisible = false;
     focusElementAfterRender(savedTripId ? `trip-trigger-${savedTripId}` : 'trips-heading', 'trips-heading');
@@ -863,6 +958,7 @@
       exitCountryCode: ongoing ? '' : tripForm.exitCountryCode,
       status: ongoing ? 'booked' : tripForm.status
     };
+    if (ongoing) tripExitCountryExplicit = false;
   }
 
   function calculateOngoingLeaveBy(preview: EditableTrip | null): string | null {
@@ -880,8 +976,22 @@
     tripForm = {
       ...tripForm,
       entryCountryCode,
-      exitCountryCode: tripForm.exitCountryCode || entryCountryCode
+      exitCountryCode: tripExitCountryExplicit ? tripForm.exitCountryCode : entryCountryCode
     };
+  }
+
+  function updateTripExitCountry(event: Event): void {
+    const exitCountryCode = (event.currentTarget as HTMLSelectElement).value;
+    tripForm = {
+      ...tripForm,
+      exitCountryCode
+    };
+    tripExitCountryExplicit = Boolean(exitCountryCode);
+  }
+
+  function confirmTripExitCountry(): void {
+    tripExitCountryExplicit = true;
+    focusElementAfterRender('trip-passport-country', 'trip-exit-country');
   }
 
   function requestDeleteTrip(id: string): void {
@@ -1345,33 +1455,38 @@
       <div class="app-header-actions">
         <LanguageSelector label={t('common.language')} {locale} url={page.url} />
         <button
-        class:attention={accountState === 'conflict' || accountState === 'paused' || accountState === 'error'}
-        class:synced={accountState === 'synced' || accountState === 'syncing'}
-        class="account-chip"
-        type="button"
-        aria-label={`${ui('openAccount')} — ${accountStatusLabel}`}
-        onclick={() => { accountDetailsOpen = true; navigateToAnchor('account'); }}
-      >
-        <span aria-hidden="true"></span>{accountStatusLabel}
+          class="account-chip"
+          class:signed-in={accountSignedIn}
+          type="button"
+          disabled={accountSignOutInProgress || signupOpening}
+          aria-busy={accountSignOutInProgress || signupOpening ? 'true' : undefined}
+          onclick={() => accountSignedIn ? void signOutAccount() : void startAccountSignUp()}
+        >
+          {headerAccountLabel}
         </button>
+        {#if signupError}<p class="header-auth-error" role="alert">{signupError}</p>{/if}
       </div>
     </header>
 
     <nav class="anchor-nav" aria-label={ui('appSections')}>
       <div class="anchor-links">
         <span>{singlePage('jumpTo')}</span>
-        {#each anchorLinks as link}
-          <a
-            href={appAnchorUrl(page.url, link.anchor)}
-            aria-current={currentAnchor === link.anchor ? 'location' : undefined}
-            onclick={(event) => { event.preventDefault(); navigateToAnchor(link.anchor); }}
-          >{link.label}</a>
-        {/each}
+        <a href={appAnchorUrl(page.url, 'timeline')} aria-current={currentAnchor === 'timeline' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('timeline'); }}>{singlePage('timeline')}</a>
+        <a href={appAnchorUrl(page.url, 'trips')} aria-current={currentAnchor === 'trips' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('trips'); }}>{singlePage('trips')}</a>
+        <a href={localizedPath('/explainer', locale)}>{singlePage('explainer')}</a>
+        <a href={localizedPath('/faq', locale)}>{singlePage('faq')}</a>
+        <a href={localizedPath('/contact', locale)}>{contactCopy.nav}</a>
+        <a href={appAnchorUrl(page.url, 'account')} aria-current={currentAnchor === 'account' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('account'); }}>{singlePage('account')}</a>
       </div>
       <label class="anchor-select" for="app-anchor-select">
         <span>{singlePage('jumpTo')}</span>
         <select id="app-anchor-select" value={currentAnchor} onchange={selectAnchor}>
-          {#each anchorLinks as link}<option value={link.anchor}>{link.label}</option>{/each}
+          <option value="timeline">{singlePage('timeline')}</option>
+          <option value="trips">{singlePage('trips')}</option>
+          <option value="explainer">{singlePage('explainer')}</option>
+          <option value="faq">{singlePage('faq')}</option>
+          <option value="contact">{contactCopy.nav}</option>
+          <option value="account">{singlePage('account')}</option>
         </select>
       </label>
     </nav>
@@ -1432,7 +1547,7 @@
           <p>{ui('navTrips')}</p>
           <h2 id="trip-heading" class="screen-title" tabindex="-1">{deep('addStay')}</h2>
         </div>
-        <p class="intro-copy">{deep('tripIntro')}</p>
+        <p class="intro-copy">{tripOnboarding('copy')}</p>
         <form class="trip-form" aria-label={rt('tripFormAria')} novalidate onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
           <label for="trip-label">
             <span>{deep('tripLabel')} <small>{deep('optional')}</small></span>
@@ -1508,7 +1623,8 @@
                 <label for="trip-exit-country"><span>{deep('leftVia')} <small>{deep('optional')}</small></span></label>
                 <select
                   id="trip-exit-country"
-                  bind:value={tripForm.exitCountryCode}
+                  value={tripForm.exitCountryCode}
+                  onchange={updateTripExitCountry}
                   aria-describedby={formErrors.exitCountryCode ? 'trip-border-help trip-exit-country-error' : 'trip-border-help'}
                   aria-invalid={formErrors.exitCountryCode ? 'true' : undefined}
                 >
@@ -1520,6 +1636,22 @@
             {/if}
           </div>
           <small id="trip-border-help">{deep('borderContext')}</small>
+          <SchengenCountryGuide {locale} presentation="popover" />
+          {#if !tripForm.ongoing && resolvedTripFormStatus !== 'past' && !tripExitCountryExplicit && tripForm.exitCountryCode}
+            <button
+              class="secondary-button compact-button"
+              type="button"
+              onclick={confirmTripExitCountry}
+            >{bilateralUi('confirmExitCountry')}</button>
+          {/if}
+          {#if !tripForm.ongoing && resolvedTripFormStatus !== 'past' && tripExitCountryExplicit && tripForm.exitCountryCode}
+            <BilateralPassportCheck
+              hostCountryCode={tripForm.exitCountryCode}
+              asOf={tripForm.exitDate > tripFormToday ? tripForm.exitDate : tripFormToday}
+              selectId="trip-passport-country"
+              {locale}
+            />
+          {/if}
 
           <section class="outside-breaks" aria-labelledby="trip-breaks-heading">
             <div class="outside-breaks-heading">
@@ -1610,7 +1742,6 @@
       <section class="screen trips-section" id="trips" aria-labelledby="trips-heading">
         <div class="section-heading">
           <div>
-            <p>{accountState === 'synced' || accountState === 'syncing' ? deep('syncedHistory') : deep('deviceHistory')}</p>
             <h2 id="trips-heading" class="screen-title" tabindex="-1">{tripOnboarding('nav')}</h2>
           </div>
         </div>
@@ -1622,7 +1753,7 @@
           </section>
         {:else}
           <p class="list-summary">
-            {rt('storedSummary', { count: tripCount(trips.length), synced: accountState === 'synced' || accountState === 'syncing' ? rt('syncedSuffix') : '.' })}
+            {tripCount(trips.length)}
           </p>
           <div class="trip-list">
             {#each visibleTrips as trip (trip.id)}
@@ -1671,12 +1802,25 @@
                     label={tripCardTimelineLabel(tripCardPreview(trip))}
                   />
                 </button>
-                <button
-                  class="trip-delete-action"
-                  type="button"
-                  aria-label={`${deep('delete')} ${displayTripName(trip)}`}
-                  onclick={() => requestDeleteTrip(trip.id)}
-                >{deep('delete')}</button>
+                <div class="trip-card-actions">
+                  <button
+                    class="trip-expand-action"
+                    type="button"
+                    aria-label={tripCardToggleLabel(tripCardPreview(trip), quickAdjustVisible && quickAdjustSourceId === trip.id)}
+                    aria-expanded={quickAdjustVisible && quickAdjustSourceId === trip.id}
+                    aria-controls={quickAdjustVisible && quickAdjustSourceId === trip.id ? 'quick-adjust-panel' : undefined}
+                    onclick={() => toggleQuickAdjuster(trip)}
+                  >
+                    {quickAdjustVisible && quickAdjustSourceId === trip.id ? tripCardUi('collapseAction') : tripCardUi('expandAction')}
+                    <span aria-hidden="true">{quickAdjustVisible && quickAdjustSourceId === trip.id ? '▴' : '▾'}</span>
+                  </button>
+                  <button
+                    class="trip-delete-action"
+                    type="button"
+                    aria-label={`${deep('delete')} ${displayTripName(trip)}`}
+                    onclick={() => requestDeleteTrip(trip.id)}
+                  >{deep('delete')}</button>
+                </div>
                 {#if quickAdjustVisible && quickAdjustSourceId === trip.id && quickAdjustRange && quickAdjustSourceTrip}
                   <TripAdjustPanel
                     panelId="quick-adjust-panel"
@@ -1801,6 +1945,7 @@
             </div>
           </div>
           <small>{deep('borderContext')}</small>
+          <SchengenCountryGuide {locale} presentation="popover" />
 
           <section class="outside-breaks" aria-labelledby="simulation-breaks-heading">
             <div class="outside-breaks-heading">
@@ -1906,7 +2051,12 @@
         <section class="panel whatif-panel">
           <h2>{rt('needPlanningPower')}</h2>
           <p>{unlockFakeDoorState.helperCopy}</p>
-          <button class="secondary-button" type="button" onclick={recordUnlockBuyIntent}>{accountSignedIn ? unlockFakeDoorState.buttonLabel : deep('signUp')}</button>
+          <button
+            class="secondary-button"
+            type="button"
+            disabled={!accountSignedIn && signupOpening}
+            onclick={() => accountSignedIn ? recordUnlockBuyIntent() : void startAccountSignUp()}
+          >{accountSignedIn ? unlockFakeDoorState.buttonLabel : signupValue('compactButton')}</button>
         </section>
         {#if unlockFakeDoorState.showIntentMessage}
           <section class="panel mint" aria-live="polite">
@@ -1925,14 +2075,13 @@
       </section>
       {/if}
 
-
       {#if !accountSignedIn}
         <section class="signup-value-section" aria-labelledby="signup-value-heading">
           <div>
             <h2 id="signup-value-heading">{signupValue('title')}</h2>
             <p>{signupValue('copy')}</p>
           </div>
-          <button class="primary-button" type="button" onclick={startAccountSignUp}>{signupValue('button')}</button>
+          <button class="primary-button" type="button" disabled={signupOpening} aria-busy={signupOpening ? 'true' : undefined} onclick={startAccountSignUp}>{signupValue('button')}</button>
         </section>
       {/if}
 
@@ -1981,7 +2130,7 @@
             </div>
             <p>{rt('guestCopy')}</p>
             <div class="button-row account-actions">
-              <button class="primary-button" type="button" onclick={startAccountSignUp}>{deep('signUp')}</button>
+              <button class="primary-button" type="button" disabled={signupOpening} aria-busy={signupOpening ? 'true' : undefined} onclick={startAccountSignUp}>{signupValue('compactButton')}</button>
               <button class="secondary-button" type="button" onclick={startAccountSignIn}>{deep('signIn')}</button>
             </div>
           {:else if accountState === 'offer_sync'}
@@ -2138,17 +2287,6 @@
             </div>
           </section>
         {/if}
-        <section class="panel paper-panel">
-          <h2>{rt('officialSources')}</h2>
-          <p>{rt('officialCopy')}</p>
-          <div class="official-links stacked">
-            {#each officialSourceLinks as source}<a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>{/each}
-          </div>
-        </section>
-        <section class="panel paper-panel">
-          <h2>{rt('analyticsTitle')}</h2>
-          <p>{rt('analyticsCopy')}</p>
-        </section>
           </div>
         </details>
       </section>
@@ -2194,8 +2332,20 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 10px;
     min-width: 0;
+  }
+
+  .header-auth-error {
+    flex-basis: 100%;
+    max-width: 38ch;
+    margin: 0;
+    color: var(--risk);
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1.35;
+    text-align: end;
   }
 
   .brand {
@@ -2206,22 +2356,20 @@
     display: inline-flex;
     min-height: 44px;
     align-items: center;
-    gap: 7px;
-    border: 1px solid var(--line);
+    justify-content: center;
+    border: 1px solid var(--ink);
     border-radius: 8px;
-    background: var(--paper);
-    color: var(--ink);
-    padding: 8px 11px;
+    background: var(--ink);
+    color: var(--surface);
+    padding: 8px 14px;
     font-size: 0.84rem;
     font-weight: 760;
   }
 
-  .account-chip > span {
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-    background: var(--muted);
-  }
+  .account-chip.signed-in { background: var(--surface); color: var(--ink); }
+  .account-chip:hover:not(:disabled) { filter: brightness(1.08); }
+  .account-chip:focus-visible { outline: 3px solid var(--safe); outline-offset: 2px; }
+  .account-chip:disabled { cursor: progress; opacity: 0.62; }
 
   .account-chip.synced {
     border-color: color-mix(in srgb, var(--safe), var(--line) 35%);
@@ -2229,15 +2377,11 @@
     color: var(--safe);
   }
 
-  .account-chip.synced > span { background: var(--safe); }
-
   .account-chip.attention {
     border-color: color-mix(in srgb, var(--whatif), var(--line) 20%);
     background: var(--whatif-bg);
     color: var(--whatif);
   }
-
-  .account-chip.attention > span { background: var(--whatif); }
 
   .skip-link {
     position: fixed;
@@ -2426,31 +2570,6 @@
     color: var(--muted);
     line-height: 1.45;
     text-wrap: pretty;
-  }
-
-  .official-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .official-links.stacked {
-    display: grid;
-  }
-
-  .official-links a {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
-    color: var(--ink);
-    padding: 8px 10px;
-    font-size: 0.88rem;
-    font-weight: 740;
-    text-decoration: none;
   }
 
   .compact {
@@ -3161,7 +3280,6 @@
     grid-template-columns: 10px minmax(0, 1fr);
     align-items: start;
     gap: 4px 10px;
-    padding-inline-end: 58px;
   }
 
   .trip-color-dot {
@@ -3200,19 +3318,47 @@
     color: var(--whatif);
   }
 
+  .trip-card-actions {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-top: 2px;
+  }
+
+  .trip-expand-action,
   .trip-delete-action {
-    position: absolute;
-    inset-block-start: 8px;
-    inset-inline-end: 8px;
-    z-index: 2;
     min-height: 44px;
-    border: 0;
     border-radius: 7px;
-    background: transparent;
-    color: var(--risk);
     padding: 6px 9px;
     font: inherit;
     font-weight: 740;
+  }
+
+  .trip-expand-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+  }
+
+  .trip-expand-action:hover {
+    border-color: color-mix(in srgb, var(--trip-color), var(--line) 34%);
+    background: color-mix(in srgb, var(--surface), var(--trip-color) 7%);
+  }
+
+  .trip-expand-action:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--trip-color), transparent 35%);
+    outline-offset: 1px;
+  }
+
+  .trip-delete-action {
+    border: 0;
+    background: transparent;
+    color: var(--risk);
   }
 
   .trip-delete-action:hover {
@@ -3334,7 +3480,7 @@
     .outside-breaks-heading .compact-button { width: 100%; }
     .section-heading.with-action { align-items: flex-start; flex-direction: column; }
     .trip-summary-trigger { width: 100%; }
-    .trip-card-heading { padding-inline-end: 52px; }
+    .trip-card-actions > * { flex: 1; }
     .add-trip-footer > button { width: 100%; }
     .trip-dialog {
       width: calc(100% - 20px);

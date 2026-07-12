@@ -13,6 +13,8 @@ describe('trip card localization', () => {
       const translate = createTripCardUiTranslator(locale);
       expect(translate('timelineLabel').trim().length).toBeGreaterThan(0);
       expect(translate('completed').trim().length).toBeGreaterThan(0);
+      expect(translate('expandAction').trim().length).toBeGreaterThan(0);
+      expect(translate('collapseAction').trim().length).toBeGreaterThan(0);
     }
     expect(new Set(Object.values(tripCardCatalogLengths())).size).toBe(1);
   });
@@ -52,5 +54,7 @@ describe('trip card localization', () => {
     }
     expect(formatTripCardToggleLabel('en', 'Barcelona', false)).toBe('Expand Barcelona to edit this trip');
     expect(formatTripCardToggleLabel('en', 'Barcelona', true)).toBe('Collapse Barcelona trip editor');
+    expect(createTripCardUiTranslator('en')('expandAction')).toBe('Expand');
+    expect(createTripCardUiTranslator('en')('collapseAction')).toBe('Collapse');
   });
 });

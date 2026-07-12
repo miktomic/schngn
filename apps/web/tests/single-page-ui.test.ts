@@ -11,6 +11,8 @@ const keys: SinglePageUiKey[] = [
   'jumpTo',
   'trips',
   'timeline',
+  'explainer',
+  'faq',
   'plan',
   'details',
   'report',
@@ -53,16 +55,20 @@ describe('single-page app localization', () => {
     expect({
       timeline: translate('timeline'),
       trips: translate('trips'),
+      explainer: translate('explainer'),
+      faq: translate('faq'),
       account: translate('account')
     }).toEqual({
       timeline: 'Timeline',
       trips: 'Trips',
+      explainer: 'Explainer',
+      faq: 'FAQ',
       account: 'Account'
     });
   });
 
   test('ships complete navigation labels in every non-English catalog', () => {
-    const navigationKeys = ['timeline', 'trips', 'account'] as const;
+    const navigationKeys = ['timeline', 'trips', 'explainer', 'faq', 'account'] as const;
 
     for (const locale of SUPPORTED_LOCALES.filter((locale) => locale !== 'en')) {
       const translate = createSinglePageUiTranslator(locale);

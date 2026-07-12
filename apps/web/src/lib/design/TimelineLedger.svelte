@@ -8,6 +8,7 @@
   } from '@schngn/engine';
   import { toEngineTrips, tripEntryDate, tripExitDate, type EditableTrip } from '$lib/trips/tripCrud';
   import { intlLocale, type Locale } from '$lib/i18n';
+  import { translateExtended } from '$lib/i18n/extendedLocaleStrings';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
   import {
     formatReturnsTimelineSummary,
@@ -97,7 +98,7 @@
   let returnForecastEndDate = $derived(formatISODate(addDays(parseISODate(referenceDate), horizonDays)));
   let returnMarkerPosition = $derived(firstReturnDate ? markerPosition(referenceDate, firstReturnDate, horizonDays) : 0);
 
-  const legendCatalog: Record<Locale, string[]> = {
+  const legendCatalog: Partial<Record<Locale, string[]>> & { en: string[] } = {
     en: ['Past trip', 'Trip', 'What-if trip', 'Over the limit', 'Day returned', 'Not counted'],
     fr: ['Voyage passé', 'Voyage', 'Simulation', 'Limite dépassée', 'Jour récupéré', 'Non compté'],
     de: ['Vergangene Reise', 'Reise', 'Was-wäre-wenn', 'Über dem Limit', 'Tag zurück', 'Nicht gezählt'],
@@ -108,9 +109,12 @@
     he: ['נסיעה קודמת', 'נסיעה', 'תרחיש', 'מעל למגבלה', 'יום חזר', 'לא נספר'],
     ar: ['رحلة سابقة', 'رحلة', 'سيناريو', 'فوق الحد', 'يوم مستعاد', 'غير محسوب']
   };
-  const timelineAriaLabel: Record<Locale, string> = { en:'Timeline legend',fr:'Légende de la chronologie',de:'Zeitachsenlegende',es:'Leyenda de la cronología',it:'Legenda della cronologia',ru:'Легенда шкалы времени',tr:'Zaman çizelgesi açıklaması',he:'מקרא ציר הזמן',ar:'مفتاح المخطط الزمني' };
-  const dateRangeLabel: Record<Locale, string> = { en:'Date range',fr:'Plage de dates',de:'Datumsbereich',es:'Intervalo de fechas',it:'Intervallo di date',ru:'Диапазон дат',tr:'Tarih aralığı',he:'טווח תאריכים',ar:'نطاق التاريخ' };
-  let legendItems = $derived((['past', 'booked', 'whatif', 'risk', 'return', 'empty'] as SegmentKind[]).map((kind, index) => ({ kind, label: legendCatalog[locale][index] })));
+  const timelineAriaLabel: Partial<Record<Locale, string>> & { en: string } = { en:'Timeline legend',fr:'Légende de la chronologie',de:'Zeitachsenlegende',es:'Leyenda de la cronología',it:'Legenda della cronologia',ru:'Легенда шкалы времени',tr:'Zaman çizelgesi açıklaması',he:'מקרא ציר הזמן',ar:'مفتاح المخطط الزمني' };
+  const dateRangeLabel: Partial<Record<Locale, string>> & { en: string } = { en:'Date range',fr:'Plage de dates',de:'Datumsbereich',es:'Intervalo de fechas',it:'Intervallo di date',ru:'Диапазон дат',tr:'Tarih aralığı',he:'טווח תאריכים',ar:'نطاق التاريخ' };
+  let activeLegend = $derived(legendCatalog[locale] ?? legendCatalog.en.map((item) => translateExtended(locale, item)));
+  let activeTimelineAriaLabel = $derived(timelineAriaLabel[locale] ?? translateExtended(locale, timelineAriaLabel.en));
+  let activeDateRangeLabel = $derived(dateRangeLabel[locale] ?? translateExtended(locale, dateRangeLabel.en));
+  let legendItems = $derived((['past', 'booked', 'whatif', 'risk', 'return', 'empty'] as SegmentKind[]).map((kind, index) => ({ kind, label: activeLegend[index] })));
 
   function buildTimelineModel(input: Omit<TimelineProps, 'label'>): TimelineModel {
     if (input.mode === 'returns') return buildReturnsTimeline(input);
@@ -304,7 +308,7 @@
     class="timeline-rail"
     style={`--timeline-days: ${model.dayCount}`}
     role="img"
-    aria-label={`${label}. ${model.summary} ${dateRangeLabel[locale]} ${model.rangeLabel}.`}
+    aria-label={`${label}. ${model.summary} ${activeDateRangeLabel} ${model.rangeLabel}.`}
   >
     {#each model.segments as segment, index (`${segment.startDate}-${segment.kind}-${index}`)}
       <span
@@ -370,7 +374,7 @@
       </div>
     </section>
   {/if}
-  <ul class="timeline-legend" aria-label={timelineAriaLabel[locale]}>
+  <ul class="timeline-legend" aria-label={activeTimelineAriaLabel}>
     {#each legendItems as item}
       {#if visibleKinds.has(item.kind)}
         <li><span class={item.kind}></span>{item.label}</li>

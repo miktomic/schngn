@@ -3,8 +3,8 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { createCspDirectives } from './csp.config.js';
 
 const development = process.env.NODE_ENV === 'development';
-const localizedPrerenderEntries = ['fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar']
-  .flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`]);
+const localizedPrerenderEntries = ['fr', 'de', 'es', 'it', 'pt-br', 'ru', 'uk', 'tr', 'sr', 'sq', 'ka', 'zh-cn', 'ja', 'ko', 'he', 'ar']
+  .flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`, `/${locale}/explainer`, `/${locale}/faq`, `/${locale}/contact`]);
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {

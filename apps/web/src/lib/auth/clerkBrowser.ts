@@ -15,7 +15,7 @@ export interface ClerkBrowserClientLike {
     | undefined;
   load(options: { telemetry: false }): Promise<unknown>;
   addListener(listener: () => void, options?: { skipInitialEmit?: boolean }): () => void;
-  redirectToSignUp(options?: { redirectUrl?: string | null }): Promise<unknown>;
+  openSignUp(options?: { forceRedirectUrl?: string | null }): void;
   redirectToSignIn(options?: { redirectUrl?: string | null }): Promise<unknown>;
   redirectToUserProfile(): Promise<unknown>;
   signOut(): Promise<unknown>;
@@ -26,7 +26,12 @@ export type ClerkBrowserClientLoader = (publishableKey: string) => Promise<Clerk
 export interface ClerkBrowserWindow {
   __schngnClerkTestClient?: ClerkBrowserClientLike;
   __schngnClerkTestLoader?: ClerkBrowserClientLoader;
+  __schngnClerkTestUiLoader?: ClerkBrowserClientLoader;
 }
+
+export type ClerkSignUpOpenResult =
+  | { ok: true }
+  | { ok: false; reason: 'missing_publishable_key' | 'browser_unavailable' | 'load_failed' };
 
 export type ClerkBrowserAuthUnavailable = {
   available: false;
@@ -41,7 +46,7 @@ export interface ClerkBrowserAuthAvailable {
   readonly sessionId: string | null;
   getToken(): Promise<string | null>;
   subscribe(listener: () => void): () => void;
-  redirectToSignUp(options?: { redirectUrl?: string | null }): Promise<void>;
+  openSignUp(options?: { forceRedirectUrl?: string | null }): Promise<void>;
   redirectToSignIn(options?: { redirectUrl?: string | null }): Promise<void>;
   redirectToUserProfile(): Promise<void>;
   signOut(): Promise<void>;
@@ -54,17 +59,55 @@ declare global {
 }
 
 async function loadOfficialClerkClient(publishableKey: string): Promise<ClerkBrowserClientLike> {
-  // The account UI redirects to Clerk's hosted surfaces, so the React-hosted
-  // component bundle is unnecessary on the calculator route.
+  // Keep the account/session check small. The UI bundle is loaded only after signup is clicked.
   const { Clerk } = await import('@clerk/clerk-js/no-rhc');
   return new Clerk(publishableKey) as ClerkBrowserClientLike;
+}
+
+let clerkUiClient: { key: string; client: Promise<ClerkBrowserClientLike> } | null = null;
+
+function loadOfficialClerkUiClient(publishableKey: string): Promise<ClerkBrowserClientLike> {
+  if (clerkUiClient?.key === publishableKey) return clerkUiClient.client;
+  const client = import('@clerk/clerk-js').then(async ({ Clerk }) => {
+    const uiClient = new Clerk(publishableKey) as ClerkBrowserClientLike;
+    await uiClient.load({ telemetry: false });
+    return uiClient;
+  });
+  clerkUiClient = { key: publishableKey, client };
+  return client;
+}
+
+export async function openClerkSignUp(
+  publishableKey: string | null | undefined,
+  options?: { forceRedirectUrl?: string | null },
+  targetWindow?: ClerkBrowserWindow
+): Promise<ClerkSignUpOpenResult> {
+  const key = typeof publishableKey === 'string' ? publishableKey.trim() : '';
+  if (key.length === 0) return { ok: false, reason: 'missing_publishable_key' };
+
+  const browserWindow = targetWindow ?? (typeof window === 'undefined' ? undefined : window);
+  if (!browserWindow) return { ok: false, reason: 'browser_unavailable' };
+
+  try {
+    const injectedClient = browserWindow.__schngnClerkTestClient;
+    const injectedLoader = browserWindow.__schngnClerkTestUiLoader ?? browserWindow.__schngnClerkTestLoader;
+    const client = injectedClient ?? (await (injectedLoader ?? loadOfficialClerkUiClient)(key));
+    if (injectedClient || injectedLoader) await client.load({ telemetry: false });
+    client.openSignUp(options);
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: 'load_failed' };
+  }
 }
 
 function stringOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function browserAuthFor(client: ClerkBrowserClientLike): ClerkBrowserAuthAvailable {
+function browserAuthFor(
+  client: ClerkBrowserClientLike,
+  openSignUp: (options?: { forceRedirectUrl?: string | null }) => Promise<void>
+): ClerkBrowserAuthAvailable {
   return {
     available: true,
     get isSignedIn() {
@@ -87,9 +130,7 @@ function browserAuthFor(client: ClerkBrowserClientLike): ClerkBrowserAuthAvailab
     subscribe(listener) {
       return client.addListener(listener, { skipInitialEmit: true });
     },
-    async redirectToSignUp(options) {
-      await client.redirectToSignUp(options);
-    },
+    openSignUp,
     async redirectToSignIn(options) {
       await client.redirectToSignIn(options);
     },
@@ -117,10 +158,14 @@ export async function initializeClerkBrowserAuth(
   }
 
   try {
-    const loader = browserWindow.__schngnClerkTestLoader ?? loadOfficialClerkClient;
-    const client = browserWindow.__schngnClerkTestClient ?? (await loader(key));
+    const injectedClient = browserWindow.__schngnClerkTestClient;
+    const injectedLoader = browserWindow.__schngnClerkTestLoader;
+    const client = injectedClient ?? (await (injectedLoader ?? loadOfficialClerkClient)(key));
     await client.load({ telemetry: false });
-    return browserAuthFor(client);
+    const openSignUp = injectedClient || injectedLoader
+      ? async (options?: { forceRedirectUrl?: string | null }) => { client.openSignUp(options); }
+      : async (options?: { forceRedirectUrl?: string | null }) => { (await loadOfficialClerkUiClient(key)).openSignUp(options); };
+    return browserAuthFor(client, openSignUp);
   } catch {
     return { available: false, reason: 'load_failed' };
   }

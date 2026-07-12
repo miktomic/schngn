@@ -9,6 +9,7 @@
   import { SCHENGEN_COUNTRY_OPTIONS } from '$lib/trips/countries';
   import { createOutsideBreak, MAX_OUTSIDE_BREAKS, MAX_TRIP_LABEL_LENGTH } from '$lib/trips/tripCrud';
   import StatusChip from './StatusChip.svelte';
+  import SchengenCountryGuide from './SchengenCountryGuide.svelte';
   import WhatIfAdjuster from './WhatIfAdjuster.svelte';
 
   interface Props {
@@ -197,6 +198,7 @@
         {/if}
       </div>
       <small class="detail-help">{deep('borderContext')}</small>
+      <SchengenCountryGuide {locale} presentation="popover" />
 
       <section class="outside-details" aria-labelledby={`${instanceId}-outside-heading`}>
         <div class="outside-heading">

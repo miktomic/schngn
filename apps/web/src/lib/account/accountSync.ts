@@ -1,10 +1,11 @@
 import { sortTrips, type EditableTrip } from '../trips/tripCrud';
 import type { TripStorageLike, TripStorageMutationResult } from '../trips/tripStorage';
-import type { AccountTripSnapshot } from './accountTripSnapshot';
+import { ACCOUNT_SYNC_CONSENT_VERSION, type AccountTripSnapshot } from './accountTripSnapshot';
 
 export type { AccountTripSnapshot } from './accountTripSnapshot';
 
 export const ACCOUNT_SYNC_METADATA_KEY = 'schngn.accountSync.v1';
+export const ACCOUNT_SIGNUP_SYNC_INTENT_KEY = 'schngn.accountSignupSync.v1';
 const ACCOUNT_SYNC_METADATA_VERSION = 2;
 
 export interface AccountSyncMetadata {
@@ -133,6 +134,38 @@ export function clearAccountSyncMetadata(storage: Pick<TripStorageLike, 'removeI
     return { ok: true };
   } catch {
     return { ok: false, error: 'Account sync status could not be cleared from this browser.' };
+  }
+}
+
+export function saveAccountSignupSyncIntent(
+  storage: Pick<TripStorageLike, 'setItem'>
+): TripStorageMutationResult {
+  try {
+    storage.setItem(ACCOUNT_SIGNUP_SYNC_INTENT_KEY, ACCOUNT_SYNC_CONSENT_VERSION);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Signup could not remember the account-save choice in this browser.' };
+  }
+}
+
+export function hasAccountSignupSyncIntent(
+  storage: Pick<TripStorageLike, 'getItem'>
+): boolean {
+  try {
+    return storage.getItem(ACCOUNT_SIGNUP_SYNC_INTENT_KEY) === ACCOUNT_SYNC_CONSENT_VERSION;
+  } catch {
+    return false;
+  }
+}
+
+export function clearAccountSignupSyncIntent(
+  storage: Pick<TripStorageLike, 'removeItem'>
+): TripStorageMutationResult {
+  try {
+    storage.removeItem(ACCOUNT_SIGNUP_SYNC_INTENT_KEY);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Signup account-save choice could not be cleared in this browser.' };
   }
 }
 

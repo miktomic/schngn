@@ -1,23 +1,26 @@
-import type { Locale } from './locales';
+import { SUPPORTED_LOCALES, type Locale } from './locales';
+import { translateExtended } from './extendedLocaleStrings';
 
-const catalogs = {
-  en: { label: "I'm currently in Schengen", help: 'Leave the departure date open and calculate when I need to leave.', leaveBy: 'Leave by', calculating: 'Add a valid arrival date to calculate your latest departure.', ongoing: 'Currently in Schengen' },
-  fr: { label: 'Je suis actuellement dans l’espace Schengen', help: 'Laissez la date de départ ouverte pour calculer quand vous devez partir.', leaveBy: 'Partir au plus tard le', calculating: 'Ajoutez une date d’arrivée valide pour calculer votre dernier jour de départ.', ongoing: 'Actuellement dans l’espace Schengen' },
-  de: { label: 'Ich bin derzeit im Schengen-Raum', help: 'Lassen Sie das Abreisedatum offen, um den spätesten Abreisetag zu berechnen.', leaveBy: 'Späteste Abreise', calculating: 'Geben Sie ein gültiges Ankunftsdatum ein, um die späteste Abreise zu berechnen.', ongoing: 'Derzeit im Schengen-Raum' },
-  es: { label: 'Actualmente estoy en el espacio Schengen', help: 'Deja abierta la fecha de salida para calcular cuándo debes salir.', leaveBy: 'Salir como máximo el', calculating: 'Añade una fecha de llegada válida para calcular tu última salida.', ongoing: 'Actualmente en Schengen' },
-  it: { label: 'Sono attualmente nell’area Schengen', help: 'Lascia aperta la data di partenza per calcolare quando devi uscire.', leaveBy: 'Partenza entro il', calculating: 'Aggiungi una data di arrivo valida per calcolare l’ultima partenza.', ongoing: 'Attualmente nell’area Schengen' },
-  ru: { label: 'Я сейчас нахожусь в Шенгенской зоне', help: 'Оставьте дату выезда открытой, чтобы рассчитать, когда нужно уехать.', leaveBy: 'Выехать не позднее', calculating: 'Укажите корректную дату въезда, чтобы рассчитать последний день выезда.', ongoing: 'Сейчас в Шенгенской зоне' },
-  tr: { label: 'Şu anda Schengen bölgesindeyim', help: 'Ne zaman ayrılmanız gerektiğini hesaplamak için çıkış tarihini açık bırakın.', leaveBy: 'En geç çıkış', calculating: 'En geç çıkışınızı hesaplamak için geçerli bir giriş tarihi ekleyin.', ongoing: 'Şu anda Schengen bölgesinde' },
-  he: { label: 'אני נמצא/ת כעת באזור שנגן', help: 'השאירו את תאריך היציאה פתוח כדי לחשב מתי צריך לצאת.', leaveBy: 'יש לצאת עד', calculating: 'הוסיפו תאריך כניסה תקין כדי לחשב את מועד היציאה האחרון.', ongoing: 'כעת באזור שנגן' },
-  ar: { label: 'أنا موجود حاليًا في منطقة شنغن', help: 'اترك تاريخ الخروج مفتوحًا لحساب موعد المغادرة المطلوب.', leaveBy: 'المغادرة في موعد أقصاه', calculating: 'أضف تاريخ دخول صالحًا لحساب آخر موعد للمغادرة.', ongoing: 'موجود حاليًا في شنغن' }
-} satisfies Record<Locale, Record<'label' | 'help' | 'leaveBy' | 'calculating' | 'ongoing', string>>;
+type OngoingCatalog = Record<'label' | 'help' | 'leaveBy' | 'calculating' | 'ongoing', string>;
+
+const catalogs: Partial<Record<Locale, OngoingCatalog>> & { en: OngoingCatalog } = {
+  en: { label: "I don't know the exit date yet", help: 'Use this for a current or future stay. SCHNGN will calculate the latest safe exit from your other trips.', leaveBy: 'Latest safe exit', calculating: 'Add a valid entry date to calculate the latest safe exit.', ongoing: 'Exit date open' },
+  fr: { label: 'Je ne connais pas encore la date de sortie', help: 'Utilisez cette option pour un séjour actuel ou futur. SCHNGN calcule la dernière sortie sûre à partir de vos autres voyages.', leaveBy: 'Dernière sortie sûre', calculating: 'Ajoutez une date d’entrée valide pour calculer la dernière sortie sûre.', ongoing: 'Date de sortie ouverte' },
+  de: { label: 'Ich kenne das Ausreisedatum noch nicht', help: 'Nutzen Sie dies für einen aktuellen oder künftigen Aufenthalt. SCHNGN berechnet die späteste sichere Ausreise aus Ihren anderen Reisen.', leaveBy: 'Späteste sichere Ausreise', calculating: 'Geben Sie ein gültiges Einreisedatum ein, um die späteste sichere Ausreise zu berechnen.', ongoing: 'Ausreisedatum offen' },
+  es: { label: 'Todavía no sé la fecha de salida', help: 'Usa esta opción para una estancia actual o futura. SCHNGN calculará la última salida segura a partir de tus otros viajes.', leaveBy: 'Última salida segura', calculating: 'Añade una fecha de entrada válida para calcular la última salida segura.', ongoing: 'Fecha de salida abierta' },
+  it: { label: 'Non conosco ancora la data di uscita', help: 'Usa questa opzione per un soggiorno attuale o futuro. SCHNGN calcolerà l’ultima uscita sicura in base agli altri viaggi.', leaveBy: 'Ultima uscita sicura', calculating: 'Aggiungi una data di ingresso valida per calcolare l’ultima uscita sicura.', ongoing: 'Data di uscita aperta' },
+  ru: { label: 'Я пока не знаю дату выезда', help: 'Используйте эту опцию для текущей или будущей поездки. SCHNGN рассчитает последнюю безопасную дату выезда с учётом других поездок.', leaveBy: 'Последняя безопасная дата выезда', calculating: 'Укажите корректную дату въезда, чтобы рассчитать последнюю безопасную дату выезда.', ongoing: 'Дата выезда не указана' },
+  tr: { label: 'Çıkış tarihini henüz bilmiyorum', help: 'Bunu mevcut veya gelecekteki bir kalış için kullanın. SCHNGN diğer seyahatlerinize göre en geç güvenli çıkışı hesaplar.', leaveBy: 'En geç güvenli çıkış', calculating: 'En geç güvenli çıkışı hesaplamak için geçerli bir giriş tarihi ekleyin.', ongoing: 'Çıkış tarihi açık' },
+  he: { label: 'עדיין לא ידוע לי תאריך היציאה', help: 'אפשר להשתמש באפשרות הזו לשהייה נוכחית או עתידית. SCHNGN יחשב את תאריך היציאה הבטוח האחרון לפי הנסיעות האחרות.', leaveBy: 'תאריך היציאה הבטוח האחרון', calculating: 'הוסיפו תאריך כניסה תקין כדי לחשב את תאריך היציאה הבטוח האחרון.', ongoing: 'תאריך היציאה פתוח' },
+  ar: { label: 'لا أعرف تاريخ الخروج بعد', help: 'استخدم هذا الخيار لإقامة حالية أو مستقبلية. سيحسب SCHNGN آخر تاريخ خروج آمن استنادًا إلى رحلاتك الأخرى.', leaveBy: 'آخر تاريخ خروج آمن', calculating: 'أضف تاريخ دخول صالحًا لحساب آخر تاريخ خروج آمن.', ongoing: 'تاريخ الخروج مفتوح' }
+};
 
 export type OngoingStayUiKey = keyof (typeof catalogs)['en'];
 
 export function createOngoingStayUiTranslator(locale: Locale): (key: OngoingStayUiKey) => string {
-  return (key) => catalogs[locale][key];
+  return (key) => catalogs[locale]?.[key] ?? translateExtended(locale, catalogs.en[key]);
 }
 
 export function ongoingStayCatalogLengths(): Record<Locale, number> {
-  return Object.fromEntries(Object.entries(catalogs).map(([locale, catalog]) => [locale, Object.keys(catalog).length])) as Record<Locale, number>;
+  return Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [locale, Object.keys(catalogs.en).length])) as Record<Locale, number>;
 }
