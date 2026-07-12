@@ -1,4 +1,7 @@
-export const SUPPORTED_LOCALES = ['en', 'fr', 'de', 'es', 'it', 'ru', 'tr', 'he', 'ar'] as const;
+export const SUPPORTED_LOCALES = [
+  'en', 'fr', 'de', 'es', 'it', 'pt-br', 'ru', 'uk', 'tr', 'sr', 'sq', 'ka',
+  'zh-cn', 'ja', 'ko', 'he', 'ar'
+] as const;
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
@@ -11,8 +14,16 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   de: 'Deutsch',
   es: 'Español',
   it: 'Italiano',
+  'pt-br': 'Português (Brasil)',
   ru: 'Русский',
+  uk: 'Українська',
   tr: 'Türkçe',
+  sr: 'Srpski (latinica)',
+  sq: 'Shqip',
+  ka: 'ქართული',
+  'zh-cn': '简体中文',
+  ja: '日本語',
+  ko: '한국어',
   he: 'עברית',
   ar: 'العربية'
 };
@@ -46,9 +57,14 @@ export function localeDirection(locale: Locale): 'ltr' | 'rtl' {
 }
 
 export function intlLocale(locale: Locale): string {
-  return ({ en: 'en-GB', fr: 'fr-FR', de: 'de-DE', es: 'es-ES', it: 'it-IT', ru: 'ru-RU', tr: 'tr-TR', he: 'he-IL', ar: 'ar' } as const)[locale];
+  return ({
+    en: 'en-GB', fr: 'fr-FR', de: 'de-DE', es: 'es-ES', it: 'it-IT',
+    'pt-br': 'pt-BR', ru: 'ru-RU', uk: 'uk-UA', tr: 'tr-TR', sr: 'sr-Latn-RS',
+    sq: 'sq-AL', ka: 'ka-GE', 'zh-cn': 'zh-CN', ja: 'ja-JP', ko: 'ko-KR',
+    he: 'he-IL', ar: 'ar'
+  } as const)[locale];
 }
 
 export function isLocalizedNavigationPath(pathname: string): boolean {
-  return ['/', '/app', '/accuracy'].includes(stripLocalePrefix(pathname));
+  return ['/', '/app', '/accuracy', '/explainer', '/faq', '/contact'].includes(stripLocalePrefix(pathname));
 }

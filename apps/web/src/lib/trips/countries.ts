@@ -6,6 +6,18 @@ export const SCHENGEN_SHORT_STAY_COUNTRY_CODES = [
 
 export type SchengenShortStayCountryCode = (typeof SCHENGEN_SHORT_STAY_COUNTRY_CODES)[number];
 
+export const NON_EU_SCHENGEN_COUNTRY_CODES = ['IS', 'LI', 'NO', 'CH'] as const;
+export const EU_COUNTRIES_OUTSIDE_SCHENGEN = ['IE', 'CY'] as const;
+export const NEWEST_SCHENGEN_COUNTRY_CODES = ['BG', 'RO'] as const;
+export const SCHENGEN_AREA_COUNTRIES_SOURCE_URL =
+  'https://home-affairs.ec.europa.eu/policies/schengen/schengen-area_en';
+
+const NON_EU_SCHENGEN_COUNTRY_CODE_SET = new Set<string>(NON_EU_SCHENGEN_COUNTRY_CODES);
+
+export const EU_SCHENGEN_COUNTRY_CODES = SCHENGEN_SHORT_STAY_COUNTRY_CODES.filter(
+  (code) => !NON_EU_SCHENGEN_COUNTRY_CODE_SET.has(code)
+);
+
 export interface SupportedCountryOption {
   code: string;
   name: string;

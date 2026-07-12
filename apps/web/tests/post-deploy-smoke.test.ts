@@ -18,6 +18,9 @@ describe('post-deploy smoke and privacy-safe operations', () => {
       '/',
       '/app',
       '/accuracy',
+      '/explainer',
+      '/faq',
+      '/contact',
       '/manifest.json',
       '/service-worker.js',
       '/favicon.png',
@@ -81,7 +84,7 @@ describe('post-deploy smoke and privacy-safe operations', () => {
   test('CI/CD docs include the privacy-safe post-deploy runbook and rollback notes', () => {
     expect(ciDocs).toContain('## Post-deploy smoke and privacy-safe operations');
     expect(ciDocs).toContain('bun run smoke:production');
-    expect(ciDocs).toContain('no public SCHNGN email-capture endpoint exists');
+    expect(ciDocs).toContain('contact endpoint accepts only user-entered support fields');
     expect(ciDocs).toContain('signup is delegated to Clerk');
     expect(ciDocs).toContain('Rollback');
     expect(ciDocs).toContain('Cloudflare logs');

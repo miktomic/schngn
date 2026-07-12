@@ -25,7 +25,7 @@ Before CI can deploy:
 1. `schngn.com` must be an active Cloudflare zone.
 2. Registrar nameservers must point to Cloudflare.
 3. The repo must have a GitHub Environment named `production`.
-4. The `production` environment must contain Cloudflare deployment credentials and all three Clerk bindings.
+4. The `production` environment must contain Cloudflare deployment credentials plus the required Clerk and Turnstile bindings.
 5. `apps/web/wrangler.jsonc` must include the custom domain route.
 
 Current route config:
@@ -56,6 +56,8 @@ Create:
 | `PUBLIC_CLERK_PUBLISHABLE_KEY` | Environment variable | Clerk publishable key; intentionally browser-visible |
 | `CLERK_SECRET_KEY` | Environment secret | Clerk server key |
 | `CLERK_WEBHOOK_SIGNING_SECRET` | Environment secret | Clerk endpoint signing secret for `/api/webhooks/clerk` |
+| `PUBLIC_TURNSTILE_SITE_KEY` | Environment variable | Public site key for the `/contact` widget |
+| `TURNSTILE_SECRET_KEY` | Environment secret | Server-side Turnstile verification key |
 
 The workflow accepts account ID from either environment variable or secret:
 
@@ -160,6 +162,8 @@ CLOUDFLARE_ACCOUNT_ID
 PUBLIC_CLERK_PUBLISHABLE_KEY
 CLERK_SECRET_KEY
 CLERK_WEBHOOK_SIGNING_SECRET
+PUBLIC_TURNSTILE_SITE_KEY
+TURNSTILE_SECRET_KEY
 ```
 
 Optional but recommended:
@@ -178,7 +182,19 @@ In the Clerk production instance:
 
 Clerk remains the identity source. Do not create a duplicate D1 user profile merely to mirror email/name fields. D1 application data is keyed by the Clerk user ID derived from the verified server session, never a client-supplied owner.
 
-### 6. Test locally without exposing secrets
+### 6. Configure contact delivery
+
+In Cloudflare before deploying the contact binding:
+
+1. Enable Email Routing or Email Service for `schngn.com`.
+2. Add `schngn@proton.me` as a destination address and complete the verification email in Proton Mail.
+3. Enable the `support@schngn.com` → `schngn@proton.me` routing rule and onboard `schngn.com` so the Worker may also send from the branded support address.
+4. Create a Turnstile widget for `schngn.com` with the action `contact` used by the app.
+5. Store its public site key as `PUBLIC_TURNSTILE_SITE_KEY` and its secret as `TURNSTILE_SECRET_KEY` in the GitHub `production` Environment.
+
+Wrangler restricts `CONTACT_EMAIL` to the one destination and sender. `CONTACT_RATE_LIMITER` permits three attempts per minute before Turnstile verification. No email provider API key is stored in GitHub.
+
+### 7. Test locally without exposing secrets
 
 For local Clerk development, place development-instance values in ignored `apps/web/.env.local` or `apps/web/.dev.vars`. Use names only matching the production bindings:
 
@@ -186,6 +202,8 @@ For local Clerk development, place development-instance values in ignored `apps/
 PUBLIC_CLERK_PUBLISHABLE_KEY=replace-with-development-value
 CLERK_SECRET_KEY=replace-with-development-value
 CLERK_WEBHOOK_SIGNING_SECRET=replace-with-development-value
+PUBLIC_TURNSTILE_SITE_KEY=replace-with-development-value
+TURNSTILE_SECRET_KEY=replace-with-development-value
 ```
 
 Both `.env*` and `.dev.vars*` are ignored. Never use production keys in a committed example file.
@@ -207,7 +225,7 @@ bun run deploy
 
 Only do real deploys from a clean working tree.
 
-### 7. Test GitHub deploy
+### 8. Test GitHub deploy
 
 Push to `main` after CI is configured.
 
@@ -218,7 +236,7 @@ test-build passes
   ↓
 permission-restricted runner file is created from GitHub Clerk values
   ↓
-inactive version upload provisions the D1 binding and required Clerk bindings
+inactive version upload provisions the D1 binding plus required Clerk/contact bindings
   ↓
 D1 migrations apply
   ↓

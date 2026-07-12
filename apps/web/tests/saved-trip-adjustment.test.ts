@@ -21,6 +21,23 @@ function trip(id: string, status: TripStatus, entryDate: string, exitDate: strin
 }
 
 describe('saved trip adjustment', () => {
+  test('uses the projected safe exit when opening a future open-ended stay', () => {
+    const futureOpen = {
+      ...trip('future-open', 'booked', '2026-08-01', '2026-10-29', 'Future stay'),
+      ongoing: true as const,
+      exitCountryCode: undefined
+    };
+    const draft = createSavedTripAdjustmentDraft(futureOpen, '2026-07-10');
+
+    expect(draft.form).toMatchObject({
+      entryDate: '2026-08-01',
+      exitDate: '2026-10-29',
+      ongoing: true
+    });
+    expect(draft.range.minDate).toBe('2026-05-03');
+    expect(draft.range.maxDate).toBe('2027-04-27');
+  });
+
   test('keeps an ongoing stay open until the traveler explicitly ends it', () => {
     const ongoing = { ...trip('ongoing', 'booked', '2026-07-01', '2026-07-10', 'Current stay'), ongoing: true as const, exitCountryCode: undefined };
     const draft = createSavedTripAdjustmentDraft(ongoing, '2026-07-10');

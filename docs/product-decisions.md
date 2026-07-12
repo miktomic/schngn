@@ -17,11 +17,11 @@ This file records product, privacy, infrastructure, and launch decisions that un
 | DEC-06 | Include public `/accuracy` validation page in MVP after US-01 is robust | Approved | US-12 |
 | DEC-07 | No Sentry for MVP launch; use Cloudflare logs + smoke tests first | Approved | US-20 |
 | DEC-08 | Redirect `www.schngn.com` to `https://schngn.com` | Approved | US-21 |
-| DEC-09 | First ad/landing angle: UK second-home owners and frequent EU travelers post-Brexit | Approved | US-16 |
+| DEC-09 | Landing angle: inclusive Schengen trip planning for frequent travelers, family visits, and longer stays | Approved | US-16 |
 | DEC-10 | Optional Clerk accounts with consented, authenticated D1 trip sync | Approved scope change | US-22 |
 | DEC-11 | Use the supplied cobalt SCHNGN wordmark and euro-star mark as the production identity | Approved | Production brand surfaces |
 | DEC-12 | Model trips as journeys made of explicit Schengen stays | Approved | US-04, US-19 |
-| DEC-13 | Localize the whole site in nine languages, including RTL Hebrew and Arabic | Approved | Whole-site UI |
+| DEC-13 | Localize the whole site in 17 languages, including RTL Hebrew and Arabic | Approved | Whole-site UI |
 | DEC-14 | Use one continuous anchored calculator workspace with one canonical saved timeline | Approved | Core app UX |
 
 ## DEC-01 — Analytics provider
@@ -174,20 +174,20 @@ Use first:
 
 ## DEC-09 — First ad/landing angle
 
-**Decision:** Start with **UK second-home owners and frequent EU travelers post-Brexit**.
+**Decision:** Present SCHNGN as an inclusive **Schengen trip planner for any traveler managing the 90/180-day rule**. Frequent travel, family visits, and second-home stays are examples, not eligibility categories.
 
 **Rationale:**
 
-- Sharp 90/180 pain.
-- Clear search intent.
-- Likely willingness to pay for confidence/reporting.
-- Less noisy than remote-worker positioning, which drifts into tax/visa/legal complexity.
+- The 90/180-day problem applies across nationalities and travel patterns.
+- Broad calculator and trip-planning language matches the product's actual scope.
+- Specific examples can explain the value without implying the product is only for one nationality or property-owning group.
+- Avoid remote-worker tax/visa/legal positioning that exceeds the product scope.
 
-**Implementation direction:** Landing page copy and SEO should target UK 90/180, second homes, frequent France/Spain/Italy travel, and booking confidence.
+**Implementation direction:** Landing copy and SEO should lead with the Schengen 90/180 calculator and trip planner. Mention frequent trips, family visits, and longer stays as representative uses without making any one group the headline audience.
 
 ## DEC-10 — Optional accounts and authenticated sync
 
-**Decision:** Add optional Clerk signup for repeat visits. Guest trips remain local-only. A signed-in user may explicitly consent to sync validated trip data and application settings to Cloudflare D1.
+**Decision:** Add optional Clerk signup for repeat visits. Guest trips remain local-only. The “Sign up & save” and “Create account & save trips” actions are explicit storage consent: after Clerk signup completes, SCHNGN automatically syncs the current validated trip snapshot to Cloudflare D1. A separately signed-in existing user retains the reconciliation and sync-choice flow.
 
 This is an approved **scope change** after the original no-account MVP cards. It does not retroactively weaken the local-only guarantees verified by US-05.
 
@@ -202,8 +202,8 @@ This is an approved **scope change** after the original no-account MVP cards. It
 
 - Signup is optional; the calculator remains usable without an account.
 - Guest trips never leave browser storage and have no server fallback.
-- Signing in does not automatically upload existing local trips. Show a separate, explicit consent action before the first sync.
-- Clerk signup and account-sync consent are separate actions: creating a session never uploads guest trips.
+- Completing signup from a signup-and-save CTA automatically uploads the current local trips to the newly created account.
+- A normal existing-account sign-in does not silently overwrite local or cloud data; it follows the reconciliation flow and may require a separate sync choice.
 
 **Lifecycle requirements:**
 
@@ -247,14 +247,14 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - The form progressively reveals inline outside-Schengen breaks, summarizes counted versus outside days, and previews the resulting inclusive 180-day allocation on the shared timeline.
 - A newly added historical trip ending before today’s inclusive rolling-window start requires an inline “Save anyway” confirmation because it will not affect today’s allocation. The boundary day itself remains in-window.
 - A journey whose final exit is before the current local date is automatically marked Past. An exit today remains current; users choose only Booked or What-if for current and future journeys.
-- A traveler who is currently inside Schengen may leave the final exit open. The saved journey carries an explicit ongoing marker, is projected through the current local date for calculation, and shows a live latest-safe-exit date. The calculated deadline is never stored as though it were the traveler’s actual exit. Only one journey may be ongoing at a time; entering the actual exit closes it.
+- A traveler may leave the final exit open for a current or future stay when the actual exit date is not known. A current open-ended stay is counted through the current local date; a future open-ended stay is projected through its latest safe exit based on the other saved trips. The saved journey keeps an explicit internal open-ended marker, and the calculated deadline is never presented as the traveler’s actual exit. Only one journey may be open-ended at a time; entering the actual exit closes it.
 - Local storage, backups, and account snapshots use schema version 2. Version-one data is intentionally unsupported because no legacy-data commitment exists.
 - D1 migration `0004_reset_account_trip_snapshots_v2.sql` clears pre-launch snapshots and recreates the constrained schema-two table without deleting Clerk accounts.
 - Country metadata and full travel histories remain prohibited from analytics and logs.
 
 ## DEC-13 — Whole-site localization and reviewed-copy boundary
 
-**Decision:** Support English, French, German, Spanish, Italian, Russian, Turkish, Hebrew, and Arabic across the public site and calculator. English uses the existing unprefixed routes; other languages use a locale prefix such as `/fr/app`. Hebrew and Arabic render right-to-left.
+**Decision:** Support English, French, German, Spanish, Italian, Brazilian Portuguese, Russian, Ukrainian, Turkish, Serbian in Latin script, Albanian, Georgian, Simplified Chinese, Japanese, Korean, Hebrew, and Arabic across the public site and calculator. English uses the existing unprefixed routes; other languages use a locale prefix such as `/pt-br/app` or `/uk/faq`. Hebrew and Arabic render right-to-left.
 
 **Implementation constraints:**
 
@@ -263,11 +263,13 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - Dates use locale-aware `Intl` formatting. ISO trip dates and engine inputs remain unchanged.
 - Localized routes are included in canonical/alternate metadata, the sitemap, and the offline navigation allowlist.
 - Fixed legal, safety, rule-explanation, and official-source labels are localized in every supported pack and remain deterministic; generated legal explanations remain forbidden.
+- New-market packs begin from the canonical English catalog and must receive native-speaker review of legal and rule copy before paid acquisition targets that language.
+- Ukrainian copy explicitly states that residence permits, temporary protection, and other residence status can change which days count; SCHNGN models ordinary short stays only.
 - Hebrew and Arabic use semantic RTL document direction while ISO values, email addresses, and other inherently left-to-right data retain appropriate directionality.
 
 ## DEC-14 — One continuous calculator workspace
 
-**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The canonical 180-day timeline, Trips list, report, and account controls are addressable by stable URL hashes; the persistent answer rail is visible but is not a navigation destination. The master timeline is the first workspace section, followed immediately by the saved-trip cards under Trips. Every card always shows its own color-coded 180-day timeline; selecting the card expands sliders and direct date inputs inside it. One bottom “Add new trip” action opens the new-trip editor as a dialog.
+**Decision:** `/app` is one continuous, responsive workspace rather than a set of mutually exclusive tabs. The canonical 180-day timeline, Trips list, and account controls are addressable by stable URL hashes; the guided Explainer and sourced FAQ are dedicated localized public pages linked from the workspace navigation. The Explainer reuses the production timeline, trip mini-timeline, status, date, and counting logic so its examples cannot quietly drift into a different visual or mathematical model. The persistent answer rail is visible but is not a navigation destination. The master timeline is the first workspace section, followed immediately by the saved-trip cards under Trips. Every card always shows its own color-coded 180-day timeline; selecting the card expands sliders and direct date inputs inside it. One bottom “Add new trip” action opens the new-trip editor as a dialog.
 
 **Implementation constraints:**
 
@@ -280,9 +282,23 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - A completed trip that exceeded the allowance is historical evidence, not a plan that still “needs changes.” It is labeled “Completed · N days over at the time,” remains fully counted in any rolling window it affects, and offers correction only if its recorded dates are inaccurate. If that completed history would make a later plan exceed the limit, the later plan is identified as the affected item rather than misattributing the overage to the completed trip.
 - The single “Add new trip” action at the bottom of Trips opens the trip editor as a modal dialog; the workspace has no second trip-entry surface.
 - Future planning and saved-trip adjustment keep independent state so experimenting with one cannot silently alter the other.
-- `#timeline`, `#trips`, and `#account` restore on refresh and browser navigation. Retired `#status` canonicalizes to `#timeline`; retired `#details` and old planner, proof, and returning-days destinations map to `#trips`; retired report and waitlist destinations map to `#account`.
+- `#timeline`, `#trips`, and `#account` restore on refresh and browser navigation. Retired `#status` canonicalizes to `#timeline`; retired `#details` and old planner, proof, and returning-days destinations map to `#trips`; retired report and waitlist destinations map to `#account`. Legacy app destinations `#rules`, `#explainer`, `#help`, and `#faq` redirect to the dedicated localized `/explainer` and `/faq` pages.
+- FAQ rule answers remain fixed, reviewed copy with direct official EU sources. SCHNGN-specific behavior is labeled separately and never presented as law or a border decision.
 - Account/data controls use accessible progressive disclosure so the primary workflow stays compact.
 - The unrecognized “border-ready PDF” fake door and its analytics event are retired. The visible bottom CTA instead explains the real account value: keeping trip history for future 90/180 calculations and optional cross-device sync after explicit consent.
+
+## DEC-15 — Support and feature-request contact form
+
+**Decision:** Add a small localized `/contact` form for help and feature requests. It is not an account, waitlist, newsletter, or analytics surface.
+
+**Implementation constraints:**
+
+- The form collects request type, optional name, reply email, and a message only when the visitor submits them.
+- It never reads or attaches saved trips, calculated timelines, account identity, or browser storage.
+- The Worker delivers through Cloudflare Email Service from `support@schngn.com` to the fixed, verified `schngn@proton.me` destination. Inbound mail to the branded support address forwards to the same Proton inbox. The browser cannot choose a recipient.
+- Cloudflare Turnstile is validated server-side for every real submission, and the Worker rate-limits before verification or delivery.
+- Responses use `Cache-Control: no-store`; message content and sender addresses never enter Plausible or operational logs.
+- The form warns visitors not to send passport, visa, or other sensitive document numbers and retains a direct email fallback when delivery is unavailable.
 
 ## Board state
 

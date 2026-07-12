@@ -273,19 +273,20 @@
 
 # Launch / Sprint 3 — Distribution and polish
 
-## US-16 — SEO landing page, niche-targeted
+## US-16 — SEO landing page, broadly targeted
 
 - **Priority:** Must
 - **Estimate:** M
 - **Status:** Done
-- **Depends on:** validated positioning copy, analytics from US-15, approved UK second-home/frequent-traveler angle; see `docs/product-decisions.md`.
-- **Implementation target:** landing page aimed at UK second-home owners and frequent Europe travelers post-Brexit.
+- **Depends on:** validated positioning copy, analytics from US-15, approved inclusive traveler angle; see `docs/product-decisions.md`.
+- **Implementation target:** landing page for travelers managing the Schengen 90/180-day rule, with frequent travel, family visits, and longer stays as representative uses.
 - **Acceptance summary:**
   - Hero, benefit bullets, trust line, CTA.
-  - SEO title/meta/social tags for UK 90/180 and second-home long-tail terms.
+  - SEO title/meta/social tags for Schengen 90/180 calculation and trip-planning intent.
   - Mobile-first load without private trip-value network leakage.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 117 Bun tests / 1296 assertions including UK second-home SEO source tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the targeted landing metadata, hero, trust line, CTA, and no forbidden network payloads.
 - **Success metric:** cold-traffic Clerk signup conversion > 5%.
+- **Positioning update:** Nationality- and second-home-specific headline copy was retired because the calculator serves a broader traveler audience.
 
 ## US-12 — Accuracy trust signal
 
@@ -357,7 +358,7 @@ These decisions were approved on 2026-07-09 and recorded in `docs/product-decisi
 - **Production error monitoring:** no Sentry for MVP launch; use Cloudflare logs + smoke tests first.
 - **`www` domain policy:** redirect `www.schngn.com` to `https://schngn.com`.
 - **Ad test angle:** UK second-home owners and frequent EU travelers post-Brexit.
-- **Optional accounts:** Clerk for identity, with explicitly consented authenticated D1 sync keyed by the verified Clerk user ID.
+- **Optional accounts:** Clerk for identity, with a clearly labelled signup-and-save action that automatically persists current trips after account creation; existing-account reconciliation remains protected against silent overwrites.
 
 ---
 
@@ -375,13 +376,14 @@ The original MVP implementation cards above shipped code and automated coverage.
 - **Estimate:** L
 - **Status:** In progress
 - **Depends on:** US-04, US-05, US-06, US-19, DEC-10
-- **Implementation target:** optional Clerk authentication plus Cloudflare D1 storage for users who sign up and explicitly consent to sync.
+- **Implementation target:** optional Clerk authentication plus Cloudflare D1 storage for users who explicitly choose a save-labelled signup action.
 - **Acceptance summary:**
   - The app remains fully usable without signup; guest trips remain local-only and never enter a server request.
-  - Signup/sign-in does not upload existing local trips until the signed-in user gives explicit consent.
+  - “Sign up & save” / “Create account & save trips” is the explicit storage choice: after Clerk completes account creation, the current local trips are stored automatically.
+  - Ordinary sign-in to an existing account retains conflict detection and reconciliation before either local or account trips are replaced.
   - Clerk is the identity source of truth; D1 application data is keyed by the server-verified Clerk user ID.
   - No endpoint accepts a client-supplied owner. Every account read/write/export/deletion is scoped from the verified session.
-  - No SCHNGN-managed email waitlist exists; account creation goes through Clerk, while trip sync still requires separate explicit consent.
+  - No SCHNGN-managed email waitlist exists; account creation goes through Clerk and the save-labelled signup action carries the account-storage consent.
   - Signed-in users can export and delete their application data; a verified Clerk deletion webhook provides cleanup fallback.
   - Sign-out isolates or removes synchronized local cache data on shared devices.
   - No trip dates, history, labels, calculated timelines, Clerk user IDs, or email enter analytics or operational logs.
@@ -411,7 +413,7 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 2. Truthful evidence UI: data-driven timeline, proof, risk, and returning-days states.
 3. Live validation plumbing: Plausible loader plus the authenticated D1 schema/binding/migrations and Clerk signup entry points.
 4. Release gates: Playwright, accessibility, privacy payload, type, build, and post-deploy storage checks in CI.
-5. Account expansion: optional Clerk authentication, explicit sync consent, server-derived ownership, D1 data isolation, export/deletion, and lifecycle webhook cleanup.
+5. Account expansion: optional Clerk authentication, signup-and-save consent, safe existing-account reconciliation, server-derived ownership, D1 data isolation, export/deletion, and lifecycle webhook cleanup.
 6. External closeout: provider account setup, least-privilege credentials, migration application, `www` verification, Clerk domain/webhook verification, and a live privacy audit.
 
 The authoritative operational checklist is `docs/production-readiness.md`.

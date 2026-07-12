@@ -2,7 +2,7 @@
 
 ## Purpose
 
-SCHNGN is a local-first Schengen 90/180-day tracker and planner. Anonymous use remains local-only. Optional Clerk accounts add explicitly consented D1 sync for repeat visits without weakening the guest privacy boundary.
+SCHNGN is a local-first Schengen 90/180-day tracker and planner. Anonymous use remains local-only. Optional Clerk accounts add D1 sync for repeat visits: completing signup from an explicit signup-and-save CTA stores the current trips automatically, without weakening the guest privacy boundary.
 
 ## Runtime model
 
@@ -111,7 +111,7 @@ Clerk is the identity source of truth. D1 stores application data keyed by the v
 Authenticated routes are responsible for:
 
 - verifying the Clerk session on every request;
-- recording explicit sync consent before the first upload;
+- recording the versioned signup-and-save or separate sync consent before the first upload;
 - validating and scoping all reads/writes to the server-derived user ID;
 - exporting the signed-in user’s application data;
 - deleting account data on user request, with a verified Clerk lifecycle webhook as cleanup fallback.
@@ -129,7 +129,7 @@ Sign-out must not expose a previous user’s synchronized cache on a shared devi
 
 ### Signup boundary
 
-There is no SCHNGN-managed email waitlist. People who want an account use Clerk signup directly. Clerk remains responsible for identity data; SCHNGN stores no duplicate email/profile row in D1 and does not upload guest trips merely because signup completed.
+There is no SCHNGN-managed email waitlist. People who want an account use Clerk signup directly. A separate localized contact form sends only the support fields a visitor explicitly enters to `schngn@proton.me` through a fixed-destination Cloudflare Email Service binding; it is protected by Turnstile and rate limiting and never attaches trip history. Clerk remains responsible for identity data and SCHNGN stores no duplicate email/profile row in D1.
 
 Because there is no production waitlist data to preserve, `0001_create_waitlist_signups.sql` is removed. Fresh databases begin the active account schema at migration `0002`. Forward migration `0005_drop_waitlist_signups.sql` uses `DROP TABLE IF EXISTS` to clean any already-provisioned database safely; it never creates or repurposes an identity table.
 
@@ -177,7 +177,7 @@ Implemented:
 
 - Pure TypeScript engine with deterministic fixtures, boundary cases, a golden scenario, and independent-oracle property checks.
 - Local trip CRUD, semantic validation, persistence, and JSON backup/restore.
-- A continuous calculator workspace with trips, planning, proof, returning-days, report, and account surfaces.
+- A continuous calculator workspace with timeline, trips, and account surfaces, plus dedicated localized `/explainer`, `/faq`, and `/contact` public resources.
 - Installable offline PWA shell.
 - Aggregate-only analytics adapter with no email capture.
 - Unit, type, build, browser, privacy-network, and post-deploy smoke gates.

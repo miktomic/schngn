@@ -29,8 +29,9 @@ Manual browser verification must also confirm:
 - the approved wordmark renders without a white canvas, browser favicon links resolve, and regular plus maskable PWA icons survive install masking;
 - observed analytics requests contain no trip dates, labels, email, or travel history;
 - a guest remains local-only and emits no account trip request;
-- the signup action opens Clerk directly; SCHNGN exposes no separate email-capture form or endpoint;
-- signup/sign-in alone does not upload local trips; a signed-in user must give explicit sync consent;
+- the signup action opens Clerk directly; the separate support form is not a signup or marketing list and never receives trip history automatically;
+- the clearly labelled “Sign up & save” / “Create account & save trips” action opens Clerk and, after account creation, automatically stores the current local trip history in the new account;
+- ordinary sign-in to an existing account still reconciles local and account copies without silently overwriting either one;
 - version-one local storage and backups are intentionally unsupported; the schema-two D1 migration clears any pre-launch account snapshots while preserving Clerk accounts;
 - account requests contain no client-controlled owner and authorization-isolation tests prove one user cannot access another user’s rows;
 - account export and deletion operate only on the verified signed-in user;
@@ -49,10 +50,23 @@ Configure the GitHub Environment named `production`:
 - variable `PUBLIC_CLERK_PUBLISHABLE_KEY`;
 - secret `CLERK_SECRET_KEY`;
 - secret `CLERK_WEBHOOK_SIGNING_SECRET`.
+- variable `PUBLIC_TURNSTILE_SITE_KEY`;
+- secret `TURNSTILE_SECRET_KEY`.
 
 Use a least-privilege Cloudflare token scoped to the SCHNGN account/zone. It needs the permissions required to deploy Workers, provision/apply D1 migrations, manage the `www` DNS record, and manage the canonical redirect ruleset. Never place any value in this repository or command output.
 
-The workflow passes the public Clerk value to the production build. For Worker runtime bindings it creates a mode-`0600` JSON file at a fixed path in `RUNNER_TEMP`, performs inactive `wrangler versions upload --secrets-file`, applies migrations, performs the gated active deploy with the same file, and unconditionally removes that fixed path in an `always()` step. Raw Cloudflare values are step-scoped to the deployment operations that require them; the job-level gate contains only a derived boolean. Production must fail if a required binding is absent; do not replace this with `wrangler secret put`, which immediately deploys a secret-only version.
+The workflow passes the public Clerk and Turnstile values to the production build. For Worker runtime bindings it creates a mode-`0600` JSON file at a fixed path in `RUNNER_TEMP`, performs inactive `wrangler versions upload --secrets-file`, applies migrations, performs the gated active deploy with the same file, and unconditionally removes that fixed path in an `always()` step. Raw Cloudflare values are step-scoped to the deployment operations that require them; the job-level gate contains only a derived boolean. Production must fail if a required binding is absent; do not replace this with `wrangler secret put`, which immediately deploys a secret-only version.
+
+### Contact delivery
+
+Before deploying the contact route:
+
+- verify `schngn@proton.me` as a Cloudflare Email Routing destination;
+- enable `support@schngn.com` forwarding and onboard `schngn.com` for sending from that branded address;
+- create a Turnstile widget for `schngn.com` and add its public/secret key pair to the production Environment;
+- confirm Wrangler provisions the fixed `CONTACT_EMAIL` binding and `CONTACT_RATE_LIMITER` namespace.
+
+Submit one synthetic help request and one feature request. Both must arrive at Proton with the visitor email as `Reply-To`; no trip history, account data, IP address, or analytics request may contain the message. A failed Turnstile token must return `400`, a burst over the limit must return `429`, and every response must be `no-store`.
 
 ### Clerk production instance
 
@@ -67,7 +81,8 @@ Subscribe it to `user.deleted`, then store the generated signing secret as `CLER
 Verify in production:
 
 - anonymous calculator use works with Clerk unavailable and no trip request leaves the browser;
-- a new signup does not upload existing guest trips until separate explicit consent;
+- a new signup started through a save-labelled CTA automatically stores the current guest trips after Clerk completes account creation;
+- ordinary sign-in to an existing account preserves the conflict/reconciliation safeguards before any local or account copy is replaced;
 - signed-in sync survives a repeat visit and is isolated to the verified Clerk user ID;
 - changing request fields cannot select another owner;
 - export returns only the current account’s application data;
@@ -82,7 +97,7 @@ SvelteKit owns the document CSP in `apps/web/svelte.config.js` using `mode: 'aut
 
 The production network allowlist is deliberately small:
 
-- scripts: same origin, `https://clerk.schngn.com`, and `https://challenges.cloudflare.com` for Clerk bot protection;
+- scripts: same origin, `https://clerk.schngn.com`, and `https://challenges.cloudflare.com` for Clerk and contact-form bot protection;
 - connections: same origin, `https://clerk.schngn.com`, and `https://plausible.io`;
 - images: same origin, `data:`, and `https://img.clerk.com`;
 - frames: `https://challenges.cloudflare.com` only;
@@ -92,7 +107,7 @@ Clerk's runtime CSS-in-JS and SCHNGN's data-driven inline CSS variables require 
 
 ### Cloudflare D1
 
-`apps/web/wrangler.jsonc` declares the `DB` binding without a committed database identifier. Current Wrangler provisions the resource for the binding, and migrations live under `apps/web/migrations/`. Active application data is keyed by the server-verified Clerk user ID and may exist only after explicit consent; guest trips never enter D1. Fresh databases start with the account schema at `0002`. Migration `0005_drop_waitlist_signups.sql` safely drops the retired table if an already-provisioned database still has it.
+`apps/web/wrangler.jsonc` declares the `DB` binding without a committed database identifier. Current Wrangler provisions the resource for the binding, and migrations live under `apps/web/migrations/`. Active application data is keyed by the server-verified Clerk user ID and may exist only after an explicit save action: the save-labelled signup CTA records that choice, while existing-account reconciliation retains its own confirmation safeguards. Guest trips never enter D1 before account creation. Fresh databases start with the account schema at `0002`. Migration `0005_drop_waitlist_signups.sql` safely drops the retired table if an already-provisioned database still has it.
 
 Local schema verification:
 
@@ -157,9 +172,10 @@ Production traffic is allowed only when:
 - GitHub secret scanning/push protection (or an equivalent full-history scanner) is enabled and reports no live credential;
 - there are no known result-integrity defects;
 - Clerk production domain/redirect configuration and the signed lifecycle webhook are verified;
-- guest local-only behavior, explicit sync consent, cross-account isolation, repeat-visit sync, export, deletion, and sign-out cache isolation are verified;
+- guest local-only behavior, signup-and-save consent, existing-account reconciliation, cross-account isolation, repeat-visit sync, export, deletion, and sign-out cache isolation are verified;
 - D1 account persistence is verified with a controlled, synthetic signed-in smoke;
 - the authenticated account-write edge rate limit is enabled and verified;
+- contact email delivery, server-side Turnstile validation, and the contact rate limiter are verified;
 - aggregate Plausible events are visible and privacy-audited;
 - `www` redirects canonically;
 - Cloudflare logs show no new Worker errors after deployment;

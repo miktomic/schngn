@@ -72,7 +72,7 @@
   <header>
     <div class="eyebrow">SCHNGN architecture</div>
     <h1>Local-first Schengen planner on Cloudflare Workers</h1>
-    <p class="subtitle">The important line: guest trip dates stay in the browser. Clerk owns optional signup, while Cloudflare handles only consented authenticated account data. The calculation engine stays pure and testable.</p>
+    <p class="subtitle">The important line: guest trip dates stay in the browser. A clearly labelled signup-and-save action uses Clerk for account creation, then Cloudflare stores the authenticated account data. The calculation engine stays pure and testable.</p>
   </header>
 
   <main class="canvas" aria-label="SCHNGN application architecture diagram">
@@ -126,13 +126,13 @@
       <rect class="box browser" x="900" y="218" width="240" height="74" /><text x="920" y="244">@schngn/engine</text><text class="small" x="920" y="264">pure TS 90/180 calculator</text>
       <rect class="box data" x="884" y="328" width="140" height="74" /><text x="902" y="354">Local storage</text><text class="small" x="902" y="374">trip dates + scenarios</text>
       <rect class="box browser" x="1044" y="328" width="126" height="74" /><text x="1060" y="354">Import/export</text><text class="small" x="1060" y="374">local JSON files</text>
-      <rect class="box privacy" x="850" y="522" width="338" height="72" /><text x="872" y="548">Privacy boundary</text><text class="small" x="872" y="568">guest local-only; account sync needs consent</text>
+      <rect class="box privacy" x="850" y="522" width="338" height="72" /><text x="872" y="548">Privacy boundary</text><text class="small" x="872" y="568">guest local-only; signup-and-save is explicit</text>
     </svg>
   </main>
 
   <section class="cards">
     <article class="card"><h2>Safety-critical core</h2><p>The 90/180 calculation engine is isolated in <code>packages/engine</code> and must be tested before UI polish outruns correctness.</p></article>
-    <article class="card"><h2>Privacy boundary</h2><p>Guest trips stay in browser storage. Optional Clerk accounts sync to separate D1 rows only after explicit consent; trip data never enters analytics or logs.</p></article>
+    <article class="card"><h2>Privacy boundary</h2><p>Guest trips stay in browser storage. Choosing signup-and-save explicitly starts Clerk account creation, after which current trips sync to separate D1 rows; trip data never enters analytics or logs.</p></article>
     <article class="card"><h2>Runtime boundary</h2><p>Bun and Node 24 are tooling. Production is Cloudflare <code>workerd</code> plus static assets; deployed code avoids Bun-native APIs.</p></article>
   </section>
 </body>

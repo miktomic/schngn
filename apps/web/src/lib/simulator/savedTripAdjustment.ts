@@ -1,6 +1,7 @@
 import {
   statusForTripDates,
   currentLocalIsoDate,
+  tripExitDate,
   tripToForm,
   upsertTrip,
   type EditableTrip,
@@ -22,7 +23,7 @@ export interface SavedTripAdjustmentResult {
 
 export function createSavedTripAdjustmentDraft(trip: EditableTrip, referenceDate: string = currentLocalIsoDate()): SavedTripAdjustmentDraft {
   const form = tripToForm(trip);
-  const effectiveExitDate = form.ongoing ? referenceDate : form.exitDate;
+  const effectiveExitDate = form.ongoing ? tripExitDate(trip, referenceDate) : form.exitDate;
   return {
     form: {
       label: form.label,

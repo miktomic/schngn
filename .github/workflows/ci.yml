@@ -64,6 +64,7 @@ jobs:
     env:
       CLOUDFLARE_DEPLOY_CONFIGURED: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && (vars.CLOUDFLARE_ACCOUNT_ID != '' || secrets.CLOUDFLARE_ACCOUNT_ID != '') }}
       PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -95,11 +96,12 @@ jobs:
         env:
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "${PUBLIC_CLERK_PUBLISHABLE_KEY:-}" || -z "${CLERK_SECRET_KEY:-}" || -z "${CLERK_WEBHOOK_SIGNING_SECRET:-}" ]]; then
-            echo "::error::Required Clerk production configuration is missing."
+          if [[ -z "${PUBLIC_CLERK_PUBLISHABLE_KEY:-}" || -z "${CLERK_SECRET_KEY:-}" || -z "${CLERK_WEBHOOK_SIGNING_SECRET:-}" || -z "${PUBLIC_TURNSTILE_SITE_KEY:-}" || -z "${TURNSTILE_SECRET_KEY:-}" ]]; then
+            echo "::error::Required Clerk or contact-form production configuration is missing."
             exit 1
           fi
           secrets_file="${RUNNER_TEMP}/schngn-worker-bindings.json"
@@ -109,7 +111,9 @@ jobs:
             const bindings = {
               PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.PUBLIC_CLERK_PUBLISHABLE_KEY,
               CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-              CLERK_WEBHOOK_SIGNING_SECRET: process.env.CLERK_WEBHOOK_SIGNING_SECRET
+              CLERK_WEBHOOK_SIGNING_SECRET: process.env.CLERK_WEBHOOK_SIGNING_SECRET,
+              PUBLIC_TURNSTILE_SITE_KEY: process.env.PUBLIC_TURNSTILE_SITE_KEY,
+              TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY
             };
             writeFileSync(process.argv[1], JSON.stringify(bindings), { mode: 0o600 });
           ' "${secrets_file}"

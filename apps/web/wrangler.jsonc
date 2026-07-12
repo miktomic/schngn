@@ -8,7 +8,9 @@
     "required": [
       "PUBLIC_CLERK_PUBLISHABLE_KEY",
       "CLERK_SECRET_KEY",
-      "CLERK_WEBHOOK_SIGNING_SECRET"
+      "CLERK_WEBHOOK_SIGNING_SECRET",
+      "PUBLIC_TURNSTILE_SITE_KEY",
+      "TURNSTILE_SECRET_KEY"
     ]
   },
   "assets": {
@@ -26,6 +28,20 @@
     {
       "binding": "DB",
       "migrations_dir": "migrations"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "CONTACT_EMAIL",
+      "destination_address": "schngn@proton.me",
+      "allowed_sender_addresses": ["support@schngn.com"]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "CONTACT_RATE_LIMITER",
+      "namespace_id": "900180",
+      "simple": { "limit": 3, "period": 60 }
     }
   ]
 }

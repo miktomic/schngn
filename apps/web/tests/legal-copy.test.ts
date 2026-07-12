@@ -13,8 +13,9 @@ describe('fixed legal/disclaimer copy', () => {
     expect(localizedLegalCopy('he').full).toContain('ולא ייעוץ משפטי או הבטחה לכניסה');
     for (const locale of SUPPORTED_LOCALES) {
       expect(localizedLegalCopy(locale).full.trim().length).toBeGreaterThan(80);
-      expect(localizedLegalCopy(locale).footer.trim().length).toBeGreaterThan(30);
+      expect(localizedLegalCopy(locale).footer.trim().length).toBeGreaterThan(10);
     }
+    expect(localizedLegalCopy('uk').full).toContain('Тимчасовий захист');
   });
 
   test('keeps official source links explicit and non-endorsement-safe', () => {
@@ -41,6 +42,7 @@ describe('fixed legal/disclaimer copy', () => {
     expect(app).not.toContain('class="disclaimer-notice"');
     expect(app).not.toContain('disclaimerNoticeVisible');
     expect(app).toContain('class="legal-footer"');
-    expect(app).toContain("rt('officialSources')");
+    expect(app).not.toContain("rt('officialSources')");
+    expect(app).not.toContain('officialSourceLinks');
   });
 });

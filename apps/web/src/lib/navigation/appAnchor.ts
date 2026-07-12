@@ -5,6 +5,7 @@ export const APP_ANCHORS = [
 ] as const;
 
 export type AppAnchor = (typeof APP_ANCHORS)[number];
+export type AppResourcePage = 'explainer' | 'faq';
 
 const APP_ANCHOR_SET = new Set<string>(APP_ANCHORS);
 
@@ -18,6 +19,13 @@ const LEGACY_SECTION_ANCHORS: Readonly<Record<string, AppAnchor>> = {
   report: 'account',
   waitlist: 'account',
   privacy: 'account'
+};
+
+const LEGACY_RESOURCE_SECTIONS: Readonly<Record<string, AppResourcePage>> = {
+  rules: 'explainer',
+  explainer: 'explainer',
+  faq: 'faq',
+  help: 'faq'
 };
 
 export function isAppAnchor(value: unknown): value is AppAnchor {
@@ -34,6 +42,15 @@ export function appAnchorFromUrl(url: URL): AppAnchor {
   if (hash === 'details') return 'trips';
   if (hash === 'report') return 'account';
   return isAppAnchor(hash) ? hash : 'timeline';
+}
+
+export function appResourceFromUrl(url: URL): AppResourcePage | null {
+  if (url.searchParams.has('section')) {
+    return LEGACY_RESOURCE_SECTIONS[url.searchParams.get('section') ?? ''] ?? null;
+  }
+
+  const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+  return LEGACY_RESOURCE_SECTIONS[hash] ?? null;
 }
 
 export function appAnchorUrl(currentUrl: URL, anchor: AppAnchor): string {

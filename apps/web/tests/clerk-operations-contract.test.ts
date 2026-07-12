@@ -12,7 +12,7 @@ describe('optional account operations contract', () => {
 
     for (const source of [architecture, decisions, board, agentContext]) {
       expect(source).toContain('Clerk');
-      expect(source).toContain('explicit consent');
+      expect(source).toContain('signup-and-save');
       expect(source).toContain('Clerk user ID');
     }
 
@@ -27,6 +27,7 @@ describe('optional account operations contract', () => {
     const architecture = read('docs/architecture.md');
     const readiness = read('docs/production-readiness.md');
     const readme = read('README.md');
+    const app = read('apps/web/src/routes/app/+page.svelte');
 
     for (const source of [architecture, readiness, readme]) {
       expect(source).toContain('optional');
@@ -39,6 +40,7 @@ describe('optional account operations contract', () => {
     expect(architecture).toContain('use Clerk signup directly');
     expect(architecture).toContain('no trip data in analytics or logs');
     expect(readiness).toContain('signed-in user');
+    expect(app).toContain("accountSignedIn ? recordUnlockBuyIntent() : void startAccountSignUp()");
   });
 
   test('declares required Worker secrets and ignores every local Wrangler secret file', () => {
@@ -48,6 +50,10 @@ describe('optional account operations contract', () => {
     expect(wrangler).toContain('"secrets"');
     expect(wrangler).toContain('"CLERK_SECRET_KEY"');
     expect(wrangler).toContain('"CLERK_WEBHOOK_SIGNING_SECRET"');
+    expect(wrangler).toContain('"PUBLIC_TURNSTILE_SITE_KEY"');
+    expect(wrangler).toContain('"TURNSTILE_SECRET_KEY"');
+    expect(wrangler).toContain('"CONTACT_EMAIL"');
+    expect(wrangler).toContain('"CONTACT_RATE_LIMITER"');
     expect(gitignore).toContain('.dev.vars*');
   });
 
@@ -57,6 +63,8 @@ describe('optional account operations contract', () => {
     expect(ci).toContain('PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.PUBLIC_CLERK_PUBLISHABLE_KEY }}');
     expect(ci).toContain('CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}');
     expect(ci).toContain('CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}');
+    expect(ci).toContain('PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}');
+    expect(ci).toContain('TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}');
     expect(ci).toContain('${RUNNER_TEMP}');
     expect(ci).toContain('umask 077');
     expect(ci).toContain('--secrets-file');

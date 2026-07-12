@@ -14,8 +14,10 @@ schngn/
 │       │   ├── routes/
 │       │   │   ├── +page.svelte              # SEO landing
 │       │   │   ├── app/+page.svelte          # calculator shell
+│       │   │   ├── contact/+page.svelte      # localized support/feature form
 │       │   │   ├── api/account/              # authenticated account-data deletion route
 │       │   │   ├── api/account/trips/        # authenticated trip sync/export route
+│       │   │   ├── api/contact/              # Turnstile-checked fixed-recipient email route
 │       │   │   └── api/webhooks/clerk/       # signed identity lifecycle cleanup
 │       │   ├── app.css
 │       │   └── app.html
@@ -81,15 +83,17 @@ Allowed:
 - Privacy-safe analytics wrappers.
 - Authenticated account and Clerk lifecycle Worker endpoints.
 - Optional Clerk authentication.
-- D1-backed sync for signed-in users after explicit consent.
+- D1-backed sync after a clearly labelled signup-and-save choice, with safe reconciliation for existing-account sign-in.
 - Authenticated account-data export and deletion.
+- Fixed-destination support email delivery with server-side Turnstile validation and rate limiting.
 
 Forbidden:
 
 - Sending trip dates to analytics, logs, or anonymous endpoints.
-- Server-side trip persistence for guests or before explicit consent.
+- Server-side trip persistence for guests or before account creation through the save-labelled signup flow.
 - Accepting an account owner from the client instead of deriving the Clerk user ID from the verified session.
 - Legal advice generation.
+- Automatically attaching trips, timelines, account identity, or browser data to a contact request.
 
 ## Build pipeline
 

@@ -1,4 +1,5 @@
 import type { Locale } from '$lib/i18n';
+import { translateExtended } from '$lib/i18n/extendedLocaleStrings';
 
 const FULL_DISCLAIMER_COPY =
   'SCHNGN is a planning calculator, not legal advice and not a guarantee of entry. It estimates ordinary short stays under the Schengen 90/180-day rule. It does not account for residence permits, long-stay or national visas, bilateral waiver agreements, nationality-specific exceptions, work/study/asylum status, EES/ETIAS transition issues, or border-officer discretion. Always verify with official sources before booking or travelling.';
@@ -14,7 +15,7 @@ export const OFFICIAL_SOURCE_LINKS = [
   { label: 'ETIAS information', href: 'https://travel-europe.europa.eu/en/etias' }
 ] as const;
 
-const legalCopy: Record<Locale, { full: string; footer: string }> = {
+const legalCopy: Partial<Record<Locale, { full: string; footer: string }>> & { en: { full: string; footer: string } } = {
   en: { full: FULL_DISCLAIMER_COPY, footer: FOOTER_DISCLAIMER_COPY },
   fr: { full: 'SCHNGN est un calculateur de planification, pas un conseil juridique ni une garantie d’entrée. Il estime les courts séjours ordinaires selon la règle Schengen des 90 jours sur 180. Il ne tient pas compte des titres de séjour, visas de long séjour ou visas nationaux, accords bilatéraux d’exemption, exceptions liées à la nationalité, statuts de travail, d’études ou d’asile, transitions EES/ETIAS ni du pouvoir d’appréciation des autorités frontalières. Vérifiez toujours les sources officielles avant de réserver ou de voyager.', footer: 'Outil de planification uniquement. Ni conseil juridique ni garantie d’entrée. Vérifiez les sources officielles.' },
   de: { full: 'SCHNGN ist ein Planungsrechner, keine Rechtsberatung und keine Garantie für die Einreise. Er schätzt gewöhnliche Kurzaufenthalte nach der Schengen-Regel 90 Tage in 180 Tagen. Aufenthaltstitel, Langzeit- oder nationale Visa, bilaterale Befreiungsabkommen, nationalitätsspezifische Ausnahmen, Arbeits-, Studien- oder Asylstatus, EES/ETIAS-Übergangsfragen und das Ermessen der Grenzbehörden werden nicht berücksichtigt. Prüfen Sie vor Buchung oder Reise immer die offiziellen Quellen.', footer: 'Nur Planungshilfe. Keine Rechtsberatung oder Einreisegarantie. Prüfen Sie offizielle Quellen.' },
@@ -26,7 +27,7 @@ const legalCopy: Record<Locale, { full: string; footer: string }> = {
   ar: { full: 'SCHNGN حاسبة للتخطيط فقط، وليست مشورة قانونية ولا ضمانًا للدخول. وهي تقدّر الإقامات القصيرة العادية وفق قاعدة شنغن 90 يومًا من أصل 180. ولا تأخذ في الحسبان تصاريح الإقامة أو التأشيرات الطويلة أو الوطنية أو اتفاقيات الإعفاء الثنائية أو الاستثناءات المرتبطة بالجنسية أو أوضاع العمل أو الدراسة أو اللجوء أو مراحل انتقال EES/ETIAS أو السلطة التقديرية لمسؤولي الحدود. تحقّق دائمًا من المصادر الرسمية قبل الحجز أو السفر.', footer: 'أداة للتخطيط فقط. ليست مشورة قانونية ولا ضمانًا للدخول. تحقّق من المصادر الرسمية.' }
 };
 
-const sourceLabels: Record<Locale, readonly [string, string, string]> = {
+const sourceLabels: Partial<Record<Locale, readonly [string, string, string]>> & { en: readonly [string, string, string] } = {
   en: ['European Commission short-stay calculator', 'Entry/Exit System information', 'ETIAS information'],
   fr: ['Calculateur de court séjour de la Commission européenne', 'Informations sur le système d’entrée/de sortie', 'Informations ETIAS'],
   de: ['Kurzaufenthaltsrechner der Europäischen Kommission', 'Informationen zum Einreise-/Ausreisesystem', 'ETIAS-Informationen'],
@@ -39,9 +40,18 @@ const sourceLabels: Record<Locale, readonly [string, string, string]> = {
 };
 
 export function localizedLegalCopy(locale: Locale): { full: string; footer: string } {
-  return legalCopy[locale];
+  const copy = legalCopy[locale] ?? {
+    full: translateExtended(locale, FULL_DISCLAIMER_COPY),
+    footer: translateExtended(locale, FOOTER_DISCLAIMER_COPY)
+  };
+  if (locale !== 'uk') return copy;
+  return {
+    ...copy,
+    full: `${copy.full} Тимчасовий захист або інший статус проживання може змінити, які дні враховуються; SCHNGN розраховує лише звичайні короткострокові перебування.`
+  };
 }
 
 export function localizedOfficialSourceLinks(locale: Locale) {
-  return OFFICIAL_SOURCE_LINKS.map((source, index) => ({ ...source, label: sourceLabels[locale][index] }));
+  const labels = sourceLabels[locale] ?? sourceLabels.en.map((label) => translateExtended(locale, label));
+  return OFFICIAL_SOURCE_LINKS.map((source, index) => ({ ...source, label: labels[index] }));
 }

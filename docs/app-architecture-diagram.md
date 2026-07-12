@@ -32,7 +32,7 @@ flowchart TB
     Engine["@schngn/engine\npure TypeScript 90/180 calculator"]
     Local[("Local Storage / IndexedDB\ntrip dates + scenarios")]
     Export["JSON import/export\nlocal files only"]
-    Consent["Optional signup +\nexplicit sync consent"]
+    Consent["Optional signup + save\nexplicit storage choice"]
     UI --> Engine
     UI <--> Local
     UI --> Export
@@ -67,7 +67,7 @@ flowchart TB
 
 ### 1. Trip data is local-first by design
 
-Guest trip dates, scenarios, and calculated personal travel timelines stay in browser storage. Optional signup does not change that boundary until the signed-in traveler gives explicit sync consent. Even then, trip data is limited to the authenticated account API and never enters analytics or logs.
+Guest trip dates, scenarios, and calculated personal travel timelines stay in browser storage. Choosing a clearly labelled signup-and-save action is the explicit storage choice; after Clerk completes account creation, the current local trips are stored through the authenticated account API. Trip data never enters analytics or logs.
 
 ### 2. The Schengen engine is isolated from UI and infrastructure
 
@@ -89,11 +89,11 @@ Fresh D1 databases begin with the account schema at migration `0002`. Forward mi
 
 ### 4. Signup goes directly through Clerk
 
-SCHNGN does not manage a separate email list. The signup action opens Clerk, which owns identity and session data. Completing signup does not upload browser-local trips; sync remains a separate, explicit consent action.
+SCHNGN does not manage a separate email list. The save-labelled signup action opens Clerk, which owns identity and session data. Completing account creation automatically saves the current browser-local trips to the new account.
 
-### 5. Optional account sync is consented and reversible
+### 5. Optional account storage is explicit and reversible
 
-Clerk is the identity source of truth. A guest remains local-only. A signed-in user must explicitly opt in before local trips are uploaded. Account storage includes authenticated export and deletion, plus signature-verified Clerk lifecycle cleanup; no trip data is allowed in analytics or logs.
+Clerk is the identity source of truth. A guest remains local-only. Clicking “Sign up & save” or “Create account & save trips” explicitly chooses account storage, which begins automatically after signup completes. Ordinary sign-in to an existing account still reconciles browser and account copies without silently overwriting either. Account storage includes authenticated export and deletion, plus signature-verified Clerk lifecycle cleanup; no trip data is allowed in analytics or logs.
 
 ### 6. CI/CD gates deployment on correctness and build health
 

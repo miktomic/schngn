@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   APP_ANCHORS,
   appAnchorFromUrl,
+  appResourceFromUrl,
   appAnchorUrl,
   canonicalAppAnchorUrl,
   isAppAnchor,
@@ -22,6 +23,8 @@ describe('single-page app anchors', () => {
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#trips'))).toBe('trips');
     expect(appAnchorFromUrl(new URL('https://schngn.com/he/app#account'))).toBe('account');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#timeline'))).toBe('timeline');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#explainer'))).toBe('timeline');
+    expect(appAnchorFromUrl(new URL('https://schngn.com/app#faq'))).toBe('timeline');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#status'))).toBe('timeline');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#details'))).toBe('trips');
     expect(appAnchorFromUrl(new URL('https://schngn.com/app#unknown'))).toBe('timeline');
@@ -40,6 +43,21 @@ describe('single-page app anchors', () => {
     ['privacy', 'account']
   ] as const)('maps legacy section=%s to #%s', (section, anchor) => {
     expect(appAnchorFromUrl(new URL(`https://schngn.com/app?section=${section}`))).toBe(anchor);
+  });
+
+  test.each([
+    ['rules', 'explainer'],
+    ['explainer', 'explainer'],
+    ['faq', 'faq'],
+    ['help', 'faq']
+  ] as const)('maps legacy resource destination %s to the %s page', (destination, resource) => {
+    expect(appResourceFromUrl(new URL(`https://schngn.com/app?section=${destination}`))).toBe(resource);
+    expect(appResourceFromUrl(new URL(`https://schngn.com/app#${destination}`))).toBe(resource);
+  });
+
+  test('an explicit section controls resource redirects before the hash', () => {
+    expect(appResourceFromUrl(new URL('https://schngn.com/app?section=planner#faq'))).toBeNull();
+    expect(appResourceFromUrl(new URL('https://schngn.com/app?section=faq#rules'))).toBe('faq');
   });
 
   test('an explicit legacy section wins over an existing valid hash', () => {

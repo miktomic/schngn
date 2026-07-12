@@ -49,6 +49,9 @@ describe('canonical domain hygiene', () => {
     expect(sitemap).toContain('<loc>https://schngn.com/</loc>');
     expect(sitemap).toContain('<loc>https://schngn.com/app</loc>');
     expect(sitemap).toContain('<loc>https://schngn.com/accuracy</loc>');
+    expect(sitemap).toContain('<loc>https://schngn.com/explainer</loc>');
+    expect(sitemap).toContain('<loc>https://schngn.com/faq</loc>');
+    expect(sitemap).toContain('<loc>https://schngn.com/contact</loc>');
     expect(sitemap).not.toContain('www.schngn.com');
   });
 });

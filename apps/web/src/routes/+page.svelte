@@ -3,12 +3,15 @@
   import { SchngnLogo } from '$lib/design';
   import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
   import { createTranslator, formatDate, localeFromPath, localizedPath, type Locale } from '$lib/i18n';
+  import { contactUi } from '$lib/i18n/contactUi';
 
   let locale = $derived(localeFromPath(page.url.pathname));
   let t = $derived(createTranslator(locale));
+  let contactCopy = $derived(contactUi(locale));
   let homePath = $derived(localizedPath('/', locale));
   let appPath = $derived(`${localizedPath('/app', locale)}?market=uk`);
   let accuracyPath = $derived(localizedPath('/accuracy', locale));
+  let contactPath = $derived(localizedPath('/contact', locale));
   let canonicalUrl = $derived(`https://schngn.com${homePath}`);
 </script>
 
@@ -49,6 +52,7 @@
       <SchngnLogo alt="" motto />
     </a>
     <div class="topbar-actions">
+      <a class="contact-link" href={contactPath}>{contactCopy.nav}</a>
       <LanguageSelector label={t('common.language')} {locale} url={page.url} />
       <a class="toplink" href={appPath}>{t('common.openCalculator')}</a>
     </div>
@@ -150,6 +154,7 @@
   }
 
   .brand,
+  .contact-link,
   .toplink,
   .actions a {
     text-decoration: none;
@@ -177,6 +182,9 @@
     padding: 10px 14px;
     white-space: nowrap;
   }
+
+  .contact-link { color: var(--muted); font-weight: 700; white-space: nowrap; }
+  .contact-link:hover { color: var(--ink); }
 
   .hero {
     display: grid;
