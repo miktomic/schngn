@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   initializeClerkBrowserAuth,
-  openClerkSignUp,
+  redirectToClerkSignUp,
   type ClerkBrowserClientLike,
   type ClerkBrowserWindow
 } from '../src/lib/auth/clerkBrowser';
@@ -29,8 +29,8 @@ function createFakeClerkClient() {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    openSignUp(options) {
-      calls.push({ method: 'open-sign-up', value: options });
+    async redirectToSignUp(options) {
+      calls.push({ method: 'redirect-sign-up', value: options });
     },
     async redirectToSignIn(options) {
       calls.push({ method: 'sign-in', value: options });
@@ -108,45 +108,45 @@ describe('Clerk browser auth wrapper', () => {
     expect(emissions).toBe(1);
   });
 
-  test('opens signup in Clerk while keeping the remaining account operations minimal', async () => {
+  test('redirects signup through Clerk while keeping the remaining account operations minimal', async () => {
     const { client, calls } = createFakeClerkClient();
     const auth = await initializeClerkBrowserAuth('pk_test_browser', { __schngnClerkTestClient: client });
     if (!auth.available) throw new Error('expected Clerk to be available');
 
-    await auth.openSignUp({ forceRedirectUrl: '/app' });
+    await auth.redirectToSignUp({ redirectUrl: '/app' });
     await auth.redirectToSignIn({ redirectUrl: '/app?market=uk' });
     await auth.redirectToUserProfile();
     await auth.signOut();
 
     expect(calls.slice(1)).toEqual([
-      { method: 'open-sign-up', value: { forceRedirectUrl: '/app' } },
+      { method: 'redirect-sign-up', value: { redirectUrl: '/app' } },
       { method: 'sign-in', value: { redirectUrl: '/app?market=uk' } },
       { method: 'profile' },
       { method: 'sign-out' }
     ]);
   });
 
-  test('opens the signup UI independently when the background session client cannot load', async () => {
+  test('redirects to hosted signup independently when the background session client cannot load', async () => {
     const { client, calls } = createFakeClerkClient();
     const targetWindow: ClerkBrowserWindow = {
       __schngnClerkTestLoader: async () => {
         throw new Error('background session unavailable');
       },
-      __schngnClerkTestUiLoader: async () => client
+      __schngnClerkTestSignUpLoader: async () => client
     };
 
     await expect(initializeClerkBrowserAuth('pk_test_browser', targetWindow)).resolves.toEqual({
       available: false,
       reason: 'load_failed'
     });
-    await expect(openClerkSignUp(
+    await expect(redirectToClerkSignUp(
       'pk_test_browser',
-      { forceRedirectUrl: '/app?account=signup#account' },
+      { redirectUrl: '/app?account=signup#account' },
       targetWindow
     )).resolves.toEqual({ ok: true });
     expect(calls).toEqual([
       { method: 'load', value: { telemetry: false } },
-      { method: 'open-sign-up', value: { forceRedirectUrl: '/app?account=signup#account' } }
+      { method: 'redirect-sign-up', value: { redirectUrl: '/app?account=signup#account' } }
     ]);
   });
 

@@ -86,7 +86,7 @@ async function installSignedOutClerk(page: Page): Promise<void> {
       addListener() {
         return () => {};
       },
-      openSignUp() {},
+      async redirectToSignUp() {},
       async redirectToSignIn() {},
       async redirectToUserProfile() {},
       async signOut() {}

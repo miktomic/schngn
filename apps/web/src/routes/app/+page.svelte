@@ -81,7 +81,7 @@
   import { assignTripColors, buildTripCardStates } from '$lib/trips/tripCardState';
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
-  import { initializeClerkBrowserAuth, openClerkSignUp, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
+  import { initializeClerkBrowserAuth, redirectToClerkSignUp, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
   import { APP_ANCHORS, appAnchorFromUrl, appAnchorUrl, appResourceFromUrl, canonicalAppAnchorUrl, type AppAnchor } from '$lib/navigation/appAnchor';
   import {
     deleteAccountData,
@@ -642,9 +642,9 @@
           return;
         }
       }
-      const result = await openClerkSignUp(
+      const result = await redirectToClerkSignUp(
         env.PUBLIC_CLERK_PUBLISHABLE_KEY,
-        { forceRedirectUrl: accountReturnUrl('signup') }
+        { redirectUrl: accountReturnUrl('signup') }
       );
       if (result.ok === false) {
         clearSignupSyncIntent();
