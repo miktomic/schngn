@@ -1,0 +1,137 @@
+name: One-off Cloudflare email routing setup
+
+on:
+  push:
+    branches:
+      - email-routing-setup/support-proton
+  workflow_dispatch:
+
+jobs:
+  setup-email-routing:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CF_ZONE_ID: 55cd093e6b757f68ca0442029e33b360
+      CF_ZONE_NAME: schngn.com
+      ROUTE_FROM: support@schngn.com
+      ROUTE_TO: schngn@proton.me
+    steps:
+      - name: Configure Cloudflare Email Routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const zoneId = process.env.CF_ZONE_ID;
+          const zoneName = process.env.CF_ZONE_NAME;
+          const routeFrom = process.env.ROUTE_FROM;
+          const routeTo = process.env.ROUTE_TO;
+
+          if (!token) throw new Error('CLOUDFLARE_API_TOKEN is missing');
+          if (!accountId) throw new Error('CLOUDFLARE_ACCOUNT_ID is missing');
+
+          async function cf(method, path, body, {allowFailure = false} = {}) {
+            const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
+              method,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: body === undefined ? undefined : JSON.stringify(body)
+            });
+            const text = await res.text();
+            let json;
+            try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
+            if (!res.ok || json.success === false) {
+              const msg = (json.errors || []).map(e => `${e.code || ''} ${e.message || ''}`.trim()).join('; ') || res.statusText;
+              if (allowFailure) return { ok: false, status: res.status, message: msg, json };
+              throw new Error(`${method} ${path} failed (${res.status}): ${msg}`);
+            }
+            return { ok: true, status: res.status, json };
+          }
+
+          function hasVerified(addresses, email) {
+            const found = addresses.find(a => (a.email || '').toLowerCase() === email.toLowerCase());
+            return { found, verified: !!(found && found.verified) };
+          }
+
+          const summary = [];
+
+          const settings0 = await cf('GET', `/zones/${zoneId}/email/routing`, undefined, {allowFailure: true});
+          if (settings0.ok) {
+            summary.push(`Initial routing status: enabled=${settings0.json.result?.enabled}, status=${settings0.json.result?.status || 'unknown'}`);
+          } else {
+            summary.push(`Initial routing status unavailable: ${settings0.message}`);
+          }
+
+          const dnsEnable = await cf('POST', `/zones/${zoneId}/email/routing/dns`, { name: zoneName }, {allowFailure: true});
+          if (dnsEnable.ok) {
+            summary.push(`Email Routing DNS enable/onboard call succeeded: enabled=${dnsEnable.json.result?.enabled}, status=${dnsEnable.json.result?.status || 'unknown'}`);
+          } else {
+            summary.push(`Email Routing DNS enable/onboard call did not succeed: ${dnsEnable.message}`);
+          }
+
+          const dns = await cf('GET', `/zones/${zoneId}/email/routing/dns`, undefined, {allowFailure: true});
+          if (dns.ok) {
+            const records = Array.isArray(dns.json.result) ? dns.json.result : [];
+            summary.push(`Cloudflare reports ${records.length} routing DNS record(s) for ${zoneName}.`);
+          } else {
+            summary.push(`Could not read Email Routing DNS records: ${dns.message}`);
+          }
+
+          let addressesResp = await cf('GET', `/accounts/${accountId}/email/routing/addresses?page=1&per_page=50`);
+          let addresses = addressesResp.json.result || [];
+          let dest = hasVerified(addresses, routeTo);
+          if (!dest.found) {
+            const created = await cf('POST', `/accounts/${accountId}/email/routing/addresses`, { email: routeTo });
+            summary.push(`Destination ${routeTo} created/requested. Verification email should be sent by Cloudflare.`);
+            addressesResp = await cf('GET', `/accounts/${accountId}/email/routing/addresses?page=1&per_page=50`);
+            addresses = addressesResp.json.result || [];
+            dest = hasVerified(addresses, routeTo);
+          } else {
+            summary.push(`Destination ${routeTo} already exists; verified=${dest.verified}.`);
+          }
+
+          if (!dest.verified) {
+            summary.push(`STOP: ${routeTo} is not verified yet, so Cloudflare will not activate a forward rule. Click the Cloudflare verification link in Proton, then rerun this workflow.`);
+            console.log(summary.join('\n'));
+            process.exit(78);
+          }
+
+          const rulesResp = await cf('GET', `/zones/${zoneId}/email/routing/rules?page=1&per_page=50`);
+          const rules = rulesResp.json.result || [];
+          const existing = rules.find(r =>
+            (r.matchers || []).some(m => m.field === 'to' && (m.value || '').toLowerCase() === routeFrom.toLowerCase()) &&
+            (r.actions || []).some(a => a.type === 'forward' && (a.value || []).map(v => v.toLowerCase()).includes(routeTo.toLowerCase()))
+          );
+
+          const ruleBody = {
+            name: `Forward ${routeFrom} to ${routeTo}`,
+            enabled: true,
+            matchers: [{ type: 'literal', field: 'to', value: routeFrom }],
+            actions: [{ type: 'forward', value: [routeTo] }],
+            priority: 0
+          };
+
+          if (existing) {
+            if (existing.enabled) {
+              summary.push(`Routing rule already exists and is enabled: ${routeFrom} -> ${routeTo}.`);
+            } else {
+              const updated = await cf('PATCH', `/zones/${zoneId}/email/routing/rules/${existing.id}`, ruleBody, {allowFailure: true});
+              if (updated.ok) summary.push(`Existing routing rule enabled: ${routeFrom} -> ${routeTo}.`);
+              else summary.push(`Existing routing rule found but could not be enabled: ${updated.message}`);
+            }
+          } else {
+            const createdRule = await cf('POST', `/zones/${zoneId}/email/routing/rules`, ruleBody);
+            summary.push(`Routing rule created and enabled: ${routeFrom} -> ${routeTo}. Rule id: ${createdRule.json.result?.id || 'unknown'}`);
+          }
+
+          const settings1 = await cf('GET', `/zones/${zoneId}/email/routing`, undefined, {allowFailure: true});
+          if (settings1.ok) {
+            summary.push(`Final routing status: enabled=${settings1.json.result?.enabled}, status=${settings1.json.result?.status || 'unknown'}`);
+          }
+          console.log(summary.join('\n'));
+          NODE
