@@ -67,12 +67,10 @@ jobs:
             summary.push(`Initial routing status unavailable: ${settings0.message}`);
           }
 
-          const dnsEnable = await cf('POST', `/zones/${zoneId}/email/routing/dns`, { name: zoneName }, {allowFailure: true});
-          if (dnsEnable.ok) {
-            summary.push(`Email Routing DNS enable/onboard call succeeded: enabled=${dnsEnable.json.result?.enabled}, status=${dnsEnable.json.result?.status || 'unknown'}`);
-          } else {
-            summary.push(`Email Routing DNS enable/onboard call did not succeed: ${dnsEnable.message}`);
-          }
+          // An empty body enables Email Routing for the zone apex. Passing the
+          // apex name is interpreted as a requested subdomain and is rejected.
+          const dnsEnable = await cf('POST', `/zones/${zoneId}/email/routing/dns`);
+          summary.push(`Email Routing DNS enable/onboard call succeeded: enabled=${dnsEnable.json.result?.enabled}, status=${dnsEnable.json.result?.status || 'unknown'}`);
 
           const dns = await cf('GET', `/zones/${zoneId}/email/routing/dns`, undefined, {allowFailure: true});
           if (dns.ok) {
@@ -120,7 +118,7 @@ jobs:
             if (existing.enabled) {
               summary.push(`Routing rule already exists and is enabled: ${routeFrom} -> ${routeTo}.`);
             } else {
-              const updated = await cf('PATCH', `/zones/${zoneId}/email/routing/rules/${existing.id}`, ruleBody, {allowFailure: true});
+              const updated = await cf('PUT', `/zones/${zoneId}/email/routing/rules/${existing.id}`, ruleBody, {allowFailure: true});
               if (updated.ok) summary.push(`Existing routing rule enabled: ${routeFrom} -> ${routeTo}.`);
               else summary.push(`Existing routing rule found but could not be enabled: ${updated.message}`);
             }
@@ -129,9 +127,15 @@ jobs:
             summary.push(`Routing rule created and enabled: ${routeFrom} -> ${routeTo}. Rule id: ${createdRule.json.result?.id || 'unknown'}`);
           }
 
-          const settings1 = await cf('GET', `/zones/${zoneId}/email/routing`, undefined, {allowFailure: true});
-          if (settings1.ok) {
-            summary.push(`Final routing status: enabled=${settings1.json.result?.enabled}, status=${settings1.json.result?.status || 'unknown'}`);
+          let settings1;
+          for (let attempt = 0; attempt < 5; attempt += 1) {
+            settings1 = await cf('GET', `/zones/${zoneId}/email/routing`);
+            if (settings1.json.result?.enabled === true && settings1.json.result?.status === 'ready') break;
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
+          summary.push(`Final routing status: enabled=${settings1.json.result?.enabled}, status=${settings1.json.result?.status || 'unknown'}`);
           console.log(summary.join('\n'));
+          if (settings1.json.result?.enabled !== true || settings1.json.result?.status !== 'ready') {
+            throw new Error('Cloudflare Email Routing did not reach enabled/ready state');
+          }
           NODE
