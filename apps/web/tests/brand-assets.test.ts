@@ -5,6 +5,7 @@ const logoComponent = readFileSync('apps/web/src/lib/design/SchngnLogo.svelte', 
 const landingSource = readFileSync('apps/web/src/routes/+page.svelte', 'utf8');
 const accuracySource = readFileSync('apps/web/src/routes/accuracy/+page.svelte', 'utf8');
 const appSource = readFileSync('apps/web/src/routes/app/+page.svelte', 'utf8');
+const siteHeaderSource = readFileSync('apps/web/src/lib/design/SiteHeader.svelte', 'utf8');
 
 function readPngDimensions(path: string): { width: number; height: number } {
   const image = readFileSync(path);
@@ -22,19 +23,17 @@ describe('SCHNGN production brand assets', () => {
 
   test('uses the wordmark on every public product header', () => {
     for (const source of [landingSource, accuracySource, appSource]) {
-      expect(source).toContain('SchngnLogo');
-      expect(source).toContain("from '$lib/design'");
-      expect(source).toContain('<SchngnLogo');
+      expect(source).toContain('SiteHeader');
       expect(source).not.toContain('<SchngnMark');
     }
+    expect(siteHeaderSource).toContain('<SchngnLogo');
+    expect(siteHeaderSource).not.toContain('<SchngnMark');
   });
 
   test('pairs primary header logos with the fixed brand motto', () => {
     expect(logoComponent).toContain('Never Overstay');
     expect(logoComponent).toContain('lang="en"');
-    for (const source of [landingSource, accuracySource, appSource]) {
-      expect(source).toMatch(/<SchngnLogo[^>]*motto/);
-    }
+    expect(siteHeaderSource).toMatch(/<SchngnLogo[^>]*motto/);
   });
 
   test('ships a correctly sized social preview using the approved brand artwork', () => {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import ExplainerWalkthrough from '$lib/design/ExplainerWalkthrough.svelte';
-  import ResourceTopbar from '$lib/design/ResourceTopbar.svelte';
+  import SiteHeader from '$lib/design/SiteHeader.svelte';
   import SchengenCountryGuide from '$lib/design/SchengenCountryGuide.svelte';
   import { createTranslator, localeFromPath, localizedPath, SUPPORTED_LOCALES } from '$lib/i18n';
   import { explainerUi } from '$lib/i18n/explainerUi';
@@ -33,8 +33,8 @@
   <meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />
 </svelte:head>
 
+<SiteHeader {locale} url={page.url} current="explainer" />
 <main class="resource-page">
-  <ResourceTopbar {locale} url={page.url} current="explainer" />
 
   <article class="resource-content" id="explainer" aria-labelledby="explainer-title">
     <header class="resource-hero">

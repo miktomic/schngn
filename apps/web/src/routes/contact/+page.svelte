@@ -2,7 +2,7 @@
   import { page } from '$app/state';
   import { env } from '$env/dynamic/public';
   import ContactForm from '$lib/design/ContactForm.svelte';
-  import ResourceTopbar from '$lib/design/ResourceTopbar.svelte';
+  import SiteHeader from '$lib/design/SiteHeader.svelte';
   import { localeFromPath, localizedPath, SUPPORTED_LOCALES } from '$lib/i18n';
   import { contactUi } from '$lib/i18n/contactUi';
 
@@ -22,8 +22,8 @@
   <meta property="og:description" content={copy.metaDescription} />
 </svelte:head>
 
+<SiteHeader {locale} url={page.url} current="contact" />
 <main class="resource-page">
-  <ResourceTopbar {locale} url={page.url} current="contact" />
   <article class="contact-content" aria-labelledby="contact-title">
     <header><p>{copy.eyebrow}</p><h1 id="contact-title">{copy.title}</h1><div class="rule" aria-hidden="true"></div><p>{copy.intro}</p></header>
     <section class="form-panel" aria-label={copy.title}><ContactForm {locale} siteKey={env.PUBLIC_TURNSTILE_SITE_KEY ?? ''} /></section>

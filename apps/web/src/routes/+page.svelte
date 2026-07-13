@@ -1,17 +1,16 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { SchngnLogo } from '$lib/design';
-  import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
+  import { SiteHeader } from '$lib/design';
   import { createTranslator, formatDate, localeFromPath, localizedPath, type Locale } from '$lib/i18n';
-  import { contactUi } from '$lib/i18n/contactUi';
+
 
   let locale = $derived(localeFromPath(page.url.pathname));
   let t = $derived(createTranslator(locale));
-  let contactCopy = $derived(contactUi(locale));
+
   let homePath = $derived(localizedPath('/', locale));
   let appPath = $derived(`${localizedPath('/app', locale)}?market=uk`);
   let accuracyPath = $derived(localizedPath('/accuracy', locale));
-  let contactPath = $derived(localizedPath('/contact', locale));
+
   let canonicalUrl = $derived(`https://schngn.com${homePath}`);
 </script>
 
@@ -46,18 +45,8 @@
   <meta name="twitter:image:alt" content="SCHNGN" />
 </svelte:head>
 
+<SiteHeader {locale} url={page.url} calculatorHref={appPath} />
 <main class="landing">
-  <header class="topbar" aria-label={t('landing.header')}>
-    <a class="brand" href={homePath} aria-label={t('common.home')}>
-      <SchngnLogo alt="" motto />
-    </a>
-    <div class="topbar-actions">
-      <a class="contact-link" href={contactPath}>{contactCopy.nav}</a>
-      <LanguageSelector label={t('common.language')} {locale} url={page.url} />
-      <a class="toplink" href={appPath}>{t('common.openCalculator')}</a>
-    </div>
-  </header>
-
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
       <p class="kicker">{t('landing.kicker')}</p>
@@ -127,64 +116,25 @@
 <style>
   .landing {
     min-height: 100svh;
-    padding: 20px clamp(16px, 4vw, 48px) 64px;
+    padding: 0 clamp(16px, 4vw, 48px) 64px;
   }
 
-  .topbar,
   .hero,
   .audience {
     max-width: 1120px;
     margin: 0 auto;
   }
 
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 64px;
-    gap: 16px;
-  }
-
-  .topbar-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  .brand,
-  .contact-link,
-  .toplink,
   .actions a {
     text-decoration: none;
   }
 
-  .brand {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .toplink,
   .primary,
   .secondary {
     border-radius: 10px;
     font-weight: 750;
   }
 
-  .toplink {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--ink);
-    padding: 10px 14px;
-    white-space: nowrap;
-  }
-
-  .contact-link { color: var(--muted); font-weight: 700; white-space: nowrap; }
-  .contact-link:hover { color: var(--ink); }
 
   .hero {
     display: grid;
@@ -423,17 +373,6 @@
   }
 
   @media (max-width: 840px) {
-    .topbar {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .topbar-actions {
-      width: 100%;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
-
     .hero,
     .audience {
       grid-template-columns: 1fr;

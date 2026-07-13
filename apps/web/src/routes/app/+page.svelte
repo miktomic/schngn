@@ -5,9 +5,8 @@
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
   import { latestSafeExitDate } from '@schngn/engine';
-  import { FactCard, SchengenCountryGuide, SchngnLogo, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
+  import { FactCard, SchengenCountryGuide, SiteHeader, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
   import BilateralPassportCheck from '$lib/design/BilateralPassportCheck.svelte';
-  import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
   import { createTranslator, intlLocale, localeFromPath, localizedPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
   import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
@@ -23,7 +22,7 @@
   import { createSinglePageUiTranslator } from '$lib/i18n/singlePageUi';
   import { createOngoingStayUiTranslator } from '$lib/i18n/ongoingStayUi';
   import { createSignupValueUiTranslator } from '$lib/i18n/signupValueUi';
-  import { contactUi } from '$lib/i18n/contactUi';
+
   import {
     localizeDashboardState,
     localizeSimulationState,
@@ -130,7 +129,7 @@
   $: tripCardUi = createTripCardUiTranslator(locale);
   $: ongoingStay = createOngoingStayUiTranslator(locale);
   $: signupValue = createSignupValueUiTranslator(locale);
-  $: contactCopy = contactUi(locale);
+
   $: legal = localizedLegalCopy(locale);
 
   let currentAnchor: AppAnchor = 'timeline';
@@ -248,7 +247,7 @@
   $: accountSignedIn = clerkAuth?.available === true && clerkAuth.isSignedIn && clerkAuth.userId !== null;
   $: accountEmail = clerkAuth?.available === true ? clerkAuth.email : null;
   $: accountStatusLabel = accountHeaderLabel(accountState, accountSignedIn);
-  $: headerAccountLabel = accountSignedIn ? deep('signOut') : signupValue('compactButton');
+
   $: localizedStorageWarning = storageWarning ? (locale === 'en' ? storageWarning : rt('accountGenericError')) : '';
 
   onMount(() => {
@@ -662,7 +661,7 @@
   }
 
   async function startAccountSignIn(): Promise<void> {
-    const auth = clerkAuth;
+    const auth = await ensureClerkAuth();
     if (!auth?.available) {
       accountDetailsOpen = true;
       navigateToAnchor('account');
@@ -867,10 +866,6 @@
 
   function selectAnchor(event: Event): void {
     const anchor = (event.currentTarget as HTMLSelectElement).value;
-    if (anchor === 'explainer' || anchor === 'faq' || anchor === 'contact') {
-      window.location.assign(localizedPath(`/${anchor}`, locale));
-      return;
-    }
     if (APP_ANCHORS.includes(anchor as AppAnchor)) navigateToAnchor(anchor as AppAnchor);
   }
 
@@ -1447,35 +1442,26 @@
 
 <main class="app-shell">
   <a class="skip-link" href="#status" onclick={skipToAnswer}>{singlePage('skipToContent')}</a>
+  <SiteHeader
+    {locale}
+    url={page.url}
+    current="calculator"
+    authStatus={accountSignedIn ? 'signed-in' : accountState === 'unavailable' ? 'unavailable' : accountState === 'loading' ? 'loading' : 'signed-out'}
+    signupMode="save"
+    authBusy={accountSignOutInProgress || signupOpening}
+    authError={signupError}
+    onSignUp={startAccountSignUp}
+    onLogin={startAccountSignIn}
+    onLogout={signOutAccount}
+  />
   <section class="workspace" aria-labelledby="app-title">
-    <header class="app-header">
-      <div class="brand" id="app-title">
-        <SchngnLogo motto />
-      </div>
-      <div class="app-header-actions">
-        <LanguageSelector label={t('common.language')} {locale} url={page.url} />
-        <button
-          class="account-chip"
-          class:signed-in={accountSignedIn}
-          type="button"
-          disabled={accountSignOutInProgress || signupOpening}
-          aria-busy={accountSignOutInProgress || signupOpening ? 'true' : undefined}
-          onclick={() => accountSignedIn ? void signOutAccount() : void startAccountSignUp()}
-        >
-          {headerAccountLabel}
-        </button>
-        {#if signupError}<p class="header-auth-error" role="alert">{signupError}</p>{/if}
-      </div>
-    </header>
+    <h1 id="app-title" class="visually-hidden">SCHNGN</h1>
 
     <nav class="anchor-nav" aria-label={ui('appSections')}>
       <div class="anchor-links">
         <span>{singlePage('jumpTo')}</span>
         <a href={appAnchorUrl(page.url, 'timeline')} aria-current={currentAnchor === 'timeline' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('timeline'); }}>{singlePage('timeline')}</a>
         <a href={appAnchorUrl(page.url, 'trips')} aria-current={currentAnchor === 'trips' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('trips'); }}>{singlePage('trips')}</a>
-        <a href={localizedPath('/explainer', locale)}>{singlePage('explainer')}</a>
-        <a href={localizedPath('/faq', locale)}>{singlePage('faq')}</a>
-        <a href={localizedPath('/contact', locale)}>{contactCopy.nav}</a>
         <a href={appAnchorUrl(page.url, 'account')} aria-current={currentAnchor === 'account' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('account'); }}>{singlePage('account')}</a>
       </div>
       <label class="anchor-select" for="app-anchor-select">
@@ -1483,9 +1469,6 @@
         <select id="app-anchor-select" value={currentAnchor} onchange={selectAnchor}>
           <option value="timeline">{singlePage('timeline')}</option>
           <option value="trips">{singlePage('trips')}</option>
-          <option value="explainer">{singlePage('explainer')}</option>
-          <option value="faq">{singlePage('faq')}</option>
-          <option value="contact">{contactCopy.nav}</option>
           <option value="account">{singlePage('account')}</option>
         </select>
       </label>
@@ -2300,19 +2283,17 @@
 <style>
   .app-shell {
     min-height: 100svh;
-    padding: 18px;
+    padding: 0 0 18px;
   }
 
   .workspace {
-    width: min(100%, 1180px);
-    margin: 0 auto;
+    width: min(calc(100% - 36px), 1180px);
+    margin: 18px auto 0;
     border: 1px solid var(--control-line);
     border-radius: 14px;
     background: var(--surface);
   }
 
-  .app-header,
-  .brand,
   .anchor-links,
   .facts,
   .button-row,
@@ -2321,67 +2302,6 @@
     align-items: center;
   }
 
-  .app-header {
-    justify-content: space-between;
-    gap: 12px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .app-header-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  .header-auth-error {
-    flex-basis: 100%;
-    max-width: 38ch;
-    margin: 0;
-    color: var(--risk);
-    font-size: 0.78rem;
-    font-weight: 650;
-    line-height: 1.35;
-    text-align: end;
-  }
-
-  .brand {
-    min-width: 0;
-  }
-
-  .account-chip {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--ink);
-    border-radius: 8px;
-    background: var(--ink);
-    color: var(--surface);
-    padding: 8px 14px;
-    font-size: 0.84rem;
-    font-weight: 760;
-  }
-
-  .account-chip.signed-in { background: var(--surface); color: var(--ink); }
-  .account-chip:hover:not(:disabled) { filter: brightness(1.08); }
-  .account-chip:focus-visible { outline: 3px solid var(--safe); outline-offset: 2px; }
-  .account-chip:disabled { cursor: progress; opacity: 0.62; }
-
-  .account-chip.synced {
-    border-color: color-mix(in srgb, var(--safe), var(--line) 35%);
-    background: var(--safe-bg);
-    color: var(--safe);
-  }
-
-  .account-chip.attention {
-    border-color: color-mix(in srgb, var(--whatif), var(--line) 20%);
-    background: var(--whatif-bg);
-    color: var(--whatif);
-  }
 
   .skip-link {
     position: fixed;
@@ -3449,9 +3369,7 @@
 
   @media (max-width: 640px) {
     .app-shell { padding: 0; }
-    .workspace { min-height: 100svh; border-width: 0; border-radius: 0; }
-    .app-header { align-items: flex-start; flex-direction: column; padding: 14px 16px; }
-    .app-header-actions { width: 100%; flex-wrap: wrap; justify-content: space-between; }
+    .workspace { width: 100%; min-height: 100svh; margin-top: 0; border-width: 0; border-radius: 0; }
     .anchor-links { display: none; }
     .anchor-select {
       display: grid;
@@ -3502,7 +3420,6 @@
   }
 
   @media (max-width: 380px) {
-    .account-chip { font-size: 0.76rem; }
     fieldset { grid-template-columns: 1fr; }
     .account-heading-row { align-items: stretch; flex-direction: column; }
     .account-state-badge { align-self: flex-start; }

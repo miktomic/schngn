@@ -1,13 +1,12 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { SchngnLogo } from '$lib/design';
-  import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
+  import { SiteHeader } from '$lib/design';
   import { createTranslator, localeFromPath, localizedPath, type Locale } from '$lib/i18n';
 
   const officialCalculatorUrl = 'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en';
   let locale = $derived(localeFromPath(page.url.pathname));
   let t = $derived(createTranslator(locale));
-  let homePath = $derived(localizedPath('/', locale));
+
   let appPath = $derived(localizedPath('/app', locale));
   let accuracyPath = $derived(localizedPath('/accuracy', locale));
   let canonicalUrl = $derived(`https://schngn.com${accuracyPath}`);
@@ -54,17 +53,8 @@
   <meta name="twitter:image:alt" content="SCHNGN" />
 </svelte:head>
 
+<SiteHeader {locale} url={page.url} />
 <main class="accuracy-page">
-  <header class="topbar" aria-label={t('accuracy.header')}>
-    <a class="brand" href={homePath} aria-label={t('common.home')}>
-      <SchngnLogo alt="" motto />
-    </a>
-    <div class="topbar-actions">
-      <LanguageSelector label={t('common.language')} {locale} url={page.url} />
-      <a class="toplink" href={appPath}>{t('common.openCalculator')}</a>
-    </div>
-  </header>
-
   <section class="hero" aria-labelledby="accuracy-title">
     <p class="kicker">{t('accuracy.kicker')}</p>
     <h1 id="accuracy-title">{t('accuracy.hero')}</h1>
@@ -93,10 +83,9 @@
 <style>
   .accuracy-page {
     min-height: 100svh;
-    padding: 20px clamp(16px, 4vw, 48px) 64px;
+    padding: 0 clamp(16px, 4vw, 48px) 64px;
   }
 
-  .topbar,
   .hero,
   .notice,
   .case-grid {
@@ -104,54 +93,22 @@
     margin: 0 auto;
   }
 
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 64px;
-    gap: 16px;
-  }
-
-  .topbar-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  .brand,
-  .toplink,
   .actions a {
     text-decoration: none;
   }
 
-  .brand {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .toplink,
   .primary,
   .secondary {
     border-radius: 10px;
     font-weight: 750;
   }
 
-  .toplink,
   .secondary {
     border: 1px solid var(--ink);
     background: var(--surface);
     color: var(--ink);
   }
 
-  .toplink {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 10px 14px;
-    white-space: nowrap;
-  }
 
   .hero {
     padding: clamp(44px, 9vw, 88px) 0 34px;
@@ -251,17 +208,6 @@
   }
 
   @media (max-width: 760px) {
-    .topbar {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .topbar-actions {
-      width: 100%;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
-
     .case-grid {
       grid-template-columns: 1fr;
     }

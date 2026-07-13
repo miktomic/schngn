@@ -41,7 +41,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'The basic rule: up to 90 days in any 180 days' })).toBeVisible();
     await expect(page.getByText('Ordinary short stays only')).toBeVisible();
     await expect(page.getByRole('combobox', { name: 'Language' })).toBeVisible();
-    await expect(page.locator('.resource-topbar').getByRole('link', { name: 'Day Calculator' })).toHaveAttribute('href', '/app');
+    await expect(page.locator('.site-header').getByRole('link', { name: 'Calculator', exact: true })).toHaveAttribute('href', '/app');
     const walkthrough = page.locator('.walkthrough');
     const timeline = walkthrough.locator('.timeline-card');
     const scrollToExplainerStep = async (index: number) => {
@@ -117,7 +117,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(faq.locator('details.faq-item').first()).toHaveAttribute('open', '');
 
     const overstay = faq.locator('details').filter({ hasText: 'What can happen if I overstay?' });
-    await overstay.getByText('What can happen if I overstay?').click();
+    await overstay.locator('summary').click();
+    await expect(overstay).toHaveAttribute('open', '');
     await expect(overstay).toContainText('return procedures');
     await expect(overstay.getByRole('link', { name: /Official source/ })).toHaveAttribute('href', 'https://travel-europe.europa.eu/ees/faq');
 
@@ -202,7 +203,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByRole('heading', { name: 'خطط لإقامتك في أوروبا من دون تخمين أيامك التسعين.' })).toBeVisible();
-    await expect(page.locator('header.topbar').getByRole('link', { name: 'فتح الحاسبة', exact: true })).toHaveAttribute('href', '/ar/app?market=uk');
+    await expect(page.locator('header.site-header').getByRole('link', { name: 'الحاسبة', exact: true })).toHaveAttribute('href', '/ar/app?market=uk');
 
     await page.goto('/he/app?section=planner');
     await expect(page.locator('html')).toHaveAttribute('lang', 'he');
@@ -519,11 +520,12 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('#add-trip-button')).toBeVisible();
     await expect(page.getByRole('form', { name: 'Trip form' })).toHaveCount(0);
 
-    await expect(page.locator('.anchor-links a')).toHaveText(['Timeline', 'Trips', 'Explainer', 'FAQ', 'Contact', 'Account']);
-    await expect(page.locator('#app-anchor-select option')).toHaveText(['Timeline', 'Trips', 'Explainer', 'FAQ', 'Contact', 'Account']);
-    await expect(page.locator('.anchor-links a').filter({ hasText: 'Explainer' })).toHaveAttribute('href', '/explainer');
-    await expect(page.locator('.anchor-links a').filter({ hasText: 'FAQ' })).toHaveAttribute('href', '/faq');
-    await expect(page.locator('.anchor-links a').filter({ hasText: 'Contact' })).toHaveAttribute('href', '/contact');
+    await expect(page.locator('.anchor-links a')).toHaveText(['Timeline', 'Trips', 'Account']);
+    await expect(page.locator('#app-anchor-select option')).toHaveText(['Timeline', 'Trips', 'Account']);
+    await expect(page.locator('.site-navigation a')).toHaveText(['Calculator', 'Explainer', 'FAQs', 'Contact']);
+    await expect(page.locator('.site-navigation').getByRole('link', { name: 'Explainer' })).toHaveAttribute('href', '/explainer');
+    await expect(page.locator('.site-navigation').getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', '/faq');
+    await expect(page.locator('.site-navigation').getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');
     const timelineBox = await page.locator('#timeline').boundingBox();
     const tripsBox = await page.locator('#trips').boundingBox();
     expect(timelineBox).not.toBeNull();
@@ -606,7 +608,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
 
-    await page.locator('.app-header').getByRole('button', { name: 'Sign up & save' }).click();
+    await page.locator('.site-header').getByRole('button', { name: 'Sign up & save' }).click();
     await expect.poll(() => readClerkSignUpRedirects(page)).toEqual(['/app?account=signup#account']);
     await expect(page).toHaveURL(/\/app#timeline$/);
     await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('schngn.accountSignupSync.v1'))).toBe('account-sync-v2');
@@ -678,7 +680,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(JSON.stringify(writes[0])).not.toContain('user_signupsave');
     expect(JSON.stringify(writes[0])).not.toContain('signup-save@example.invalid');
     await expect(page.getByRole('heading', { name: 'Trips are saved for repeat visits' })).toBeVisible();
-    await expect(page.locator('.app-header .account-chip')).toHaveText('Sign out');
+    await expect(page.locator('.site-header').getByRole('button', { name: 'Log out' })).toBeVisible();
     await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('schngn.accountSignupSync.v1'))).toBeNull();
   });
 
@@ -689,13 +691,13 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
     await page.goto('/app');
 
-    const headerSignup = page.locator('.app-header .account-chip');
+    const headerSignup = page.locator('.site-header').getByRole('button', { name: 'Sign up & save' });
     await expect(headerSignup).toHaveText('Sign up & save');
     await expect(headerSignup).toBeEnabled();
     await headerSignup.click();
 
     await expect(page).toHaveURL(/#timeline$/);
-    await expect(page.locator('.app-header').getByRole('alert')).toHaveText(
+    await expect(page.locator('.site-header').getByRole('alert')).toHaveText(
       'The secure account page could not be opened. Try again.'
     );
   });
@@ -1250,7 +1252,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await consent.check();
     await accountScreen.getByRole('button', { name: 'Sync 1 trip' }).click();
     await expect.poll(() => writes.length).toBe(1);
-    await expect(page.locator('.app-header .account-chip')).toHaveText('Sign out');
+    await expect(page.locator('.site-header').getByRole('button', { name: 'Log out' })).toBeVisible();
     expect(writes[0]).toMatchObject({
       expectedRevision: 0,
       consent: true,
@@ -1273,7 +1275,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(writes).toHaveLength(1);
     releaseFirstWrite?.();
     await expect.poll(() => writes.length).toBe(2);
-    await expect(page.locator('.app-header .account-chip')).toHaveText('Sign out');
+    await expect(page.locator('.site-header').getByRole('button', { name: 'Log out' })).toBeVisible();
     expect(writes[1]).toMatchObject({
       expectedRevision: 1,
       consent: true,
@@ -1305,13 +1307,13 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       'Account Spain stay',
       'Account France stay'
     ]);
-    await expect(page.locator('.app-header .account-chip')).toHaveText('Sign out');
+    await expect(page.locator('.site-header').getByRole('button', { name: 'Log out' })).toBeVisible();
     await page.evaluate(() => {
       const storagePrototype = Storage.prototype as Storage & { __schngnAccountSetItem?: Storage['setItem'] };
       if (storagePrototype.__schngnAccountSetItem) storagePrototype.setItem = storagePrototype.__schngnAccountSetItem;
     });
     await page.reload();
-    await expect(page.locator('.app-header .account-chip')).toHaveText('Sign out');
+    await expect(page.locator('.site-header').getByRole('button', { name: 'Log out' })).toBeVisible();
     await navigateToAppAnchor(page, 'trips');
     await expect(tripDisclosure(page, 'Account France stay')).toBeVisible();
 

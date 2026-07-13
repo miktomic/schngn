@@ -19,7 +19,7 @@ describe('standalone explainer and FAQ resources', () => {
     for (const source of [explainer, faq, contact]) {
       expect(source).toContain('rel="canonical"');
       expect(source).toContain('hreflang="x-default"');
-      expect(source).toContain('ResourceTopbar');
+      expect(source).toContain('SiteHeader');
       expect(source).toContain('localeFromPath(page.url.pathname)');
     }
 
@@ -30,10 +30,12 @@ describe('standalone explainer and FAQ resources', () => {
     expect(faq).not.toContain('product-label');
     expect(contact).toContain('ContactForm');
 
-    const topbar = readFileSync('apps/web/src/lib/design/ResourceTopbar.svelte', 'utf8');
-    expect(topbar).toContain("resourceTopbarUi(locale)");
-    expect(topbar).toContain("resourceCopy.dayCalculator");
-    expect(topbar).not.toContain("t('common.openCalculator')");
+    const topbar = readFileSync('apps/web/src/lib/design/SiteHeader.svelte', 'utf8');
+    expect(topbar).toContain('siteHeaderUi(locale)');
+    expect(topbar).toContain('copy.calculator');
+    expect(topbar).toContain('copy.explainer');
+    expect(topbar).toContain('copy.faq');
+    expect(topbar).toContain('copy.contact');
   });
 
   test('uses a sticky, scroll-driven rule walkthrough without a scroll event handler', () => {
@@ -75,7 +77,8 @@ describe('standalone explainer and FAQ resources', () => {
     expect(app).not.toContain('FAQ_SOURCE_URLS');
     expect(app).not.toContain('class="screen rules-section"');
     expect(app).not.toContain('class="screen faq-section"');
-    expect(app).toContain("localizedPath('/explainer', locale)");
-    expect(app).toContain("localizedPath('/faq', locale)");
+    expect(app).toContain('<SiteHeader');
+    expect(app).not.toContain("localizedPath('/explainer', locale)");
+    expect(app).not.toContain("localizedPath('/faq', locale)");
   });
 });

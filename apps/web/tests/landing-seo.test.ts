@@ -44,6 +44,7 @@ describe('inclusive Schengen-planning landing SEO', () => {
 
   test('routes the UK-targeted landing audience into GBP pricing', () => {
     expect(pageSource).toContain("`${localizedPath('/app', locale)}?market=uk`");
-    expect(pageSource.match(/href=\{appPath\}/g)).toHaveLength(3);
+    expect(pageSource).toContain('calculatorHref={appPath}');
+    expect(pageSource.match(/href=\{appPath\}/g)).toHaveLength(2);
   });
 });

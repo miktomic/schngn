@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import ResourceTopbar from '$lib/design/ResourceTopbar.svelte';
+  import SiteHeader from '$lib/design/SiteHeader.svelte';
   import SchengenCountryGuide from '$lib/design/SchengenCountryGuide.svelte';
   import { localeFromPath, localizedPath, SUPPORTED_LOCALES } from '$lib/i18n';
   import { FAQ_SOURCE_URLS, faqUi } from '$lib/i18n/faqUi';
@@ -26,8 +26,8 @@
   <meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />
 </svelte:head>
 
+<SiteHeader {locale} url={page.url} current="faq" />
 <main class="resource-page">
-  <ResourceTopbar {locale} url={page.url} current="faq" />
 
   <article class="resource-content" id="faq" aria-labelledby="faq-title">
     <header class="resource-hero">
