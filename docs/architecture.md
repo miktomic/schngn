@@ -177,7 +177,7 @@ Implemented:
 
 - Pure TypeScript engine with deterministic fixtures, boundary cases, a golden scenario, and independent-oracle property checks.
 - Local trip CRUD, semantic validation, persistence, and JSON backup/restore.
-- A continuous calculator workspace with timeline, trips, and account surfaces, plus dedicated localized `/explainer`, `/faq`, and `/contact` public resources.
+- A tab-free calculator workspace with timeline and trips, plus a header-linked Account & data destination on the same mounted route and dedicated localized `/explainer`, `/faq`, and `/contact` public resources.
 - Installable offline PWA shell.
 - Aggregate-only analytics adapter with no email capture.
 - Unit, type, build, browser, privacy-network, and post-deploy smoke gates.

@@ -81,7 +81,7 @@
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
   import { initializeClerkBrowserAuth, redirectToClerkSignUp, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
-  import { APP_ANCHORS, appAnchorFromUrl, appAnchorUrl, appResourceFromUrl, canonicalAppAnchorUrl, type AppAnchor } from '$lib/navigation/appAnchor';
+  import { appAnchorFromUrl, appAnchorUrl, appResourceFromUrl, canonicalAppAnchorUrl, type AppAnchor } from '$lib/navigation/appAnchor';
   import {
     deleteAccountData,
     getAccountTrips,
@@ -138,7 +138,6 @@
   let tripEditorVisible = false;
   let historyConfirmedEmpty = false;
   let olderTripsVisible = false;
-  let accountDetailsOpen = false;
   let pendingDeleteTripId: string | null = null;
   let clearConfirmationVisible = false;
   let tripForm: TripFormInput = emptyTripForm('booked');
@@ -269,7 +268,6 @@
     const shouldRestoreAnchor = Boolean(initialUrl.hash || initialUrl.searchParams.has('section'));
     const canonicalUrl = canonicalAppAnchorUrl(initialUrl);
     currentAnchor = appAnchorFromUrl(initialUrl);
-    openAnchorDisclosure(currentAnchor);
     if (`${initialUrl.pathname}${initialUrl.search}${initialUrl.hash}` !== canonicalUrl) {
       window.requestAnimationFrame(() => replaceState(canonicalUrl, page.state));
     }
@@ -281,7 +279,6 @@
       const nextUrl = new URL(window.location.href);
       const nextCanonicalUrl = canonicalAppAnchorUrl(nextUrl);
       currentAnchor = appAnchorFromUrl(nextUrl);
-      openAnchorDisclosure(currentAnchor);
       if (`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}` !== nextCanonicalUrl) {
         replaceState(nextCanonicalUrl, page.state);
       }
@@ -663,7 +660,6 @@
   async function startAccountSignIn(): Promise<void> {
     const auth = await ensureClerkAuth();
     if (!auth?.available) {
-      accountDetailsOpen = true;
       navigateToAnchor('account');
       return;
     }
@@ -833,40 +829,46 @@
     if (browser && page.url.searchParams.get('account') === 'signup') clearSignupSyncIntent();
   }
 
-  function navigateToAnchor(anchor: AppAnchor, openDisclosure = false): void {
+  function navigateToAnchor(anchor: AppAnchor): void {
     currentAnchor = anchor;
-    if (openDisclosure || anchor === 'account') openAnchorDisclosure(anchor);
     if (browser) pushState(appAnchorUrl(new URL(window.location.href), anchor), page.state);
     scrollToAnchor(anchor, true, true);
   }
 
-  function skipToAnswer(event: MouseEvent): void {
+  function navigateToCalculatorHome(): void {
+    currentAnchor = 'timeline';
+    if (browser) {
+      pushState(appAnchorUrl(new URL(window.location.href), 'timeline'), page.state);
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      });
+    }
+  }
+
+  function skipToPrimaryContent(event: MouseEvent): void {
     event.preventDefault();
     if (!browser) return;
+    const sectionId = currentAnchor === 'account' ? 'account' : 'status';
+    const headingId = currentAnchor === 'account' ? 'account-section-heading' : 'status-heading';
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.getElementById('status')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
-    document.getElementById('status-heading')?.focus({ preventScroll: true });
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    document.getElementById(headingId)?.focus({ preventScroll: true });
   }
 
   function scrollToAnchor(anchor: AppAnchor, focus = true, smooth = true): void {
     if (!browser) return;
     window.requestAnimationFrame(() => {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (anchor === 'account') {
+        window.scrollTo({ top: 0, behavior: smooth && !reducedMotion ? 'smooth' : 'auto' });
+        if (focus) document.getElementById('account-section-heading')?.focus({ preventScroll: true });
+        return;
+      }
       const section = document.getElementById(anchor);
       if (!section) return;
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       section.scrollIntoView({ behavior: smooth && !reducedMotion ? 'smooth' : 'auto', block: 'start' });
-      const headingId = anchor === 'account' ? 'account-section-heading' : `${anchor}-heading`;
-      if (focus) document.getElementById(headingId)?.focus({ preventScroll: true });
+      if (focus) document.getElementById(`${anchor}-heading`)?.focus({ preventScroll: true });
     });
-  }
-
-  function openAnchorDisclosure(anchor: AppAnchor): void {
-    if (anchor === 'account') accountDetailsOpen = true;
-  }
-
-  function selectAnchor(event: Event): void {
-    const anchor = (event.currentTarget as HTMLSelectElement).value;
-    if (APP_ANCHORS.includes(anchor as AppAnchor)) navigateToAnchor(anchor as AppAnchor);
   }
 
   function resourceDestinationUrl(url: URL, resource: 'explainer' | 'faq'): string {
@@ -1089,7 +1091,6 @@
     importError = '';
     historyConfirmedEmpty = false;
     if (browser) window.localStorage.removeItem(EMPTY_HISTORY_STORAGE_KEY);
-    accountDetailsOpen = true;
     navigateToAnchor('account');
   }
 
@@ -1440,39 +1441,25 @@
   <meta name="description" content={ui('headDescription')} />
 </svelte:head>
 
+<a class="skip-link" href={currentAnchor === 'account' ? '#account' : '#status'} onclick={skipToPrimaryContent}>{singlePage('skipToContent')}</a>
+<SiteHeader
+  {locale}
+  url={page.url}
+  current={currentAnchor === 'account' ? 'account' : 'calculator'}
+  calculatorHref={appAnchorUrl(page.url, 'timeline')}
+  accountHref={appAnchorUrl(page.url, 'account')}
+  authStatus={accountSignedIn ? 'signed-in' : accountState === 'unavailable' ? 'unavailable' : accountState === 'loading' ? 'loading' : 'signed-out'}
+  signupMode="save"
+  authBusy={accountSignOutInProgress || signupOpening}
+  authError={signupError}
+  onCalculator={navigateToCalculatorHome}
+  onSignUp={startAccountSignUp}
+  onLogin={startAccountSignIn}
+  onLogout={signOutAccount}
+/>
 <main class="app-shell">
-  <a class="skip-link" href="#status" onclick={skipToAnswer}>{singlePage('skipToContent')}</a>
-  <SiteHeader
-    {locale}
-    url={page.url}
-    current="calculator"
-    authStatus={accountSignedIn ? 'signed-in' : accountState === 'unavailable' ? 'unavailable' : accountState === 'loading' ? 'loading' : 'signed-out'}
-    signupMode="save"
-    authBusy={accountSignOutInProgress || signupOpening}
-    authError={signupError}
-    onSignUp={startAccountSignUp}
-    onLogin={startAccountSignIn}
-    onLogout={signOutAccount}
-  />
   <section class="workspace" aria-labelledby="app-title">
     <h1 id="app-title" class="visually-hidden">SCHNGN</h1>
-
-    <nav class="anchor-nav" aria-label={ui('appSections')}>
-      <div class="anchor-links">
-        <span>{singlePage('jumpTo')}</span>
-        <a href={appAnchorUrl(page.url, 'timeline')} aria-current={currentAnchor === 'timeline' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('timeline'); }}>{singlePage('timeline')}</a>
-        <a href={appAnchorUrl(page.url, 'trips')} aria-current={currentAnchor === 'trips' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('trips'); }}>{singlePage('trips')}</a>
-        <a href={appAnchorUrl(page.url, 'account')} aria-current={currentAnchor === 'account' ? 'location' : undefined} onclick={(event) => { event.preventDefault(); navigateToAnchor('account'); }}>{singlePage('account')}</a>
-      </div>
-      <label class="anchor-select" for="app-anchor-select">
-        <span>{singlePage('jumpTo')}</span>
-        <select id="app-anchor-select" value={currentAnchor} onchange={selectAnchor}>
-          <option value="timeline">{singlePage('timeline')}</option>
-          <option value="trips">{singlePage('trips')}</option>
-          <option value="account">{singlePage('account')}</option>
-        </select>
-      </label>
-    </nav>
 
     {#if storageWarning}
       <aside class="storage-alert" aria-live="polite">
@@ -1481,6 +1468,7 @@
       </aside>
     {/if}
 
+    {#if currentAnchor !== 'account'}
     <div class="single-page-content" id="main-content">
       <section class="screen answer-section" id="status" aria-labelledby="status-heading">
         {#if !hasLoadedTrips}
@@ -2067,16 +2055,16 @@
           <button class="primary-button" type="button" disabled={signupOpening} aria-busy={signupOpening ? 'true' : undefined} onclick={startAccountSignUp}>{signupValue('button')}</button>
         </section>
       {/if}
-
+      </div>
+    </div>
+    {:else}
+    <div class="account-page-content" id="main-content">
       <section class="screen account-section" id="account" aria-labelledby="account-section-heading">
-        <details class="section-disclosure" bind:open={accountDetailsOpen}>
-          <summary class="disclosure-summary">
-            <div class="section-heading">
-              <p>{singlePage('accountSummary')}</p>
-              <h2 id="account-section-heading" class="screen-title" tabindex="-1">{deep('accountTitle')}</h2>
-            </div>
-          </summary>
-          <div class="disclosure-body">
+        <header class="account-page-header">
+          <h1 id="account-section-heading" class="screen-title" tabindex="-1">{deep('accountTitle')}</h1>
+          <p class="intro-copy">{singlePage('accountSummary')}</p>
+        </header>
+        <div class="account-body">
         <section
           class:mint={accountState === 'synced'}
           class:whatif-panel={accountState === 'offer_sync' || accountState === 'conflict' || accountState === 'paused'}
@@ -2270,11 +2258,10 @@
             </div>
           </section>
         {/if}
-          </div>
-        </details>
+        </div>
       </section>
-      </div>
     </div>
+    {/if}
 
     <aside class="legal-footer" aria-label={rt('disclaimerAria')}><p>{legal.footer}</p></aside>
   </section>
@@ -2283,25 +2270,20 @@
 <style>
   .app-shell {
     min-height: 100svh;
-    padding: 0 0 18px;
+    padding: 0 clamp(16px, 4vw, 48px) 72px;
   }
 
   .workspace {
-    width: min(calc(100% - 36px), 1180px);
-    margin: 18px auto 0;
-    border: 1px solid var(--control-line);
-    border-radius: 14px;
-    background: var(--surface);
+    width: min(1180px, 100%);
+    margin: 0 auto;
   }
 
-  .anchor-links,
   .facts,
   .button-row,
   .form-actions {
     display: flex;
     align-items: center;
   }
-
 
   .skip-link {
     position: fixed;
@@ -2319,58 +2301,34 @@
 
   .skip-link:focus { translate: 0; }
 
-  .anchor-nav {
-    position: sticky;
-    z-index: 20;
-    top: 0;
-    border-bottom: 1px solid var(--line);
-    background: color-mix(in srgb, var(--surface), transparent 3%);
-  }
-
-  .anchor-links {
-    gap: 4px;
-    overflow-x: auto;
-    padding: 8px 14px;
-    scrollbar-width: thin;
-  }
-
-  .anchor-links > span {
-    flex: 0 0 auto;
-    color: var(--muted);
-    padding-inline: 6px;
-    font-size: 0.78rem;
-    font-weight: 760;
-    text-transform: uppercase;
-  }
-
-  .anchor-links a {
-    display: inline-flex;
-    min-height: 40px;
-    flex: 0 0 auto;
-    align-items: center;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    color: var(--muted);
-    padding: 8px 10px;
-    font-size: 0.9rem;
-    font-weight: 720;
-    text-decoration: none;
-  }
-
-  .anchor-links a:hover { background: var(--paper); color: var(--ink); }
-
-  .anchor-links a[aria-current='location'] {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--surface);
-  }
-
-  .anchor-select { display: none; }
-
   .single-page-content {
     display: grid;
     grid-template-columns: minmax(290px, 0.72fr) minmax(0, 1.35fr);
     align-items: start;
+    gap: clamp(36px, 5vw, 68px);
+    padding-top: clamp(48px, 7vw, 76px);
+  }
+
+  .account-page-content {
+    width: min(880px, 100%);
+    margin: 0 auto;
+    padding-top: clamp(48px, 7vw, 76px);
+  }
+
+  .account-section { gap: 28px; }
+
+  .account-page-header {
+    display: grid;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px;
+  }
+
+  .account-page-header .intro-copy { font-size: 1.05rem; }
+
+  .account-body {
+    display: grid;
+    gap: 20px;
   }
 
   .screen {
@@ -2379,24 +2337,24 @@
     min-width: 0;
     align-content: start;
     gap: 20px;
-    padding: 28px 24px 36px;
-    border-bottom: 1px solid var(--line);
-    scroll-margin-top: 72px;
+    padding: 0;
+    border: 0;
+    scroll-margin-top: 24px;
   }
 
   .answer-section {
     position: sticky;
-    top: 72px;
+    top: 24px;
     grid-column: 1;
     grid-row: 1;
-    border-inline-end: 1px solid var(--line);
-    background: var(--surface);
   }
 
   .workspace-flow {
+    display: grid;
     min-width: 0;
     grid-column: 2;
     grid-row: 1;
+    gap: clamp(52px, 7vw, 80px);
   }
 
   .trip-dialog {
@@ -2446,24 +2404,17 @@
     text-wrap: balance;
   }
 
-  .plan-section { border-top: 2px solid var(--whatif); }
-
-  .narrow-screen {
-    width: min(100%, 600px);
-  }
-
   .storage-alert,
   .legal-footer {
-    width: min(calc(100% - 32px), 1120px);
-    margin: 16px auto 0;
-    border-radius: 10px;
-    padding: 14px;
+    width: min(1180px, 100%);
+    margin: 32px auto 0;
+    padding: 18px 0;
   }
 
   .storage-alert {
     display: grid;
     gap: 4px;
-    border: 1px solid var(--risk);
+    border-block: 1px solid var(--risk);
     background: var(--risk-bg);
     color: var(--risk);
   }
@@ -2474,9 +2425,8 @@
   }
 
   .legal-footer {
-    margin-bottom: 18px;
-    border: 1px solid var(--line);
-    background: var(--paper);
+    margin-top: clamp(52px, 7vw, 80px);
+    border-block: 1px solid var(--line);
   }
 
   .legal-footer p,
@@ -2515,45 +2465,6 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
-  }
-
-  .section-disclosure {
-    min-width: 0;
-  }
-
-  .disclosure-summary {
-    display: flex;
-    min-height: 64px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .disclosure-summary::-webkit-details-marker { display: none; }
-
-  .disclosure-summary::after {
-    content: '+';
-    display: grid;
-    width: 36px;
-    height: 36px;
-    flex: 0 0 auto;
-    place-items: center;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--paper);
-    color: var(--ink);
-    font-size: 1.35rem;
-    font-weight: 620;
-  }
-
-  .section-disclosure[open] > .disclosure-summary::after { content: '−'; }
-
-  .disclosure-body {
-    display: grid;
-    gap: 20px;
-    padding-top: 20px;
   }
 
   .history-assumption {
@@ -2792,7 +2703,6 @@
 
   .account-footnote {
     padding-top: 10px;
-    border-top: 1px solid var(--line);
     color: var(--muted);
     font-size: 0.82rem;
   }
@@ -3300,8 +3210,7 @@
   .add-trip-footer {
     display: flex;
     justify-content: flex-end;
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
+    padding-top: 8px;
   }
 
   .confirm-panel {
@@ -3339,7 +3248,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    border-top: 1px solid var(--line);
+    border-radius: 16px;
     background: var(--surface-mint);
     padding: 24px 32px;
   }
@@ -3368,29 +3277,17 @@
   }
 
   @media (max-width: 640px) {
-    .app-shell { padding: 0; }
-    .workspace { width: 100%; min-height: 100svh; margin-top: 0; border-width: 0; border-radius: 0; }
-    .anchor-links { display: none; }
-    .anchor-select {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      gap: 10px;
-      padding: 8px 16px;
-    }
-    .anchor-select > span {
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 760;
-      text-transform: uppercase;
-    }
-    .anchor-select select { min-height: 42px; padding-block: 7px; }
-    .single-page-content { display: block; }
-    .screen { padding: 24px 16px 32px; scroll-margin-top: 66px; }
+    .app-shell { padding-inline: 16px; padding-bottom: 52px; }
+    .workspace { min-height: 100svh; }
+    .single-page-content { grid-template-columns: minmax(0, 1fr); gap: 48px; padding-top: 44px; }
+    .workspace-flow { gap: 48px; }
+    .screen { scroll-margin-top: 16px; }
     .answer-section {
       position: static;
-      border-inline-end: 0;
+      grid-column: 1;
+      grid-row: auto;
     }
+    .workspace-flow { grid-column: 1; grid-row: auto; }
     .screen-title { font-size: 2rem; }
     .verdict { font-size: 2.6rem; }
     .date-fields { grid-template-columns: 1fr; }
@@ -3414,9 +3311,9 @@
 
   @media (min-width: 641px) and (max-width: 900px) {
     .single-page-content { grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1.2fr); }
-    .screen { padding-inline: 18px; }
     .verdict { font-size: 2.75rem; }
-    .anchor-links > span { display: none; }
+    .signup-value-section { align-items: stretch; flex-direction: column; }
+    .signup-value-section button { width: 100%; }
   }
 
   @media (max-width: 380px) {

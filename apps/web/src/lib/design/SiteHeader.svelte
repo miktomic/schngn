@@ -8,7 +8,7 @@
   import { siteHeaderUi } from '$lib/i18n/siteHeaderUi';
   import SchngnLogo from './SchngnLogo.svelte';
 
-  type HeaderSection = 'calculator' | 'explainer' | 'faq' | 'contact';
+  type HeaderSection = 'calculator' | 'explainer' | 'faq' | 'contact' | 'account';
   type AuthStatus = 'loading' | 'signed-out' | 'signed-in' | 'unavailable';
 
   interface Props {
@@ -16,10 +16,12 @@
     url: URL;
     current?: HeaderSection;
     calculatorHref?: string;
+    accountHref?: string;
     authStatus?: AuthStatus;
     signupMode?: 'standard' | 'save';
     authBusy?: boolean;
     authError?: string;
+    onCalculator?: () => void | Promise<void>;
     onSignUp?: () => void | Promise<void>;
     onLogin?: () => void | Promise<void>;
     onLogout?: () => void | Promise<void>;
@@ -30,10 +32,12 @@
     url,
     current,
     calculatorHref,
+    accountHref,
     authStatus,
     signupMode = 'standard',
     authBusy = false,
     authError = '',
+    onCalculator,
     onSignUp,
     onLogin,
     onLogout
@@ -46,6 +50,7 @@
   let explainerPath = $derived(localizedPath('/explainer', locale));
   let faqPath = $derived(localizedPath('/faq', locale));
   let contactPath = $derived(localizedPath('/contact', locale));
+  let accountPath = $derived(accountHref ?? `${localizedPath('/app', locale)}#account`);
   let localAuthStatus = $state<AuthStatus>('loading');
   let localAuthBusy = $state(false);
   let localAuthError = $state('');
@@ -95,6 +100,12 @@
     await runPublicAuthAction(() => auth.redirectToSignUp({ redirectUrl: returnUrl() }));
   }
 
+  function handleCalculatorNavigation(event: MouseEvent): void {
+    if (!onCalculator) return;
+    event.preventDefault();
+    void onCalculator();
+  }
+
   async function handleLogin(): Promise<void> {
     if (resolvedAuthBusy) return;
     if (onLogin) {
@@ -141,7 +152,8 @@
     </a>
 
     <nav class="site-navigation" aria-label={copy.navigation}>
-      <a href={appPath} aria-current={current === 'calculator' ? 'page' : undefined}>{copy.calculator}</a>
+      <a href={appPath} aria-current={current === 'calculator' ? 'page' : undefined} onclick={handleCalculatorNavigation}>{copy.calculator}</a>
+      <a href={accountPath} aria-current={current === 'account' ? 'page' : undefined}>{copy.account}</a>
       <a href={explainerPath} aria-current={current === 'explainer' ? 'page' : undefined}>{copy.explainer}</a>
       <a href={faqPath} aria-current={current === 'faq' ? 'page' : undefined}>{copy.faq}</a>
       <a href={contactPath} aria-current={current === 'contact' ? 'page' : undefined}>{copy.contact}</a>
@@ -277,8 +289,8 @@
     .site-brand { grid-column: 1; grid-row: 1; }
     .site-utilities { grid-column: 1; grid-row: 2; justify-content: space-between; flex-wrap: wrap; }
     .site-navigation { grid-column: 1; grid-row: 3; margin-inline: -16px; padding-inline: 12px; }
-    .site-navigation a { min-height: 40px; padding-inline: 9px; font-size: 0.84rem; }
-    .auth-action { min-height: 40px; padding-inline: 10px; font-size: 0.78rem; }
+    .site-navigation a { min-height: 44px; padding-inline: 9px; font-size: 0.84rem; }
+    .auth-action { min-height: 44px; padding-inline: 10px; font-size: 0.78rem; }
   }
 
   @media (max-width: 390px) {

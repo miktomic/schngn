@@ -209,14 +209,14 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'he');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page).toHaveURL(/\/he\/app#trips$/);
-    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
+    await expect(page.locator('#trips')).toBeVisible();
     await expect(page.locator('#plan')).toHaveCount(0);
     const appLanguageSelector = page.getByRole('combobox', { name: 'שפה' });
     await appLanguageSelector.selectOption('fr');
     await expect(page).toHaveURL(/\/fr\/app#trips$/);
-    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
     await page.reload();
-    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
+    await expect(page).toHaveURL(/\/fr\/app#trips$/);
+    await expect(page.locator('#trips')).toBeVisible();
     await navigateToAppAnchor(page, 'account');
     await expect(page.getByRole('heading', { name: 'Continuer sans compte' })).toBeVisible();
 
@@ -242,7 +242,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('main')).toBeVisible();
   });
 
-  test('keeps desktop workspace sections beside the sticky answer rail', async ({ page }) => {
+  test('uses a calm unboxed calculator shell beside the sticky answer rail', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
@@ -250,6 +250,24 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await page.locator('#status').getByRole('button', { name: 'I don’t have a trip to add yet.' }).click();
     await page.locator('#trips').evaluate((section) => section.scrollIntoView());
+
+    await expect(page.locator('.anchor-nav')).toHaveCount(0);
+    const shellStyles = await page.evaluate(() => {
+      const workspace = getComputedStyle(document.querySelector('.workspace')!);
+      const answer = getComputedStyle(document.querySelector('#status')!);
+      const timeline = getComputedStyle(document.querySelector('#timeline')!);
+      const flow = getComputedStyle(document.querySelector('.workspace-flow')!);
+      return {
+        workspaceBorder: workspace.borderTopWidth,
+        answerDivider: answer.borderInlineEndWidth,
+        timelineDivider: timeline.borderBottomWidth,
+        flowGap: Number.parseFloat(flow.rowGap)
+      };
+    });
+    expect(shellStyles.workspaceBorder).toBe('0px');
+    expect(shellStyles.answerDivider).toBe('0px');
+    expect(shellStyles.timelineDivider).toBe('0px');
+    expect(shellStyles.flowGap).toBeGreaterThanOrEqual(40);
 
     const answerBox = await page.locator('#status').boundingBox();
     const detailsBox = await page.locator('#trips').boundingBox();
@@ -270,6 +288,13 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await page.setViewportSize({ width: 640, height: 900 });
     expect(await page.locator('#status').evaluate((section) => getComputedStyle(section).position)).toBe('static');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const mobileAnswerBox = await page.locator('#status').boundingBox();
+    const mobileTimelineBox = await page.locator('#timeline').boundingBox();
+    expect(Math.abs(mobileTimelineBox!.x - mobileAnswerBox!.x)).toBeLessThanOrEqual(1);
+    expect(mobileTimelineBox!.y).toBeGreaterThanOrEqual(mobileAnswerBox!.y + mobileAnswerBox!.height + 40);
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/he/app#details');
@@ -520,12 +545,28 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('#add-trip-button')).toBeVisible();
     await expect(page.getByRole('form', { name: 'Trip form' })).toHaveCount(0);
 
-    await expect(page.locator('.anchor-links a')).toHaveText(['Timeline', 'Trips', 'Account']);
-    await expect(page.locator('#app-anchor-select option')).toHaveText(['Timeline', 'Trips', 'Account']);
-    await expect(page.locator('.site-navigation a')).toHaveText(['Calculator', 'Explainer', 'FAQs', 'Contact']);
+    await expect(page.locator('.anchor-nav')).toHaveCount(0);
+    await expect(page.locator('#app-anchor-select')).toHaveCount(0);
+    await expect(page.locator('.site-navigation a')).toHaveText(['Calculator', 'Account', 'Explainer', 'FAQs', 'Contact']);
     await expect(page.locator('.site-navigation').getByRole('link', { name: 'Explainer' })).toHaveAttribute('href', '/explainer');
     await expect(page.locator('.site-navigation').getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', '/faq');
     await expect(page.locator('.site-navigation').getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');
+    const accountLink = page.locator('.site-navigation').getByRole('link', { name: 'Account' });
+    await expect(accountLink).toHaveAttribute('href', '/app#account');
+    await expect(page.locator('#account')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Export JSON' })).toHaveCount(0);
+    await accountLink.click();
+    await expect(page).toHaveURL(/\/app#account$/);
+    await expect(accountLink).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('#status')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Account & data' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Import JSON', exact: true })).toBeVisible();
+    await page.locator('.site-navigation').getByRole('link', { name: 'Calculator', exact: true }).click();
+    await expect(page).toHaveURL(/\/app#timeline$/);
+    await expect(page.locator('#status')).toBeVisible();
+    await expect(page.locator('#account')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     const timelineBox = await page.locator('#timeline').boundingBox();
     const tripsBox = await page.locator('#trips').boundingBox();
     expect(timelineBox).not.toBeNull();
@@ -562,7 +603,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.goto('/app?market=uk');
     await navigateToAppAnchor(page, 'trips');
     await page.reload();
-    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
+    await expect(page).toHaveURL(/\/app\?market=uk#trips$/);
+    await expect(page.locator('#trips')).toBeVisible();
 
     await navigateToAppAnchor(page, 'account');
     await expect(page).toHaveURL(/\/app\?market=uk#account$/);
@@ -576,30 +618,27 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.addInitScript(() => window.localStorage.clear());
 
     await page.goto('/app?market=uk&section=planner');
-    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
     await expect(page).toHaveURL(/\/app\?market=uk#trips$/);
+    await expect(page.locator('#trips')).toBeVisible();
     await expect(page.locator('#plan')).toHaveCount(0);
 
     await page.goto('/app?section=trip');
-    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
     await expect(page).toHaveURL(/\/app#trips$/);
 
     await page.goto('/app#timeline');
-    await expect(page.locator('#app-anchor-select')).toHaveValue('timeline');
     await expect(page).toHaveURL(/\/app#timeline$/);
+    await expect(page.locator('#timeline')).toBeVisible();
 
     await page.goto('/app#status');
-    await expect(page.locator('#app-anchor-select')).toHaveValue('timeline');
     await expect(page).toHaveURL(/\/app#timeline$/);
 
     await page.goto('/app#details');
-    await expect(page.locator('#app-anchor-select')).toHaveValue('trips');
     await expect(page).toHaveURL(/\/app#trips$/);
 
     await page.goto('/app?section=privacy');
-    await expect(page.locator('#app-anchor-select')).toHaveValue('account');
     await expect(page).toHaveURL(/\/app#account$/);
-    await expect(page.locator('#account details')).toHaveAttribute('open', '');
+    await expect(page.locator('#account')).toBeVisible();
+    await expect(page.locator('#account details')).toHaveCount(0);
   });
 
   test('redirects to signup immediately from the header and create-account CTA while auth is still loading', async ({ page }) => {
@@ -1007,9 +1046,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
 
     await page.goto('/app?market=uk');
-    const anchorSelector = page.locator('#app-anchor-select');
-    await anchorSelector.focus();
-    await expect(anchorSelector).toBeFocused();
+    await expect(page.locator('.anchor-nav')).toHaveCount(0);
+    await expect(page.locator('.site-navigation').getByRole('link', { name: 'Calculator', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.locator('#status').getByRole('heading', { name: 'Add any Schengen trip' })).toBeVisible();
     await expect(page.locator('#status').getByRole('heading', { name: /safe buffer days/i })).toHaveCount(0);
 
@@ -1143,6 +1181,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.getByRole('button', { name: 'Clear this browser' }).click();
     await expect(page.getByText('Trip data is now cleared from this tab.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Export JSON' })).toBeDisabled();
+    await page.locator('.site-navigation').getByRole('link', { name: 'Calculator', exact: true }).click();
     await expect(page.locator('#status').getByRole('heading', { name: 'Add any Schengen trip' })).toBeVisible();
 
     const plausibleEvents = await readPlausibleEvents(page);
@@ -1431,7 +1470,9 @@ async function navigateToAppAnchor(
   page: Page,
   anchor: 'timeline' | 'trips' | 'account'
 ): Promise<void> {
-  await page.locator('#app-anchor-select').selectOption(anchor);
+  await page.evaluate((nextAnchor) => {
+    window.location.hash = nextAnchor;
+  }, anchor);
   await expect(page).toHaveURL(new RegExp(`#${anchor}$`));
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { handleMissingClientOnlyAnchor } from '../svelte.config.js';
 import { SUPPORTED_LOCALES } from '../src/lib/i18n';
 import { siteHeaderUi } from '../src/lib/i18n/siteHeaderUi';
 
@@ -20,6 +21,7 @@ describe('common site header', () => {
       explainer: 'Explainer',
       faq: 'FAQs',
       contact: 'Contact',
+      account: 'Account',
       signUp: 'Sign up',
       signUpAndSave: 'Sign up & save',
       login: 'Log in',
@@ -39,6 +41,7 @@ describe('common site header', () => {
     for (const destination of ["'/app'", "'/explainer'", "'/faq'", "'/contact'"]) {
       expect(header).toContain(destination);
     }
+    expect(header).toContain('accountPath');
     expect(header).toContain('<LanguageSelector');
     expect(header).toContain('copy.signUp');
     expect(header).toContain('copy.login');
@@ -49,15 +52,25 @@ describe('common site header', () => {
     }
   });
 
-  test('keeps resource links in the global header and only workspace anchors in the calculator jump navigation', () => {
+  test('uses the global header as the calculator navigation without a second jump menu', () => {
     const app = readFileSync('apps/web/src/routes/app/+page.svelte', 'utf8');
-    const anchorNav = app.match(/<nav class="anchor-nav"[\s\S]*?<\/nav>/)?.[0] ?? '';
 
-    expect(anchorNav).toContain("singlePage('timeline')");
-    expect(anchorNav).toContain("singlePage('trips')");
-    expect(anchorNav).toContain("singlePage('account')");
-    expect(anchorNav).not.toContain("singlePage('explainer')");
-    expect(anchorNav).not.toContain("singlePage('faq')");
-    expect(anchorNav).not.toContain('contactCopy.nav');
+    expect(app).not.toContain('<nav class="anchor-nav"');
+    expect(app).not.toContain('id="app-anchor-select"');
+    expect(app).toContain('id="timeline"');
+    expect(app).toContain('id="trips"');
+    expect(app).toContain('id="account"');
+    expect(app).toContain("current={currentAnchor === 'account' ? 'account' : 'calculator'}");
+  });
+
+  test('keeps prerender anchor validation strict outside the hydrated account view', () => {
+    const details = { id: 'account', referrers: ['/'], message: 'missing anchor' };
+
+    expect(() => handleMissingClientOnlyAnchor({ ...details, path: '/app' })).not.toThrow();
+    for (const locale of SUPPORTED_LOCALES.filter((candidate) => candidate !== 'en')) {
+      expect(() => handleMissingClientOnlyAnchor({ ...details, path: `/${locale}/app` })).not.toThrow();
+    }
+    expect(() => handleMissingClientOnlyAnchor({ ...details, path: '/faq' })).toThrow('missing anchor');
+    expect(() => handleMissingClientOnlyAnchor({ ...details, id: 'timeline', path: '/app' })).toThrow('missing anchor');
   });
 });
