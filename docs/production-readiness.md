@@ -29,8 +29,8 @@ Manual browser verification must also confirm:
 - the approved wordmark renders without a white canvas, browser favicon links resolve, and regular plus maskable PWA icons survive install masking;
 - observed analytics requests contain no trip dates, labels, email, or travel history;
 - a guest remains local-only and emits no account trip request;
-- the signup action opens Clerk directly; the separate support form is not a signup or marketing list and never receives trip history automatically;
-- the clearly labelled “Sign up & save” / “Create account & save trips” action opens Clerk and, after account creation, automatically stores the current local trip history in the new account;
+- the signup action opens Clerk in a themed in-page overlay; the separate support form is not a signup or marketing list and never receives trip history automatically;
+- the clearly labelled “Sign up & save” / “Create account & save trips” action opens that overlay without leaving the calculator and, after account creation, automatically stores the current local trip history in the new account;
 - ordinary sign-in to an existing account still reconciles local and account copies without silently overwriting either one;
 - version-one local storage and backups are intentionally unsupported; the schema-two D1 migration clears any pre-launch account snapshots while preserving Clerk accounts;
 - account requests contain no client-controlled owner and authorization-isolation tests prove one user cannot access another user’s rows;
@@ -81,7 +81,7 @@ Subscribe it to `user.deleted`, then store the generated signing secret as `CLER
 Verify in production:
 
 - anonymous calculator use works with Clerk unavailable and no trip request leaves the browser;
-- a new signup started through a save-labelled CTA automatically stores the current guest trips after Clerk completes account creation;
+- a new signup started through a save-labelled CTA keeps the calculator mounted and automatically stores the current guest trips only after Clerk completes account creation;
 - ordinary sign-in to an existing account preserves the conflict/reconciliation safeguards before any local or account copy is replaced;
 - signed-in sync survives a repeat visit and is isolated to the verified Clerk user ID;
 - changing request fields cannot select another owner;

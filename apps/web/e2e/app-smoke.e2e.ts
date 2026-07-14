@@ -242,6 +242,33 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('main')).toBeVisible();
   });
 
+  test('opens account overlays in place from a public page header', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.goto('/faq?source=header');
+    await expect.poll(() => page.evaluate(
+      () => (window as unknown as { __schngnClerkLoadCount: number }).__schngnClerkLoadCount
+    )).toBeGreaterThan(0);
+
+    await page.locator('.site-header').getByRole('button', { name: 'Sign up' }).click();
+    await expect.poll(() => readClerkSignUpModalCalls(page)).toMatchObject([{
+      forceRedirectUrl: '/faq?source=header',
+      signInForceRedirectUrl: '/faq?source=header',
+      oauthFlow: 'popup'
+    }]);
+    await expect(page.getByRole('dialog', { name: 'Create SCHNGN account' })).toBeVisible();
+    await expect(page).toHaveURL(/\/faq\?source=header$/);
+
+    await page.getByRole('dialog', { name: 'Create SCHNGN account' }).getByRole('button', { name: 'Close' }).click();
+    await page.locator('.site-header').getByRole('button', { name: 'Log in' }).click();
+    await expect.poll(() => readClerkSignInModalCalls(page)).toMatchObject([{
+      forceRedirectUrl: '/faq?source=header',
+      signUpForceRedirectUrl: '/faq?source=header',
+      oauthFlow: 'popup'
+    }]);
+    await expect(page.getByRole('dialog', { name: 'Sign in to SCHNGN' })).toBeVisible();
+    await expect(page).toHaveURL(/\/faq\?source=header$/);
+  });
+
   test('uses a calm unboxed calculator shell beside the sticky answer rail', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await installFakeClerk(page, null);
@@ -641,25 +668,51 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('#account details')).toHaveCount(0);
   });
 
-  test('redirects to signup immediately from the header and create-account CTA while auth is still loading', async ({ page }) => {
+  test('opens signup in place from the header and create-account CTA while auth is still loading', async ({ page }) => {
     const requests = observeNetwork(page);
     await installFakeClerk(page, null, 700);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
 
     await page.locator('.site-header').getByRole('button', { name: 'Sign up & save' }).click();
-    await expect.poll(() => readClerkSignUpRedirects(page)).toEqual(['/app?account=signup#account']);
+    await expect.poll(() => readClerkSignUpModalCalls(page)).toMatchObject([{
+      forceRedirectUrl: '/app?account=signup#account',
+      signInForceRedirectUrl: '/app?account=connected#account',
+      oauthFlow: 'popup',
+      appearance: {
+        variables: {
+          colorBackground: '#ffffff',
+          colorForeground: '#10231f',
+          colorPrimary: '#10231f',
+          colorRing: '#0f6b4f'
+        }
+      }
+    }]);
+    await expect(page.getByRole('dialog', { name: 'Create SCHNGN account' })).toBeVisible();
     await expect(page).toHaveURL(/\/app#timeline$/);
     await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('schngn.accountSignupSync.v1'))).toBe('account-sync-v2');
 
+    await page.getByRole('dialog', { name: 'Create SCHNGN account' }).getByRole('button', { name: 'Close' }).click();
     await page.evaluate(() => {
-      (window as unknown as { __schngnClerkRedirects: { signUp: (string | null)[] } }).__schngnClerkRedirects.signUp.length = 0;
+      (window as unknown as { __schngnClerkModals: { signUp: unknown[] } }).__schngnClerkModals.signUp.length = 0;
       window.sessionStorage.removeItem('schngn.accountSignupSync.v1');
     });
     await page.locator('.signup-value-section').getByRole('button', { name: 'Create account & save trips' }).click();
-    await expect.poll(() => readClerkSignUpRedirects(page)).toEqual(['/app?account=signup#account']);
+    await expect.poll(() => readClerkSignUpModalCalls(page)).toHaveLength(1);
+    await expect(page.getByRole('dialog', { name: 'Create SCHNGN account' })).toBeVisible();
     await expect(page).toHaveURL(/\/app#timeline$/);
     await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('schngn.accountSignupSync.v1'))).toBe('account-sync-v2');
+
+    await page.getByRole('dialog', { name: 'Create SCHNGN account' }).getByRole('button', { name: 'Close' }).click();
+    await page.locator('.site-header').getByRole('button', { name: 'Log in' }).click();
+    await expect.poll(() => readClerkSignInModalCalls(page)).toMatchObject([{
+      forceRedirectUrl: '/app?account=connected#account',
+      signUpForceRedirectUrl: '/app?account=connected#account',
+      oauthFlow: 'popup'
+    }]);
+    await expect(page.getByRole('dialog', { name: 'Sign in to SCHNGN' })).toBeVisible();
+    await expect(page).toHaveURL(/\/app#timeline$/);
+    await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('schngn.accountSignupSync.v1'))).toBeNull();
     expect(requests.filter((request) => new URL(request.url).pathname.startsWith('/api/'))).toEqual([]);
   });
 
@@ -723,10 +776,47 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('schngn.accountSignupSync.v1'))).toBeNull();
   });
 
+  test('uses ordinary reconciliation when signup switches to an existing-account sign-in', async ({ page }) => {
+    let writeCount = 0;
+    await installFakeClerk(page, {
+      userId: 'user_existing_from_signup',
+      sessionId: 'sess_existing_from_signup',
+      email: 'existing-from-signup@example.invalid'
+    });
+    await page.addInitScript(() => {
+      window.localStorage.clear();
+      window.localStorage.setItem('schngn.trips.v2', JSON.stringify([{
+        id: 'trip-existing-signin',
+        label: 'Local Italy stay',
+        status: 'booked',
+        entryCountryCode: 'IT',
+        exitCountryCode: 'IT',
+        stays: [{ entryDate: '2026-08-10', exitDate: '2026-08-14' }]
+      }]));
+      window.sessionStorage.setItem('schngn.accountSignupSync.v1', 'account-sync-v2');
+    });
+    await page.route('**/api/account/trips', async (route) => {
+      expect(route.request().headers().authorization).toBe('Bearer e2e-session-token');
+      if (route.request().method() === 'PUT') writeCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ trips: [], revision: 0, updatedAt: null, consentVersion: null })
+      });
+    });
+
+    await page.goto('/app?account=connected#account');
+
+    await expect(page.getByRole('heading', { name: 'Choose whether to sync' })).toBeVisible();
+    expect(writeCount).toBe(0);
+    await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('schngn.accountSignupSync.v1'))).toBeNull();
+  });
+
   test('shows local account configuration guidance without navigating away from signup', async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.clear();
       window.__schngnClerkTestLoader = async () => { throw new Error('Clerk is not configured'); };
+      window.__schngnClerkTestUiLoader = async () => { throw new Error('Clerk UI is not configured'); };
     });
     await page.goto('/app');
 
@@ -737,7 +827,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await expect(page).toHaveURL(/#timeline$/);
     await expect(page.locator('.site-header').getByRole('alert')).toHaveText(
-      'The secure account page could not be opened. Try again.'
+      'The secure account window could not be opened. Try again.'
     );
   });
 
@@ -1424,7 +1514,32 @@ type AccountWrite = {
 async function installFakeClerk(page: Page, identity: FakeClerkIdentity | null, loadDelayMs = 0): Promise<void> {
   await page.addInitScript(({ accountIdentity, delayMs }) => {
     const listeners = new Set<() => void>();
-    const redirects: { signUp: (string | null)[]; signIn: (string | null)[] } = { signUp: [], signIn: [] };
+    const modals: { signUp: unknown[]; signIn: unknown[] } = { signUp: [], signIn: [] };
+    const clerkWindow = window as unknown as {
+      __schngnClerkTestClient: unknown;
+      __schngnClerkModals: typeof modals;
+      __schngnClerkLoadCount: number;
+    };
+    clerkWindow.__schngnClerkLoadCount = 0;
+    const openModal = (kind: 'signUp' | 'signIn') => {
+      document.querySelector('[data-fake-clerk-modal]')?.remove();
+      const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const dialog = document.createElement('div');
+      dialog.dataset.fakeClerkModal = kind;
+      dialog.setAttribute('role', 'dialog');
+      dialog.setAttribute('aria-modal', 'true');
+      dialog.setAttribute('aria-label', kind === 'signUp' ? 'Create SCHNGN account' : 'Sign in to SCHNGN');
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.textContent = 'Close';
+      close.addEventListener('click', () => {
+        dialog.remove();
+        trigger?.focus();
+      });
+      dialog.appendChild(close);
+      document.body.appendChild(dialog);
+      close.focus();
+    };
     const client = {
       user: accountIdentity
         ? { id: accountIdentity.userId, primaryEmailAddress: { emailAddress: accountIdentity.email } }
@@ -1438,17 +1553,20 @@ async function installFakeClerk(page: Page, identity: FakeClerkIdentity | null, 
           }
         : null,
       async load() {
+        clerkWindow.__schngnClerkLoadCount += 1;
         if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
       },
       addListener(listener: () => void) {
         listeners.add(listener);
         return () => listeners.delete(listener);
       },
-      async redirectToSignUp(options?: { redirectUrl?: string | null }) {
-        redirects.signUp.push(options?.redirectUrl ?? null);
+      openSignUp(options?: unknown) {
+        modals.signUp.push(options ?? null);
+        openModal('signUp');
       },
-      async redirectToSignIn(options?: { redirectUrl?: string | null }) {
-        redirects.signIn.push(options?.redirectUrl ?? null);
+      openSignIn(options?: unknown) {
+        modals.signIn.push(options ?? null);
+        openModal('signIn');
       },
       async redirectToUserProfile() {},
       async signOut() {
@@ -1457,12 +1575,8 @@ async function installFakeClerk(page: Page, identity: FakeClerkIdentity | null, 
         listeners.forEach((listener) => listener());
       }
     };
-    const clerkWindow = window as unknown as {
-      __schngnClerkTestClient: typeof client;
-      __schngnClerkRedirects: typeof redirects;
-    };
     clerkWindow.__schngnClerkTestClient = client;
-    clerkWindow.__schngnClerkRedirects = redirects;
+    clerkWindow.__schngnClerkModals = modals;
   }, { accountIdentity: identity, delayMs: loadDelayMs });
 }
 
@@ -1476,11 +1590,19 @@ async function navigateToAppAnchor(
   await expect(page).toHaveURL(new RegExp(`#${anchor}$`));
 }
 
-async function readClerkSignUpRedirects(page: Page): Promise<(string | null)[]> {
+async function readClerkSignUpModalCalls(page: Page): Promise<unknown[]> {
   return page.evaluate(
     () =>
-      (window as unknown as { __schngnClerkRedirects: { signUp: (string | null)[] } })
-        .__schngnClerkRedirects.signUp
+      (window as unknown as { __schngnClerkModals: { signUp: unknown[] } })
+        .__schngnClerkModals.signUp
+  );
+}
+
+async function readClerkSignInModalCalls(page: Page): Promise<unknown[]> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __schngnClerkModals: { signIn: unknown[] } })
+        .__schngnClerkModals.signIn
   );
 }
 

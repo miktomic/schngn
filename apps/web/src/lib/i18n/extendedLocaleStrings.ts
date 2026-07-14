@@ -416,7 +416,7 @@ const english = [
   "The final exit is before today, so this trip will be counted as past automatically.",
   "The full planner is not live yet. Sign up to save your trips; no payment is taken.",
   "The rules behind the calculation",
-  "The secure account page could not be opened. Try again.",
+  "The secure account window could not be opened. Try again.",
   "Then add any trips you already booked",
   "These 29 countries share one 90/180-day short-stay allowance. Moving between them does not reset the count.",
   "These EU countries are part of the shared Schengen short-stay area.",

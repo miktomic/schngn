@@ -14,7 +14,7 @@ export const SECURITY_HEADERS = {
   'referrer-policy': 'strict-origin-when-cross-origin',
   'x-frame-options': 'DENY',
   'permissions-policy':
-    'accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), publickey-credentials-get=(), usb=()'
+    'accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), publickey-credentials-create=(self), publickey-credentials-get=(self), usb=()'
 } as const;
 
 export const handle: Handle = async ({ event, resolve }) => {

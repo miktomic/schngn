@@ -2,7 +2,7 @@
   import { browser } from '$app/environment';
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
-  import { initializeClerkBrowserAuth, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
+  import { initializeClerkBrowserAuth, openClerkSignIn, openClerkSignUp, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
   import LanguageSelector from '$lib/i18n/LanguageSelector.svelte';
   import { createTranslator, localizedPath, type Locale } from '$lib/i18n';
   import { siteHeaderUi } from '$lib/i18n/siteHeaderUi';
@@ -92,12 +92,14 @@
       await onSignUp();
       return;
     }
-    const auth = clerkAuth;
-    if (!auth?.available) {
-      localAuthError = copy.accountError;
-      return;
-    }
-    await runPublicAuthAction(() => auth.redirectToSignUp({ redirectUrl: returnUrl() }));
+    await runPublicAuthAction(async () => {
+      const destination = returnUrl();
+      const result = await openClerkSignUp(env.PUBLIC_CLERK_PUBLISHABLE_KEY, {
+        forceRedirectUrl: destination,
+        signInForceRedirectUrl: destination
+      });
+      if (result.ok === false) throw new Error('Clerk signup unavailable');
+    });
   }
 
   function handleCalculatorNavigation(event: MouseEvent): void {
@@ -112,12 +114,14 @@
       await onLogin();
       return;
     }
-    const auth = clerkAuth;
-    if (!auth?.available) {
-      localAuthError = copy.accountError;
-      return;
-    }
-    await runPublicAuthAction(() => auth.redirectToSignIn({ redirectUrl: returnUrl() }));
+    await runPublicAuthAction(async () => {
+      const destination = returnUrl();
+      const result = await openClerkSignIn(env.PUBLIC_CLERK_PUBLISHABLE_KEY, {
+        forceRedirectUrl: destination,
+        signUpForceRedirectUrl: destination
+      });
+      if (result.ok === false) throw new Error('Clerk sign-in unavailable');
+    });
   }
 
   async function handleLogout(): Promise<void> {

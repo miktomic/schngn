@@ -80,7 +80,7 @@
   import { assignTripColors, buildTripCardStates } from '$lib/trips/tripCardState';
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
-  import { initializeClerkBrowserAuth, redirectToClerkSignUp, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
+  import { initializeClerkBrowserAuth, openClerkSignIn, openClerkSignUp, type ClerkBrowserAuth } from '$lib/auth/clerkBrowser';
   import { appAnchorFromUrl, appAnchorUrl, appResourceFromUrl, canonicalAppAnchorUrl, type AppAnchor } from '$lib/navigation/appAnchor';
   import {
     deleteAccountData,
@@ -335,6 +335,7 @@
       accountState = 'unavailable';
       return;
     }
+    clearSignupSyncIntentOnConnectedReturn();
 
     if (!unsubscribeClerk) {
       observedClerkIdentity = clerkIdentityKey(auth);
@@ -638,9 +639,13 @@
           return;
         }
       }
-      const result = await redirectToClerkSignUp(
+      const returnUrl = accountReturnUrl('signup');
+      const result = await openClerkSignUp(
         env.PUBLIC_CLERK_PUBLISHABLE_KEY,
-        { redirectUrl: accountReturnUrl('signup') }
+        {
+          forceRedirectUrl: returnUrl,
+          signInForceRedirectUrl: accountReturnUrl('signin')
+        }
       );
       if (result.ok === false) {
         clearSignupSyncIntent();
@@ -658,15 +663,30 @@
   }
 
   async function startAccountSignIn(): Promise<void> {
-    const auth = await ensureClerkAuth();
-    if (!auth?.available) {
-      navigateToAnchor('account');
-      return;
-    }
+    if (signupOpening) return;
+    signupOpening = true;
+    clearSignupSyncIntent();
+    accountError = '';
+    signupError = '';
     try {
-      await auth.redirectToSignIn({ redirectUrl: accountReturnUrl('signin') });
+      const returnUrl = accountReturnUrl('signin');
+      const result = await openClerkSignIn(
+        env.PUBLIC_CLERK_PUBLISHABLE_KEY,
+        {
+          forceRedirectUrl: returnUrl,
+          signUpForceRedirectUrl: returnUrl
+        }
+      );
+      if (result.ok === false) {
+        navigateToAnchor('account');
+        signupError = rt('securePageError');
+        accountError = signupError;
+      }
     } catch {
-      accountError = rt('securePageError');
+      signupError = rt('securePageError');
+      accountError = signupError;
+    } finally {
+      signupOpening = false;
     }
   }
 
@@ -827,6 +847,10 @@
 
   function clearSignupSyncIntentOnCancelledReturn(): void {
     if (browser && page.url.searchParams.get('account') === 'signup') clearSignupSyncIntent();
+  }
+
+  function clearSignupSyncIntentOnConnectedReturn(): void {
+    if (browser && page.url.searchParams.get('account') === 'connected') clearSignupSyncIntent();
   }
 
   function navigateToAnchor(anchor: AppAnchor): void {

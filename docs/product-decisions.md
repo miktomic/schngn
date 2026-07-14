@@ -187,7 +187,7 @@ Use first:
 
 ## DEC-10 — Optional accounts and authenticated sync
 
-**Decision:** Add optional Clerk signup for repeat visits. Guest trips remain local-only. The “Sign up & save” and “Create account & save trips” actions are explicit storage consent: after Clerk signup completes, SCHNGN automatically syncs the current validated trip snapshot to Cloudflare D1. A separately signed-in existing user retains the reconciliation and sync-choice flow.
+**Decision:** Add optional Clerk signup for repeat visits. Guest trips remain local-only. Clerk signup and sign-in open in a SCHNGN-themed in-page overlay so the calculator stays mounted; successful completion returns to the same app URL. The “Sign up & save” and “Create account & save trips” actions are explicit storage consent: after Clerk signup completes, SCHNGN automatically syncs the current validated trip snapshot to Cloudflare D1. A separately signed-in existing user retains the reconciliation and sync-choice flow.
 
 This is an approved **scope change** after the original no-account MVP cards. It does not retroactively weaken the local-only guarantees verified by US-05.
 

@@ -89,7 +89,7 @@ Fresh D1 databases begin with the account schema at migration `0002`. Forward mi
 
 ### 4. Signup goes directly through Clerk
 
-SCHNGN does not manage a separate email list. The save-labelled signup action opens Clerk, which owns identity and session data. Completing account creation automatically saves the current browser-local trips to the new account.
+SCHNGN does not manage a separate email list. The save-labelled signup action opens Clerk in a SCHNGN-themed in-page overlay, while Clerk continues to own identity and session data. Completing account creation returns to the same app and automatically saves the current browser-local trips to the new account.
 
 ### 5. Optional account storage is explicit and reversible
 
