@@ -58,9 +58,11 @@ describe('SCHNGN JSON CLI', () => {
     const child = Bun.spawn({
       cmd: [process.execPath, cliPath, 'usage'],
       stderr: 'pipe',
-      stdin: new Blob(['{not json']),
+      stdin: 'pipe',
       stdout: 'pipe'
     });
+    child.stdin.write('{not json');
+    child.stdin.end();
     const [exitCode, stderr] = await Promise.all([
       child.exited,
       new Response(child.stderr).text()
@@ -124,9 +126,11 @@ async function runCli(command: string, input: unknown): Promise<{
   const child = Bun.spawn({
     cmd: [process.execPath, cliPath, command],
     stderr: 'pipe',
-    stdin: new Blob([JSON.stringify(input)]),
+    stdin: 'pipe',
     stdout: 'pipe'
   });
+  child.stdin.write(JSON.stringify(input));
+  child.stdin.end();
   const [exitCode, stderr, stdout] = await Promise.all([
     child.exited,
     new Response(child.stderr).text(),
