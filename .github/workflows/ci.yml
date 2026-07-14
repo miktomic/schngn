@@ -47,6 +47,9 @@ jobs:
       - name: Build packages and app
         run: bun run build
 
+      - name: Smoke compiled agent interfaces
+        run: bun run smoke:agent
+
       - name: Install Playwright browser
         run: bunx playwright install --with-deps chromium
 

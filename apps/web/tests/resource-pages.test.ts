@@ -5,18 +5,21 @@ const explainerPath = 'apps/web/src/routes/explainer/+page.svelte';
 const faqPath = 'apps/web/src/routes/faq/+page.svelte';
 const appPath = 'apps/web/src/routes/app/+page.svelte';
 const contactPath = 'apps/web/src/routes/contact/+page.svelte';
+const agentsPath = 'apps/web/src/routes/agents/+page.svelte';
 
-describe('standalone explainer and FAQ resources', () => {
+describe('standalone public resources', () => {
   test('ships dedicated localized, indexable pages', () => {
     expect(existsSync(explainerPath)).toBe(true);
     expect(existsSync(faqPath)).toBe(true);
     expect(existsSync(contactPath)).toBe(true);
+    expect(existsSync(agentsPath)).toBe(true);
 
     const explainer = readFileSync(explainerPath, 'utf8');
     const faq = readFileSync(faqPath, 'utf8');
     const contact = readFileSync(contactPath, 'utf8');
+    const agents = readFileSync(agentsPath, 'utf8');
 
-    for (const source of [explainer, faq, contact]) {
+    for (const source of [explainer, faq, contact, agents]) {
       expect(source).toContain('rel="canonical"');
       expect(source).toContain('hreflang="x-default"');
       expect(source).toContain('SiteHeader');
@@ -80,5 +83,6 @@ describe('standalone explainer and FAQ resources', () => {
     expect(app).toContain('<SiteHeader');
     expect(app).not.toContain("localizedPath('/explainer', locale)");
     expect(app).not.toContain("localizedPath('/faq', locale)");
+    expect(app).not.toContain("localizedPath('/agents', locale)");
   });
 });

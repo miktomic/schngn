@@ -164,9 +164,12 @@ describe('installable offline PWA shell', () => {
     const source = serviceWorkerSource;
 
     expect(source).toContain("'/app'");
+    expect(source).toContain("'/agents'");
     expect(source).toContain("'/manifest.json'");
     expect(source).toContain('SCHNGN_STATIC_CACHE');
     expect(source).toContain('SCHNGN_RUNTIME_CACHE');
+    expect(source).toContain('schngn-static-v11');
+    expect(source).toContain('schngn-runtime-v11');
     expect(source).toContain('event.respondWith');
     expect(source).toContain('caches.match(request)');
   });
@@ -330,6 +333,8 @@ describe('installable offline PWA shell', () => {
         'schngn-runtime-v7',
         'schngn-static-v8',
         'schngn-runtime-v8',
+        'schngn-static-v10',
+        'schngn-runtime-v10',
         'other-origin-tool-cache'
       ]
     });
@@ -344,12 +349,14 @@ describe('installable offline PWA shell', () => {
     await completion;
     expect(harness.deletedCaches.sort()).toEqual([
       'schngn-runtime-v1',
+      'schngn-runtime-v10',
       'schngn-runtime-v2',
       'schngn-runtime-v5',
       'schngn-runtime-v6',
       'schngn-runtime-v7',
       'schngn-runtime-v8',
       'schngn-static-v1',
+      'schngn-static-v10',
       'schngn-static-v2',
       'schngn-static-v5',
       'schngn-static-v6',

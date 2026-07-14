@@ -66,6 +66,7 @@ describe('whole-site localization', () => {
     expect(localizedPath('/ru/app', 'fr')).toBe('/fr/app');
     expect(localizedPath('/faq', 'ar')).toBe('/ar/faq');
     expect(localizedPath('/contact', 'uk')).toBe('/uk/contact');
+    expect(localizedPath('/agents', 'ja')).toBe('/ja/agents');
     expect(localizedPath('/de', 'en')).toBe('/');
     expect(localizedUrl(new URL('https://schngn.com/he/app?section=planner#result'), 'tr')).toBe('/tr/app?section=planner#result');
   });
@@ -75,6 +76,7 @@ describe('whole-site localization', () => {
     expect(await reroute({ url: new URL('https://schngn.com/ar/accuracy'), fetch } as never)).toBe('/accuracy');
     expect(await reroute({ url: new URL('https://schngn.com/he/faq'), fetch } as never)).toBe('/faq');
     expect(await reroute({ url: new URL('https://schngn.com/pt-br/contact'), fetch } as never)).toBe('/contact');
+    expect(await reroute({ url: new URL('https://schngn.com/ja/agents'), fetch } as never)).toBe('/agents');
   });
 
   test('keeps hooks resolvable before SvelteKit generates path aliases in clean CI', () => {
@@ -348,6 +350,7 @@ describe('whole-site localization', () => {
     const explainerRoute = readFileSync('apps/web/src/routes/explainer/+page.ts', 'utf8');
     const faqRoute = readFileSync('apps/web/src/routes/faq/+page.ts', 'utf8');
     const contactRoute = readFileSync('apps/web/src/routes/contact/+page.ts', 'utf8');
+    const agentsRoute = readFileSync('apps/web/src/routes/agents/+page.ts', 'utf8');
     expect(worker).toContain("'he', 'ar'");
     expect(worker).toContain('localizedAppPath');
     expect(landing).toContain('hreflang="x-default"');
@@ -357,6 +360,7 @@ describe('whole-site localization', () => {
     expect(explainerRoute).toContain('prerender = true');
     expect(faqRoute).toContain('prerender = true');
     expect(contactRoute).toContain('prerender = true');
+    expect(agentsRoute).toContain('prerender = true');
     for (const locale of SUPPORTED_LOCALES.filter((candidate) => candidate !== 'en')) {
       expect(config).toContain(`'${locale}'`);
     }

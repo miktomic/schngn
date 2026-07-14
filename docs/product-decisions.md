@@ -1,7 +1,7 @@
 # SCHNGN Product Decisions
 
-> Last updated: 2026-07-11
-> Scope: original MVP validation plus the approved optional-account scope change for SCHNGN.
+> Last updated: 2026-07-14
+> Scope: original MVP validation plus the approved optional-account and local-agent scope changes for SCHNGN.
 
 This file records product, privacy, infrastructure, and launch decisions that unblock the MVP Kanban board. It is intentionally concise: durable decisions, rationale, and implementation constraints. Not a graveyard for every passing thought with a hat.
 
@@ -23,6 +23,7 @@ This file records product, privacy, infrastructure, and launch decisions that un
 | DEC-12 | Model trips as journeys made of explicit Schengen stays | Approved | US-04, US-19 |
 | DEC-13 | Localize the whole site in 17 languages, including RTL Hebrew and Arabic | Approved | Whole-site UI |
 | DEC-14 | Use one continuous anchored calculator workspace with one canonical saved timeline | Approved | Core app UX |
+| DEC-16 | Expose the calculation to agents through local-only TypeScript, CLI, loopback HTTP/OpenAPI, and stdio MCP surfaces | Approved post-MVP scope change | US-23 |
 
 ## DEC-01 — Analytics provider
 
@@ -300,6 +301,38 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - Responses use `Cache-Control: no-store`; message content and sender addresses never enter Plausible or operational logs.
 - The form warns visitors not to send passport, visa, or other sensitive document numbers and retains a direct email fallback when delivery is unavailable.
 
+## DEC-16 — Local-only agent calculation capability
+
+**Decision:** Expose the ordinary-short-stay calculation to agents through one strict local capability contract and four local surfaces:
+
+- a TypeScript API in `@schngn/capability`;
+- a JSON CLI in `@schngn/agent`;
+- a loopback-only HTTP API with an OpenAPI 3.1 document;
+- three read-only MCP tools over stdio.
+
+This is an approved post-MVP scope change. “API” currently means an in-process TypeScript interface or a service reachable only on the same machine. It does not authorize a SCHNGN-hosted calculation service.
+
+**Distribution:** Publish `@schngn/engine`, `@schngn/capability`, and `@schngn/agent` as public MIT-licensed npm packages, distribute the repository-backed `schngn` skill through `npx skills add miktomic/schngn --skill schngn`, and document the setup and interfaces on a localized `/agents` page. The skill guides compatible agents to the strict local tools; it does not duplicate the calculation. The initial npm registry release was confirmed on 2026-07-14.
+
+**Contract:**
+
+- Schema version `1` and rule set `ordinary-schengen-90-180/v1` cover usage on a reference date, checking a candidate stay on every day, and finding the latest safe exit.
+- Each stay-list field accepts at most 100 explicit continuous Schengen stay ranges, with a separate candidate range for the stay-check operation; stay objects contain only `entryDate` and `exitDate` in ISO calendar-date form.
+- Full calendar days outside Schengen are represented as gaps between separate stays. Country metadata never changes the math and is not accepted by the capability.
+- Successful results include stable semantic fields plus fixed planning-aid/not-legal-advice advisory copy and the official European Commission source link.
+- The checked-in evidence remains deterministic published-rule fixtures, boundary/property tests, and an independent day-set oracle. Do not claim captured-output parity with the European Commission calculator, certification, endorsement, or a guarantee of entry.
+
+**Local privacy and runtime boundary:**
+
+- The capability and agent surfaces perform no persistence, analytics, telemetry, outbound network calls, or logging of submitted dates.
+- That guarantee covers the SCHNGN runtime. A cloud-backed agent host or model provider may receive and retain tool inputs and results under its own policies.
+- The HTTP server accepts only loopback hosts (`127.0.0.1`, `::1`, or `localhost`), uses bounded JSON bodies and no-store responses, and publishes its OpenAPI document locally.
+- MCP uses stdio only. Remote MCP transports are not approved.
+- The JSON CLI reads stdin or an explicit local file and emits structured JSON; calculation errors do not echo submitted values.
+- Node 24+ is the local runtime baseline and Bun 1.3.14 remains the build/test/package runner.
+
+**Remote scope guardrail:** A SCHNGN-hosted HTTP API, hosted MCP server, or any other SCHNGN-operated remote calculation transport remains unapproved because it would send anonymous trip dates to SCHNGN infrastructure. Before any remote phase, approve a separate decision covering authentication, explicit consent, privacy disclosure, retention and operational logging, rate/abuse controls, deletion/export expectations, and the relationship to the signed-in account model. Do not quietly add a Worker calculation route or relax the loopback/stdio restrictions.
+
 ## Board state
 
-The corresponding Hermes Kanban decision cards on board `schngn` were completed on 2026-07-09 with comments and structured metadata.
+The original MVP Hermes Kanban decision cards on board `schngn` were completed on 2026-07-09 with comments and structured metadata. DEC-16 is the later local-agent scope decision recorded with completed repository card US-23.

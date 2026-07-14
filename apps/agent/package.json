@@ -1,0 +1,65 @@
+{
+  "name": "@schngn/agent",
+  "version": "0.1.1",
+  "description": "Local SCHNGN CLI, loopback OpenAPI service, and stdio MCP server for agents.",
+  "keywords": [
+    "schengen",
+    "90-180",
+    "agent",
+    "cli",
+    "mcp",
+    "openapi"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "bin": {
+    "schngn": "dist/cli.js",
+    "schngn-api": "dist/api.js",
+    "schngn-mcp": "dist/mcp.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miktomic/schngn.git",
+    "directory": "apps/agent"
+  },
+  "homepage": "https://schngn.com/agents",
+  "bugs": {
+    "url": "https://github.com/miktomic/schngn/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.build.json && bun build src/index.ts src/cli.ts src/api.ts src/mcp.ts --target=node --format=esm --outdir=dist --sourcemap=external",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test tests",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "@schngn/capability": "0.1.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^7.0.2"
+  }
+}

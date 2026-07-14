@@ -48,9 +48,15 @@ export function calculateUsageOnDate(stays: SchengenStay[], referenceDate: strin
     const exit = parseISODate(stay.exitDate);
     assertValidTripRange(entry, exit, stay);
 
-    for (let current = entry; current.getTime() <= exit.getTime(); current = addDays(current, 1)) {
-      if (current.getTime() < windowStart.getTime()) continue;
-      if (current.getTime() > reference.getTime()) continue;
+    const countedStart = entry.getTime() < windowStart.getTime() ? windowStart : entry;
+    const countedEnd = exit.getTime() > reference.getTime() ? reference : exit;
+    if (countedStart.getTime() > countedEnd.getTime()) continue;
+
+    for (
+      let current = countedStart;
+      current.getTime() <= countedEnd.getTime();
+      current = addDays(current, 1)
+    ) {
       countedDays.add(formatISODate(current));
     }
   }

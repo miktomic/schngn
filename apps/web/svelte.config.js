@@ -5,7 +5,7 @@ import { createCspDirectives } from './csp.config.js';
 const development = process.env.NODE_ENV === 'development';
 const prerenderedLocales = ['fr', 'de', 'es', 'it', 'pt-br', 'ru', 'uk', 'tr', 'sr', 'sq', 'ka', 'zh-cn', 'ja', 'ko', 'he', 'ar'];
 const localizedPrerenderEntries = prerenderedLocales
-  .flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`, `/${locale}/explainer`, `/${locale}/faq`, `/${locale}/contact`]);
+  .flatMap((locale) => [`/${locale}`, `/${locale}/app`, `/${locale}/accuracy`, `/${locale}/explainer`, `/${locale}/faq`, `/${locale}/agents`, `/${locale}/contact`]);
 const clientOnlyAppPaths = new Set(['/app', ...prerenderedLocales.map((locale) => `/${locale}/app`)]);
 
 /** @type {import('@sveltejs/kit').PrerenderMissingIdHandler} */

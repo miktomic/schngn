@@ -94,6 +94,32 @@ describe('Schengen rolling 180-day engine', () => {
     expect(calculateUsageOnDate(trips, '2026-06-30').daysUsed).toBe(9);
   });
 
+  test('counts only the active-window intersection of a very long historical range', () => {
+    const result = calculateUsageOnDate(
+      [{ entryDate: '0001-01-01', exitDate: '2026-06-30' }],
+      '2026-06-30'
+    );
+
+    expect(result.windowStart).toBe('2026-01-02');
+    expect(result.daysUsed).toBe(180);
+    expect(result.countedDays).toHaveLength(180);
+    expect(result.countedDays[0]).toBe(result.windowStart);
+    expect(result.countedDays.at(-1)).toBe(result.referenceDate);
+  });
+
+  test('ignores stays with no intersection while preserving active-window boundaries', () => {
+    const result = calculateUsageOnDate(
+      [
+        { entryDate: '0001-01-01', exitDate: '1900-12-31' },
+        { entryDate: '2026-01-02', exitDate: '2026-01-02' },
+        { entryDate: '2100-01-01', exitDate: '9999-12-31' }
+      ],
+      '2026-06-30'
+    );
+
+    expect(result.countedDays).toEqual(['2026-01-02']);
+  });
+
   test('validates invalid Schengen stay ranges', () => {
     expect(() =>
       calculateUsageOnDate([{ entryDate: '2026-05-10', exitDate: '2026-05-01' }], '2026-05-10')

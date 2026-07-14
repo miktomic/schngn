@@ -29,7 +29,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (
     pathLocale === DEFAULT_LOCALE &&
     event.url.pathname === unprefixedPath &&
-    ['/', '/app', '/accuracy', '/explainer', '/faq', '/contact'].includes(unprefixedPath) &&
+    ['/', '/app', '/accuracy', '/explainer', '/faq', '/agents', '/contact'].includes(unprefixedPath) &&
     isLocale(preferredLocale) &&
     preferredLocale !== DEFAULT_LOCALE
   ) {

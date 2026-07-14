@@ -1,0 +1,4 @@
+interface:
+  display_name: "SCHNGN"
+  short_description: "Check Schengen 90/180 plans with local tools"
+  default_prompt: "Use $schngn to check whether my planned Schengen stay fits the ordinary 90/180-day rule."

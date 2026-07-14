@@ -2,7 +2,7 @@
 
 ## Purpose
 
-SCHNGN is a local-first Schengen 90/180-day tracker and planner. Anonymous use remains local-only. Optional Clerk accounts add D1 sync for repeat visits: completing signup from an explicit signup-and-save CTA stores the current trips automatically, without weakening the guest privacy boundary.
+SCHNGN is a local-first Schengen 90/180-day tracker and planner. Anonymous use remains local-only. Optional Clerk accounts add D1 sync for repeat visits: completing signup from an explicit signup-and-save CTA stores the current trips automatically, without weakening the guest privacy boundary. Agents can use the same calculation locally through a strict TypeScript API, JSON CLI, loopback HTTP/OpenAPI service, or stdio MCP server.
 
 ## Runtime model
 
@@ -23,8 +23,8 @@ For SCHNGN this is fine, because the app is deliberately local-first:
 ```text
 ┌──────────────────────────── BUILD / CI — BUN ────────────────────────────┐
 │ bun install                                                               │
-│ bun test          → @schngn/engine correctness suite                      │
-│ bun run build     → engine TypeScript build + SvelteKit/Vite build        │
+│ bun test          → engine, capability, agent, and web suites              │
+│ bun run build     → engine/capability/agent builds + SvelteKit/Vite       │
 │ wrangler deploy   → uploads Worker + static assets                        │
 └───────────────────────────────────┬──────────────────────────────────────┘
                                     │
@@ -51,7 +51,19 @@ For SCHNGN this is fine, because the app is deliberately local-first:
 │ service worker/offline app shell                                           │
 │ guest data stays here; signed-in sync requires explicit consent           │
 └───────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────── LOCAL AGENT PROCESS — NODE 24+ ──────────────────────┐
+│ @schngn/capability strict schema-versioned calculation API                │
+│ @schngn/agent JSON CLI                                                    │
+│ loopback-only HTTP API + OpenAPI 3.1 discovery                            │
+│ read-only MCP tools over stdio                                            │
+│ no persistence, telemetry, outbound network calls, or hosted listener     │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
+
+The local packages are MIT licensed and published publicly as `@schngn/engine`, `@schngn/capability`, and `@schngn/agent`. The repository also contains a source-distributed SCHNGN agent skill intended for `npx skills add miktomic/schngn --skill schngn`.
+
+The local box describes the SCHNGN runtime, not the full data path of every agent client. SCHNGN makes no outbound requests, but a cloud-backed agent host or model provider may receive and retain MCP tool inputs and results under its own policies.
 
 ## Components
 
@@ -81,6 +93,44 @@ This is the safety-critical package. CI must fail if its tests fail.
 
 The web trip model is a traveler-facing journey with optional entry/exit country context and one or more `stays`. Outside-Schengen breaks are stored as gaps between those stays. Before calculation, the web layer flattens journeys to pure `{ entryDate, exitDate }` ranges. This keeps route labels out of the mathematical contract.
 
+### `packages/capability`
+
+Strict, transport-neutral adapter over `@schngn/engine`.
+
+Responsibilities:
+
+- Runtime-validation schemas for explicit `{ entryDate, exitDate }` Schengen stays.
+- Versioned `calculateUsage`, `checkStay`, and `latestSafeExit` operations.
+- Stable semantic statuses and safe validation issue codes.
+- Fixed planning-aid advisory and official-source link on every successful result.
+- A maximum of 100 ranges in each stay-list field, plus the separate candidate range for a stay check.
+
+Constraints:
+
+- No browser, Worker, filesystem, persistence, logging, analytics, or network APIs.
+- No country classification, identity/account fields, labels, open-ended state, or legal-status inference.
+- Unknown request fields are rejected rather than ignored.
+- The public evidence description remains published-rule fixtures and an independent oracle, not captured European Commission calculator parity.
+
+### `apps/agent`
+
+Local Node 24+ transports for `@schngn/capability`.
+
+Responsibilities:
+
+- JSON CLI commands `usage`, `check-stay`, and `latest-exit`, reading stdin or an explicit file.
+- A loopback HTTP API with health, OpenAPI 3.1 discovery, and versioned calculation endpoints.
+- Three read-only MCP tools over stdio.
+- Bounded input/body sizes, structured non-echoing errors, and no-store HTTP responses.
+
+Constraints:
+
+- The HTTP listener accepts only `127.0.0.1`, `::1`, or `localhost`; it is not a hosted API.
+- MCP uses stdio only; no remote transport is approved.
+- The app stores and logs no trip data, makes no outbound network requests, and emits no telemetry.
+- A surrounding agent host may still transmit tool arguments and results to its model provider; that behavior is outside the SCHNGN runtime boundary.
+- A remote or hosted phase requires a new decision covering privacy, authentication, explicit consent, retention/logging, and abuse controls.
+
 ### `apps/web`
 
 SvelteKit app deployed to Cloudflare Workers with Static Assets.
@@ -88,6 +138,7 @@ SvelteKit app deployed to Cloudflare Workers with Static Assets.
 Responsibilities:
 
 - Marketing/SEO landing page.
+- Localized `/agents` setup and interface documentation for the local runtime and repository-backed skill.
 - Mobile-first calculator shell.
 - Local trip storage and import/export.
 - Dashboard, simulator, and days-coming-back views.
@@ -135,9 +186,10 @@ Because there is no production waitlist data to preserve, `0001_create_waitlist_
 
 ## Data boundaries
 
-| Data | Location | Leaves browser? | Notes |
+| Data | Location | Leaves local client? | Notes |
 |---|---|---:|---|
 | Guest trip dates | Browser storage | No | No account or server fallback |
+| Local agent inputs/results | SCHNGN process plus the invoking client | Depends on agent host | SCHNGN does not transmit them; a cloud-backed host may transmit and retain inputs/results under its own policies |
 | Signed-in trip dates/settings | Browser cache + Cloudflare D1 | Only after explicit consent | D1 rows keyed by verified Clerk user ID |
 | Identity/session | Clerk | Yes, on optional signup/sign-in | Clerk remains identity source of truth |
 | Calculation results | Browser memory/UI | No by default | May be shown/exported locally |
@@ -147,6 +199,8 @@ Because there is no production waitlist data to preserve, `0001_create_waitlist_
 ## Deployment target
 
 Production domain: `https://schngn.com`.
+
+`apps/agent` is not part of the production Worker deployment. Its HTTP surface is a local loopback interface, its MCP transport is stdio, and its TypeScript API runs in the caller's local process. There is no approved public calculation endpoint.
 
 Use `@sveltejs/adapter-cloudflare`, not the deprecated Workers-specific adapter.
 
@@ -170,14 +224,16 @@ The Wrangler config maps the Worker to the apex and `www` custom domains. A post
 5. **Fake-door monetization before building paid features.** Validate willingness to pay before building expensive surfaces.
 6. **Clerk identity, D1 application data.** Do not build a second identity store; associate consented account data with the server-verified Clerk user ID.
 7. **Deletion and export are part of storage.** Authenticated sync is incomplete until users can retrieve and delete their data.
+8. **Agent access remains local.** One strict capability contract powers the TypeScript API, JSON CLI, loopback HTTP/OpenAPI service, and stdio MCP server without sending anonymous trip dates to SCHNGN infrastructure.
 
 ## Current implementation status
 
 Implemented:
 
 - Pure TypeScript engine with deterministic fixtures, boundary cases, a golden scenario, and independent-oracle property checks.
+- Strict local agent capability with a TypeScript API, JSON CLI, loopback HTTP/OpenAPI service, and stdio MCP tools.
 - Local trip CRUD, semantic validation, persistence, and JSON backup/restore.
-- A tab-free calculator workspace with timeline and trips, plus a header-linked Account & data destination on the same mounted route and dedicated localized `/explainer`, `/faq`, and `/contact` public resources.
+- A tab-free calculator workspace with timeline and trips, plus a header-linked Account & data destination on the same mounted route and dedicated localized `/explainer`, `/faq`, `/agents`, and `/contact` public resources.
 - Installable offline PWA shell.
 - Aggregate-only analytics adapter with no email capture.
 - Unit, type, build, browser, privacy-network, and post-deploy smoke gates.

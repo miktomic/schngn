@@ -359,12 +359,13 @@ These decisions were approved on 2026-07-09 and recorded in `docs/product-decisi
 - **`www` domain policy:** redirect `www.schngn.com` to `https://schngn.com`.
 - **Ad test angle:** UK second-home owners and frequent EU travelers post-Brexit.
 - **Optional accounts:** Clerk for identity, with a clearly labelled signup-and-save action that automatically persists current trips after account creation; existing-account reconciliation remains protected against silent overwrites.
+- **Local agent capability:** one strict TypeScript contract exposed through a JSON CLI, loopback HTTP/OpenAPI, and read-only stdio MCP; no hosted calculation endpoint is approved.
 
 ---
 
 # Current state
 
-The original MVP implementation cards above shipped code and automated coverage. The separate waitlist experiment was later retired; the active product now sends account creation directly to Clerk. Production-readiness hardening is tracked separately because a green feature card is not proof that provider configuration, live telemetry, or every adversarial input is safe.
+The original MVP implementation cards above shipped code and automated coverage. The separate waitlist experiment was later retired; the active product now sends account creation directly to Clerk. The later US-23 capability adds a local SCHNGN runtime without adding a hosted SCHNGN calculation endpoint. A cloud-backed agent host may still process tool inputs and results under its own policies. Production-readiness hardening is tracked separately because a green feature card is not proof that provider configuration, live telemetry, or every adversarial input is safe.
 
 ---
 
@@ -391,6 +392,33 @@ The original MVP implementation cards above shipped code and automated coverage.
 
 ---
 
+# Local agent capability — approved post-MVP scope change
+
+## US-23 — Local TypeScript API, JSON CLI, loopback HTTP/OpenAPI, and stdio MCP
+
+- **Priority:** Should; additive local integration surface
+- **Estimate:** M
+- **Status:** Done
+- **Depends on:** US-01, US-02, US-03, DEC-16
+- **Implementation target:** expose the pure calculation to local agents through one strict versioned contract and thin local transports.
+- **Acceptance summary:**
+  - `@schngn/capability` provides strict schema-version-one TypeScript operations for usage on a reference date, checking a candidate stay on every day, and finding the latest safe exit.
+  - Each stay-list field accepts at most 100 explicit continuous `{ entryDate, exitDate }` Schengen ranges, with a separate candidate range for stay checks; dates are real ISO calendar dates and unknown fields, labels, countries, IDs, account owners, and open-ended state are rejected.
+  - Results use stable semantic fields, the `ordinary-schengen-90-180/v1` rule-set identifier, and fixed planning-aid/not-legal-advice advisory copy with the official source link.
+  - `@schngn/agent` exposes strict JSON CLI commands through stdin or a file, a 64 KiB-bounded loopback HTTP API with OpenAPI 3.1 discovery, and three read-only MCP tools over stdio.
+  - The HTTP server accepts only loopback hosts and returns no-store, non-echoing structured errors. MCP has no remote transport.
+  - No capability surface stores or logs trip data, emits analytics/telemetry, or makes outbound network calls.
+  - A cloud-backed agent host or model provider may still receive and retain tool inputs and results; the local guarantee applies to the SCHNGN runtime itself.
+  - `@schngn/engine`, `@schngn/capability`, and `@schngn/agent` are MIT-licensed public npm packages; the initial registry release was confirmed on 2026-07-14.
+  - The repository-backed `schngn` skill is prepared for distribution through the intended `npx skills add miktomic/schngn --skill schngn` command and delegates all math to the local runtime.
+  - The localized `/agents` resource documents MCP-first setup, the skill, CLI, loopback REST/OpenAPI, TypeScript, operation schemas, and the agent-host privacy boundary.
+  - Node 24+ is the runtime baseline; Bun 1.3.14 builds and tests the engine, capability, and agent packages as part of the root release gate.
+  - The evidence wording remains published-rule fixtures and an independent oracle; there is no direct European Commission calculator output-parity claim.
+- **Verification:** `bun run test:capability` passed with 15 tests / 50 assertions; `bun run test:agent` passed with 12 tests / 71 assertions covering JSON CLI, loopback/host/body guards, OpenAPI, structured errors, and stdio MCP tool results; `bun run build:agent` passed for the engine, capability, and four Node-targeted agent bundles; `bun run smoke:agent` launched the compiled CLI and stdio MCP server successfully. Root `bun run check` includes these tests, TypeScript checks, builds, and compiled-agent smoke.
+- **Remote guardrail:** A SCHNGN-hosted API, hosted MCP server, non-loopback HTTP binding, or other SCHNGN-operated remote calculation phase remains unapproved because it would send anonymous trip dates to SCHNGN infrastructure. It requires a new decision covering privacy, authentication, explicit consent, logging/retention, rate/abuse controls, export/deletion expectations, and account-model integration.
+
+---
+
 # Still excluded — scope guardrail
 
 These are explicitly excluded from MVP. Do not pull them into active work unless the validation gate changes the strategy.
@@ -404,6 +432,7 @@ These are explicitly excluded from MVP. Do not pull them into active work unless
 | B2B / multi-client mode | Liability and procurement friction; later only |
 | Push notification alerts | Requires backend/permissions; test appetite first |
 | Residence permits, bilateral waivers, Brazil exception | Edge-case engine explicitly excluded and disclaimed |
+| Hosted/remote calculation API or MCP | SCHNGN infrastructure must not receive anonymous trip dates without a new privacy/authentication/consent decision |
 
 ---
 
@@ -430,5 +459,6 @@ If we convert this to GitHub Issues/Projects later, use:
 - `test-infrastructure`
 - `post-deploy-smoke`
 - `domain-hygiene`
+- `agent-capability`
 - `blocked:decision`
 - `won't-mvp`

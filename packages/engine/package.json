@@ -1,19 +1,51 @@
 {
   "name": "@schngn/engine",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.1",
+  "description": "Pure TypeScript engine for ordinary Schengen 90/180-day calculations.",
+  "keywords": [
+    "schengen",
+    "90-180",
+    "travel",
+    "typescript"
+  ],
+  "license": "MIT",
   "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "bun": "./dist/index.js",
+      "browser": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miktomic/schngn.git",
+    "directory": "packages/engine"
+  },
+  "homepage": "https://schngn.com/agents",
+  "bugs": {
+    "url": "https://github.com/miktomic/schngn/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "bun test tests"
+    "test": "bun test tests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

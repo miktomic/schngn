@@ -45,10 +45,32 @@ npx -y bun@1.3.14 run check
 npx -y bun@1.3.14 run test:e2e
 ```
 
+## Agent integrations
+
+SCHNGN's calculator is available to local agents without sending trip history to a SCHNGN-hosted calculation service:
+
+- `@schngn/engine` is the pure TypeScript calculation engine.
+- `@schngn/capability` provides the strict, runtime-agnostic TypeScript API and schemas.
+- `@schngn/agent` provides the JSON CLI, loopback REST/OpenAPI server, and MCP stdio server.
+
+All three packages are MIT licensed and published publicly on npm. The local setup is:
+
+```bash
+npm install --global @schngn/agent
+codex mcp add schngn -- schngn-mcp
+npx skills add miktomic/schngn --skill schngn
+```
+
+The SCHNGN runtime itself performs no persistence, telemetry, logging, or outbound network calls. A cloud-backed agent host or model provider may still receive and retain tool inputs and results under its own policies. There is no hosted SCHNGN API or MCP endpoint.
+
+See the [agent capability guide](docs/agent-capability.md) for source builds, request contracts, examples, privacy boundaries, and client setup.
+
 ## Workspace layout
 
 ```text
 packages/engine/  Pure TypeScript Schengen calculation engine
+packages/capability/ Strict versioned API and schemas for agent consumers
+apps/agent/       Local JSON CLI, loopback REST/OpenAPI, and MCP stdio surfaces
 apps/web/         SvelteKit web/PWA shell for Cloudflare Workers
 .github/workflows CI/CD pipeline
 ```

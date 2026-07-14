@@ -62,7 +62,7 @@
 
   function collectShellUrls(): string[] {
     const urls = new Set<string>();
-    const candidates = ['/', '/app', '/accuracy', '/explainer', '/faq', '/contact', '/manifest.json', '/favicon.ico', '/favicon.png', location.pathname];
+    const candidates = ['/', '/app', '/accuracy', '/explainer', '/faq', '/agents', '/contact', '/manifest.json', '/favicon.ico', '/favicon.png', location.pathname];
 
     for (const candidate of candidates) {
       const url = new URL(candidate, location.origin);

@@ -14,18 +14,27 @@
   ],
   "scripts": {
     "dev": "cd apps/web && bun run dev",
-    "build": "cd packages/engine && bun run build && cd ../../apps/web && bun run build",
-    "test": "bun test",
+    "build": "cd packages/engine && bun run build && cd ../capability && bun run build && cd ../../apps/agent && bun run build && cd ../web && bun run build",
+    "build:agent": "cd packages/engine && bun run build && cd ../capability && bun run build && cd ../../apps/agent && bun run build",
+    "test": "bun run build:agent && bun test",
     "test:engine": "bun test packages/engine/tests",
+    "test:capability": "cd packages/engine && bun run build && cd ../.. && bun test packages/capability/tests",
+    "test:agent": "bun run build:agent && bun test apps/agent/tests",
     "test:e2e": "cd apps/web && bun run test:e2e",
-    "typecheck": "cd apps/web && bun run check",
-    "check": "bun run test && bun run typecheck && bun run build",
+    "typecheck": "cd packages/engine && bun run typecheck && cd ../capability && bun run typecheck && cd ../../apps/agent && bun run typecheck && cd ../web && bun run check",
+    "check": "bun run test && bun run typecheck && bun run build && bun run smoke:agent",
     "smoke:production": "node scripts/post-deploy-smoke.mjs",
+    "smoke:agent": "cd apps/agent && bun run smoke",
+    "release:packages:check": "bun run build:agent && node scripts/verify-published-packages.mjs",
+    "release:packages:public-check": "node scripts/verify-published-packages.mjs --registry",
     "d1:migrate:local": "cd apps/web && bun run d1:migrate:local",
     "d1:migrate:remote": "cd apps/web && bun run d1:migrate:remote",
     "cloudflare:provision": "cd apps/web && bun run provision:production",
     "cloudflare:canonical-www": "node scripts/configure-cloudflare-canonical-www.mjs",
-    "deploy": "cd apps/web && bun run deploy"
+    "deploy": "cd apps/web && bun run deploy",
+    "agent:cli": "bun apps/agent/src/cli.ts",
+    "agent:api": "bun apps/agent/src/api.ts",
+    "agent:mcp": "bun apps/agent/src/mcp.ts"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

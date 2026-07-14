@@ -23,10 +23,12 @@ Toolchain policy:
 
 - Node is pinned to `24` through `.node-version` and `.nvmrc` for Node-based tooling.
 - Bun is pinned to `1.3.14` through `.bun-version` and the root `packageManager` field.
-- The engine build uses the TypeScript 7 native compiler. The Svelte typecheck temporarily uses
+- The engine, capability, and agent packages use the TypeScript 7 native compiler. Bun bundles the
+  local agent entry points for Node 24+. The Svelte typecheck temporarily uses
   TypeScript 6 because TypeScript 7.0 does not expose the programmatic API required by
   `svelte-check`.
-- Production is still Cloudflare Workers / `workerd`, not Node.
+- Web production is still Cloudflare Workers / `workerd`, not Node. `apps/agent` is a local Node
+  process and is never included in the Wrangler deployment.
 
 ```text
 checkout
@@ -42,6 +44,8 @@ bun run test
 bun run typecheck
   ↓
 bun run build
+  ↓
+compile-artifact smoke for the agent CLI and stdio MCP server
   ↓
 install Chromium + bun run test:e2e
   ↓
@@ -75,12 +79,34 @@ Current tests are a real published-rule correctness gate:
 - verdict boundary classification at 82/83/89/90/91 days used, including exact-limit versus over-limit distinction and configurable close threshold
 - latest safe exit date boundary coverage: no prior stays, 89-used one-day remaining, 90-used null, and old days aging out
 
+The fixture suite verifies published-rule behavior using deterministic cases and an independent day-set oracle. It does not claim captured-output parity with the European Commission calculator.
+
+### Local agent capability gate
+
+`bun run test` includes `packages/capability` and `apps/agent`; focused commands are `bun run test:capability` and `bun run test:agent`.
+
+The gate covers:
+
+- strict schema-version-one inputs with at most 100 explicit `{ entryDate, exitDate }` ranges per stay-list field and a separate candidate range for stay checks;
+- rejection of labels, country metadata, identity/account fields, invalid ranges, and unknown fields;
+- stable rule-set metadata, semantic statuses, and fixed planning-aid advisory output;
+- usage, every-day candidate-stay, and latest-safe-exit operations over the shared engine;
+- JSON CLI stdin/file behavior, bounded input, structured errors, and clean stdout;
+- loopback-only HTTP binding/request guards, 64 KiB body limits, no-store responses, and OpenAPI 3.1 discovery;
+- three read-only MCP tools over stdio with structured output and safe error results.
+
+No agent test may add persistence, telemetry, outbound network calls, or a hosted listener. Remote HTTP or MCP is outside the approved scope and requires a new privacy/authentication/consent decision.
+
 ### Build gate
 
 `bun run build` must produce:
 
 - engine TypeScript output
+- capability TypeScript output
+- Node-targeted local agent bundles for the CLI, loopback API, and stdio MCP server
 - SvelteKit Cloudflare output under `.svelte-kit/cloudflare`
+
+`bun run smoke:agent` then launches the compiled Node CLI and stdio MCP bundle against synthetic dates. This catches packaging or entry-point failures that source-level tests cannot see.
 
 ### App/browser and privacy gates
 
@@ -113,6 +139,8 @@ This runs:
 ```bash
 vite build && wrangler deploy
 ```
+
+The local `apps/agent` build is exercised by the repository gate but is not uploaded by Wrangler and does not create a production calculation endpoint. The word “API” in this surface means the in-process TypeScript contract or the loopback-only HTTP service. Any hosted API/MCP phase remains unapproved because it would cause submitted trip dates to leave the operator's machine.
 
 The GitHub Actions production deploy job only runs on `main`, after unit/type/build/browser gates pass, and is attached to the GitHub Environment named `production`. It passes the public Clerk and Turnstile keys into the production build. It then writes the required runtime bindings to a mode-`0600` file under `RUNNER_TEMP`, uploads an inactive version with `wrangler versions upload --secrets-file`, applies D1 migrations, and only then performs the active `wrangler deploy --secrets-file`. An `always()` cleanup step removes that fixed temporary filename directly, so cleanup does not depend on a previous step successfully publishing an output. No `wrangler secret put` command is used because that would create and immediately deploy a secret-only version.
 
@@ -241,3 +269,5 @@ For now:
 5. Auto-deploy only if Cloudflare credentials and all required Clerk/contact bindings are configured.
 
 No manual deploys from dirty working trees.
+
+Do not publish or deploy the local agent HTTP/MCP surfaces remotely without a new approved product decision covering authentication, explicit consent, privacy disclosure, logging/retention, and abuse controls.

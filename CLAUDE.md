@@ -16,6 +16,8 @@ The product is **Option B Web/PWA** with an approved optional-account expansion:
 - Localized help/feature-request contact form delivered through a fixed-destination Cloudflare email binding.
 - Signed-in trip storage in Cloudflare D1 after an explicit save action: completing Clerk signup from a “Sign up & save” CTA automatically stores the current trips; existing users may also enable sync after sign-in.
 - Provably-correct Schengen calculation engine.
+- Local agent access through a strict TypeScript API, JSON CLI, loopback HTTP/OpenAPI service, and stdio MCP server; the SCHNGN calculation runtime remains on the operator's machine.
+- Public MIT npm packages for `@schngn/engine`, `@schngn/capability`, and `@schngn/agent`, plus a repository-backed `schngn` skill for compatible agents.
 - Free calculator plus fake-door paid unlock/PDF validation.
 - No GPS, passport scanning, OCR, automatic guest upload, global visa/tax rule engine, or legal advice workflow.
 
@@ -32,7 +34,8 @@ Primary product promise:
 5. **Authenticated ownership is server-derived.** Account data is keyed by the verified Clerk user ID. Never accept a client-supplied owner, and never persist guest trips server-side.
 6. **Node 24+ is the Node tooling baseline.** It is pinned through `.node-version` and `.nvmrc`; GitHub Actions uses Node-24-compatible actions and `actions/setup-node`.
 7. **Bun 1.3.14 remains the build/test/package runner.** Production still runs on Cloudflare Workers (`workerd`), not Node or Bun.
-8. **TypeScript 7 is the root and engine compiler baseline.** Keep the Svelte web workspace on TypeScript 6 until TypeScript 7 exposes the programmatic API required by Svelte tooling; do not force an unsupported repo-wide 7.x resolution.
+8. **TypeScript 7 is the root, engine, capability, and agent compiler baseline.** Keep the Svelte web workspace on TypeScript 6 until TypeScript 7 exposes the programmatic API required by Svelte tooling; do not force an unsupported repo-wide 7.x resolution.
+9. **Agent calculation surfaces are local-only.** The agent HTTP server may bind only to loopback, MCP uses stdio, and the capability performs no persistence, telemetry, logging, or outbound network calls. A cloud-backed agent host or model provider may still receive and retain tool inputs and results under its own policies. A SCHNGN-hosted or remote calculation API/MCP is not approved; it requires a new privacy, authentication, and consent decision before SCHNGN infrastructure may receive anonymous trip dates.
 
 ## Current architecture
 
@@ -49,10 +52,12 @@ Runtime model:
 
 ```text
 Production domain: https://schngn.com
-Build/dev/test: Bun 1.3.14; Node 24+; TypeScript 7 engine + TypeScript 6 Svelte tooling
+Build/dev/test: Bun 1.3.14; Node 24+; TypeScript 7 engine/capability/agent + TypeScript 6 Svelte tooling
 App framework: SvelteKit + Vite
 Production: Cloudflare Workers + Static Assets
-Core logic: packages/engine, pure TypeScript
+Core logic: packages/engine plus the strict local packages/capability adapter, pure TypeScript
+Local agent runtime: apps/agent on Node 24+; JSON CLI, loopback HTTP/OpenAPI, and stdio MCP
+Agent distribution: public MIT npm packages plus the repository-backed schngn skill
 Trip data: guest browser storage; signup-and-save or separately consented signed-in sync in Cloudflare D1
 Identity: optional Clerk accounts; Clerk is the identity source of truth
 Dynamic Worker routes: authenticated account/sync/export/deletion endpoints plus Clerk lifecycle webhook
@@ -62,21 +67,26 @@ Important consequence:
 
 - Code shipped to the browser or Worker must avoid Bun-native APIs (`bun:sqlite`, filesystem access, subprocesses, raw sockets).
 - The engine package must remain runtime-agnostic and dependency-light.
+- The Node-based agent app is a local process, not a Cloudflare Worker route or hosted service. Its HTTP listener must remain loopback-only and its MCP transport must remain stdio-only.
 
 ## Repository structure
 
 ```text
 schngn/
+├── .agents/skills/schngn/          # repository-backed agent behavior and setup skill
 ├── apps/
+│   ├── agent/                       # local Node CLI, loopback HTTP/OpenAPI, stdio MCP
 │   └── web/                         # SvelteKit app, Cloudflare Worker/static assets target
 │       ├── src/routes/+page.svelte  # SEO landing page
 │       ├── src/routes/app/+page.svelte
+│       ├── src/routes/agents/+page.svelte # localized local-agent setup and interface guide
 │       ├── src/routes/api/account/   # authenticated account trip API
 │       ├── src/routes/api/webhooks/  # verified Clerk lifecycle webhook
 │       ├── src/lib/account/          # signup-save intent, repository, reconciliation
 │       ├── src/lib/auth/             # Clerk browser and Worker auth boundaries
 │       └── migrations/               # account schemas plus idempotent retired-table cleanup
 ├── packages/
+│   ├── capability/                  # strict, versioned local agent calculation contract
 │   └── engine/                      # Pure TS Schengen calculation engine
 │       ├── src/index.ts
 │       └── tests/engine.test.ts
@@ -92,6 +102,9 @@ Supporting implementation areas:
 
 ```text
 packages/engine/tests/fixtures/ec/*.json # US-01 fixture gate exists
+packages/capability/             # strict schemas and three transport-neutral operations
+apps/agent/                      # JSON CLI, loopback HTTP/OpenAPI, stdio MCP adapters
+.agents/skills/schngn/           # skill that routes agents to the local runtime without reimplementing math
 apps/web/src/lib/trips/         # validated local trip CRUD/storage
 apps/web/src/lib/account/       # authenticated D1 sync and conflict handling
 apps/web/src/lib/auth/          # Clerk client/server integration
@@ -99,7 +112,7 @@ apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
 
-`/app` has a tab-free calculator workspace plus a dedicated Account & data destination in the shared header. Stable hashes address `timeline`, `trips`, and `account`: `#timeline` and `#trips` render the continuous calculator, while `#account` switches the same mounted route to the account, sync, import, export, and browser-data controls so pending sync state is preserved. Legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, retired `#status` maps to `timeline`, retired `#details` plus planner, proof, and returning-days destinations map to `trips`, and the retired report destination maps to `account`. The Explainer and FAQ are dedicated localized public pages at `/explainer` and `/faq`; legacy `#rules`, `#explainer`, `#help`, and `#faq` app destinations redirect to those pages. The canonical master timeline is the first calculator section, followed immediately by the saved-trip cards under their own Trips anchor. The Explainer teaches the ordinary-short-stay calculation through a five-step walkthrough that renders the production `TimelineLedger`, `TripMiniTimeline`, and `StatusChip` components against deterministic sample trips; the teaching surface therefore stays visually and mathematically aligned with `/app`. The FAQ keeps reviewed rule answers linked to official EU sources and visibly distinguishes product behavior from legal/rule guidance. Clicking a trip row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
+`/app` has a tab-free calculator workspace plus a dedicated Account & data destination in the shared header. Stable hashes address `timeline`, `trips`, and `account`: `#timeline` and `#trips` render the continuous calculator, while `#account` switches the same mounted route to the account, sync, import, export, and browser-data controls so pending sync state is preserved. Legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, retired `#status` maps to `timeline`, retired `#details` plus planner, proof, and returning-days destinations map to `trips`, and the retired report destination maps to `account`. The Explainer and FAQ are dedicated localized public pages at `/explainer` and `/faq`; legacy `#rules`, `#explainer`, `#help`, and `#faq` app destinations redirect to those pages. The localized `/agents` page documents MCP-first setup, the repository-backed skill, CLI, loopback REST/OpenAPI, TypeScript, tool schemas, and the surrounding agent-host privacy boundary without collecting trip inputs. The canonical master timeline is the first calculator section, followed immediately by the saved-trip cards under their own Trips anchor. The Explainer teaches the ordinary-short-stay calculation through a five-step walkthrough that renders the production `TimelineLedger`, `TripMiniTimeline`, and `StatusChip` components against deterministic sample trips; the teaching surface therefore stays visually and mathematically aligned with `/app`. The FAQ keeps reviewed rule answers linked to official EU sources and visibly distinguishes product behavior from legal/rule guidance. Clicking a trip row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
 
 ## Commands
 
@@ -130,11 +143,19 @@ Useful focused commands:
 
 ```bash
 bun run test:engine
+bun run test:capability
+bun run test:agent
+bun run build:agent
+bun run release:packages:check
+bun run release:packages:public-check
+bun run agent:cli -- help
+bun run agent:api
+bun run agent:mcp
 cd apps/web && bun run check
 cd apps/web && bun run dev -- --host 127.0.0.1 --port 5173
 ```
 
-`bun run check` is the local CI equivalent: tests + Svelte/TS typecheck + build.
+`bun run check` is the local CI equivalent: all tests, TypeScript checks for the engine/capability/agent packages, Svelte/TypeScript web checks, every build, and a compiled agent CLI/MCP smoke. `bun run test:e2e` remains the separate browser gate.
 
 ## CI/CD
 
@@ -151,6 +172,7 @@ bun install --frozen-lockfile
 bun run test
 bun run typecheck
 bun run build
+bun run smoke:agent
 bun run test:e2e
 inactive resource provisioning + D1 migrations
 optional deploy, canonical-domain setup, and blocking smoke on main if Cloudflare credentials plus required Clerk/contact bindings exist
@@ -202,6 +224,35 @@ Correctness requirements from MVP backlog:
 
 US-01 is implemented as a published-rule correctness gate: `packages/engine/tests/engine.test.ts` adapts 50 country-annotated source fixtures into explicit Schengen stay ranges, runs deterministic property checks against an independent day-set oracle, and includes golden counted-day scenarios. Do not claim direct European Commission calculator output parity until captured official outputs and provenance are added.
 
+## Local agent capability rules
+
+Packages: `packages/capability` and `apps/agent`
+
+The capability package is the transport-neutral boundary over `@schngn/engine`. It exposes strict schema-version-one operations for usage on a reference date, checking a candidate stay on every day, and finding the latest safe exit. Each stay-list field accepts at most 100 explicit continuous Schengen stay ranges, with a separate required candidate range for the stay-check operation. Stay objects contain only `entryDate` and `exitDate`; country metadata, labels, IDs, account owners, open-ended state, and unknown fields are rejected. Every result carries the fixed planning-aid advisory and the `ordinary-schengen-90-180/v1` rule-set identifier.
+
+The local agent app exposes that one contract through:
+
+- `schngn usage`, `schngn check-stay`, and `schngn latest-exit`, reading strict JSON from stdin or a file;
+- a loopback-only HTTP API with `/openapi.json` and versioned calculation routes;
+- read-only MCP tools over stdio.
+
+`@schngn/engine`, `@schngn/capability`, and `@schngn/agent` are MIT licensed and published publicly on npm. The runtime and skill setup is `npm install --global @schngn/agent`, `codex mcp add schngn -- schngn-mcp`, and `npx skills add miktomic/schngn --skill schngn`.
+
+Allowed:
+
+- Local Node 24+ execution built and tested with Bun 1.3.14.
+- Strict runtime validation, bounded request bodies, safe error codes, and fixed deterministic advisory copy.
+- Loopback HTTP on `127.0.0.1`, `::1`, or `localhost` only.
+
+Forbidden:
+
+- Binding the agent HTTP server to a LAN/public interface or deploying it as a hosted endpoint.
+- Remote MCP transports, persistence, analytics, telemetry, outbound network calls, or logging submitted dates.
+- Adding country classification or legal-status inference to the calculation contract.
+- Claiming direct European Commission calculator parity or EU endorsement.
+
+The TypeScript API and the HTTP “API” are local machine interfaces. The SCHNGN runtime does not transmit tool inputs or results, but a cloud-backed agent host or model provider may receive and retain them under its own policies. Any SCHNGN-hosted or remote calculation phase is a separate, unapproved scope change that must first define authentication, explicit consent, retention/logging rules, abuse controls, and revised privacy disclosure.
+
 ## Web app rules
 
 Package: `apps/web`
@@ -233,11 +284,11 @@ Use `docs/product-decisions.md` for approved MVP product/provider/domain decisio
 
 Pull order:
 
-All original MVP implementation cards are green. Optional accounts and authenticated sync are an explicit post-MVP scope change recorded as DEC-10/US-22, not a reinterpretation of the original local-only cards. `docs/production-readiness.md` is authoritative for launch. Remaining work should be explicit provider/account configuration, edge rate limiting, live payload verification, or new validation tasks—not another quiet scope creep goblin.
+All original MVP implementation cards are green. Optional accounts and authenticated sync are an explicit post-MVP scope change recorded as DEC-10/US-22, not a reinterpretation of the original local-only cards. The completed local agent capability is the separate DEC-16/US-23 scope change; it does not authorize hosted calculation. `docs/production-readiness.md` is authoritative for the web launch. Remaining web work should be explicit provider/account configuration, edge rate limiting, live payload verification, or new validation tasks—not another quiet scope creep goblin.
 
 Documentation drift cleanup is continuous: current-state claims in `README.md`, architecture, CI/CD, Cloudflare setup, product decisions, and the Kanban must agree with the production-readiness checklist. Tests in `apps/web/tests/docs-consistency.test.ts` guard the known stale skeleton and parity claims.
 
-US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, US-13, US-14, US-18, US-16, US-12, US-17, US-21, and US-20 are green.
+US-01/US-02/US-03, US-19, US-04, US-05, US-06, US-07, US-09, US-08, US-10, US-11, US-15, US-13, US-14, US-18, US-16, US-12, US-17, US-21, US-20, and US-23 are green.
 
 ## Design direction
 
@@ -286,6 +337,7 @@ Installed:
 
 - `.agents/skills/design-taste-frontend/SKILL.md` from `Leonxlnx/taste-skill`.
 - `.agents/skills/impeccable/SKILL.md` and `.github/skills/impeccable/SKILL.md` from `pbakaus/impeccable`, installed with `npx impeccable install`.
+- `.agents/skills/schngn/SKILL.md`, the repository-backed local calculation and setup skill intended for `npx skills add miktomic/schngn --skill schngn`.
 
 Use `design-taste-frontend` for landing page, portfolio-style, visual redesign, and marketing UI work where taste/hierarchy/anti-slop rules matter. Use `impeccable` for design-system context, UI critique/polish/audit/layout/type/color passes, and deterministic UI anti-pattern detection via `npx impeccable detect`. Do **not** let either design skill override SCHNGN’s higher-priority constraints: engine correctness, guest-local/account-consent data boundaries, no legal advice, accessibility, and the product/backlog pull order above.
 
@@ -305,6 +357,12 @@ For engine work, prefer:
 - Boundary tests for off-by-one failures.
 - Property tests for random trip sets.
 - Golden-master snapshots for known scenarios.
+
+For local agent work, prefer:
+
+- Shared contract tests in `packages/capability` before transport tests.
+- Node-compatible CLI, loopback HTTP/OpenAPI, and stdio MCP tests in `apps/agent`.
+- Tests that reject unknown/private fields, non-loopback hosts, oversized bodies, and submitted-value echoing in errors.
 
 ## Privacy and analytics
 
@@ -335,6 +393,8 @@ Approved MVP services:
 - Clerk for optional authentication and identity lifecycle webhooks.
 - Cloudflare Email Service plus Turnstile for fixed-destination support requests; `schngn@proton.me` must be a verified destination and the public/sender address is restricted to `support@schngn.com`.
 
+The SCHNGN local agent runtime uses no external service. Its loopback HTTP server and stdio MCP server are local transports, not production infrastructure. The surrounding agent host may still be an external, cloud-backed service and may handle tool inputs and results under its own policies.
+
 If configuring any external service, do not write secrets to files. Use GitHub secrets, Cloudflare dashboard, or local `.env` files ignored by git.
 
 ## Agent workflow
@@ -348,7 +408,7 @@ Before coding:
 
 While coding:
 
-- Keep packages separated: engine logic in `packages/engine`; UI/storage in `apps/web`.
+- Keep packages separated: engine logic in `packages/engine`; strict transport-neutral agent schemas/operations in `packages/capability`; local Node transports in `apps/agent`; UI/storage in `apps/web`.
 - Keep guest trip data local; require a verified Clerk session plus an explicit signup-and-save or separate sync action for account storage.
 - Derive account ownership server-side and preserve export/deletion paths.
 - Prefer small vertical slices with tests.
