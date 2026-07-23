@@ -7,6 +7,7 @@ schngn/
 ├── .bun-version
 ├── .node-version
 ├── .nvmrc
+├── .infisical.json                         # non-secret Infisical project selection
 ├── .agents/skills/schngn/                # source-distributed agent skill and setup references
 ├── .github/workflows/ci.yml
 ├── apps/
@@ -80,7 +81,7 @@ schngn/
 | `bun run agent:mcp` | run `apps/agent/src/mcp.ts` | Start the stdio MCP server |
 | `bun run d1:migrate:local` | Wrangler D1 local migrations | Verify account schema and forward cleanup locally |
 | `bun run d1:migrate:remote` | Wrangler D1 remote migrations | Production migration step after inactive provisioning |
-| `bun run deploy` | `cd apps/web && bun run deploy` | Build and deploy through Wrangler |
+| `bun run deploy` | `cd apps/web && bun run deploy` | Low-level Wrangler build/deploy command; production uses the complete protected GitHub Actions workflow |
 
 ## Package rules
 
@@ -201,6 +202,8 @@ npx -y bun@1.3.14 run build:agent
 npx -y bun@1.3.14 run test:e2e
 ```
 
+Anonymous development needs no secrets. For full local Clerk account testing, authenticate the Infisical CLI, run `bun run secrets:check:dev`, then `bun run dev:infisical`; the machine-identity ID alone is not a local credential.
+
 The US-01 engine gate is now in place: `packages/engine/tests/engine.test.ts` loads `packages/engine/tests/fixtures/ec/rolling-180-fixtures.json` and adds property/golden tests.
 
 ## Current web library structure
@@ -216,7 +219,6 @@ apps/web/src/lib/explanation/   # calculation proof state
 apps/web/src/lib/design/        # shared product UI components
 apps/web/src/lib/analytics/     # privacy-safe event wrapper
 apps/web/src/lib/import-export/ # JSON import/export
-apps/web/src/lib/fake-door/     # paid-intent state and events
 apps/web/src/lib/auth/          # Clerk client/session integration
 apps/web/src/lib/account/       # consented authenticated sync and account lifecycle helpers
 ```

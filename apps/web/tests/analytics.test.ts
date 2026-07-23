@@ -13,8 +13,7 @@ const allowedEvents: AnalyticsEventName[] = [
   'page_view',
   'calculator_start',
   'trip_added',
-  'simulation_run',
-  'unlock_buy_intent'
+  'simulation_run'
 ];
 
 describe('privacy-safe analytics wrapper', () => {
@@ -62,12 +61,6 @@ describe('privacy-safe analytics wrapper', () => {
       }
     });
 
-    expect(
-      buildAnalyticsEvent('unlock_buy_intent', {
-        price_bucket: 'eur_9',
-        source: 'planner'
-      })
-    ).toEqual({ name: 'unlock_buy_intent', props: { price_bucket: 'eur_9', source: 'planner' } });
   });
 
   test('rejects unknown event names and unknown property keys', () => {
@@ -87,8 +80,7 @@ describe('privacy-safe analytics wrapper', () => {
       { source: 'waitlist' },
       { trip_count_bucket: 'exactly-2' },
       { safe_buffer_bucket: 'about-a-week' },
-      { verdict: 'approved' },
-      { price_bucket: 'eur_99' }
+      { verdict: 'approved' }
     ];
 
     for (const props of unsafeValues) {

@@ -74,13 +74,17 @@ describe('post-deploy smoke and privacy-safe operations', () => {
     expect(ci).toContain('bunx playwright install --with-deps chromium');
     expect(ci).toContain('bun run test:e2e');
     expect(ci).toContain('Provision Cloudflare resources without changing production traffic');
-    expect(ci).toContain('wrangler versions upload --secrets-file');
+    expect(ci).toContain('wrangler versions upload');
+    expect(ci).toContain('--secrets-file');
     expect(ci).toContain('Apply D1 migrations');
     expect(ci).toContain('bun run d1:migrate:remote');
-    expect(ci).toContain('wrangler deploy --secrets-file');
-    expect(ci).toContain('Remove temporary Worker bindings');
+    expect(ci).toContain('wrangler deploy');
+    expect(ci).toContain('Remove inactive Worker bindings');
+    expect(ci).toContain('Remove deployment Worker bindings');
     expect(ci.indexOf('Provision Cloudflare resources without changing production traffic')).toBeLessThan(ci.indexOf('Apply D1 migrations'));
+    expect(ci.indexOf('Remove inactive Worker bindings')).toBeLessThan(ci.indexOf('Apply D1 migrations'));
     expect(ci.indexOf('Apply D1 migrations')).toBeLessThan(ci.indexOf('Deploy to Cloudflare Workers'));
+    expect(ci.indexOf('Deploy to Cloudflare Workers')).toBeLessThan(ci.indexOf('Remove deployment Worker bindings'));
     expect(ci.indexOf('Apply D1 migrations')).toBeLessThan(ci.indexOf('Run production smoke checks'));
   });
 

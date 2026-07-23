@@ -41,21 +41,27 @@ Manual browser verification must also confirm:
 
 ## One-time production configuration
 
-### GitHub production environment
+### Infisical and GitHub production environment
 
-Configure the GitHub Environment named `production`:
+Infisical is authoritative. Populate all required production values in `prod` at `/apps/web`:
 
-- secret `CLOUDFLARE_API_TOKEN`;
-- variable `CLOUDFLARE_ACCOUNT_ID` (a secret fallback is supported).
-- variable `PUBLIC_CLERK_PUBLISHABLE_KEY`;
-- secret `CLERK_SECRET_KEY`;
-- secret `CLERK_WEBHOOK_SIGNING_SECRET`.
-- variable `PUBLIC_TURNSTILE_SITE_KEY`;
-- secret `TURNSTILE_SECRET_KEY`.
+- `CLOUDFLARE_API_TOKEN`;
+- `CLOUDFLARE_ACCOUNT_ID`;
+- `PUBLIC_CLERK_PUBLISHABLE_KEY`;
+- `CLERK_SECRET_KEY`;
+- `CLERK_WEBHOOK_SIGNING_SECRET`;
+- `PUBLIC_TURNSTILE_SITE_KEY`;
+- `TURNSTILE_SECRET_KEY`.
 
-Use a least-privilege Cloudflare token scoped to the SCHNGN account/zone. It needs the permissions required to deploy Workers, provision/apply D1 migrations, manage the `www` DNS record, and manage the canonical redirect ruleset. Never place any value in this repository or command output.
+Configure Infisical identity `812097c6-b028-4a21-9af0-291ebc835cfa` for GitHub OIDC with read/describe access limited to this project's `prod` `/apps/web` path. Its trust policy must accept only the `miktomic/schngn` workflow on a GitHub-hosted runner, a push to `main`, and GitHub Environment `production`; use audience `https://github.com/miktomic`. Keep the identity's organization and broad project roles at no access so the path-scoped additional privilege is the effective permission.
 
-The workflow passes the public Clerk and Turnstile values to the production build. For Worker runtime bindings it creates a mode-`0600` JSON file at a fixed path in `RUNNER_TEMP`, performs inactive `wrangler versions upload --secrets-file`, applies migrations, performs the gated active deploy with the same file, and unconditionally removes that fixed path in an `always()` step. Raw Cloudflare values are step-scoped to the deployment operations that require them; the job-level gate contains only a derived boolean. Production must fail if a required binding is absent; do not replace this with `wrangler secret put`, which immediately deploys a secret-only version.
+Keep the GitHub Environment `production` restricted to `main` and apply any desired reviewer protections. It is the deployment and OIDC trust boundary, not a value store: do not create GitHub Actions secret/variable copies and do not configure an Infisical Secret Sync. The deploy job alone receives `id-token: write`; repository and pull-request validation retain `contents: read` only.
+
+Use a least-privilege Cloudflare token scoped to the SCHNGN account/zone. It needs the permissions required to deploy Workers, provision/apply D1 migrations, manage the `www` DNS record, and manage the canonical redirect ruleset. Never place any value in this repository, command output, chat, or documentation.
+
+The repository wrapper exchanges the job's short-lived GitHub OIDC token directly with Infisical, fetches and validates the complete seven-value set in memory, and starts each child process from a benign environment allowlist plus only the keys it explicitly requests. The build receives the two public values; Worker-binding preparation receives five bindings; Cloudflare operations receive only the token and account ID. OIDC authentication material is removed from child environments. Any exchange, retrieval, validation, or deployment failure stops production; there is no missing-credentials skip path.
+
+For Worker runtime bindings the workflow creates a mode-`0600` JSON file at a fixed path in `RUNNER_TEMP`, performs inactive `wrangler versions upload --secrets-file`, and unconditionally removes the file before migrations. It recreates the file only for the active deploy and removes it again afterward. The deploy job is serialized through a non-cancelling production concurrency group, so two main pushes cannot race migrations or finish out of order. Production must fail if a required binding is absent; do not replace this with `wrangler secret put`, which immediately deploys a secret-only version.
 
 ### Contact delivery
 
@@ -63,7 +69,7 @@ Before deploying the contact route:
 
 - verify `schngn@proton.me` as a Cloudflare Email Routing destination;
 - enable `support@schngn.com` forwarding and onboard `schngn.com` for sending from that branded address;
-- create a Turnstile widget for `schngn.com` and add its public/secret key pair to the production Environment;
+- create a Turnstile widget for `schngn.com` and add its public/secret key pair to Infisical `prod` `/apps/web`;
 - confirm Wrangler provisions the fixed `CONTACT_EMAIL` binding and `CONTACT_RATE_LIMITER` namespace.
 
 Submit one synthetic help request and one feature request. Both must arrive at Proton with the visitor email as `Reply-To`; no trip history, account data, IP address, or analytics request may contain the message. A failed Turnstile token must return `400`, a burst over the limit must return `429`, and every response must be `no-store`.
@@ -76,7 +82,7 @@ Configure the Clerk production instance for `schngn.com`, including the exact al
 https://schngn.com/api/webhooks/clerk
 ```
 
-Subscribe it to `user.deleted`, then store the generated signing secret as `CLERK_WEBHOOK_SIGNING_SECRET` in the GitHub `production` Environment. The account expansion must not deploy until that third Clerk value is present.
+Subscribe it to `user.deleted`, then store the generated signing secret as `CLERK_WEBHOOK_SIGNING_SECRET` in Infisical `prod` `/apps/web`. The account expansion must not deploy until that value passes the workflow's complete-set validation.
 
 If Google signup is enabled, follow [`google-oauth-production-setup.md`](google-oauth-production-setup.md). The public homepage must expose the localized `/privacy` and `/terms` documents in its shared footer before Google branding verification. Google Client ID and Client Secret values live only in the Clerk production Google connection; they are not application or deployment bindings.
 
@@ -139,7 +145,6 @@ After deployment, confirm these events arrive with bucket/source properties only
 - `calculator_start`
 - `trip_added`
 - `simulation_run`
-- `unlock_buy_intent`
 
 Do not launch paid traffic if events are absent or if any event contains a date, email, free-form trip label, country history, or calculated timeline.
 
@@ -158,19 +163,21 @@ The response must redirect to `https://schngn.com/` and preserve the path/query.
 The GitHub production workflow performs this sequence after the test/build/browser gate:
 
 1. create the permission-restricted ephemeral Clerk bindings file and upload an inactive Worker version with `--secrets-file` so Wrangler can provision the ID-less D1 binding without changing production traffic;
-2. apply remote D1 migrations;
-3. deploy the verified Worker/static assets with the same required bindings to active traffic;
-4. remove the ephemeral bindings file even if an earlier step fails;
-5. ensure the canonical `www` DNS/redirect configuration;
-6. run the production route, security-header, account-auth, and domain smoke checks.
+2. remove that file even if upload fails;
+3. apply remote D1 migrations with no Clerk/Turnstile bindings file present;
+4. recreate the required bindings file and deploy the verified Worker/static assets to active traffic;
+5. remove the deployment file even if deploy fails;
+6. ensure the canonical `www` DNS/redirect configuration;
+7. run the production route, security-header, account-auth, and domain smoke checks.
 
-Do not deploy manually from an unverified working tree. If an emergency manual release is unavoidable, follow the same order and retain the command results in the deployment record.
+Do not deploy production manually. For an emergency redeployment of the current trusted `main` commit, use **Re-run all jobs** on that commit's GitHub Actions run so the full binding, migration, deploy, redirect, and smoke sequence remains intact.
 
 ## Go/no-go decision
 
 Production traffic is allowed only when:
 
 - repository and browser gates are green;
+- Infisical `prod` `/apps/web` contains the complete verified seven-value production set, and the path-scoped OIDC identity can read it from the protected GitHub `production` deployment;
 - GitHub secret scanning/push protection (or an equivalent full-history scanner) is enabled and reports no live credential;
 - there are no known result-integrity defects;
 - the Privacy Policy and Terms name the real legal operator/controller, include the required contact and jurisdiction details, and have received appropriate legal plus native-language review; generated draft copy is not published as final legal copy;

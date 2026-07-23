@@ -57,7 +57,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. Korišćenje bez naloga i skladištenje u pregledaču',
           paragraphs: [
-            'Kada koristite SCHNGN kao gost, datumi i oznake putovanja, opcioni podaci o graničnim zemljama, rasponi boravka, status i rezultati proračuna ostaju u vašem pregledaču. Proračuni i nesačuvane simulacije izvršavaju se na vašem uređaju. Opciono pitanje o pasošu koristi samo zemlju izdavanja u privremenoj memoriji pregledača kako bi prikazalo obaveštenje o mogućem bilateralnom sporazumu; taj podatak se ne čuva uz putovanja niti šalje analitici. Skladište pregledača čuva i funkcionalna podešavanja kao što su jezik, odgovor o prethodnom putovanju i testna cenovna kategorija; javne datoteke aplikacije mogu biti keširane za rad van mreže. JSON rezervna kopija pravi se i čita lokalno pod vašom kontrolom i ne otprema se samim izvozom ili uvozom.'
+            'Kada koristite SCHNGN kao gost, datumi i oznake putovanja, opcioni podaci o graničnim zemljama, rasponi boravka, status i rezultati proračuna ostaju u vašem pregledaču. Proračuni i nesačuvane simulacije izvršavaju se na vašem uređaju. Opciono pitanje o pasošu koristi samo zemlju izdavanja u privremenoj memoriji pregledača kako bi prikazalo obaveštenje o mogućem bilateralnom sporazumu; taj podatak se ne čuva uz putovanja niti šalje analitici. Skladište pregledača čuva i funkcionalna podešavanja kao što su jezik i odgovor o prethodnom putovanju; javne datoteke aplikacije mogu biti keširane za rad van mreže. JSON rezervna kopija pravi se i čita lokalno pod vašom kontrolom i ne otprema se samim izvozom ili uvozom.'
           ],
           items: [
             'Podaci o putovanjima u pregledaču ostaju dok ih ne obrišete ili zamenite, ili dok ne obrišete podatke sajta.',
@@ -83,7 +83,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. Zbirna analitika',
           paragraphs: [
-            'Na produkcionom sajtu Plausible može primati samo dozvoljene događaje, kao što su pregled stranice, pokretanje kalkulatora, dodavanje putovanja, pokretanje simulacije i interesovanje za otključavanje, zajedno sa grubim kategorijama kao što su raspon broja putovanja, ocena rezultata, raspon bezbedne rezerve, izvor ili testna cenovna kategorija. SCHNGN uklanja upitne nizove i heš delove URL-a i zabranjuje datume, oznake i zemlje putovanja, vremenske linije, izbor pasoša, imejl i identifikatore naloga. Plausible analitika je podešena bez analitičkih kolačića i bez automatskog praćenja obrazaca, preuzimanja i odlaznih veza. Plausible ipak može obrađivati uobičajene mrežne podatke radi izrade zbirne statistike.'
+            'Na produkcionom sajtu Plausible može primati samo dozvoljene događaje, kao što su pregled stranice, pokretanje kalkulatora, dodavanje putovanja i pokretanje simulacije, zajedno sa grubim kategorijama kao što su raspon broja putovanja, ocena rezultata, raspon bezbedne rezerve ili izvor. SCHNGN uklanja upitne nizove i heš delove URL-a i zabranjuje datume, oznake i zemlje putovanja, vremenske linije, izbor pasoša, imejl i identifikatore naloga. Plausible analitika je podešena bez analitičkih kolačića i bez automatskog praćenja obrazaca, preuzimanja i odlaznih veza. Plausible ipak može obrađivati uobičajene mrežne podatke radi izrade zbirne statistike.'
           ]
         },
         {
@@ -253,7 +253,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. Përdorimi si vizitor dhe ruajtja në shfletues',
           paragraphs: [
-            'Kur përdorni SCHNGN si vizitor, datat dhe etiketat e udhëtimeve, konteksti opsional i vendeve kufitare, periudhat e qëndrimit, statusi dhe rezultatet e llogaritjeve mbeten në shfletuesin tuaj. Llogaritjet dhe simulimet e paruajtura kryhen në pajisjen tuaj. Pyetja opsionale për pasaportën përdor vetëm vendin lëshues në kujtesën e përkohshme të shfletuesit për të shfaqur një njoftim për një marrëveshje të mundshme dypalëshe; ajo nuk ruhet me udhëtimet dhe nuk dërgohet në analitikë. Hapësira e shfletuesit ruan edhe preferenca funksionale, si gjuha, përgjigjja për udhëtimet e mëparshme dhe një kategori testuese çmimi; skedarët publikë të aplikacionit mund të ruhen në memorien e përkohshme për përdorim pa internet. Një kopje rezervë JSON krijohet dhe lexohet lokalisht nën kontrollin tuaj dhe nuk ngarkohet vetëm pse e eksportoni ose importoni.'
+            'Kur përdorni SCHNGN si vizitor, datat dhe etiketat e udhëtimeve, konteksti opsional i vendeve kufitare, periudhat e qëndrimit, statusi dhe rezultatet e llogaritjeve mbeten në shfletuesin tuaj. Llogaritjet dhe simulimet e paruajtura kryhen në pajisjen tuaj. Pyetja opsionale për pasaportën përdor vetëm vendin lëshues në kujtesën e përkohshme të shfletuesit për të shfaqur një njoftim për një marrëveshje të mundshme dypalëshe; ajo nuk ruhet me udhëtimet dhe nuk dërgohet në analitikë. Hapësira e shfletuesit ruan edhe preferenca funksionale, si gjuha dhe përgjigjja për udhëtimet e mëparshme; skedarët publikë të aplikacionit mund të ruhen në memorien e përkohshme për përdorim pa internet. Një kopje rezervë JSON krijohet dhe lexohet lokalisht nën kontrollin tuaj dhe nuk ngarkohet vetëm pse e eksportoni ose importoni.'
           ],
           items: [
             'Të dhënat e udhëtimeve në shfletues mbeten derisa t’i pastroni, t’i zëvendësoni ose të pastroni të dhënat e sajtit.',
@@ -279,7 +279,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. Analitika e përmbledhur',
           paragraphs: [
-            'Në sajtin në prodhim, Plausible mund të marrë ngjarje të lejuara si shikimi i faqes, nisja e llogaritësit, shtimi i udhëtimit, ekzekutimi i simulimit dhe interesi për zhbllokim, bashkë me kategori të përgjithshme si intervali i numrit të udhëtimeve, rezultati, intervali i rezervës së sigurt, burimi ose kategoria testuese e çmimit. SCHNGN heq vargjet e pyetjeve dhe fragmentet pas # dhe ndalon datat, etiketat dhe vendet e udhëtimeve, vijat kohore, zgjedhjen e pasaportës, emailin dhe identifikuesit e llogarisë. Analitika Plausible është konfiguruar pa cookie analitike dhe pa gjurmim automatik të formularëve, shkarkimeve dhe lidhjeve dalëse. Plausible mund të përpunojë ende informacion të zakonshëm të rrjetit për të prodhuar statistika të përmbledhura.'
+            'Në sajtin në prodhim, Plausible mund të marrë ngjarje të lejuara si shikimi i faqes, nisja e llogaritësit, shtimi i udhëtimit dhe ekzekutimi i simulimit, bashkë me kategori të përgjithshme si intervali i numrit të udhëtimeve, rezultati, intervali i rezervës së sigurt ose burimi. SCHNGN heq vargjet e pyetjeve dhe fragmentet pas # dhe ndalon datat, etiketat dhe vendet e udhëtimeve, vijat kohore, zgjedhjen e pasaportës, emailin dhe identifikuesit e llogarisë. Analitika Plausible është konfiguruar pa cookie analitike dhe pa gjurmim automatik të formularëve, shkarkimeve dhe lidhjeve dalëse. Plausible mund të përpunojë ende informacion të zakonshëm të rrjetit për të prodhuar statistika të përmbledhura.'
           ]
         },
         {
@@ -449,7 +449,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. სტუმრად გამოყენება და ბრაუზერში შენახვა',
           paragraphs: [
-            'როდესაც SCHNGN-ს სტუმრად იყენებთ, მოგზაურობის თარიღები, ნიშნულები, საზღვრის ქვეყნების არასავალდებულო კონტექსტი, ყოფნის პერიოდები, სტატუსი და გამოთვლის შედეგები თქვენს ბრაუზერში რჩება. გამოთვლები და შეუნახავი სიმულაციები თქვენს მოწყობილობაზე სრულდება. პასპორტის არასავალდებულო კითხვა ბრაუზერის დროებით მეხსიერებაში მხოლოდ გამცემი ქვეყნის მონაცემს იყენებს, რათა შესაძლო ორმხრივი შეთანხმების შეტყობინება აჩვენოს; ის მოგზაურობებთან ერთად არ ინახება და ანალიტიკაში არ იგზავნება. ბრაუზერის საცავი ასევე ინახავს ფუნქციურ პარამეტრებს, მაგალითად ენას, წინა მოგზაურობის შესახებ პასუხსა და სატესტო ფასის კატეგორიას; აპლიკაციის საჯარო ფაილები ოფლაინგამოყენებისთვის შეიძლება დაკეშირდეს. JSON სარეზერვო ასლი თქვენს კონტროლქვეშ ადგილობრივად იქმნება და იკითხება და მხოლოდ ექსპორტის ან იმპორტის გამო არ იტვირთება სერვერზე.'
+            'როდესაც SCHNGN-ს სტუმრად იყენებთ, მოგზაურობის თარიღები, ნიშნულები, საზღვრის ქვეყნების არასავალდებულო კონტექსტი, ყოფნის პერიოდები, სტატუსი და გამოთვლის შედეგები თქვენს ბრაუზერში რჩება. გამოთვლები და შეუნახავი სიმულაციები თქვენს მოწყობილობაზე სრულდება. პასპორტის არასავალდებულო კითხვა ბრაუზერის დროებით მეხსიერებაში მხოლოდ გამცემი ქვეყნის მონაცემს იყენებს, რათა შესაძლო ორმხრივი შეთანხმების შეტყობინება აჩვენოს; ის მოგზაურობებთან ერთად არ ინახება და ანალიტიკაში არ იგზავნება. ბრაუზერის საცავი ასევე ინახავს ფუნქციურ პარამეტრებს, მაგალითად ენასა და წინა მოგზაურობის შესახებ პასუხს; აპლიკაციის საჯარო ფაილები ოფლაინგამოყენებისთვის შეიძლება დაკეშირდეს. JSON სარეზერვო ასლი თქვენს კონტროლქვეშ ადგილობრივად იქმნება და იკითხება და მხოლოდ ექსპორტის ან იმპორტის გამო არ იტვირთება სერვერზე.'
           ],
           items: [
             'ბრაუზერში შენახული მოგზაურობის მონაცემები რჩება, სანამ არ გაასუფთავებთ, ჩაანაცვლებთ ან საიტის მონაცემებს არ წაშლით.',
@@ -475,7 +475,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. შეჯამებული ანალიტიკა',
           paragraphs: [
-            'პროდუქციულ საიტზე Plausible-მა შეიძლება მიიღოს მხოლოდ ნებადართული მოვლენები, როგორიცაა გვერდის ნახვა, კალკულატორის დაწყება, მოგზაურობის დამატება, სიმულაციის გაშვება და განბლოკვისადმი ინტერესი, ასევე ზოგადი კატეგორიები — მოგზაურობების რაოდენობის დიაპაზონი, შედეგის შეფასება, უსაფრთხო მარაგის დიაპაზონი, წყარო ან სატესტო ფასის კატეგორია. SCHNGN შლის მოთხოვნის სტრიქონებსა და ჰეშ-ფრაგმენტებს და კრძალავს მოგზაურობის თარიღებს, ნიშნულებს, ქვეყნებს, დროის ხაზებს, პასპორტის არჩევანს, ელფოსტასა და ანგარიშის იდენტიფიკატორებს. Plausible ანალიტიკა კონფიგურირებულია ანალიტიკური cookie-ების და ფორმების, ჩამოტვირთვებისა და გარე ბმულების ავტომატური თვალთვალის გარეშე. შეჯამებული სტატისტიკის შესაქმნელად Plausible-მა შეიძლება მაინც დაამუშაოს ჩვეულებრივი ქსელური ინფორმაცია.'
+            'პროდუქციულ საიტზე Plausible-მა შეიძლება მიიღოს მხოლოდ ნებადართული მოვლენები, როგორიცაა გვერდის ნახვა, კალკულატორის დაწყება, მოგზაურობის დამატება და სიმულაციის გაშვება, ასევე ზოგადი კატეგორიები — მოგზაურობების რაოდენობის დიაპაზონი, შედეგის შეფასება, უსაფრთხო მარაგის დიაპაზონი ან წყარო. SCHNGN შლის მოთხოვნის სტრიქონებსა და ჰეშ-ფრაგმენტებს და კრძალავს მოგზაურობის თარიღებს, ნიშნულებს, ქვეყნებს, დროის ხაზებს, პასპორტის არჩევანს, ელფოსტასა და ანგარიშის იდენტიფიკატორებს. Plausible ანალიტიკა კონფიგურირებულია ანალიტიკური cookie-ების და ფორმების, ჩამოტვირთვებისა და გარე ბმულების ავტომატური თვალთვალის გარეშე. შეჯამებული სტატისტიკის შესაქმნელად Plausible-მა შეიძლება მაინც დაამუშაოს ჩვეულებრივი ქსელური ინფორმაცია.'
           ]
         },
         {
@@ -645,7 +645,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. 访客使用和浏览器存储',
           paragraphs: [
-            '当您以访客身份使用 SCHNGN 时，行程日期、标签、可选的边境国家信息、停留区间、状态和计算结果会保留在您的浏览器中。计算和未保存的模拟在您的设备上运行。可选的护照问题只会在浏览器临时内存中使用签发国，以显示可能存在的双边协议提示；该信息不会随行程保存，也不会发送至分析服务。浏览器存储还会保留语言、过往旅行回答和测试价格区间等功能偏好；应用的公共文件可能会被缓存以供离线使用。JSON 备份在您的控制下于本地创建和读取，不会仅仅因为您导出或导入它而被上传。'
+            '当您以访客身份使用 SCHNGN 时，行程日期、标签、可选的边境国家信息、停留区间、状态和计算结果会保留在您的浏览器中。计算和未保存的模拟在您的设备上运行。可选的护照问题只会在浏览器临时内存中使用签发国，以显示可能存在的双边协议提示；该信息不会随行程保存，也不会发送至分析服务。浏览器存储还会保留语言和过往旅行回答等功能偏好；应用的公共文件可能会被缓存以供离线使用。JSON 备份在您的控制下于本地创建和读取，不会仅仅因为您导出或导入它而被上传。'
           ],
           items: [
             '浏览器中的行程数据会一直保留，直至您将其清除、替换或清除网站数据。',
@@ -671,7 +671,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. 汇总分析',
           paragraphs: [
-            '在生产网站上，Plausible 可能会收到允许列表中的事件，例如页面浏览、开始使用计算器、添加行程、运行模拟和解锁意向，以及行程数量区间、判断结果、安全余量区间、来源或测试价格区间等粗略类别。SCHNGN 会移除查询字符串和哈希片段，并禁止发送行程日期、标签、国家、时间线、护照选择、电子邮件地址和账户标识符。Plausible 分析配置为不使用分析 Cookie，也不自动跟踪表单、下载和出站链接。Plausible 仍可能处理普通网络信息，以生成汇总统计数据。'
+            '在生产网站上，Plausible 可能会收到允许列表中的事件，例如页面浏览、开始使用计算器、添加行程和运行模拟，以及行程数量区间、判断结果、安全余量区间或来源等粗略类别。SCHNGN 会移除查询字符串和哈希片段，并禁止发送行程日期、标签、国家、时间线、护照选择、电子邮件地址和账户标识符。Plausible 分析配置为不使用分析 Cookie，也不自动跟踪表单、下载和出站链接。Plausible 仍可能处理普通网络信息，以生成汇总统计数据。'
           ]
         },
         {
@@ -841,7 +841,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. ゲスト利用とブラウザへの保存',
           paragraphs: [
-            'SCHNGN をゲストとして利用する場合、旅行日、ラベル、任意の入出国国情報、滞在期間、ステータス、計算結果はブラウザ内に残ります。計算と未保存のシミュレーションは端末上で実行されます。任意のパスポートに関する質問では、ブラウザの一時メモリ内で発行国だけを使用し、二国間協定が適用される可能性についての案内を表示します。この情報は旅行データと共に保存されず、アクセス解析にも送信されません。ブラウザのストレージには、言語、過去の渡航に関する回答、テスト用価格帯などの機能上の設定も保存されます。オフライン利用のため、公開アプリファイルがキャッシュされる場合があります。JSON バックアップはお客様の管理下で端末内に作成、読み込みされ、エクスポートまたはインポートしただけでアップロードされることはありません。'
+            'SCHNGN をゲストとして利用する場合、旅行日、ラベル、任意の入出国国情報、滞在期間、ステータス、計算結果はブラウザ内に残ります。計算と未保存のシミュレーションは端末上で実行されます。任意のパスポートに関する質問では、ブラウザの一時メモリ内で発行国だけを使用し、二国間協定が適用される可能性についての案内を表示します。この情報は旅行データと共に保存されず、アクセス解析にも送信されません。ブラウザのストレージには、言語や過去の渡航に関する回答などの機能上の設定も保存されます。オフライン利用のため、公開アプリファイルがキャッシュされる場合があります。JSON バックアップはお客様の管理下で端末内に作成、読み込みされ、エクスポートまたはインポートしただけでアップロードされることはありません。'
           ],
           items: [
             'ブラウザ内の旅行データは、お客様が消去または置換するか、サイトデータを消去するまで残ります。',
@@ -867,7 +867,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. 集計アクセス解析',
           paragraphs: [
-            '本番サイトでは、Plausible はページ表示、計算開始、旅行追加、シミュレーション実行、機能解除への関心など許可リストにあるイベントと、旅行件数の範囲、判定、安全余裕日数の範囲、流入元、テスト用価格帯などの大まかな区分を受け取る場合があります。SCHNGN はクエリ文字列とハッシュ部分を除去し、旅行日、ラベル、国、タイムライン、パスポートの選択、メールアドレス、アカウント識別子を禁止しています。Plausible の解析は、解析用 Cookie を使用せず、フォーム、ダウンロード、外部リンクを自動追跡しないよう設定されています。集計統計を作成するため、Plausible が通常のネットワーク情報を処理する場合はあります。'
+            '本番サイトでは、Plausible はページ表示、計算開始、旅行追加、シミュレーション実行など許可リストにあるイベントと、旅行件数の範囲、判定、安全余裕日数の範囲、流入元などの大まかな区分を受け取る場合があります。SCHNGN はクエリ文字列とハッシュ部分を除去し、旅行日、ラベル、国、タイムライン、パスポートの選択、メールアドレス、アカウント識別子を禁止しています。Plausible の解析は、解析用 Cookie を使用せず、フォーム、ダウンロード、外部リンクを自動追跡しないよう設定されています。集計統計を作成するため、Plausible が通常のネットワーク情報を処理する場合はあります。'
           ]
         },
         {
@@ -1006,7 +1006,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
     },
     privacy: {
       navLabel: '개인정보처리방침 항목',
-      title: '개인정보처리방침',
+      title: '개인정보 처리방침',
       metaDescription: 'SCHNGN이 브라우저 내 여행 데이터, 선택적 계정 동기화, Google 로그인, 분석, 지원 요청 및 개인정보 보호 선택 사항을 처리하는 방식을 설명합니다.',
       intro: 'SCHNGN은 계정 없이도 여행 계획을 계산할 수 있도록 설계되었습니다. 이 방침은 브라우저에 남는 정보, 선택적 온라인 기능을 이용할 때 처리되는 정보, 그리고 사용자가 이용할 수 있는 관리 방법을 설명합니다.',
       updatedLabel: '최종 업데이트',
@@ -1037,7 +1037,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. 게스트 이용과 브라우저 저장',
           paragraphs: [
-            'SCHNGN을 게스트로 이용하면 여행 날짜, 라벨, 선택적 출입국 국가 정보, 체류 기간, 상태 및 계산 결과가 브라우저에 남습니다. 계산과 저장하지 않은 시뮬레이션은 사용자의 기기에서 실행됩니다. 선택적 여권 질문은 브라우저의 임시 메모리에서 발급 국가만 사용하여 적용 가능성이 있는 양자 협정 안내를 표시하며, 여행과 함께 저장되거나 분석 서비스로 전송되지 않습니다. 브라우저 저장소에는 언어, 이전 여행에 대한 답변, 테스트 가격 구간과 같은 기능 설정도 보관됩니다. 오프라인 이용을 위해 공개 앱 파일이 캐시될 수 있습니다. JSON 백업은 사용자의 관리 아래 기기에서 생성되고 읽히며, 내보내거나 가져왔다는 이유만으로 업로드되지 않습니다.'
+            'SCHNGN을 게스트로 이용하면 여행 날짜, 라벨, 선택적 출입국 국가 정보, 체류 기간, 상태 및 계산 결과가 브라우저에 남습니다. 계산과 저장하지 않은 시뮬레이션은 사용자의 기기에서 실행됩니다. 선택적 여권 질문은 브라우저의 임시 메모리에서 발급 국가만 사용하여 적용 가능성이 있는 양자 협정 안내를 표시하며, 여행과 함께 저장되거나 분석 서비스로 전송되지 않습니다. 브라우저 저장소에는 언어와 이전 여행에 대한 답변 같은 기능 설정도 보관됩니다. 오프라인 이용을 위해 공개 앱 파일이 캐시될 수 있습니다. JSON 백업은 사용자의 관리 아래 기기에서 생성되고 읽히며, 내보내거나 가져왔다는 이유만으로 업로드되지 않습니다.'
           ],
           items: [
             '브라우저의 여행 데이터는 사용자가 지우거나 교체하거나 사이트 데이터를 지울 때까지 남습니다.',
@@ -1063,7 +1063,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. 집계 분석',
           paragraphs: [
-            '운영 사이트에서 Plausible은 페이지 조회, 계산기 시작, 여행 추가, 시뮬레이션 실행 및 잠금 해제 관심도처럼 허용 목록에 포함된 이벤트와 여행 수 구간, 판정, 안전 여유일 구간, 출처 또는 테스트 가격 구간 같은 대략적인 범주를 받을 수 있습니다. SCHNGN은 쿼리 문자열과 해시 조각을 제거하고 여행 날짜, 라벨, 국가, 타임라인, 여권 선택, 이메일 및 계정 식별자의 전송을 금지합니다. Plausible 분석은 분석 쿠키와 자동 양식, 다운로드 및 외부 링크 추적 없이 설정되어 있습니다. Plausible은 집계 통계를 만들기 위해 일반적인 네트워크 정보를 처리할 수 있습니다.'
+            '운영 사이트에서 Plausible은 페이지 조회, 계산기 시작, 여행 추가 및 시뮬레이션 실행처럼 허용 목록에 포함된 이벤트와 여행 수 구간, 판정, 안전 여유일 구간 또는 출처 같은 대략적인 범주를 받을 수 있습니다. SCHNGN은 쿼리 문자열과 해시 조각을 제거하고 여행 날짜, 라벨, 국가, 타임라인, 여권 선택, 이메일 및 계정 식별자의 전송을 금지합니다. Plausible 분석은 분석 쿠키와 자동 양식, 다운로드 및 외부 링크 추적 없이 설정되어 있습니다. Plausible은 집계 통계를 만들기 위해 일반적인 네트워크 정보를 처리할 수 있습니다.'
           ]
         },
         {
@@ -1233,7 +1233,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. שימוש כאורחים ואחסון בדפדפן',
           paragraphs: [
-            'כאשר משתמשים ב־SCHNGN כאורחים, תאריכי הנסיעות, התוויות, מידע אופציונלי על מדינות הכניסה והיציאה, טווחי השהייה, המצב ותוצאות החישוב נשארים בדפדפן. החישובים והסימולציות שלא נשמרו פועלים במכשיר שלכם. שאלת הדרכון האופציונלית משתמשת רק במדינת ההנפקה בזיכרון הזמני של הדפדפן כדי להציג הודעה על הסכם דו־צדדי אפשרי; המידע אינו נשמר עם הנסיעות ואינו נשלח לניתוח שימוש. אחסון הדפדפן שומר גם העדפות תפעוליות כגון שפה, התשובה לגבי נסיעות קודמות וקבוצת מחיר לבדיקה; קבצים ציבוריים של היישום עשויים להישמר במטמון לשימוש לא מקוון. גיבוי JSON נוצר ונקרא מקומית בשליטתכם ואינו מועלה רק משום שייצאתם או ייבאתם אותו.'
+            'כאשר משתמשים ב־SCHNGN כאורחים, תאריכי הנסיעות, התוויות, מידע אופציונלי על מדינות הכניסה והיציאה, טווחי השהייה, המצב ותוצאות החישוב נשארים בדפדפן. החישובים והסימולציות שלא נשמרו פועלים במכשיר שלכם. שאלת הדרכון האופציונלית משתמשת רק במדינת ההנפקה בזיכרון הזמני של הדפדפן כדי להציג הודעה על הסכם דו־צדדי אפשרי; המידע אינו נשמר עם הנסיעות ואינו נשלח לניתוח שימוש. אחסון הדפדפן שומר גם העדפות תפעוליות כגון שפה והתשובה לגבי נסיעות קודמות; קבצים ציבוריים של היישום עשויים להישמר במטמון לשימוש לא מקוון. גיבוי JSON נוצר ונקרא מקומית בשליטתכם ואינו מועלה רק משום שייצאתם או ייבאתם אותו.'
           ],
           items: [
             'נתוני הנסיעות בדפדפן נשארים עד שתנקו או תחליפו אותם, או עד לניקוי נתוני האתר.',
@@ -1259,7 +1259,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. ניתוח שימוש מצטבר',
           paragraphs: [
-            'באתר הייצור, Plausible עשויה לקבל אירועים מרשימה מורשית, כגון צפייה בדף, התחלת מחשבון, הוספת נסיעה, הרצת סימולציה והתעניינות בפתיחת תכונה, לצד קטגוריות כלליות כגון טווח מספר הנסיעות, התוצאה, טווח מרווח הביטחון, המקור או קבוצת מחיר לבדיקה. SCHNGN מסירה מחרוזות שאילתה ומקטעי hash ואוסרת תאריכי נסיעות, תוויות, מדינות, צירי זמן, בחירת דרכון, דוא״ל ומזהי חשבון. ניתוח Plausible מוגדר ללא עוגיות ניתוח וללא מעקב אוטומטי אחר טפסים, הורדות וקישורים יוצאים. Plausible עדיין עשויה לעבד מידע רשת רגיל כדי להפיק נתונים סטטיסטיים מצטברים.'
+            'באתר הייצור, Plausible עשויה לקבל אירועים מרשימה מורשית, כגון צפייה בדף, התחלת מחשבון, הוספת נסיעה והרצת סימולציה, לצד קטגוריות כלליות כגון טווח מספר הנסיעות, התוצאה, טווח מרווח הביטחון או המקור. SCHNGN מסירה מחרוזות שאילתה ומקטעי hash ואוסרת תאריכי נסיעות, תוויות, מדינות, צירי זמן, בחירת דרכון, דוא״ל ומזהי חשבון. ניתוח Plausible מוגדר ללא עוגיות ניתוח וללא מעקב אוטומטי אחר טפסים, הורדות וקישורים יוצאים. Plausible עדיין עשויה לעבד מידע רשת רגיל כדי להפיק נתונים סטטיסטיים מצטברים.'
           ]
         },
         {
@@ -1429,7 +1429,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'guest-data',
           title: '3. الاستخدام كضيف والتخزين في المتصفح',
           paragraphs: [
-            'عند استخدام SCHNGN كضيف، تبقى تواريخ الرحلات وتسمياتها، والسياق الاختياري لبلدان الدخول والخروج، وفترات الإقامة، والحالة، ونتائج الحساب في متصفحك. تعمل الحسابات والمحاكاة غير المحفوظة على جهازك. يستخدم سؤال جواز السفر الاختياري بلد الإصدار فقط في ذاكرة المتصفح المؤقتة لعرض إشعار عن اتفاق ثنائي محتمل؛ ولا يُحفظ هذا الاختيار مع الرحلات ولا يُرسل إلى التحليلات. يحتفظ تخزين المتصفح أيضًا بتفضيلات تشغيلية مثل اللغة، والإجابة المتعلقة بالسفر السابق، وشريحة سعر اختبارية؛ وقد تُخزّن ملفات التطبيق العامة مؤقتًا للاستخدام من دون اتصال. تُنشأ نسخة JSON الاحتياطية وتُقرأ محليًا تحت سيطرتك، ولا تُرفع لمجرد تصديرها أو استيرادها.'
+            'عند استخدام SCHNGN كضيف، تبقى تواريخ الرحلات وتسمياتها، والسياق الاختياري لبلدان الدخول والخروج، وفترات الإقامة، والحالة، ونتائج الحساب في متصفحك. تعمل الحسابات والمحاكاة غير المحفوظة على جهازك. يستخدم سؤال جواز السفر الاختياري بلد الإصدار فقط في ذاكرة المتصفح المؤقتة لعرض إشعار عن اتفاق ثنائي محتمل؛ ولا يُحفظ هذا الاختيار مع الرحلات ولا يُرسل إلى التحليلات. يحتفظ تخزين المتصفح أيضًا بتفضيلات تشغيلية مثل اللغة والإجابة المتعلقة بالسفر السابق؛ وقد تُخزّن ملفات التطبيق العامة مؤقتًا للاستخدام من دون اتصال. تُنشأ نسخة JSON الاحتياطية وتُقرأ محليًا تحت سيطرتك، ولا تُرفع لمجرد تصديرها أو استيرادها.'
           ],
           items: [
             'تبقى بيانات الرحلات في المتصفح إلى أن تمسحها أو تستبدلها أو تمسح بيانات الموقع.',
@@ -1455,7 +1455,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'analytics',
           title: '6. التحليلات المجمّعة',
           paragraphs: [
-            'في الموقع التشغيلي، قد تتلقى Plausible أحداثًا مدرجة في القائمة المسموح بها، مثل عرض الصفحة وبدء الحاسبة وإضافة رحلة وتشغيل محاكاة وإبداء الاهتمام بإلغاء القفل، إلى جانب فئات عامة مثل نطاق عدد الرحلات، والنتيجة، ونطاق الهامش الآمن، والمصدر، أو شريحة السعر الاختبارية. تزيل SCHNGN سلاسل الاستعلام وأجزاء hash وتحظر تواريخ الرحلات وتسمياتها وبلدانها ومخططاتها الزمنية واختيار جواز السفر والبريد الإلكتروني ومعرّفات الحساب. أُعدّت تحليلات Plausible من دون ملفات ارتباط للتحليلات أو تتبع تلقائي للنماذج والتنزيلات والروابط الخارجية. وقد تعالج Plausible مع ذلك معلومات الشبكة المعتادة لإنتاج إحصاءات مجمّعة.'
+            'في الموقع التشغيلي، قد تتلقى Plausible أحداثًا مدرجة في القائمة المسموح بها، مثل عرض الصفحة وبدء الحاسبة وإضافة رحلة وتشغيل محاكاة، إلى جانب فئات عامة مثل نطاق عدد الرحلات، والنتيجة، ونطاق الهامش الآمن، أو المصدر. تزيل SCHNGN سلاسل الاستعلام وأجزاء hash وتحظر تواريخ الرحلات وتسمياتها وبلدانها ومخططاتها الزمنية واختيار جواز السفر والبريد الإلكتروني ومعرّفات الحساب. أُعدّت تحليلات Plausible من دون ملفات ارتباط للتحليلات أو تتبع تلقائي للنماذج والتنزيلات والروابط الخارجية. وقد تعالج Plausible مع ذلك معلومات الشبكة المعتادة لإنتاج إحصاءات مجمّعة.'
           ]
         },
         {

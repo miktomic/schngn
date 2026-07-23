@@ -8,9 +8,12 @@ flowchart TB
     Repo["GitHub repo\nmiktomic/schngn"]
     Toolchain["Node 24 + Bun 1.3.14\ninstall → test → typecheck → build"]
     Gates["Release gates\nunit + privacy + browser + typecheck + build"]
-    Deploy["inactive upload → migrate → active deploy\nephemeral Clerk bindings"]
-    Repo --> Toolchain --> Gates --> Deploy
+    Boundary["Protected production Environment\nmain-only deployment + OIDC trust"]
+    Deploy["scoped in-memory secret injection\ninactive upload → migrate → active deploy"]
+    Repo --> Toolchain --> Gates --> Boundary --> Deploy
   end
+
+  Infisical["Infisical prod /apps/web\nseven authoritative values"]
 
   subgraph CF["Cloudflare edge — production"]
     Domain["schngn.com\ncustom domain"]
@@ -41,6 +44,8 @@ flowchart TB
 
   Clerk["Clerk\nidentity + verified sessions"]
 
+  Boundary -- "short-lived GitHub OIDC" --> Infisical
+  Infisical -- "exact keys per child command" --> Deploy
   Deploy --> Worker
   Assets --> UI
   Consent --> Clerk
@@ -55,7 +60,7 @@ flowchart TB
   classDef browser fill:#fff7ed,stroke:#ea580c,color:#0f172a
   classDef data fill:#f5f3ff,stroke:#7c3aed,color:#0f172a
   classDef privacy fill:#fff1f2,stroke:#e11d48,color:#0f172a
-  class Repo,Toolchain,Gates,Deploy ci
+  class Repo,Toolchain,Gates,Boundary,Deploy ci
   class Domain,Worker,Assets,AccountApi,Webhook,Clerk edge
   class UI,Engine,Export,Consent browser
   class Local,Store data
@@ -112,25 +117,17 @@ Pipeline shape:
 5. `bun run test:e2e`
 6. deploy on `main` through the `production` GitHub Environment
 
-### 7. Secrets stay in GitHub Environment, not the repo
+### 7. Infisical is authoritative; GitHub provides short-lived identity
 
-Cloudflare credentials are injected only during the production deploy job:
+The protected GitHub Environment `production` gates main-branch deployment and defines the trusted OIDC subject. It stores no copies of SCHNGN's seven production values. The deploy job alone has `id-token: write` and exchanges GitHub's short-lived token directly with Infisical identity `812097c6-b028-4a21-9af0-291ebc835cfa`, whose access is limited to read/describe on `prod` `/apps/web`. There is no Infisical Secret Sync and no long-lived Infisical token in GitHub.
 
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
+The repository wrapper retrieves and validates the complete set in memory, removes OIDC/Infisical authentication material, and starts each child from a benign environment allowlist plus only the keys it needs. Missing or invalid configuration fails deployment instead of skipping it. The production workflow writes the five Worker runtime bindings to a mode-`0600` file in `RUNNER_TEMP`, deletes it after inactive upload and before migrations, recreates it only for active deploy, and deletes it again even when deployment fails. A non-cancelling concurrency group serializes production jobs.
 
-Clerk configuration uses:
-
-- variable `PUBLIC_CLERK_PUBLISHABLE_KEY`
-- secrets `CLERK_SECRET_KEY` and `CLERK_WEBHOOK_SIGNING_SECRET`
-
-The production workflow writes runtime bindings to a permission-restricted temporary runner file, uses it for inactive upload and gated active deploy, and deletes it even when a step fails.
-
-These values must never be committed, printed in logs, or copied into docs.
+These values must never be committed, printed in logs, or copied into docs, GitHub Actions secrets, or GitHub Actions variables.
 
 ### 8. External production closeout
 
-The remaining environment-owned work is explicit: configure the Clerk production domain/webhook, provision/apply D1, register `schngn.com` in Plausible, configure least-privilege Cloudflare/GitHub credentials, and verify the canonical `www` redirect after deployment. See `docs/production-readiness.md`.
+The remaining environment-owned work is explicit: configure the Clerk production domain/webhook, provision/apply D1, register `schngn.com` in Plausible, and verify the canonical `www` redirect after deployment. The least-privilege Infisical OIDC identity and main-only GitHub `production` Environment are configured. See `docs/production-readiness.md`.
 
 ## Source files represented
 

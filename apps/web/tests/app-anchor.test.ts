@@ -72,32 +72,40 @@ describe('single-page app anchors', () => {
     );
 
     expect(appAnchorUrl(current, 'trips')).toBe(
-      '/he/app?market=uk&account=connected&campaign=summer#trips'
+      '/he/app?account=connected&campaign=summer#trips'
     );
   });
 
-  test('canonicalizes legacy URLs and removes only the section parameter', () => {
+  test('canonicalizes legacy URLs while preserving unrelated query context', () => {
     const legacy = new URL(
-      'https://schngn.com/fr/app?market=uk&section=returns&account=connected#plan'
+      'https://schngn.com/fr/app?market=uk&campaign=summer&section=returns&account=connected#plan'
     );
 
     expect(canonicalAppAnchorUrl(legacy)).toBe(
-      '/fr/app?market=uk&account=connected#trips'
+      '/fr/app?campaign=summer&account=connected#trips'
     );
     expect(legacy.href).toBe(
-      'https://schngn.com/fr/app?market=uk&section=returns&account=connected#plan'
+      'https://schngn.com/fr/app?market=uk&campaign=summer&section=returns&account=connected#plan'
     );
+  });
+
+  test('removes the retired pricing market without discarding other query context', () => {
+    expect(
+      canonicalAppAnchorUrl(
+        new URL('https://schngn.com/ru/app?market=uk&campaign=summer#timeline')
+      )
+    ).toBe('/ru/app?campaign=summer#timeline');
   });
 
   test('canonicalization keeps an existing valid hash when there is no legacy section', () => {
     expect(
       canonicalAppAnchorUrl(
-        new URL('https://schngn.com/tr/app?market=uk&account=connected#report')
+        new URL('https://schngn.com/tr/app?campaign=summer&account=connected#report')
       )
-    ).toBe('/tr/app?market=uk&account=connected#account');
+    ).toBe('/tr/app?campaign=summer&account=connected#account');
 
-    expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app?market=uk#invalid'))).toBe(
-      '/app?market=uk#timeline'
+    expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app?campaign=summer#invalid'))).toBe(
+      '/app?campaign=summer#timeline'
     );
 
     expect(canonicalAppAnchorUrl(new URL('https://schngn.com/app#timeline'))).toBe(

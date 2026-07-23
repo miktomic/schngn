@@ -14,6 +14,7 @@
   ],
   "scripts": {
     "dev": "cd apps/web && bun run dev",
+    "dev:infisical": "infisical run --env=dev --path=/apps/web -- bun run dev",
     "build": "cd packages/engine && bun run build && cd ../capability && bun run build && cd ../../apps/agent && bun run build && cd ../web && bun run build",
     "build:agent": "cd packages/engine && bun run build && cd ../capability && bun run build && cd ../../apps/agent && bun run build",
     "test": "bun run build:agent && bun test",
@@ -31,6 +32,8 @@
     "d1:migrate:remote": "cd apps/web && bun run d1:migrate:remote",
     "cloudflare:provision": "cd apps/web && bun run provision:production",
     "cloudflare:canonical-www": "node scripts/configure-cloudflare-canonical-www.mjs",
+    "secrets:check:dev": "infisical run --env=dev --path=/apps/web -- node scripts/validate-infisical-env.mjs dev",
+    "secrets:check:prod": "infisical run --env=prod --path=/apps/web -- node scripts/validate-infisical-env.mjs prod",
     "deploy": "cd apps/web && bun run deploy",
     "agent:cli": "bun apps/agent/src/cli.ts",
     "agent:api": "bun apps/agent/src/api.ts",

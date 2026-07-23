@@ -21,6 +21,7 @@ const config = {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter({
+      platformProxy: { envFiles: ['.env.local'] },
       routes: {
         include: ['/*'],
         exclude: ['<build>', '<files>']

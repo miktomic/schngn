@@ -16,6 +16,7 @@ SCHNGN is a mobile-first web/PWA with a heavily tested pure calculation engine. 
 - **Identity:** optional Clerk signup; Clerk is the identity source and application rows are keyed by verified Clerk user ID
 - **Server data:** authenticated account trips/settings in Cloudflare D1; there is no email waitlist. The contact form sends only visitor-entered support fields to the support inbox.
 - **Analytics:** aggregate-only events through the allowlisted Plausible adapter; never trip dates or email
+- **Secrets:** Infisical `dev` and `prod` environments at `/apps/web`; production deploys fetch the seven required values directly through GitHub OIDC, without copying them into GitHub Actions secrets or variables
 
 Read:
 
@@ -44,6 +45,32 @@ npx -y bun@1.3.14 install
 npx -y bun@1.3.14 run check
 npx -y bun@1.3.14 run test:e2e
 ```
+
+### Optional local accounts
+
+The calculator works without account configuration. Infisical is the
+authoritative store for application secrets. After authenticating the Infisical
+CLI, run the web app with the `dev` secrets at `/apps/web`:
+
+```bash
+bun run d1:migrate:local
+bun run secrets:check:dev
+bun run dev:infisical
+```
+
+`PUBLIC_CLERK_PUBLISHABLE_KEY` enables the signup/sign-in modal.
+`CLERK_SECRET_KEY` also enables authenticated sync, export, and deletion. Keep
+both values in Infisical; Google OAuth credentials remain inside Clerk. A
+machine-identity ID by itself cannot authenticate a local agent: use a human
+`infisical login` session or securely provisioned Universal Auth credentials.
+Never paste secret values into chat, commands, documentation, or tracked files.
+Production uses the protected GitHub Environment `production` only as the
+deployment and OIDC trust boundary. Its deploy job exchanges GitHub's
+short-lived identity token directly with Infisical and fails closed if any
+required `prod` value is missing or invalid; no Secret Sync is used.
+See the
+[local secrets setup](docs/cloudflare-github-secrets-setup.md#7-test-locally-without-exposing-secrets)
+for the exact boundary.
 
 ## Agent integrations
 

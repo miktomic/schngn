@@ -56,6 +56,7 @@ export function appResourceFromUrl(url: URL): AppResourcePage | null {
 export function appAnchorUrl(currentUrl: URL, anchor: AppAnchor): string {
   const nextUrl = new URL(currentUrl);
   nextUrl.searchParams.delete('section');
+  nextUrl.searchParams.delete('market');
   nextUrl.hash = anchor;
   return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
 }

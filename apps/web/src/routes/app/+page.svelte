@@ -25,8 +25,7 @@
 
   import {
     localizeDashboardState,
-    localizeSimulationState,
-    localizeUnlockState
+    localizeSimulationState
   } from '$lib/i18n/stateUi';
   import { buildDashboardState } from '$lib/dashboard/dashboardState';
   import { buildTripSimulationState, emptyProposedTrip, type ProposedTripInput } from '$lib/simulator/tripSimulator';
@@ -40,13 +39,6 @@
   } from '$lib/simulator/savedTripAdjustment';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
-  import {
-    buildUnlockBuyIntentEvent,
-    buildUnlockFakeDoorState,
-    chooseUnlockPriceBucket,
-    loadOrAssignUnlockPriceBucket,
-    type UnlockMarket
-  } from '$lib/fake-door/unlockFakeDoor';
   import {
     buildSafeBufferBucket,
     buildTripCountBucket,
@@ -149,9 +141,6 @@
   let importError = '';
   let importInput: HTMLInputElement;
   let tripDialog: HTMLDialogElement;
-  let unlockIntentMessageVisible = false;
-  let market: UnlockMarket = 'eu';
-  let unlockPrice = chooseUnlockPriceBucket('eu', 0.34);
   let simulationSubmitted = false;
   let simulationSaveNotice = '';
   let simulationOutsideWindowConfirmationVisible = false;
@@ -238,7 +227,6 @@
     | 'whatif';
   $: timelineReturningForecast = buildReturningDaysForecast(trips, { referenceDate: dashboardState.referenceDate, horizonDays: 180 });
   $: explanationState = buildExplanationState(trips, dashboardState.referenceDate, locale);
-  $: unlockFakeDoorState = localizeUnlockState(locale, buildUnlockFakeDoorState(unlockPrice, unlockIntentMessageVisible), unlockPrice.label);
   $: pendingDeleteTrip = trips.find((trip) => trip.id === pendingDeleteTripId) ?? null;
   $: accountSignedIn = clerkAuth?.available === true && clerkAuth.isSignedIn && clerkAuth.userId !== null;
   $: accountEmail = clerkAuth?.available === true ? clerkAuth.email : null;
@@ -254,8 +242,6 @@
     storageSource = result.source;
     storageWarning = result.warning ?? '';
     localTripsDurable = result.warning === undefined;
-    market = new URL(window.location.href).searchParams.get('market') === 'uk' ? 'uk' : 'eu';
-    unlockPrice = loadOrAssignUnlockPriceBucket(window.localStorage, { market });
     const initialUrl = new URL(window.location.href);
     const resourceDestination = appResourceFromUrl(initialUrl);
     if (resourceDestination) {
@@ -647,7 +633,9 @@
       if (result.ok === false) {
         clearSignupSyncIntent();
         accountState = 'unavailable';
-        signupError = rt('securePageError');
+        signupError = result.reason === 'missing_publishable_key'
+          ? rt('signInUnavailable')
+          : rt('securePageError');
         accountError = signupError;
       }
     } catch {
@@ -676,7 +664,9 @@
       );
       if (result.ok === false) {
         navigateToAnchor('account');
-        signupError = rt('securePageError');
+        signupError = result.reason === 'missing_publishable_key'
+          ? rt('signInUnavailable')
+          : rt('securePageError');
         accountError = signupError;
       }
     } catch {
@@ -1397,13 +1387,6 @@
     });
   }
 
-  function recordUnlockBuyIntent(): void {
-    const event = buildUnlockBuyIntentEvent(unlockPrice, 'planner');
-    trackAnalyticsEvent(event.name, event.props);
-    unlockIntentMessageVisible = true;
-    if (!accountSignedIn) void startAccountSignUp();
-  }
-
   function analyticsVerdict(): AnalyticsVerdict {
     if (!simulationState.valid || !simulationState.usage) return 'empty';
     if (simulationState.usage.overLimit) return 'over_limit';
@@ -2040,23 +2023,6 @@
           </section>
         {/if}
 
-        <section class="panel whatif-panel">
-          <h2>{rt('needPlanningPower')}</h2>
-          <p>{unlockFakeDoorState.helperCopy}</p>
-          <button
-            class="secondary-button"
-            type="button"
-            disabled={!accountSignedIn && signupOpening}
-            onclick={() => accountSignedIn ? recordUnlockBuyIntent() : void startAccountSignUp()}
-          >{accountSignedIn ? unlockFakeDoorState.buttonLabel : signupValue('compactButton')}</button>
-        </section>
-        {#if unlockFakeDoorState.showIntentMessage}
-          <section class="panel mint" aria-live="polite">
-            <h2>{rt('unlockNoted')}</h2>
-            <p>{unlockFakeDoorState.messageCopy}</p>
-            <p class="micro-safe">{rt('noPaymentPlanner')}</p>
-          </section>
-        {/if}
         {:else}
           <section class="history-gate panel" aria-labelledby="plan-history-gate-heading">
             <h2 id="plan-history-gate-heading">{tripOnboarding('title')}</h2>

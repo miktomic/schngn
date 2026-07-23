@@ -65,6 +65,7 @@ describe('privacy policy and terms', () => {
       const copy = legalFooterUi(locale);
       expect(copy.navigation.trim().length).toBeGreaterThan(0);
       expect(copy.privacy.trim().length).toBeGreaterThan(0);
+      expect(copy.privacy).toBe(privacyUi(locale).title);
       expect(copy.terms.trim().length).toBeGreaterThan(0);
       expect(copy.contact.trim().length).toBeGreaterThan(0);
     }
@@ -139,6 +140,8 @@ describe('privacy policy and terms', () => {
     expect(privacy).toContain('no fixed deletion period is currently promised');
     expect(privacy).toContain('trip fingerprint');
     expect(privacy).not.toContain('used only to create, secure and authenticate');
+    expect(privacy).not.toContain('unlock interest');
+    expect(privacy).not.toContain('test price bucket');
 
     const terms = flattenCopy(termsUi('en'));
     expect(terms).toContain('not legal advice');

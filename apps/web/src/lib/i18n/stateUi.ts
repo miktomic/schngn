@@ -1,7 +1,6 @@
 import type { DashboardState } from '../dashboard/dashboardState';
 import type { TripSimulationState } from '../simulator/tripSimulator';
 import type { ReturningDaysForecast } from '../returns/returningDays';
-import type { UnlockFakeDoorState } from '../fake-door/unlockFakeDoor';
 import { formatDate, intlLocale } from './index';
 import type { Locale } from './locales';
 import { formatLocalizedCount, formatLocalizedNumber, localizedPluralCategory } from './countUi';
@@ -239,11 +238,6 @@ export function localizeReturningForecast(locale: Locale, forecast: ReturningDay
   const returningDays = rows.reduce((total,row)=>total+row.daysReturned,0);
   const horizon = formatDayMetric(locale,forecast.horizonDays,'plain');
   return {...forecast,rows,currentUsedLabel:formatCountedRatio(locale,forecast.currentUsed),summaryLabel:rows.length ? `${formatDayMetric(locale,returningDays,'returning')} · ${horizon}` : `${l.noDaysReturn} · ${horizon}`,nextReturnLabel:rows[0] ? `${l.nextReturn}: ${rows[0].dateLabel}` : l.noReturning};
-}
-
-export function localizeUnlockState(locale: Locale, state: UnlockFakeDoorState, price: string): UnlockFakeDoorState {
-  if (locale === 'en') return state;
-  const l=labelsFor(locale); return {...state,buttonLabel:`${l.unlockButton} — ${price}`,helperCopy:l.unlockHelper,messageTitle:l.unlockTitle,messageCopy:l.unlockMessage};
 }
 
 export function stateCatalogKeyCount(): Record<Locale, number> {

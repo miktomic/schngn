@@ -98,7 +98,7 @@ const englishCatalog: LegalLocaleCatalog = {
         id: 'guest-data',
         title: '3. Guest use and browser storage',
         paragraphs: [
-          'When you use SCHNGN as a guest, trip dates, labels, optional border-country context, stay ranges, status and calculation results remain in your browser. Calculations and unsaved simulations run on your device. The optional passport question uses only the issuing country in temporary browser memory to show a possible bilateral-agreement notice; it is not saved with trips or sent to analytics. Browser storage also keeps functional preferences such as language, the previous-travel answer and a test price bucket; public app files may be cached for offline use. A JSON backup is created and read locally under your control and is not uploaded merely because you export or import it.'
+          'When you use SCHNGN as a guest, trip dates, labels, optional border-country context, stay ranges, status and calculation results remain in your browser. Calculations and unsaved simulations run on your device. The optional passport question uses only the issuing country in temporary browser memory to show a possible bilateral-agreement notice; it is not saved with trips or sent to analytics. Browser storage also keeps functional preferences such as language and the previous-travel answer; public app files may be cached for offline use. A JSON backup is created and read locally under your control and is not uploaded merely because you export or import it.'
         ],
         items: [
           'Browser trip storage remains until you clear it, replace it, or clear site data.',
@@ -124,7 +124,7 @@ const englishCatalog: LegalLocaleCatalog = {
         id: 'analytics',
         title: '6. Aggregate analytics',
         paragraphs: [
-          'On the production site, Plausible may receive allowlisted events such as page view, calculator start, trip added, simulation run and unlock interest, together with coarse categories such as trip-count range, verdict, safe-buffer range, source or test price bucket. SCHNGN strips query strings and hashes and prohibits trip dates, labels, countries, timelines, passport choice, email and account identifiers. Plausible analytics is configured without analytics cookies or automatic form, download and outbound-link tracking. Ordinary network information may still be processed by Plausible to produce aggregate statistics.'
+          'On the production site, Plausible may receive allowlisted events such as page view, calculator start, trip added and simulation run, together with coarse categories such as trip-count range, verdict, safe-buffer range or source. SCHNGN strips query strings and hashes and prohibits trip dates, labels, countries, timelines, passport choice, email and account identifiers. Plausible analytics is configured without analytics cookies or automatic form, download and outbound-link tracking. Ordinary network information may still be processed by Plausible to produce aggregate statistics.'
         ]
       },
       {

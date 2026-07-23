@@ -10,7 +10,7 @@ This file records product, privacy, infrastructure, and launch decisions that un
 | ID | Decision | Status | Impacted cards |
 |---|---|---|---|
 | DEC-01 | Use Plausible Cloud for MVP analytics | Approved | US-15, US-13, US-14, US-16, US-20 |
-| DEC-02 | Use one-time fake-door price buckets: €5/€9/€19 default, £5/£9/£19 for UK pages | Approved | US-13, US-14 |
+| DEC-02 | Historical one-time fake-door price buckets | Retired; superseded by DEC-14 | US-13, US-14 |
 | DEC-03 | Historical Cloudflare D1 waitlist/email capture experiment | Retired; superseded by DEC-10 | US-18 |
 | DEC-04 | Use fixed planning-aid/not-legal-advice disclaimer copy | Approved | US-10, US-11 |
 | DEC-05 | Use official EC short-stay calculator, EES, and ETIAS references | Approved | US-10, US-12 |
@@ -45,7 +45,6 @@ This file records product, privacy, infrastructure, and launch decisions that un
   - `calculator_start`
   - `trip_added`
   - `simulation_run`
-  - `unlock_buy_intent`
 - Never include:
   - trip dates
   - country sequences/history
@@ -54,9 +53,9 @@ This file records product, privacy, infrastructure, and launch decisions that un
   - local storage dumps
   - calculated personal travel timelines
 
-## DEC-02 — Fake-door pricing
+## DEC-02 — Retired fake-door pricing
 
-**Decision:** Use one-time fake-door price buckets.
+**Historical decision:** Use one-time fake-door price buckets.
 
 - Default/EU: **€5 / €9 / €19**
 - UK-targeted pages: **£5 / £9 / £19**
@@ -73,6 +72,11 @@ This file records product, privacy, infrastructure, and launch decisions that un
 - Log only assigned bucket and intent event.
 - No payment capture unless explicitly enabled later.
 - No trip data in analytics payloads.
+
+**Retirement decision (2026-07-23):** The hidden price-bucket assignment, `market=uk`
+URL context, planner fake door, and `unlock_buy_intent` event are removed. DEC-14's
+real account-value CTA remains the only repeat-visit conversion surface; Clerk signup
+and account sync are unchanged.
 
 ## DEC-03 — Retired email/waitlist experiment
 
@@ -220,8 +224,10 @@ This is an approved **scope change** after the original no-account MVP cards. It
 
 **Infrastructure:**
 
-- GitHub production variable: `PUBLIC_CLERK_PUBLISHABLE_KEY`.
-- GitHub production secrets: `CLERK_SECRET_KEY` and `CLERK_WEBHOOK_SIGNING_SECRET`.
+- Infisical is authoritative for `dev` and `prod` application secrets at `/apps/web`.
+- GitHub Actions remains the deployment runner. The protected `production` Environment gates main-branch deployments and provides the OIDC trust boundary; it does not store duplicate application secrets or variables.
+- The deploy job alone receives `id-token: write` and exchanges GitHub's short-lived token directly with Infisical identity `812097c6-b028-4a21-9af0-291ebc835cfa` for read-only access to `prod` `/apps/web`.
+- No Infisical Secret Sync or long-lived Infisical service credential is used for deployment. The repository wrapper fetches and validates the complete production set in memory, strips auth material, and passes each child command only its explicitly requested keys.
 - Runtime secrets are uploaded through a permission-restricted ephemeral runner file with `wrangler versions upload --secrets-file`; no key value is committed or printed.
 
 ## DEC-11 — Production brand identity

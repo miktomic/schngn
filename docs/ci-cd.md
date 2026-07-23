@@ -52,9 +52,13 @@ install Chromium + bun run test:e2e
 inactive version upload provisions bindings (main only)
   + required Clerk and contact-form bindings from an ephemeral runner file
   ↓
+remove inactive-upload bindings file
+  ↓
 apply D1 migrations
   ↓
-deploy active Worker + configure www redirect
+recreate bindings file + deploy active Worker
+  ↓
+remove deployment bindings file + configure www redirect
   ↓
 blocking production smoke checks
 ```
@@ -115,7 +119,7 @@ US-19 adds two app-level gates, both required by CI:
 - `bun run test` includes privacy-network rejection, empty/corrupt/unavailable storage, schema-two multi-stay import validation, optional Schengen border countries, outside-break calculation, dashboard and future-commitment conflicts, dynamic proof/return state, runtime analytics allowlists, authenticated account isolation/consent/export/deletion/webhook checks, D1 migration/config checks, security headers, PWA/offline behavior, SEO, and truthful accuracy evidence.
 - `bun run test:e2e` runs Playwright mobile Chromium smoke for `/`, `/accuracy`, `/explainer`, `/faq`, `/contact`, `/privacy`, `/terms`, and `/app`, including inclusive Schengen trip-planning title/meta/hero/CTA coverage, accuracy-page title/official-source/case/non-endorsement coverage, service-worker install/control plus offline `/app` reload coverage, the canonical Timeline and Trips sections, a dedicated localized Explainer rendered with production components, a sourced localized FAQ, the contact-form field/privacy boundary, public legal-page metadata and RTL rendering, expandable saved-trip adjusters, trip validation, reload persistence, JSON export/import, Clerk signup entry points, keyboard focus reachability, and privacy-network assertions.
 
-Before enabling analytics or fake-door flows, CI/manual QA must confirm:
+Before enabling or changing analytics and account flows, CI/manual QA must confirm:
 
 - analytics payloads do not contain trip dates
 - analytics payloads do not contain email/PII
@@ -128,23 +132,22 @@ Before enabling analytics or fake-door flows, CI/manual QA must confirm:
 
 ## Deployment
 
-Deployment uses Wrangler from `apps/web` and targets the production domain `https://schngn.com` plus a canonical `www.schngn.com` custom-domain redirect route:
-
-```bash
-bun run deploy
-```
-
-This runs:
-
-```bash
-vite build && wrangler deploy
-```
+Production deployment targets `https://schngn.com` plus a canonical
+`www.schngn.com` custom-domain redirect route. It must run through the
+protected GitHub Actions workflow, which performs the complete test, binding,
+migration, deploy, redirect, and smoke sequence. To redeploy the current
+trusted `main` commit without a code change, use **Re-run all jobs** on that
+commit's GitHub Actions run. Do not use the repository's low-level
+`bun run deploy` command as a production runbook: by itself it does not perform
+the surrounding migration, binding-file lifecycle, redirect, or smoke steps.
 
 The local `apps/agent` build is exercised by the repository gate but is not uploaded by Wrangler and does not create a production calculation endpoint. The word “API” in this surface means the in-process TypeScript contract or the loopback-only HTTP service. Any hosted API/MCP phase remains unapproved because it would cause submitted trip dates to leave the operator's machine.
 
-The GitHub Actions production deploy job only runs on `main`, after unit/type/build/browser gates pass, and is attached to the GitHub Environment named `production`. It passes the public Clerk and Turnstile keys into the production build. It then writes the required runtime bindings to a mode-`0600` file under `RUNNER_TEMP`, uploads an inactive version with `wrangler versions upload --secrets-file`, applies D1 migrations, and only then performs the active `wrangler deploy --secrets-file`. An `always()` cleanup step removes that fixed temporary filename directly, so cleanup does not depend on a previous step successfully publishing an output. No `wrangler secret put` command is used because that would create and immediately deploy a secret-only version.
+The GitHub Actions production deploy job only runs on a push to `main`, after unit/type/build/browser gates pass, and is attached to the protected GitHub Environment named `production`. GitHub Actions remains the runner, while Infisical `prod` `/apps/web` is the only value store. The deploy job alone receives `id-token: write`; its repository wrapper exchanges the short-lived GitHub OIDC token directly with Infisical identity `812097c6-b028-4a21-9af0-291ebc835cfa`. No production value is copied into a GitHub Actions secret or variable, and no Infisical Secret Sync is used. A non-cancelling `schngn-production` concurrency group serializes migrations and deployment, and both checkout steps disable persisted Git credentials.
 
-The deploy job keeps only a derived `true`/`false` configuration gate at job scope. Raw Cloudflare credentials are injected separately into the inactive upload, migration, active deploy, and canonical-redirect steps that need them; checkout, dependency installation, build, Clerk binding preparation, cleanup, and public production smoke do not receive those values. Every external GitHub Action is pinned to a reviewed 40-character commit SHA, with its release version retained in a comment for upgrade review.
+Each wrapper invocation fetches and validates the complete seven-value production set in memory, then starts its child process from a small benign environment allowlist plus only the explicitly requested keys. The build receives only the public Clerk and Turnstile keys. Worker-binding preparation receives the five runtime bindings. Wrangler upload, migration, active deploy, and canonical redirect receive only the Cloudflare token and account ID. The wrapper removes GitHub OIDC and Infisical authentication material from every child environment; checkout, dependency installation, cleanup, and public production smoke receive none of the seven values.
+
+Worker-binding preparation writes a mode-`0600` file under `RUNNER_TEMP`, uploads an inactive version with `wrangler versions upload --secrets-file`, and removes the file in an `always()` step before D1 migrations begin. The workflow recreates the same fixed path only immediately before active `wrangler deploy --secrets-file`, then removes it again in a second `always()` step. Migrations therefore cannot read the Clerk/Turnstile bindings through the filesystem. No `wrangler secret put` command is used because that would create and immediately deploy a secret-only version. OIDC exchange, secret retrieval, complete-set validation, or any deployment operation failing stops the job; there is no missing-credentials skip path. Every external GitHub Action is pinned to a reviewed 40-character commit SHA, with its release version retained in a comment for upgrade review.
 
 ## Post-deploy smoke and privacy-safe operations
 
@@ -170,7 +173,7 @@ The public smoke intentionally has no Clerk session, so it cannot prove signed-i
 Privacy-safe operations for MVP:
 
 - Use Cloudflare logs plus the smoke script first; no Sentry or equivalent third-party error-monitoring SDK in the MVP.
-- Inspect analytics, account sync, Clerk signup, and fake-door payloads with browser/devtools or Playwright before changing those flows.
+- Inspect analytics, account sync, and Clerk signup payloads with browser/devtools or Playwright before changing those flows.
 - Keep operational logs aggregate; never log trip dates, labels, full history, passport/residence details, or secrets.
 - Verify account routes return only the current signed-in user’s data, that guests cannot upload trips, that signup-and-save writes only after account creation, and that ordinary sign-in does not bypass reconciliation safeguards.
 
@@ -187,27 +190,23 @@ Full setup runbook: [`docs/cloudflare-github-secrets-setup.md`](cloudflare-githu
 
 Decision for production:
 
-- **GitHub Environment variables/secrets are the current deployment source.** The production environment is the simplest boundary for Cloudflare credentials and Clerk Worker bindings.
-- **Use Infisical as the upgrade/source-of-truth path** if we need team-wide secret management, rotation/audit workflows, multiple environments, or the same secret consumed outside GitHub Actions.
-- **Do not put deployment credentials in repository-wide secrets unless there is a reason.** Prefer the `production` GitHub Environment so future approval/protection rules apply only to deployment, not to every CI job.
+- **Infisical is the authoritative secret store.** Application values live in the `dev` and `prod` environments under `/apps/web`.
+- **GitHub Actions is the runner, not a second secret store.** The protected `production` Environment gates deployment and defines the trusted OIDC subject, but contains no copies of the application values.
+- **Production retrieval is direct and short-lived.** The deploy job has job-local `id-token: write`, exchanges its GitHub OIDC token with Infisical identity `812097c6-b028-4a21-9af0-291ebc835cfa`, and reads only `prod` `/apps/web`.
+- **No Secret Sync or long-lived Infisical credential is used.** The workflow stores neither the seven deployment values nor an Infisical service token in GitHub.
+- **Deployment fails closed.** The repository-owned wrapper validates all seven values on every retrieval and gives each child command only the exact allowlisted subset it requires.
 
-Recommended setup for now:
+Production inventory:
 
-| Store | Name | Type | Purpose |
-|---|---|---|---|
-| GitHub Environment: `production` | `CLOUDFLARE_API_TOKEN` | Secret | Least-privilege Wrangler deployment token |
-| GitHub Environment: `production` | `CLOUDFLARE_ACCOUNT_ID` | Variable preferred; secret accepted by fallback | Cloudflare account ID used by Wrangler |
-| GitHub Environment: `production` | `PUBLIC_CLERK_PUBLISHABLE_KEY` | Variable | Public client key used at build time and as a Worker binding |
-| GitHub Environment: `production` | `CLERK_SECRET_KEY` | Secret | Clerk server authentication/API key |
-| GitHub Environment: `production` | `CLERK_WEBHOOK_SIGNING_SECRET` | Secret | Verifies Clerk lifecycle webhooks |
-| GitHub Environment: `production` | `PUBLIC_TURNSTILE_SITE_KEY` | Variable | Public contact-form bot-check key |
-| GitHub Environment: `production` | `TURNSTILE_SECRET_KEY` | Secret | Server-side contact-form bot verification |
-
-The workflow supports `CLOUDFLARE_ACCOUNT_ID` as either an environment variable or secret:
-
-```yaml
-CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
-```
+| Authoritative location | Name | Child-process use |
+|---|---|---|
+| Infisical `prod` `/apps/web` | `CLOUDFLARE_API_TOKEN` | Wrangler upload/migration/deploy and canonical redirect |
+| Infisical `prod` `/apps/web` | `CLOUDFLARE_ACCOUNT_ID` | Wrangler upload/migration/deploy and canonical redirect |
+| Infisical `prod` `/apps/web` | `PUBLIC_CLERK_PUBLISHABLE_KEY` | Production build and Worker-binding writer |
+| Infisical `prod` `/apps/web` | `CLERK_SECRET_KEY` | Worker-binding writer only |
+| Infisical `prod` `/apps/web` | `CLERK_WEBHOOK_SIGNING_SECRET` | Worker-binding writer only |
+| Infisical `prod` `/apps/web` | `PUBLIC_TURNSTILE_SITE_KEY` | Production build and Worker-binding writer |
+| Infisical `prod` `/apps/web` | `TURNSTILE_SECRET_KEY` | Worker-binding writer only |
 
 Recommended Cloudflare token permissions:
 
@@ -223,19 +222,7 @@ Do not use a global Cloudflare API key. Create a narrow token for this app.
 
 The contact binding can send only from `support@schngn.com` to the verified `schngn@proton.me` destination. Inbound mail to the same branded support address is forwarded to Proton by an enabled Cloudflare Email Routing rule. The endpoint validates Turnstile server-side, allows three submissions per minute per transient client key, uses `no-store`, and never logs or automatically attaches trip history.
 
-The production webhook endpoint is `https://schngn.com/api/webhooks/clerk`. Configure it in Clerk for the required account-lifecycle event set and place its generated signing secret in `CLERK_WEBHOOK_SIGNING_SECRET` before deployment. The current production workflow must not deploy the account expansion until this third value exists.
-
-### When to use Infisical
-
-Use Infisical for SCHNGN if any of these become true:
-
-- more than GitHub Actions needs the Cloudflare token;
-- we add staging/preview/prod secret matrices;
-- we want centralized audit/rotation;
-- we want Infisical Secret Syncs to push secrets into GitHub Environment secrets;
-- we want GitHub Actions to fetch secrets from Infisical via OIDC machine identity at runtime.
-
-If using Infisical with GitHub Actions, prefer **GitHub OIDC → Infisical machine identity** over storing a long-lived Infisical service token in GitHub. Otherwise we merely move the turtle one layer down and call it architecture.
+The production webhook endpoint is `https://schngn.com/api/webhooks/clerk`. Configure it in Clerk for the required account-lifecycle event set and place its generated signing secret in Infisical `prod` `/apps/web` as `CLERK_WEBHOOK_SIGNING_SECRET`. The production wrapper rejects an incomplete or invalid seven-value set before starting a deployment child command.
 
 Do not store secrets in the repo, docs, wiki, logs, screenshots, or chat output.
 
@@ -266,7 +253,7 @@ For now:
 2. PR to `main`.
 3. CI must pass.
 4. Merge to `main`.
-5. Auto-deploy only if Cloudflare credentials and all required Clerk/contact bindings are configured.
+5. Auto-deploy through the protected `production` Environment; fail closed if OIDC authentication or any required Infisical value is unavailable or invalid.
 
 No manual deploys from dirty working trees.
 

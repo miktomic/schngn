@@ -143,7 +143,6 @@ Responsibilities:
 - Local trip storage and import/export.
 - Dashboard, simulator, and days-coming-back views.
 - Privacy-safe analytics hooks.
-- Paid-intent fake-door flows that never collect email or trip data.
 - Optional Clerk authentication and authenticated D1 sync.
 - Account-data export and deletion flows.
 - Aggregate-only Plausible event adapter.
@@ -238,4 +237,4 @@ Implemented:
 - Aggregate-only analytics adapter with no email capture.
 - Unit, type, build, browser, privacy-network, and post-deploy smoke gates.
 
-The checked-in suite verifies the published 90/180-day rule semantics. It does not claim captured output parity with the European Commission calculator until provenance-backed official outputs are added. Optional accounts are the explicit DEC-10/US-22 scope expansion. External Clerk/D1/Plausible/Cloudflare configuration is tracked in `docs/production-readiness.md`.
+The checked-in suite verifies the published 90/180-day rule semantics. It does not claim captured output parity with the European Commission calculator until provenance-backed official outputs are added. Optional accounts are the explicit DEC-10/US-22 scope expansion. Infisical is authoritative for development and production secrets. GitHub Actions retrieves the production set directly with short-lived OIDC credentials and stores no duplicate Actions secret or variable copies; external Infisical/Clerk/D1/Plausible/Cloudflare configuration is tracked in `docs/production-readiness.md`.

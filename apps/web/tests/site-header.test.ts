@@ -54,6 +54,17 @@ describe('common site header', () => {
     }
   });
 
+  test('gives translated desktop navigation room before it becomes a two-row header', () => {
+    const header = readFileSync('apps/web/src/lib/design/SiteHeader.svelte', 'utf8');
+
+    expect(header).toContain('width: min(1440px, calc(100% - 32px))');
+    expect(header).toContain('@media (max-width: 1400px)');
+    expect(header).toContain('@media (max-width: 900px)');
+    expect(header).toContain('grid-column: 1 / -1');
+    expect(header).toContain('overflow-x: auto');
+    expect(header).toContain('white-space: normal');
+  });
+
   test('uses the global header as the calculator navigation without a second jump menu', () => {
     const app = readFileSync('apps/web/src/routes/app/+page.svelte', 'utf8');
 

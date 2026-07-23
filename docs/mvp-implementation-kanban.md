@@ -214,10 +214,10 @@
 - **Depends on:** US-04, US-05, privacy/product decision.
 - **Implementation target:** privacy-safe analytics wrapper with Plausible-compatible client hook and no provider lock-in.
 - **Acceptance summary:**
-  - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`, `unlock_buy_intent`.
-  - Payloads are allowlisted and aggregate-only: source, trip count bucket, safe-buffer bucket, verdict, or price bucket.
+  - Events: `page_view`, `calculator_start`, `trip_added`, `simulation_run`.
+  - Payloads are allowlisted and aggregate-only: source, trip count bucket, safe-buffer bucket, or verdict.
   - Trip dates, labels, names, email addresses, country history, and personal timelines are rejected before any analytics call.
-  - UI wiring fires aggregate funnel events from workspace views, trip-add, simulator, and paid-intent actions without sending trip details or identity data.
+  - UI wiring fires aggregate funnel events from workspace views, trip-add, and simulator actions without sending trip details or identity data.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 104 Bun tests / 1242 assertions including privacy-safe analytics allowlist and forbidden-payload rejection tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for intercepted Plausible-compatible events and no forbidden network payloads.
 
 ## US-13 — Border-ready PDF export fake-door (retired)
@@ -236,13 +236,13 @@
 - **Success metric:** PDF-click rate after completed calculation > 10%.
 - **Retirement note:** The PDF/report fake door and `pdf_buy_intent` event were removed. The product now uses the bottom-of-workspace account CTA to explain the validated repeat-visit value: saving trip history for future calculations and optional cross-device sync after explicit consent.
 
-## US-14 — Paid unlock fake-door + pricing A/B
+## US-14 — Paid unlock fake-door + pricing A/B (retired)
 
 - **Priority:** Must
 - **Estimate:** M
-- **Status:** Done
+- **Status:** Retired after validation
 - **Depends on:** US-09, US-13, US-15, approved fake-door price buckets; see `docs/product-decisions.md`.
-- **Implementation target:** premium/full-tracker planner CTA with persisted one-time price bucket assignment in local browser storage.
+- **Historical implementation target:** premium/full-tracker planner CTA with persisted one-time price bucket assignment in local browser storage.
 - **Acceptance summary:**
   - Gates premium/full-planner framing behind an unlock fake-door CTA on the Planner screen.
   - Assigns approved €5 / €9 / €19 EU buckets and £5 / £9 / £19 UK buckets through a tested bucket helper.
@@ -251,6 +251,7 @@
   - Shows honest early-access and “No payment was taken” copy; no checkout or charge path is enabled.
 - **Verification:** `npx -y bun@1.3.14 run test` passed with 110 Bun tests / 1266 assertions including bucket assignment, persistence, invalid-value recovery, and aggregate unlock-intent payload tests; `npx -y bun@1.3.14 run typecheck` passed; `npx -y bun@1.3.14 run build` passed; `npx -y bun@1.3.14 run test:e2e` passed with mobile Chromium coverage for the planner unlock CTA, early-access/no-charge message, `unlock_buy_intent`, PDF fake-door, and no forbidden network payloads.
 - **Success metric:** targeted-traffic preorder/buy-intent > 2%.
+- **Retirement note:** The hidden price assignment, `market=uk` URL context, planner fake door, local price-bucket storage, and `unlock_buy_intent` event were removed. Clerk signup and the real account-value CTA remain active.
 
 ## US-18 — Retired waitlist / email-capture experiment
 

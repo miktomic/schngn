@@ -18,7 +18,7 @@ The product is **Option B Web/PWA** with an approved optional-account expansion:
 - Provably-correct Schengen calculation engine.
 - Local agent access through a strict TypeScript API, JSON CLI, loopback HTTP/OpenAPI service, and stdio MCP server; the SCHNGN calculation runtime remains on the operator's machine.
 - Public MIT npm packages for `@schngn/engine`, `@schngn/capability`, and `@schngn/agent`, plus a repository-backed `schngn` skill for compatible agents.
-- Free calculator plus fake-door paid unlock/PDF validation.
+- Free calculator with optional Clerk account signup and explicitly consented trip sync.
 - No GPS, passport scanning, OCR, automatic guest upload, global visa/tax rule engine, or legal advice workflow.
 
 Primary product promise:
@@ -112,7 +112,7 @@ apps/web/src/lib/analytics/     # aggregate-only event boundary
 apps/web/src/lib/import-export/ # private JSON backup/restore
 ```
 
-`/app` has a tab-free calculator workspace plus a dedicated Account & data destination in the shared header. Stable hashes address `timeline`, `trips`, and `account`: `#timeline` and `#trips` render the continuous calculator, while `#account` switches the same mounted route to the account, sync, import, export, and browser-data controls so pending sync state is preserved. Legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`, retired `#status` maps to `timeline`, retired `#details` plus planner, proof, and returning-days destinations map to `trips`, and the retired report destination maps to `account`. The Explainer and FAQ are dedicated localized public pages at `/explainer` and `/faq`; legacy `#rules`, `#explainer`, `#help`, and `#faq` app destinations redirect to those pages. The localized `/agents` page documents MCP-first setup, the repository-backed skill, CLI, loopback REST/OpenAPI, TypeScript, tool schemas, and the surrounding agent-host privacy boundary without collecting trip inputs. Localized `/privacy` and `/terms` documents are linked from the shared site footer without crowding the primary header. The canonical master timeline is the first calculator section, followed immediately by the saved-trip cards under their own Trips anchor. The Explainer teaches the ordinary-short-stay calculation through a five-step walkthrough that renders the production `TimelineLedger`, `TripMiniTimeline`, and `StatusChip` components against deterministic sample trips; the teaching surface therefore stays visually and mathematically aligned with `/app`. The FAQ keeps reviewed rule answers linked to official EU sources and visibly distinguishes product behavior from legal/rule guidance. Clicking a trip row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
+`/app` has a tab-free calculator workspace plus a dedicated Account & data destination in the shared header. Stable hashes address `timeline`, `trips`, and `account`: `#timeline` and `#trips` render the continuous calculator, while `#account` switches the same mounted route to the account, sync, import, export, and browser-data controls so pending sync state is preserved. Legacy `?section=` links are canonicalized by `apps/web/src/lib/navigation/appAnchor.ts`; the retired pricing-only `market` query is removed during the same canonicalization. Retired `#status` maps to `timeline`, retired `#details` plus planner, proof, and returning-days destinations map to `trips`, and the retired report destination maps to `account`. The Explainer and FAQ are dedicated localized public pages at `/explainer` and `/faq`; legacy `#rules`, `#explainer`, `#help`, and `#faq` app destinations redirect to those pages. The localized `/agents` page documents MCP-first setup, the repository-backed skill, CLI, loopback REST/OpenAPI, TypeScript, tool schemas, and the surrounding agent-host privacy boundary without collecting trip inputs. Localized `/privacy` and `/terms` documents are linked from the shared site footer without crowding the primary header. The canonical master timeline is the first calculator section, followed immediately by the saved-trip cards under their own Trips anchor. The Explainer teaches the ordinary-short-stay calculation through a five-step walkthrough that renders the production `TimelineLedger`, `TripMiniTimeline`, and `StatusChip` components against deterministic sample trips; the teaching surface therefore stays visually and mathematically aligned with `/app`. The FAQ keeps reviewed rule answers linked to official EU sources and visibly distinguishes product behavior from legal/rule guidance. Clicking a trip row expands that trip's draggable adjuster directly beneath it, while the single bottom “Add new trip” action opens the trip editor as a dialog. Saved trips share one user-facing model regardless of whether their dates are past or future, and adjustments remain previews until explicitly committed.
 
 ## Commands
 
@@ -151,6 +151,9 @@ bun run release:packages:public-check
 bun run agent:cli -- help
 bun run agent:api
 bun run agent:mcp
+bun run secrets:check:dev
+bun run secrets:check:prod
+bun run dev:infisical
 cd apps/web && bun run check
 cd apps/web && bun run dev -- --host 127.0.0.1 --port 5173
 ```
@@ -175,22 +178,22 @@ bun run build
 bun run smoke:agent
 bun run test:e2e
 inactive resource provisioning + D1 migrations
-optional deploy, canonical-domain setup, and blocking smoke on main if Cloudflare credentials plus required Clerk/contact bindings exist
+serialized, fail-closed deploy + canonical-domain setup + blocking smoke on main
 ```
 
 Deployment secret policy:
 
-- Use GitHub Environment `production` for the initial Cloudflare deploy boundary.
-- Store `CLOUDFLARE_API_TOKEN` as a production environment secret.
-- Store `CLOUDFLARE_ACCOUNT_ID` as a production environment variable when possible; the workflow accepts a secret fallback.
-- Store `PUBLIC_CLERK_PUBLISHABLE_KEY` as a production environment variable.
-- Store `CLERK_SECRET_KEY` and `CLERK_WEBHOOK_SIGNING_SECRET` as production environment secrets.
-- Upload Clerk runtime bindings through a permission-restricted temporary runner file passed to inactive `wrangler versions upload --secrets-file`; delete it even on failure and pass it again only at the gated active deploy.
+- Infisical is the authoritative secret store. Use environments `dev` and `prod`, with application values at `/apps/web`.
+- Local agents obtain `dev` values with `infisical run`; an identity ID alone is not an authentication credential. Use a human CLI login or securely provisioned Universal Auth credentials, never values pasted into chat or commands.
+- GitHub Actions remains the production runner. The protected `production` Environment is the deployment and OIDC trust boundary; its deploy job alone receives `id-token: write`.
+- The deploy job exchanges GitHub's short-lived OIDC token directly with Infisical identity `812097c6-b028-4a21-9af0-291ebc835cfa` and reads the seven required values from `prod` `/apps/web`.
+- Do not copy deployment values into GitHub Actions secrets or variables and do not configure an Infisical Secret Sync. The workflow fails closed when OIDC exchange, retrieval, or validation fails.
+- `scripts/run-with-infisical-oidc.mjs` keeps fetched values in memory, validates the complete production set, starts children from a benign environment allowlist, removes authentication material, and passes each command only its explicitly requested keys.
+- Upload Clerk runtime bindings through a permission-restricted temporary runner file passed to inactive `wrangler versions upload --secrets-file`; delete it before migrations, recreate it only for the gated active deploy, and delete that second file even on failure.
+- Serialize production deployments without cancellation so rapid main pushes cannot race migrations or allow an older Worker version to finish last.
 - Use a least-privilege Cloudflare API token, not a global API key.
-- Use Infisical later if we need centralized audit/rotation, staging/prod matrices, Secret Syncs, or GitHub OIDC machine identity retrieval.
-- If using Infisical with GitHub Actions, prefer GitHub OIDC to an Infisical machine identity over storing a long-lived Infisical service token in GitHub.
 
-Do not invent or commit these values. Configure them in GitHub/Cloudflare/Infisical only.
+Do not invent or commit these values. Enter and rotate provider values directly in Infisical.
 
 ## Engine rules
 
@@ -372,7 +375,6 @@ Allowed analytics events must be aggregate only:
 - `calculator_start`
 - `trip_added` with count bucket only
 - `simulation_run` without dates
-- `unlock_buy_intent`
 
 Never include:
 
@@ -392,10 +394,11 @@ Approved MVP services:
 - Plausible Cloud for aggregate-only analytics.
 - Clerk for optional authentication and identity lifecycle webhooks.
 - Cloudflare Email Service plus Turnstile for fixed-destination support requests; `schngn@proton.me` must be a verified destination and the public/sender address is restricted to `support@schngn.com`.
+- Infisical as the authoritative `dev`/`prod` secret store, with local process injection and direct production retrieval through GitHub OIDC.
 
 The SCHNGN local agent runtime uses no external service. Its loopback HTTP server and stdio MCP server are local transports, not production infrastructure. The surrounding agent host may still be an external, cloud-backed service and may handle tool inputs and results under its own policies.
 
-If configuring any external service, do not write secrets to files. Use GitHub secrets, Cloudflare dashboard, or local `.env` files ignored by git.
+If configuring any external service, do not write secrets to tracked files or paste them into chat, docs, logs, screenshots, or shell commands. Enter values directly into Infisical; use `infisical run` for local processes and the repository's scoped GitHub OIDC wrapper for production deployment.
 
 ## Agent workflow
 

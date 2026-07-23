@@ -2,8 +2,7 @@ export const ALLOWED_ANALYTICS_EVENTS = [
   'page_view',
   'calculator_start',
   'trip_added',
-  'simulation_run',
-  'unlock_buy_intent'
+  'simulation_run'
 ] as const;
 
 export type AnalyticsEventName = (typeof ALLOWED_ANALYTICS_EVENTS)[number];
@@ -20,14 +19,11 @@ export type AnalyticsSource =
   | 'planner'
   | 'privacy'
   | 'manual';
-export type PriceBucket = 'eur_5' | 'eur_9' | 'eur_19' | 'gbp_5' | 'gbp_9' | 'gbp_19';
-
 export type AnalyticsProps = Partial<{
   source: AnalyticsSource;
   trip_count_bucket: TripCountBucket;
   safe_buffer_bucket: SafeBufferBucket;
   verdict: AnalyticsVerdict;
-  price_bucket: PriceBucket;
 }>;
 
 export interface AnalyticsEvent {
@@ -39,8 +35,7 @@ const ALLOWED_PROP_KEYS = new Set<keyof AnalyticsProps>([
   'source',
   'trip_count_bucket',
   'safe_buffer_bucket',
-  'verdict',
-  'price_bucket'
+  'verdict'
 ]);
 
 const ALLOWED_PROP_VALUES: { [Key in keyof Required<AnalyticsProps>]: ReadonlySet<Required<AnalyticsProps>[Key]> } = {
@@ -56,8 +51,7 @@ const ALLOWED_PROP_VALUES: { [Key in keyof Required<AnalyticsProps>]: ReadonlySe
   ]),
   trip_count_bucket: new Set<TripCountBucket>(['0', '1', '2-3', '4-7', '8-15', '16+']),
   safe_buffer_bucket: new Set<SafeBufferBucket>(['0', '1-3', '4-7', '8-30', '31+']),
-  verdict: new Set<AnalyticsVerdict>(['safe', 'close', 'at_limit', 'over_limit', 'empty']),
-  price_bucket: new Set<PriceBucket>(['eur_5', 'eur_9', 'eur_19', 'gbp_5', 'gbp_9', 'gbp_19'])
+  verdict: new Set<AnalyticsVerdict>(['safe', 'close', 'at_limit', 'over_limit', 'empty'])
 };
 
 const FORBIDDEN_PROP_KEYS = /(^|_)(date|dates|day|days|country|countries|label|name|email|timeline|history|passport|visa|residence)($|_)/i;

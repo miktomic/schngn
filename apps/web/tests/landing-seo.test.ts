@@ -42,8 +42,9 @@ describe('inclusive Schengen-planning landing SEO', () => {
     expect(pageSource).toContain('<meta name="twitter:image" content="https://schngn.com/brand/schngn-social.png" />');
   });
 
-  test('routes the UK-targeted landing audience into GBP pricing', () => {
-    expect(pageSource).toContain("`${localizedPath('/app', locale)}?market=uk`");
+  test('routes every landing audience directly into the localized calculator', () => {
+    expect(pageSource).toContain("localizedPath('/app', locale)");
+    expect(pageSource).not.toContain('market=uk');
     expect(pageSource).toContain('calculatorHref={appPath}');
     expect(pageSource.match(/href=\{appPath\}/g)).toHaveLength(2);
   });

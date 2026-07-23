@@ -13,7 +13,7 @@ const forbiddenTripValues = [
 ];
 
 test.describe('SCHNGN production smoke and privacy checks', () => {
-  test('landing page renders the inclusive trip-planning pitch and carries UK pricing context', async ({ page }) => {
+  test('landing page renders the inclusive trip-planning pitch and links directly to the calculator', async ({ page }) => {
     const requests = observeNetwork(page);
 
     await page.goto('/');
@@ -23,7 +23,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: /Plan Europe stays without guessing your 90 days/i })).toBeVisible();
     await expect(page.getByText('Schengen 90/180 trip planner')).toBeVisible();
     await expect(page.getByText(/See counted days and your safe-exit date/)).toBeVisible();
-    await expect(page.getByRole('link', { name: 'See if your Europe trip fits' })).toHaveAttribute('href', '/app?market=uk');
+    await expect(page.getByRole('link', { name: 'See if your Europe trip fits' })).toHaveAttribute('href', '/app');
     await expect(page.getByRole('link', { name: 'Accuracy evidence' })).toHaveAttribute('href', '/accuracy');
     const wordmark = page.locator('header img[src$="/brand/schngn-wordmark.png"]');
     await expect(wordmark).toHaveCount(1);
@@ -237,7 +237,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByRole('heading', { name: 'خطط لإقامتك في أوروبا من دون تخمين أيامك التسعين.' })).toBeVisible();
-    await expect(page.locator('header.site-header').getByRole('link', { name: 'الحاسبة', exact: true })).toHaveAttribute('href', '/ar/app?market=uk');
+    await expect(page.locator('header.site-header').getByRole('link', { name: 'الحاسبة', exact: true })).toHaveAttribute('href', '/ar/app');
 
     await page.goto('/he/app?section=planner');
     await expect(page.locator('html')).toHaveAttribute('lang', 'he');
@@ -661,16 +661,16 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.clock.setFixedTime(new Date('2026-07-10T12:00:00Z'));
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
-    await page.goto('/app?market=uk');
+    await page.goto('/app?campaign=summer');
     await navigateToAppAnchor(page, 'trips');
     await page.reload();
-    await expect(page).toHaveURL(/\/app\?market=uk#trips$/);
+    await expect(page).toHaveURL(/\/app\?campaign=summer#trips$/);
     await expect(page.locator('#trips')).toBeVisible();
 
     await navigateToAppAnchor(page, 'account');
-    await expect(page).toHaveURL(/\/app\?market=uk#account$/);
+    await expect(page).toHaveURL(/\/app\?campaign=summer#account$/);
     await page.goBack();
-    await expect(page).toHaveURL(/\/app\?market=uk#trips$/);
+    await expect(page).toHaveURL(/\/app\?campaign=summer#trips$/);
     await expect(page.getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
   });
 
@@ -678,8 +678,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
 
-    await page.goto('/app?market=uk&section=planner');
-    await expect(page).toHaveURL(/\/app\?market=uk#trips$/);
+    await page.goto('/app?campaign=summer&section=planner');
+    await expect(page).toHaveURL(/\/app\?campaign=summer#trips$/);
     await expect(page.locator('#trips')).toBeVisible();
     await expect(page.locator('#plan')).toHaveCount(0);
 
@@ -1160,7 +1160,6 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => {
       window.localStorage.clear();
-      Math.random = () => 0.34;
       const analyticsWindow = window as unknown as {
         __plausibleEvents: { name: string; options?: { props?: Record<string, string> } }[];
         plausible: (name: string, options?: { props?: Record<string, string> }) => void;
@@ -1169,7 +1168,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       analyticsWindow.plausible = (name, options) => analyticsWindow.__plausibleEvents.push({ name, options });
     });
 
-    await page.goto('/app?market=uk');
+    await page.goto('/app');
     await expect(page.locator('.anchor-nav')).toHaveCount(0);
     await expect(page.locator('.site-navigation').getByRole('link', { name: 'Calculator', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.locator('#status').getByRole('heading', { name: 'Add any Schengen trip' })).toBeVisible();
@@ -1666,8 +1665,8 @@ async function readPlausibleEvents(page: Page): Promise<PlausibleEvent[]> {
 }
 
 function assertSafePlausiblePayload(events: PlausibleEvent[]): void {
-  const allowedNames = ['page_view', 'calculator_start', 'trip_added', 'simulation_run', 'unlock_buy_intent'];
-  const allowedProps = ['source', 'trip_count_bucket', 'safe_buffer_bucket', 'verdict', 'price_bucket'];
+  const allowedNames = ['page_view', 'calculator_start', 'trip_added', 'simulation_run'];
+  const allowedProps = ['source', 'trip_count_bucket', 'safe_buffer_bucket', 'verdict'];
   for (const event of events) {
     expect(allowedNames).toContain(event.name);
     for (const key of Object.keys(event.options?.props ?? {})) expect(allowedProps).toContain(key);

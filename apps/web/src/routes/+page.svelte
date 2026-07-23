@@ -8,7 +8,7 @@
   let t = $derived(createTranslator(locale));
 
   let homePath = $derived(localizedPath('/', locale));
-  let appPath = $derived(`${localizedPath('/app', locale)}?market=uk`);
+  let appPath = $derived(localizedPath('/app', locale));
   let accuracyPath = $derived(localizedPath('/accuracy', locale));
 
   let canonicalUrl = $derived(`https://schngn.com${homePath}`);

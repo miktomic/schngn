@@ -28,13 +28,11 @@ import {
   localizeDashboardState,
   localizeReturningForecast,
   localizeSimulationState,
-  localizeUnlockState,
   stateCatalogKeyCount
 } from '../src/lib/i18n/stateUi';
 import { buildDashboardState } from '../src/lib/dashboard/dashboardState';
 import { buildTripSimulationState } from '../src/lib/simulator/tripSimulator';
 import { createTranslator } from '../src/lib/i18n';
-import { buildUnlockFakeDoorState } from '../src/lib/fake-door/unlockFakeDoor';
 import { buildReturningDaysForecast } from '../src/lib/returns/returningDays';
 import { makeTrip } from './trip-fixtures';
 import {
@@ -203,14 +201,6 @@ describe('whole-site localization', () => {
     expect(localizeDashboardState('fr', raw).statusLabel).toBe('Ajouter un voyage');
     expect(localizeDashboardState('ar', raw).statusLabel).toBe('إضافة رحلة');
     expect(createAppRuntimeUiTranslator('de')('checkingSignIn')).toBe('Anmeldung wird geprüft…');
-    expect(createAppRuntimeUiTranslator('he')('needPlanningPower')).toContain('תכנון');
-    expect(
-      localizeUnlockState(
-        'ar',
-        buildUnlockFakeDoorState({ bucket: 'eur_9', label: '€9' }, true),
-        '€9'
-      ).messageCopy
-    ).toContain('أنشئ حسابًا');
 
     const overByOne = buildDashboardState([
       makeTrip('past', 'Prior Schengen', '2026-01-01', '2026-03-31'),

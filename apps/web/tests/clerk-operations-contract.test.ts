@@ -40,12 +40,21 @@ describe('optional account operations contract', () => {
     expect(architecture).toContain('use Clerk signup directly');
     expect(architecture).toContain('no trip data in analytics or logs');
     expect(readiness).toContain('signed-in user');
-    expect(app).toContain("accountSignedIn ? recordUnlockBuyIntent() : void startAccountSignUp()");
+    expect(app).toContain('class="signup-value-section"');
+    expect(app).toContain('onclick={startAccountSignUp}');
+    expect(app).not.toContain('recordUnlockBuyIntent');
+    expect(app).toContain("result.reason === 'missing_publishable_key'");
+    expect(app).toContain("rt('signInUnavailable')");
   });
 
-  test('declares required Worker secrets and ignores every local Wrangler secret file', () => {
+  test('declares required Worker secrets and the value-free Infisical local setup', () => {
     const wrangler = read('apps/web/wrangler.jsonc');
     const gitignore = read('.gitignore');
+    const example = read('apps/web/.env.example');
+    const infisical = read('.infisical.json');
+    const packageJson = read('package.json');
+    const svelteConfig = read('apps/web/svelte.config.js');
+    const setup = read('docs/cloudflare-github-secrets-setup.md');
 
     expect(wrangler).toContain('"secrets"');
     expect(wrangler).toContain('"CLERK_SECRET_KEY"');
@@ -54,17 +63,56 @@ describe('optional account operations contract', () => {
     expect(wrangler).toContain('"TURNSTILE_SECRET_KEY"');
     expect(wrangler).toContain('"CONTACT_EMAIL"');
     expect(wrangler).toContain('"CONTACT_RATE_LIMITER"');
+    expect(gitignore).toContain('.env.*');
     expect(gitignore).toContain('.dev.vars*');
+    expect(example).toContain('PUBLIC_CLERK_PUBLISHABLE_KEY=');
+    expect(example).toContain('CLERK_SECRET_KEY=');
+    expect(example).not.toMatch(/pk_(?:test|live)_[A-Za-z0-9_-]{8,}/);
+    expect(example).not.toMatch(/sk_(?:test|live)_[A-Za-z0-9_-]{8,}/);
+    expect(infisical).toContain('"workspaceId": "44e3b68f-6f17-458c-aaeb-da72b0faa793"');
+    expect(infisical).not.toContain('token');
+    expect(packageJson).toContain('"dev:infisical"');
+    expect(packageJson).toContain('"secrets:check:dev"');
+    expect(packageJson).toContain('"secrets:check:prod"');
+    expect(svelteConfig).toContain("platformProxy: { envFiles: ['.env.local'] }");
+    expect(setup).toContain('Infisical `dev` `/apps/web` is the single source of truth');
+    expect(setup).toContain('bun run dev:infisical');
+    expect(setup).toContain('bun run secrets:check:dev');
   });
 
-  test('delivers Clerk configuration without committing or immediately deploying secrets', () => {
+  test('fetches production values directly from Infisical with job-scoped GitHub OIDC', () => {
     const ci = read('.github/workflows/ci.yml');
+    const loader = read('scripts/run-with-infisical-oidc.mjs');
+    const deployJob = ci.slice(ci.indexOf('  deploy-production:'));
 
-    expect(ci).toContain('PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.PUBLIC_CLERK_PUBLISHABLE_KEY }}');
-    expect(ci).toContain('CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}');
-    expect(ci).toContain('CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}');
-    expect(ci).toContain('PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}');
-    expect(ci).toContain('TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}');
+    expect(deployJob).toContain('permissions:\n      contents: read\n      id-token: write');
+    expect(ci.match(/id-token: write/g)).toHaveLength(1);
+    expect(deployJob).toContain(
+      'concurrency:\n      group: schngn-production\n      cancel-in-progress: false'
+    );
+    expect(deployJob).toContain('timeout-minutes: 30');
+    expect(deployJob).toContain('INFISICAL_IDENTITY_ID: 812097c6-b028-4a21-9af0-291ebc835cfa');
+    expect(deployJob).toContain('INFISICAL_PROJECT_ID: 44e3b68f-6f17-458c-aaeb-da72b0faa793');
+    expect(deployJob).toContain('INFISICAL_OIDC_AUDIENCE: https://github.com/miktomic');
+    expect(ci).toContain('scripts/run-with-infisical-oidc.mjs');
+    expect(ci).not.toContain('${{ secrets.');
+    expect(ci).not.toContain('${{ vars.');
+    expect(ci).not.toContain('INFISICAL_TOKEN');
+    expect(ci).not.toContain('CLOUDFLARE_DEPLOY_CONFIGURED');
+    expect(ci).not.toContain('Skip deploy');
+    expect(loader).toContain("const INFISICAL_ENVIRONMENT = 'prod'");
+    expect(loader).toContain("const INFISICAL_SECRET_PATH = '/apps/web'");
+    for (const name of [
+      'CLOUDFLARE_API_TOKEN',
+      'CLOUDFLARE_ACCOUNT_ID',
+      'PUBLIC_CLERK_PUBLISHABLE_KEY',
+      'CLERK_SECRET_KEY',
+      'CLERK_WEBHOOK_SIGNING_SECRET',
+      'PUBLIC_TURNSTILE_SITE_KEY',
+      'TURNSTILE_SECRET_KEY'
+    ]) {
+      expect(read('scripts/validate-infisical-env.mjs')).toContain(name);
+    }
     expect(ci).toContain('${RUNNER_TEMP}');
     expect(ci).toContain('umask 077');
     expect(ci).toContain('--secrets-file');
@@ -74,31 +122,44 @@ describe('optional account operations contract', () => {
     expect(ci).not.toContain('steps.clerk-worker-bindings.outputs');
     expect(ci).not.toContain('wrangler secret put');
 
-    const prepare = ci.indexOf('Prepare Clerk Worker bindings');
-    const inactiveUpload = ci.indexOf('wrangler versions upload --secrets-file');
+    const firstPrepare = ci.indexOf('Prepare Worker bindings for inactive upload');
+    const inactiveUpload = ci.indexOf('wrangler versions upload');
+    const firstCleanup = ci.indexOf('Remove inactive Worker bindings');
     const migration = ci.indexOf('Apply D1 migrations');
-    const activeDeploy = ci.indexOf('wrangler deploy --secrets-file');
-    const cleanup = ci.indexOf('Remove temporary Worker bindings');
-    expect(prepare).toBeLessThan(inactiveUpload);
-    expect(inactiveUpload).toBeLessThan(migration);
-    expect(migration).toBeLessThan(activeDeploy);
-    expect(activeDeploy).toBeLessThan(cleanup);
+    const secondPrepare = ci.indexOf('Prepare Worker bindings for deployment');
+    const activeDeploy = ci.indexOf('wrangler deploy');
+    const secondCleanup = ci.indexOf('Remove deployment Worker bindings');
+    expect(firstPrepare).toBeLessThan(inactiveUpload);
+    expect(inactiveUpload).toBeLessThan(firstCleanup);
+    expect(firstCleanup).toBeLessThan(migration);
+    expect(migration).toBeLessThan(secondPrepare);
+    expect(secondPrepare).toBeLessThan(activeDeploy);
+    expect(activeDeploy).toBeLessThan(secondCleanup);
   });
 
-  test('limits Cloudflare credentials to deployment operations behind a boolean gate', () => {
+  test('passes only the values each production operation requires', () => {
     const ci = read('.github/workflows/ci.yml');
     const deployJob = ci.slice(ci.indexOf('  deploy-production:'));
-    const jobEnvironment = deployJob.match(/\n    env:\n([\s\S]*?)\n    steps:/)?.[1] ?? '';
+    const stepBlock = (name: string) => {
+      const start = deployJob.indexOf(`      - name: ${name}`);
+      const end = deployJob.indexOf('\n      - name:', start + 1);
+      return deployJob.slice(start, end === -1 ? undefined : end);
+    };
 
-    expect(jobEnvironment).toContain('CLOUDFLARE_DEPLOY_CONFIGURED:');
-    expect(jobEnvironment).not.toContain('CLOUDFLARE_API_TOKEN:');
-    expect(jobEnvironment).not.toContain('CLOUDFLARE_ACCOUNT_ID:');
-    expect(ci).not.toMatch(/^\s*if:.*secrets\./m);
-
-    const cloudflareTokenBindings = ci.match(/^          CLOUDFLARE_API_TOKEN:/gm) ?? [];
-    const cloudflareAccountBindings = ci.match(/^          CLOUDFLARE_ACCOUNT_ID:/gm) ?? [];
-    expect(cloudflareTokenBindings).toHaveLength(4);
-    expect(cloudflareAccountBindings).toHaveLength(4);
+    expect(stepBlock('Build packages and app')).toContain(
+      '--keys PUBLIC_CLERK_PUBLISHABLE_KEY,PUBLIC_TURNSTILE_SITE_KEY'
+    );
+    for (const step of [
+      'Prepare Worker bindings for inactive upload',
+      'Prepare Worker bindings for deployment'
+    ]) {
+      expect(stepBlock(step)).toContain(
+        '--keys PUBLIC_CLERK_PUBLISHABLE_KEY,CLERK_SECRET_KEY,CLERK_WEBHOOK_SIGNING_SECRET,PUBLIC_TURNSTILE_SITE_KEY,TURNSTILE_SECRET_KEY'
+      );
+      expect(stepBlock(step)).toContain(
+        'node scripts/write-worker-bindings.mjs "${secrets_file}"'
+      );
+    }
 
     for (const step of [
       'Provision Cloudflare resources without changing production traffic',
@@ -106,20 +167,19 @@ describe('optional account operations contract', () => {
       'Deploy to Cloudflare Workers',
       'Configure canonical www redirect'
     ]) {
-      const start = ci.indexOf(`      - name: ${step}`);
-      const end = ci.indexOf('\n      - name:', start + 1);
-      const block = ci.slice(start, end === -1 ? undefined : end);
-      expect(block).toContain('CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}');
-      expect(block).toContain('CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}');
-      expect(block).toContain("if: ${{ env.CLOUDFLARE_DEPLOY_CONFIGURED == 'true' }}");
+      const block = stepBlock(step);
+      expect(block).toContain('--keys CLOUDFLARE_API_TOKEN,CLOUDFLARE_ACCOUNT_ID');
+      expect(block).not.toContain('CLERK_SECRET_KEY');
+      expect(block).not.toContain('TURNSTILE_SECRET_KEY');
     }
 
-    const smokeStart = ci.indexOf('      - name: Run production smoke checks');
-    const smokeEnd = ci.indexOf('\n      - name:', smokeStart + 1);
-    const smokeBlock = ci.slice(smokeStart, smokeEnd);
-    expect(smokeBlock).toContain("if: ${{ env.CLOUDFLARE_DEPLOY_CONFIGURED == 'true' }}");
+    const smokeBlock = stepBlock('Run production smoke checks');
+    expect(smokeBlock).not.toContain('run-with-infisical-oidc');
     expect(smokeBlock).not.toContain('CLOUDFLARE_API_TOKEN:');
     expect(smokeBlock).not.toContain('CLOUDFLARE_ACCOUNT_ID:');
+
+    const migrationBlock = stepBlock('Apply D1 migrations');
+    expect(migrationBlock).not.toContain('schngn-worker-bindings.json');
   });
 
   test('pins every third-party action to an audited commit while retaining release comments', () => {
@@ -133,6 +193,7 @@ describe('optional account operations contract', () => {
     expect(ci).toContain('actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0');
     expect(ci).toContain('actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0');
     expect(ci).toContain('oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0');
+    expect(ci.match(/persist-credentials: false/g)).toHaveLength(2);
   });
 
   test('contains binding names but no live Clerk credential literals', () => {
