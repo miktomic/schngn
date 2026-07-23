@@ -5,7 +5,7 @@
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
   import { latestSafeExitDate } from '@schngn/engine';
-  import { FactCard, SchengenCountryGuide, SiteHeader, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
+  import { DateRangeCalendar, FactCard, SchengenCountryGuide, SiteHeader, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
   import BilateralPassportCheck from '$lib/design/BilateralPassportCheck.svelte';
   import { createTranslator, intlLocale, localeFromPath, localizedPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
@@ -68,6 +68,7 @@
     type TripValidationErrors
   } from '$lib/trips/tripCrud';
   import { SCHENGEN_COUNTRY_OPTIONS } from '$lib/trips/countries';
+  import type { OrderedDateRange } from '$lib/calendar/dateRangeCalendar';
   import { assignTripColors, buildTripCardStates } from '$lib/trips/tripCardState';
   import { importTripsFromJson, MAX_TRIP_BACKUP_BYTES, tripsToBackupJson } from '$lib/import-export/tripBackup';
   import { clearTripsFromStorage, loadTripsFromStorage, saveTripsToStorage } from '$lib/trips/tripStorage';
@@ -956,6 +957,22 @@
     };
   }
 
+  function updateTripEntryDate(event: Event): void {
+    const entryDate = (event.currentTarget as HTMLInputElement).value;
+    outsideWindowConfirmationVisible = false;
+    tripForm = { ...tripForm, entryDate };
+  }
+
+  function updateTripDateRange(range: OrderedDateRange): void {
+    outsideWindowConfirmationVisible = false;
+    formErrors = { ...formErrors, entryDate: undefined, exitDate: undefined };
+    tripForm = {
+      ...tripForm,
+      ...range,
+      status: statusForTripDates(tripForm.status, range.exitDate)
+    };
+  }
+
   function updateOngoingStay(event: Event): void {
     const ongoing = (event.currentTarget as HTMLInputElement).checked;
     outsideWindowConfirmationVisible = false;
@@ -1538,13 +1555,24 @@
           <small id="trip-label-help">{rt('labelHelp', { max: MAX_TRIP_LABEL_LENGTH })}</small>
           {#if formErrors.label}<strong id="trip-label-error" class="field-error">{formErrors.label}</strong>{/if}
 
+          {#if !tripForm.ongoing}
+            <DateRangeCalendar
+              entryDate={tripForm.entryDate}
+              exitDate={tripForm.exitDate}
+              {locale}
+              onRangeChange={updateTripDateRange}
+              today={tripFormToday}
+            />
+          {/if}
+
           <div class="date-fields">
             <div class="field-group">
               <label for="trip-entry"><span>{deep('entered')}</span></label>
               <input
                 id="trip-entry"
                 type="date"
-                bind:value={tripForm.entryDate}
+                value={tripForm.entryDate}
+                oninput={updateTripEntryDate}
                 aria-describedby={formErrors.entryDate ? 'entry-help entry-error' : 'entry-help'}
                 aria-invalid={formErrors.entryDate ? 'true' : undefined}
               />

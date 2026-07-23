@@ -366,7 +366,7 @@ These decisions were approved on 2026-07-09 and recorded in `docs/product-decisi
 
 # Current state
 
-The original MVP implementation cards above shipped code and automated coverage. The separate waitlist experiment was later retired; the active product now sends account creation directly to Clerk. The later US-23 capability adds a local SCHNGN runtime without adding a hosted SCHNGN calculation endpoint. A cloud-backed agent host may still process tool inputs and results under its own policies. Production-readiness hardening is tracked separately because a green feature card is not proof that provider configuration, live telemetry, or every adversarial input is safe.
+The original MVP implementation cards above shipped code and automated coverage. The separate waitlist experiment was later retired; the active product now sends account creation directly to Clerk. The later US-23 capability adds a local SCHNGN runtime without adding a hosted SCHNGN calculation endpoint. US-24 replaces two-field-only trip entry with a reusable localized calendar while retaining exact native date controls. A cloud-backed agent host may still process tool inputs and results under its own policies. Production-readiness hardening is tracked separately because a green feature card is not proof that provider configuration, live telemetry, or every adversarial input is safe.
 
 ---
 
@@ -417,6 +417,26 @@ The original MVP implementation cards above shipped code and automated coverage.
   - The evidence wording remains published-rule fixtures and an independent oracle; there is no direct European Commission calculator output-parity claim.
 - **Verification:** `bun run test:capability` passed with 15 tests / 50 assertions; `bun run test:agent` passed with 12 tests / 71 assertions covering JSON CLI, loopback/host/body guards, OpenAPI, structured errors, and stdio MCP tool results; `bun run build:agent` passed for the engine, capability, and four Node-targeted agent bundles; `bun run smoke:agent` launched the compiled CLI and stdio MCP server successfully. Root `bun run check` includes these tests, TypeScript checks, builds, and compiled-agent smoke.
 - **Remote guardrail:** A SCHNGN-hosted API, hosted MCP server, non-loopback HTTP binding, or other SCHNGN-operated remote calculation phase remains unapproved because it would send anonymous trip dates to SCHNGN infrastructure. It requires a new decision covering privacy, authentication, explicit consent, logging/retention, rate/abuse controls, export/deletion expectations, and account-model integration.
+
+---
+
+# Trip-entry usability — approved additive scope
+
+## US-24 — Localized drag-select date-range calendar
+
+- **Priority:** Should; improves the primary trip-entry workflow
+- **Estimate:** M
+- **Status:** Done
+- **Depends on:** US-04, US-13, DEC-13, DEC-14
+- **Implementation target:** a reusable, dependency-free calendar selector inside the Add trip dialog that writes to the existing canonical entry/exit fields.
+- **Acceptance summary:**
+  - Desktop shows two months; mobile shows one month without horizontal overflow.
+  - Mouse, pen, and touch users can drag an inclusive period in either direction and across the two visible desktop months.
+  - Tap-tap and Enter/Space selection remain available; arrow, Home/End, and Page Up/Page Down keys move focus without arbitrary past/future limits.
+  - Exact native entry and exit inputs remain synchronized as an accessibility and precision fallback, and open-ended stays retain their existing behavior.
+  - Calendar instructions, status, month/day formatting, and controls ship in all 17 supported locales; Hebrew and Arabic navigation mirrors correctly.
+  - Selection updates the existing local trip form only. It adds no persistence, analytics, logging, or network path and preserves inclusive engine semantics.
+- **Verification:** calendar model tests cover Monday-first grids, leap years, reverse ranges, month clamping, inclusive counts, and every locale. Playwright covers reverse cross-month drag through saved-trip output, real touchscreen tap-tap, keyboard selection, 320 px containment, RTL navigation, internal dialog scrolling, open-ended stays, PWA/offline behavior, account sync, outside-Schengen breaks, and inline editing. `bun run test:e2e` passed 32/32 and root `bun run check` passed 430 tests plus every typecheck, build, and compiled-agent smoke.
 
 ---
 

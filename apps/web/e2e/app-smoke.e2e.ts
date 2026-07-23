@@ -367,7 +367,86 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(rtlDetailsBox!.x + rtlDetailsBox!.width).toBeLessThanOrEqual(rtlAnswerBox!.x + 1);
   });
 
-  test('keeps native date controls inside the trip dialog on narrow mobile screens', async ({ page }) => {
+  test('selects an inclusive cross-month trip period by dragging in either direction', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.clock.setFixedTime(new Date('2026-07-12T12:00:00Z'));
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.setViewportSize({ width: 830, height: 900 });
+    await page.goto('/app');
+    await page.locator('#add-trip-button').click();
+
+    const dialog = page.getByRole('dialog', { name: 'Add a past or future Schengen stay' });
+    const calendar = dialog.getByRole('group', { name: 'Choose entry and exit dates' });
+    await expect(calendar).toBeVisible();
+    await expect(calendar.getByText('July 2026', { exact: true })).toBeVisible();
+    await expect(calendar.getByText('August 2026', { exact: true })).toBeVisible();
+
+    const entryDay = calendar.getByRole('button', { name: '30 July 2026' });
+    const exitDay = calendar.getByRole('button', { name: '3 August 2026', exact: true });
+    const entryBox = await entryDay.boundingBox();
+    const exitBox = await exitDay.boundingBox();
+    expect(entryBox).not.toBeNull();
+    expect(exitBox).not.toBeNull();
+
+    await page.mouse.move(exitBox!.x + exitBox!.width / 2, exitBox!.y + exitBox!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(entryBox!.x + entryBox!.width / 2, entryBox!.y + entryBox!.height / 2, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-30');
+    await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-08-03');
+    await expect(entryDay).toHaveAttribute('aria-pressed', 'true');
+    await expect(exitDay).toHaveAttribute('aria-pressed', 'true');
+    await expect(calendar).toContainText('5 days selected');
+
+    await dialog.getByLabel(/Trip label/).fill('Dragged stay');
+    await dialog.getByRole('button', { name: 'Save trip' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(savedTripCard(page, 'Dragged stay').locator('.trip-day-count')).toHaveText('5 days');
+  });
+
+  test('supports tap and keyboard alternatives for calendar range selection', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.clock.setFixedTime(new Date('2026-07-12T12:00:00Z'));
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.goto('/app');
+    await page.locator('#add-trip-button').click();
+
+    const dialog = page.getByRole('dialog', { name: 'Add a past or future Schengen stay' });
+    const calendar = dialog.getByRole('group', { name: 'Choose entry and exit dates' });
+    const tapStart = await calendar.getByRole('button', { name: '14 July 2026' }).boundingBox();
+    const tapEnd = await calendar.getByRole('button', { name: '17 July 2026' }).boundingBox();
+    expect(tapStart).not.toBeNull();
+    expect(tapEnd).not.toBeNull();
+    await page.touchscreen.tap(tapStart!.x + tapStart!.width / 2, tapStart!.y + tapStart!.height / 2);
+    await page.touchscreen.tap(tapEnd!.x + tapEnd!.width / 2, tapEnd!.y + tapEnd!.height / 2);
+    await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-14');
+    await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-17');
+
+    const dragStart = await calendar.getByRole('button', { name: '24 July 2026' }).boundingBox();
+    const dragEnd = await calendar.getByRole('button', { name: '27 July 2026' }).boundingBox();
+    expect(dragStart).not.toBeNull();
+    expect(dragEnd).not.toBeNull();
+    const touch = await page.context().newCDPSession(page);
+    const startPoint = { x: dragStart!.x + dragStart!.width / 2, y: dragStart!.y + dragStart!.height / 2 };
+    const endPoint = { x: dragEnd!.x + dragEnd!.width / 2, y: dragEnd!.y + dragEnd!.height / 2 };
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [startPoint] });
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [endPoint] });
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-24');
+    await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-27');
+
+    const keyboardStart = calendar.getByRole('button', { name: '20 July 2026' });
+    await keyboardStart.focus();
+    await keyboardStart.press('Enter');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-20');
+    await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-22');
+  });
+
+  test('keeps calendar and native date controls inside the trip dialog on narrow mobile screens', async ({ page }) => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.goto('/app');
@@ -429,7 +508,26 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(dialog).toBeVisible();
   });
 
-  test('uses the available viewport before making the trip dialog scroll', async ({ page }) => {
+  test('mirrors calendar navigation in right-to-left locales', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.clock.setFixedTime(new Date('2026-07-12T12:00:00Z'));
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.goto('/he/app');
+    await page.locator('#add-trip-button').click();
+
+    const calendar = page.getByRole('group', { name: 'בחירת תאריכי כניסה ויציאה' });
+    const previousMonth = calendar.getByRole('button', { name: 'החודש הקודם' });
+    const nextMonth = calendar.getByRole('button', { name: 'החודש הבא' });
+    const previousBox = await previousMonth.boundingBox();
+    const nextBox = await nextMonth.boundingBox();
+    expect(previousBox).not.toBeNull();
+    expect(nextBox).not.toBeNull();
+    expect(previousBox!.x).toBeGreaterThan(nextBox!.x);
+    await expect(previousMonth).toHaveText('→');
+    await expect(nextMonth).toHaveText('←');
+  });
+
+  test('contains the calendar dialog and keeps its actions reachable through internal scrolling', async ({ page }) => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
     await page.setViewportSize({ width: 830, height: 795 });
@@ -454,10 +552,12 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
           viewportHeight: window.innerHeight
         };
       });
-      expect(fittingGeometry.scrollHeight).toBeLessThanOrEqual(fittingGeometry.clientHeight + 1);
+      expect(fittingGeometry.scrollHeight).toBeGreaterThan(fittingGeometry.clientHeight);
       expect(fittingGeometry.top).toBeGreaterThanOrEqual(0);
       expect(fittingGeometry.bottom).toBeLessThanOrEqual(fittingGeometry.viewportHeight + 1);
-      await expect(dialog.locator('.form-actions')).toBeInViewport();
+      const formActions = dialog.locator('.form-actions');
+      await formActions.scrollIntoViewIfNeeded();
+      await expect(formActions).toBeInViewport();
     }
 
     await page.setViewportSize({ width: 830, height: 560 });

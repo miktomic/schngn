@@ -1,5 +1,6 @@
 export { default as FactCard } from './FactCard.svelte';
 export { default as CommandBlock } from './CommandBlock.svelte';
+export { default as DateRangeCalendar } from './DateRangeCalendar.svelte';
 export { default as LegalDocument } from './LegalDocument.svelte';
 export { default as SchngnLogo } from './SchngnLogo.svelte';
 export { default as SiteFooter } from './SiteFooter.svelte';
