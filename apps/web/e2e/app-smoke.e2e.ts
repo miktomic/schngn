@@ -429,6 +429,60 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(dialog).toBeVisible();
   });
 
+  test('uses the available viewport before making the trip dialog scroll', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.setViewportSize({ width: 830, height: 795 });
+    await page.goto('/app');
+    await page.locator('#add-trip-button').click();
+
+    const dialog = page.getByRole('dialog', { name: 'Add a past or future Schengen stay' });
+    await expect(dialog).toBeVisible();
+
+    for (const viewport of [
+      { width: 830, height: 795 },
+      { width: 1024, height: 768 }
+    ]) {
+      await page.setViewportSize(viewport);
+      const fittingGeometry = await dialog.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          clientHeight: element.clientHeight,
+          scrollHeight: element.scrollHeight,
+          top: rect.top,
+          bottom: rect.bottom,
+          viewportHeight: window.innerHeight
+        };
+      });
+      expect(fittingGeometry.scrollHeight).toBeLessThanOrEqual(fittingGeometry.clientHeight + 1);
+      expect(fittingGeometry.top).toBeGreaterThanOrEqual(0);
+      expect(fittingGeometry.bottom).toBeLessThanOrEqual(fittingGeometry.viewportHeight + 1);
+      await expect(dialog.locator('.form-actions')).toBeInViewport();
+    }
+
+    await page.setViewportSize({ width: 830, height: 560 });
+    const shortGeometry = await dialog.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        overflowY: getComputedStyle(element).overflowY,
+        top: rect.top,
+        bottom: rect.bottom,
+        viewportHeight: window.innerHeight
+      };
+    });
+    expect(shortGeometry.scrollHeight).toBeGreaterThan(shortGeometry.clientHeight + 1);
+    expect(shortGeometry.overflowY).toBe('auto');
+    expect(shortGeometry.top).toBeGreaterThanOrEqual(0);
+    expect(shortGeometry.bottom).toBeLessThanOrEqual(shortGeometry.viewportHeight + 1);
+
+    const actions = dialog.locator('.form-actions');
+    await actions.scrollIntoViewIfNeeded();
+    await expect(actions).toBeInViewport();
+    expect(await dialog.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  });
+
   test('saves a current open-ended stay and calculates the departure deadline without an exit date', async ({ page }) => {
     await page.clock.setFixedTime(new Date('2026-07-10T12:00:00Z'));
     await installFakeClerk(page, null);

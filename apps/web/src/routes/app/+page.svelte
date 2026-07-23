@@ -2346,14 +2346,14 @@
   .trip-dialog {
     width: min(calc(100% - 32px), 760px);
     max-width: none;
-    max-height: min(90dvh, 900px);
+    max-height: calc(100dvh - 20px);
     margin: auto;
     overflow-y: auto;
     border: 1px solid var(--control-line);
     border-radius: 12px;
     background: var(--paper);
     color: var(--ink);
-    padding: clamp(18px, 3vw, 28px);
+    padding: clamp(18px, 2.25vw, 24px);
   }
 
   .trip-dialog::backdrop {
@@ -2361,7 +2361,11 @@
   }
 
   .trip-dialog > .intro-copy {
-    margin-top: 10px;
+    margin-top: 8px;
+  }
+
+  .trip-dialog .trip-form {
+    gap: 6px;
   }
 
   .timeline-section { gap: 14px; }
@@ -3270,7 +3274,6 @@
     .add-trip-footer > button { width: 100%; }
     .trip-dialog {
       width: calc(100% - 20px);
-      max-height: calc(100dvh - 20px);
       padding: 18px 16px;
     }
     .confirm-panel { align-items: stretch; flex-direction: column; }
