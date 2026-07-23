@@ -134,16 +134,39 @@ jobs:
           });
           assertOk(verifyResponse, "Infisical verification");
           const verifyPayload = await verifyResponse.json();
-          const actual = new Map(
+          const records = new Map(
             Array.isArray(verifyPayload.secrets)
-              ? verifyPayload.secrets.map(({ secretKey, secretValue }) => [secretKey, secretValue])
+              ? verifyPayload.secrets.map((secret) => [secret.secretKey, secret])
               : []
           );
           const mismatched = source
-            .filter(([key, value]) => actual.get(key) !== value)
+            .filter(([key, value]) => records.get(key)?.secretValue !== value)
             .map(([key]) => key);
           if (mismatched.length > 0) {
-            throw new Error(`Infisical verification failed for: ${mismatched.join(", ")}`);
+            const sourceByKey = new Map(source);
+            const diagnostics = mismatched.map((key) => {
+              const expected = sourceByKey.get(key);
+              const record = records.get(key);
+              const returned = record?.secretValue;
+              return {
+                key,
+                present: Boolean(record),
+                hidden: record?.secretValueHidden === true,
+                returnedEmpty: returned === "",
+                sameLength: typeof returned === "string" && returned.length === expected.length,
+                trimEquivalent: typeof returned === "string" && returned.trim() === expected.trim(),
+                newlineEquivalent:
+                  typeof returned === "string" &&
+                  returned.replaceAll("\r\n", "\n") === expected.replaceAll("\r\n", "\n"),
+                returnedIsExpectedBase64:
+                  typeof returned === "string" &&
+                  returned === Buffer.from(expected, "utf8").toString("base64"),
+                returnedBase64DecodesToExpected:
+                  typeof returned === "string" &&
+                  Buffer.from(returned, "base64").toString("utf8") === expected
+              };
+            });
+            throw new Error(`Infisical verification classification: ${JSON.stringify(diagnostics)}`);
           }
 
           console.log(`Imported and verified ${source.length} production configuration values.`);
