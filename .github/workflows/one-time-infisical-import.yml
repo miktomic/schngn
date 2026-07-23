@@ -112,7 +112,11 @@ jobs:
               environment,
               secretPath,
               mode: "upsert",
-              secrets: source.map(([secretKey, secretValue]) => ({ secretKey, secretValue }))
+              secrets: source.map(([secretKey, secretValue]) => ({
+                secretKey,
+                secretValue,
+                skipMultilineEncoding: true
+              }))
             })
           });
           assertOk(upsertResponse, "Infisical bulk upsert");
