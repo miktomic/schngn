@@ -1,4 +1,4 @@
-import { localizedLegalCopy } from '$lib/legal/legalCopy';
+import { localizedLegalCopy } from '../legal/legalCopy';
 import type { Locale } from './locales';
 
 export interface LegalFooterCopy {
