@@ -48,6 +48,11 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
       await walkthrough.locator(`[data-explainer-step="${index}"]`).evaluate((element) =>
         element.scrollIntoView({ block: 'center' })
       );
+      await expect.poll(async () => {
+        const active = Number(await walkthrough.getAttribute('data-active-step'));
+        if (active !== index) await page.mouse.wheel(0, active < index ? 96 : -96);
+        return active;
+      }).toBe(index);
     };
     await expect(walkthrough).toHaveAttribute('data-active-step', '0');
     await expect(timeline).toContainText('0 counted days');
