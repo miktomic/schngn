@@ -436,7 +436,7 @@ The original MVP implementation cards above shipped code and automated coverage.
   - Exact native entry and exit inputs remain synchronized as an accessibility and precision fallback, and open-ended stays retain their existing behavior.
   - Calendar instructions, status, month/day formatting, and controls ship in all 17 supported locales; Hebrew and Arabic navigation mirrors correctly.
   - Selection updates the existing local trip form only. It adds no persistence, analytics, logging, or network path and preserves inclusive engine semantics.
-- **Verification:** calendar model tests cover Monday-first grids, leap years, reverse ranges, month clamping, inclusive counts, and every locale. Playwright covers reverse cross-month drag through saved-trip output, real touchscreen tap-tap, keyboard selection, 320 px containment, RTL navigation, internal dialog scrolling, open-ended stays, PWA/offline behavior, account sync, outside-Schengen breaks, and inline editing. `bun run test:e2e` passed 32/32 and root `bun run check` passed 430 tests plus every typecheck, build, and compiled-agent smoke.
+- **Verification:** calendar model tests cover Monday-first grids, leap years, reverse ranges, month clamping, inclusive counts, and every locale. Playwright covers reverse cross-month drag through saved-trip output, real touchscreen tap-tap, keyboard selection, 320 px containment, RTL navigation, internal dialog scrolling, open-ended stays, PWA/offline behavior, account sync, outside-Schengen breaks, and inline editing. `bun run test:e2e` passed 32/32 and root `bun run check` passed 431 tests plus every typecheck, build, and compiled-agent smoke.
 
 ---
 

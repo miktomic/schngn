@@ -1,5 +1,5 @@
 import { addDays, formatISODate, parseISODate } from '@schngn/engine';
-import { intlLocale, type Locale } from '$lib/i18n/locales';
+import { intlLocale, type Locale } from '../i18n/locales';
 
 const DAYS_IN_CALENDAR_GRID = 42;
 
