@@ -133,10 +133,41 @@ export function createDateRangeCalendarUiTranslator(locale: Locale): (key: DateR
   return (key) => translations[locale][key];
 }
 
+export function formatCalendarDayNumber(locale: Locale, day: number): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
+    numberingSystem: locale === 'ar' ? 'arab' : undefined,
+    useGrouping: false
+  }).format(day);
+}
+
 export function formatDateRangeSelection(locale: Locale, count: number): string {
-  const formatted = new Intl.NumberFormat(intlLocale(locale)).format(count);
+  const formatted = new Intl.NumberFormat(intlLocale(locale), {
+    numberingSystem: locale === 'ar' ? 'arab' : undefined
+  }).format(count);
+  if (count === 1) {
+    const singular: Record<Locale, string> = {
+      en: `${formatted} day selected`,
+      fr: `${formatted} jour sélectionné`,
+      de: `${formatted} Tag ausgewählt`,
+      es: `${formatted} día seleccionado`,
+      it: `${formatted} giorno selezionato`,
+      'pt-br': `${formatted} dia selecionado`,
+      ru: `Выбран ${formatted} день`,
+      uk: `Вибрано ${formatted} день`,
+      tr: `${formatted} gün seçildi`,
+      sr: `Izabran ${formatted} dan`,
+      sq: `${formatted} ditë e zgjedhur`,
+      ka: `არჩეულია ${formatted} დღე`,
+      'zh-cn': `已选择 ${formatted} 天`,
+      ja: `${formatted}日間を選択`,
+      ko: `${formatted}일 선택됨`,
+      he: 'נבחר יום אחד',
+      ar: 'تم اختيار يوم واحد'
+    };
+    return singular[locale];
+  }
   const phrases: Record<Locale, string> = {
-    en: count === 1 ? `${formatted} day selected` : `${formatted} days selected`,
+    en: `${formatted} days selected`,
     fr: `${formatted} jours sélectionnés`,
     de: `${formatted} Tage ausgewählt`,
     es: `${formatted} días seleccionados`,

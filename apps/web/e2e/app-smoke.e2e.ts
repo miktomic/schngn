@@ -120,6 +120,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const faq = page.locator('#faq');
     await expect(faq.locator('details.faq-item')).toHaveCount(18);
     await expect(faq.locator('details.faq-item').first()).toHaveAttribute('open', '');
+    await expect(page.locator('.language-selector select')).toBeEnabled();
 
     const overstay = faq.locator('details').filter({ hasText: 'What can happen if I overstay?' });
     await overstay.locator('summary').click();
@@ -451,6 +452,69 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-22');
   });
 
+  test('keeps mobile keyboard focus visible across month boundaries and resets after exact-date edits', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.clock.setFixedTime(new Date('2026-07-12T12:00:00Z'));
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.setViewportSize({ width: 1024, height: 844 });
+    await page.goto('/app');
+    await page.locator('#add-trip-button').click();
+
+    const dialog = page.getByRole('dialog', { name: 'Add a past or future Schengen stay' });
+    const calendar = dialog.getByRole('group', { name: 'Choose entry and exit dates' });
+    await calendar.getByRole('button', { name: 'Next month' }).click();
+    await expect(calendar.getByText('August 2026', { exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(calendar.getByText('August 2026', { exact: true })).toBeVisible();
+    await calendar.getByRole('button', { name: 'Previous month' }).click();
+
+    const july31 = calendar.getByRole('button', { name: '31 July 2026' });
+    await july31.focus();
+    await july31.press('ArrowRight');
+
+    await expect(calendar.getByText('August 2026', { exact: true })).toBeVisible();
+    await expect(calendar.getByRole('button', { name: '1 August 2026', exact: true })).toBeFocused();
+
+    await dialog.getByLabel('Entry date').fill('2026-11-05');
+    await dialog.getByLabel('Exit date', { exact: true }).fill('2026-11-06');
+    await expect(calendar.getByText('November 2026', { exact: true })).toBeVisible();
+    await calendar.getByRole('button', { name: '8 November 2026', exact: true }).click();
+    await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-11-08');
+    await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-11-08');
+  });
+
+  test('restores the prior range when a pointer drag is canceled', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.clock.setFixedTime(new Date('2026-07-12T12:00:00Z'));
+    await page.addInitScript(() => window.localStorage.clear());
+    await page.goto('/app');
+    await page.locator('#add-trip-button').click();
+
+    const dialog = page.getByRole('dialog', { name: 'Add a past or future Schengen stay' });
+    const calendar = dialog.getByRole('group', { name: 'Choose entry and exit dates' });
+    await dialog.getByLabel('Entry date').fill('2026-07-14');
+    await dialog.getByLabel('Exit date', { exact: true }).fill('2026-07-17');
+    const start = calendar.getByRole('button', { name: '20 July 2026' });
+    const end = calendar.getByRole('button', { name: '22 July 2026' });
+    const startBox = await start.boundingBox();
+    const endBox = await end.boundingBox();
+    expect(startBox).not.toBeNull();
+    expect(endBox).not.toBeNull();
+
+    await start.dispatchEvent('pointerdown', {
+      pointerId: 71, pointerType: 'mouse', isPrimary: true, button: 0,
+      clientX: startBox!.x + startBox!.width / 2, clientY: startBox!.y + startBox!.height / 2
+    });
+    await calendar.dispatchEvent('pointermove', {
+      pointerId: 71, pointerType: 'mouse', isPrimary: true, button: 0,
+      clientX: endBox!.x + endBox!.width / 2, clientY: endBox!.y + endBox!.height / 2
+    });
+    await calendar.dispatchEvent('pointercancel', { pointerId: 71, pointerType: 'mouse', isPrimary: true });
+
+    await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-14');
+    await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-17');
+  });
+
   test('keeps calendar and native date controls inside the trip dialog on narrow mobile screens', async ({ page }) => {
     await installFakeClerk(page, null);
     await page.addInitScript(() => window.localStorage.clear());
@@ -530,6 +594,11 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(previousBox!.x).toBeGreaterThan(nextBox!.x);
     await expect(previousMonth).toHaveText('→');
     await expect(nextMonth).toHaveText('←');
+
+    const july20 = calendar.getByRole('button', { name: '20 ביולי 2026' });
+    await july20.focus();
+    await july20.press('ArrowLeft');
+    await expect(calendar.getByRole('button', { name: '21 ביולי 2026' })).toBeFocused();
   });
 
   test('contains the calendar dialog and keeps its actions reachable through internal scrolling', async ({ page }) => {

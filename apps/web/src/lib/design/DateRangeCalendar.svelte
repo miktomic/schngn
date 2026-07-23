@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { addDays, formatISODate, parseISODate } from '@schngn/engine';
   import { formatDate, type Locale } from '$lib/i18n';
   import {
@@ -14,6 +14,7 @@
   } from '$lib/calendar/dateRangeCalendar';
   import {
     createDateRangeCalendarUiTranslator,
+    formatCalendarDayNumber,
     formatDateRangeSelection
   } from '$lib/i18n/dateRangeCalendarUi';
 
@@ -29,6 +30,9 @@
     anchor: string;
     moved: boolean;
     pointerId: number;
+    previousRange: OrderedDateRange;
+    previousSelectingExit: boolean;
+    previousSelectionAnchor: string | null;
     startedWithEntry: boolean;
   }
 
@@ -50,7 +54,9 @@
   let selectionAnchor = $state<string | null>(null);
   let selectingExit = $state(false);
   let dragSelection = $state<DragSelection | null>(null);
+  let singleMonth = $state(false);
   let suppressClick = $state(false);
+  let pendingRangeKey: string | null = null;
 
   let ui = $derived(createDateRangeCalendarUiTranslator(locale));
   let isRtl = $derived(locale === 'he' || locale === 'ar');
@@ -67,6 +73,47 @@
         : ''
   );
 
+  function rangeKey(range: OrderedDateRange): string {
+    return `${range.entryDate}\u0000${range.exitDate}`;
+  }
+
+  function emitRange(range: OrderedDateRange): void {
+    pendingRangeKey = rangeKey(range);
+    onRangeChange(range);
+  }
+
+  $effect(() => {
+    const nextRange = { entryDate, exitDate };
+    const nextKey = rangeKey(nextRange);
+    if (pendingRangeKey === nextKey) {
+      pendingRangeKey = null;
+      return;
+    }
+
+    pendingRangeKey = null;
+    selectionAnchor = null;
+    selectingExit = false;
+    dragSelection = null;
+    suppressClick = false;
+    if (isISOCalendarDate(entryDate)) {
+      focusDate = entryDate;
+      viewMonth = calendarMonthStart(entryDate);
+    }
+  });
+
+  onMount(() => {
+    const media = window.matchMedia('(max-width: 640px)');
+    const syncSingleMonth = (): void => {
+      singleMonth = media.matches;
+      if (singleMonth && calendarMonthStart(focusDate) !== viewMonth) {
+        viewMonth = calendarMonthStart(focusDate);
+      }
+    };
+    syncSingleMonth();
+    media.addEventListener('change', syncSingleMonth);
+    return () => media.removeEventListener('change', syncSingleMonth);
+  });
+
   function isSelected(date: string): boolean {
     return isISOCalendarDate(entryDate)
       && isISOCalendarDate(exitDate)
@@ -77,7 +124,7 @@
   function chooseDate(date: string): void {
     focusDate = date;
     if (selectingExit && selectionAnchor) {
-      onRangeChange(orderDateRange(selectionAnchor, date));
+      emitRange(orderDateRange(selectionAnchor, date));
       selectingExit = false;
       selectionAnchor = null;
       return;
@@ -85,7 +132,7 @@
 
     selectionAnchor = date;
     selectingExit = true;
-    onRangeChange({ entryDate: date, exitDate: date });
+    emitRange({ entryDate: date, exitDate: date });
   }
 
   function handleDayClick(date: string): void {
@@ -99,17 +146,29 @@
   function handlePointerDown(event: PointerEvent, date: string): void {
     if (!event.isPrimary || event.button !== 0) return;
     event.preventDefault();
+    (event.currentTarget as HTMLButtonElement).focus();
     suppressClick = true;
     focusDate = date;
 
     const startedWithEntry = selectingExit && selectionAnchor !== null;
     const anchor = startedWithEntry ? selectionAnchor! : date;
+    const previousRange = { entryDate, exitDate };
+    const previousSelectingExit = selectingExit;
+    const previousSelectionAnchor = selectionAnchor;
     if (!startedWithEntry) {
       selectionAnchor = date;
       selectingExit = true;
     }
-    onRangeChange(orderDateRange(anchor, date));
-    dragSelection = { anchor, moved: anchor !== date, pointerId: event.pointerId, startedWithEntry };
+    emitRange(orderDateRange(anchor, date));
+    dragSelection = {
+      anchor,
+      moved: anchor !== date,
+      pointerId: event.pointerId,
+      previousRange,
+      previousSelectingExit,
+      previousSelectionAnchor,
+      startedWithEntry
+    };
     root.setPointerCapture?.(event.pointerId);
   }
 
@@ -125,24 +184,37 @@
     if (!date) return;
     if (date !== dragSelection.anchor) dragSelection.moved = true;
     focusDate = date;
-    onRangeChange(orderDateRange(dragSelection.anchor, date));
+    emitRange(orderDateRange(dragSelection.anchor, date));
   }
 
   function finishPointerSelection(event: PointerEvent): void {
     if (!dragSelection || dragSelection.pointerId !== event.pointerId) return;
     const completed = dragSelection.moved || dragSelection.startedWithEntry;
-    if (root.hasPointerCapture?.(event.pointerId)) root.releasePointerCapture(event.pointerId);
     dragSelection = null;
+    if (root.hasPointerCapture?.(event.pointerId)) root.releasePointerCapture(event.pointerId);
     if (completed) {
       selectingExit = false;
       selectionAnchor = null;
     }
   }
 
+  function cancelPointerSelection(event: PointerEvent): void {
+    if (!dragSelection || dragSelection.pointerId !== event.pointerId) return;
+    const canceled = dragSelection;
+    dragSelection = null;
+    if (root.hasPointerCapture?.(event.pointerId)) root.releasePointerCapture(event.pointerId);
+    selectionAnchor = canceled.previousSelectionAnchor;
+    selectingExit = canceled.previousSelectingExit;
+    suppressClick = false;
+    emitRange(canceled.previousRange);
+  }
+
   async function focusCalendarDate(date: string, forceMonth = false): Promise<void> {
     focusDate = date;
     const targetMonth = calendarMonthStart(date);
-    if (forceMonth || (targetMonth !== viewMonth && targetMonth !== shiftCalendarMonth(viewMonth, 1))) {
+    const targetIsVisible = targetMonth === viewMonth
+      || (!singleMonth && targetMonth === shiftCalendarMonth(viewMonth, 1));
+    if (forceMonth || !targetIsVisible) {
       viewMonth = targetMonth;
     }
     await tick();
@@ -158,8 +230,8 @@
     let forceMonth = false;
 
     switch (event.key) {
-      case 'ArrowLeft': targetDate = formatISODate(addDays(parseISODate(date), -1)); break;
-      case 'ArrowRight': targetDate = formatISODate(addDays(parseISODate(date), 1)); break;
+      case 'ArrowLeft': targetDate = formatISODate(addDays(parseISODate(date), isRtl ? 1 : -1)); break;
+      case 'ArrowRight': targetDate = formatISODate(addDays(parseISODate(date), isRtl ? -1 : 1)); break;
       case 'ArrowUp': targetDate = formatISODate(addDays(parseISODate(date), -7)); break;
       case 'ArrowDown': targetDate = formatISODate(addDays(parseISODate(date), 7)); break;
       case 'Home': targetDate = formatISODate(addDays(parseISODate(date), -mondayIndex(date))); break;
@@ -194,7 +266,8 @@
   aria-label={ui('chooseRange')}
   onpointermove={handlePointerMove}
   onpointerup={finishPointerSelection}
-  onpointercancel={finishPointerSelection}
+  onpointercancel={cancelPointerSelection}
+  onlostpointercapture={cancelPointerSelection}
 >
   <div class="calendar-toolbar" dir={isRtl ? 'rtl' : 'ltr'}>
     <button class="month-navigation" type="button" aria-label={ui('previousMonth')} onclick={() => navigateMonth(-1)}>{isRtl ? '→' : '←'}</button>
@@ -227,7 +300,7 @@
                 onpointerdown={(event) => handlePointerDown(event, day.date)}
                 onclick={() => handleDayClick(day.date)}
                 onkeydown={(event) => handleDayKeydown(event, day.date)}
-              >{day.day}</button>
+              >{formatCalendarDayNumber(locale, day.day)}</button>
             {:else}
               <span class="empty-day" aria-hidden="true"></span>
             {/if}

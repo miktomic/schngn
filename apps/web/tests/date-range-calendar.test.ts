@@ -9,6 +9,7 @@ import {
 import { SUPPORTED_LOCALES } from '../src/lib/i18n/locales';
 import {
   createDateRangeCalendarUiTranslator,
+  formatCalendarDayNumber,
   formatDateRangeSelection
 } from '../src/lib/i18n/dateRangeCalendarUi';
 
@@ -66,5 +67,14 @@ describe('date range calendar model', () => {
       expect(ui('chooseExit').trim().length).toBeGreaterThan(0);
       expect(formatDateRangeSelection(locale, 8).trim().length).toBeGreaterThan(0);
     }
+  });
+
+  test('localizes visible day numerals and singular selection copy', () => {
+    expect(formatCalendarDayNumber('ar', 12)).toBe('١٢');
+    expect(formatDateRangeSelection('en', 1)).toBe('1 day selected');
+    expect(formatDateRangeSelection('fr', 1)).toBe('1 jour sélectionné');
+    expect(formatDateRangeSelection('de', 1)).toBe('1 Tag ausgewählt');
+    expect(formatDateRangeSelection('ar', 1)).toBe('تم اختيار يوم واحد');
+    expect(formatDateRangeSelection('ar', 8)).toBe('تم اختيار ٨ أيام');
   });
 });
