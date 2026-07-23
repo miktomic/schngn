@@ -178,7 +178,7 @@ Do not commit the ID. Enter it directly in Infisical `prod` `/apps/web` as `CLOU
    - `workflow_ref=miktomic/schngn/.github/workflows/ci.yml@refs/heads/main`;
    - `runner_environment=github-hosted`.
 8. Do not bind run IDs, SHA, or actor claims that change on every legitimate deployment.
-9. Verify the complete seven-value production set with the repository validator before the first deploy. Leave Infisical Secret Syncs disabled or remove them.
+9. Verify the complete seven-value production set with the repository validator before the first deploy. Confirm that the project has no Infisical Secret Sync configured.
 
 The non-secret identity ID, project ID, and OIDC audience are declared in the workflow. They identify the exchange but cannot retrieve values without the signed GitHub token and the matching Infisical trust policy.
 
