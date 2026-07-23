@@ -37,11 +37,13 @@ describe('fixed legal/disclaimer copy', () => {
     }
   });
 
-  test('keeps the workspace disclaimer compact instead of repeating it in a dismissible banner', () => {
+  test('keeps one shared footer disclaimer instead of repeating it inside the workspace', () => {
     const app = readFileSync('apps/web/src/routes/app/+page.svelte', 'utf8');
+    const footer = readFileSync('apps/web/src/lib/design/SiteFooter.svelte', 'utf8');
     expect(app).not.toContain('class="disclaimer-notice"');
     expect(app).not.toContain('disclaimerNoticeVisible');
-    expect(app).toContain('class="legal-footer"');
+    expect(app).not.toContain('class="legal-footer"');
+    expect(footer).toContain('class="footer-disclaimer"');
     expect(app).not.toContain("rt('officialSources')");
     expect(app).not.toContain('officialSourceLinks');
   });

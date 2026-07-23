@@ -123,7 +123,7 @@ describe('public agent setup page', () => {
     }
   });
 
-  test('integrates the route into localization, offline navigation, sitemap, and smoke discovery', async () => {
+  test('integrates the route into localization, offline navigation, sitemap, smoke, and footer discovery', async () => {
     expect(isLocalizedNavigationPath('/agents')).toBe(true);
     expect(isLocalizedNavigationPath('/ar/agents')).toBe(true);
     expect(await reroute({ url: new URL('https://schngn.com/fr/agents'), fetch } as never)).toBe('/agents');
@@ -134,6 +134,8 @@ describe('public agent setup page', () => {
     const worker = readFileSync('apps/web/static/service-worker.js', 'utf8');
     const sitemap = readFileSync('apps/web/static/sitemap.xml', 'utf8');
     const smoke = readFileSync('scripts/post-deploy-smoke.mjs', 'utf8');
+    const footer = readFileSync('apps/web/src/lib/design/SiteFooter.svelte', 'utf8');
+    const footerCopy = readFileSync('apps/web/src/lib/i18n/legalFooterUi.ts', 'utf8');
 
     expect(hook).toContain("'/agents'");
     expect(config).toContain('`/${locale}/agents`');
@@ -141,6 +143,11 @@ describe('public agent setup page', () => {
     expect(worker).toContain("'/agents'");
     expect(smoke).toContain("path: '/agents'");
     expect(smoke).toContain('<loc>https://schngn.com/agents</loc>');
+    expect(footer).toContain("localizedPath('/agents', locale)");
+    expect(footer).toContain('copy.resources');
+    expect(footer).toContain('copy.agents');
+    expect(footerCopy).toContain('resources:');
+    expect(footerCopy).toContain('agents:');
 
     for (const locale of SUPPORTED_LOCALES) {
       const pathname = locale === 'en' ? '/agents' : `/${locale}/agents`;

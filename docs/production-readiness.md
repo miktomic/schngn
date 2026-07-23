@@ -78,6 +78,8 @@ https://schngn.com/api/webhooks/clerk
 
 Subscribe it to `user.deleted`, then store the generated signing secret as `CLERK_WEBHOOK_SIGNING_SECRET` in the GitHub `production` Environment. The account expansion must not deploy until that third Clerk value is present.
 
+If Google signup is enabled, follow [`google-oauth-production-setup.md`](google-oauth-production-setup.md). The public homepage must expose the localized `/privacy` and `/terms` documents in its shared footer before Google branding verification. Google Client ID and Client Secret values live only in the Clerk production Google connection; they are not application or deployment bindings.
+
 Verify in production:
 
 - anonymous calculator use works with Clerk unavailable and no trip request leaves the browser;
@@ -171,7 +173,9 @@ Production traffic is allowed only when:
 - repository and browser gates are green;
 - GitHub secret scanning/push protection (or an equivalent full-history scanner) is enabled and reports no live credential;
 - there are no known result-integrity defects;
+- the Privacy Policy and Terms name the real legal operator/controller, include the required contact and jurisdiction details, and have received appropriate legal plus native-language review; generated draft copy is not published as final legal copy;
 - Clerk production domain/redirect configuration and the signed lifecycle webhook are verified;
+- any enabled Google social connection uses a published production OAuth app, the exact Clerk callback, verified public legal URLs, and a successful end-to-end test in a normal browser;
 - guest local-only behavior, signup-and-save consent, existing-account reconciliation, cross-account isolation, repeat-visit sync, export, deletion, and sign-out cache isolation are verified;
 - D1 account persistence is verified with a controlled, synthetic signed-in smoke;
 - the authenticated account-write edge rate limit is enabled and verified;

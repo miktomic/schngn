@@ -27,6 +27,8 @@ schngn/
 │       │   │   ├── app/+page.svelte          # calculator shell
 │       │   │   ├── agents/+page.svelte       # localized local-agent setup and interface guide
 │       │   │   ├── contact/+page.svelte      # localized support/feature form
+│       │   │   ├── privacy/+page.svelte      # localized public privacy policy
+│       │   │   ├── terms/+page.svelte        # localized public terms of use
 │       │   │   ├── api/account/              # authenticated account-data deletion route
 │       │   │   ├── api/account/trips/        # authenticated trip sync/export route
 │       │   │   ├── api/contact/              # Turnstile-checked fixed-recipient email route

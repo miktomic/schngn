@@ -22,6 +22,8 @@ describe('post-deploy smoke and privacy-safe operations', () => {
       '/faq',
       '/contact',
       '/agents',
+      '/privacy',
+      '/terms',
       '/manifest.json',
       '/service-worker.js',
       '/favicon.png',

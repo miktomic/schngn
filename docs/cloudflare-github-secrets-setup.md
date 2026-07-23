@@ -182,6 +182,8 @@ In the Clerk production instance:
 
 Clerk remains the identity source. Do not create a duplicate D1 user profile merely to mirror email/name fields. D1 application data is keyed by the Clerk user ID derived from the verified server session, never a client-supplied owner.
 
+For Google signup, use the separate [`Google signup production setup`](google-oauth-production-setup.md) runbook. Google OAuth credentials are entered directly into the Clerk production Google connection and must not be added to this GitHub Environment or to Cloudflare.
+
 ### 6. Configure contact delivery
 
 In Cloudflare before deploying the contact binding:

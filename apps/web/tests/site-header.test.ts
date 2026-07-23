@@ -10,7 +10,9 @@ const routePaths = [
   'apps/web/src/routes/accuracy/+page.svelte',
   'apps/web/src/routes/explainer/+page.svelte',
   'apps/web/src/routes/faq/+page.svelte',
-  'apps/web/src/routes/contact/+page.svelte'
+  'apps/web/src/routes/contact/+page.svelte',
+  'apps/web/src/routes/privacy/+page.svelte',
+  'apps/web/src/routes/terms/+page.svelte'
 ];
 
 describe('common site header', () => {

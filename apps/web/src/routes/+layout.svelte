@@ -1,13 +1,16 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { afterNavigate } from '$app/navigation';
+  import { page } from '$app/state';
   import { initializePlausibleAnalytics } from '$lib/analytics/plausibleClient';
   import { trackAnalyticsEvent } from '$lib/analytics/privacyAnalytics';
-  import { isLocalizedNavigationPath, stripLocalePrefix } from '$lib/i18n';
+  import SiteFooter from '$lib/design/SiteFooter.svelte';
+  import { isLocalizedNavigationPath, localeFromPath, stripLocalePrefix } from '$lib/i18n';
   import { onMount } from 'svelte';
   import '../app.css';
 
   let { children } = $props();
+  let locale = $derived(localeFromPath(page.url.pathname));
 
   if (browser) void initializePlausibleAnalytics(window);
 
@@ -62,7 +65,7 @@
 
   function collectShellUrls(): string[] {
     const urls = new Set<string>();
-    const candidates = ['/', '/app', '/accuracy', '/explainer', '/faq', '/agents', '/contact', '/manifest.json', '/favicon.ico', '/favicon.png', location.pathname];
+    const candidates = ['/', '/app', '/accuracy', '/explainer', '/faq', '/agents', '/contact', '/privacy', '/terms', '/manifest.json', '/favicon.ico', '/favicon.png', location.pathname];
 
     for (const candidate of candidates) {
       const url = new URL(candidate, location.origin);
@@ -137,3 +140,4 @@
 </script>
 
 {@render children()}
+<SiteFooter {locale} url={page.url} />

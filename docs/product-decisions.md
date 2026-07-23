@@ -23,6 +23,7 @@ This file records product, privacy, infrastructure, and launch decisions that un
 | DEC-12 | Model trips as journeys made of explicit Schengen stays | Approved | US-04, US-19 |
 | DEC-13 | Localize the whole site in 17 languages, including RTL Hebrew and Arabic | Approved | Whole-site UI |
 | DEC-14 | Use one continuous anchored calculator workspace with one canonical saved timeline | Approved | Core app UX |
+| DEC-15 | Add a localized, fixed-destination support and feature-request contact form | Approved | Public support surface |
 | DEC-16 | Expose the calculation to agents through local-only TypeScript, CLI, loopback HTTP/OpenAPI, and stdio MCP surfaces | Approved post-MVP scope change | US-23 |
 
 ## DEC-01 — Analytics provider

@@ -5,6 +5,8 @@ const explainerPath = 'apps/web/src/routes/explainer/+page.svelte';
 const faqPath = 'apps/web/src/routes/faq/+page.svelte';
 const appPath = 'apps/web/src/routes/app/+page.svelte';
 const contactPath = 'apps/web/src/routes/contact/+page.svelte';
+const privacyPath = 'apps/web/src/routes/privacy/+page.svelte';
+const termsPath = 'apps/web/src/routes/terms/+page.svelte';
 const agentsPath = 'apps/web/src/routes/agents/+page.svelte';
 
 describe('standalone public resources', () => {
@@ -12,14 +14,18 @@ describe('standalone public resources', () => {
     expect(existsSync(explainerPath)).toBe(true);
     expect(existsSync(faqPath)).toBe(true);
     expect(existsSync(contactPath)).toBe(true);
+    expect(existsSync(privacyPath)).toBe(true);
+    expect(existsSync(termsPath)).toBe(true);
     expect(existsSync(agentsPath)).toBe(true);
 
     const explainer = readFileSync(explainerPath, 'utf8');
     const faq = readFileSync(faqPath, 'utf8');
     const contact = readFileSync(contactPath, 'utf8');
+    const privacy = readFileSync(privacyPath, 'utf8');
+    const terms = readFileSync(termsPath, 'utf8');
     const agents = readFileSync(agentsPath, 'utf8');
 
-    for (const source of [explainer, faq, contact, agents]) {
+    for (const source of [explainer, faq, contact, privacy, terms, agents]) {
       expect(source).toContain('rel="canonical"');
       expect(source).toContain('hreflang="x-default"');
       expect(source).toContain('SiteHeader');

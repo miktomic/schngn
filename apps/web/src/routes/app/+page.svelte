@@ -40,7 +40,6 @@
   } from '$lib/simulator/savedTripAdjustment';
   import { buildReturningDaysForecast } from '$lib/returns/returningDays';
   import { buildExplanationState } from '$lib/explanation/explanationState';
-  import { localizedLegalCopy } from '$lib/legal/legalCopy';
   import {
     buildUnlockBuyIntentEvent,
     buildUnlockFakeDoorState,
@@ -129,8 +128,6 @@
   $: tripCardUi = createTripCardUiTranslator(locale);
   $: ongoingStay = createOngoingStayUiTranslator(locale);
   $: signupValue = createSignupValueUiTranslator(locale);
-
-  $: legal = localizedLegalCopy(locale);
 
   let currentAnchor: AppAnchor = 'timeline';
   let hasLoadedTrips = false;
@@ -2287,7 +2284,6 @@
     </div>
     {/if}
 
-    <aside class="legal-footer" aria-label={rt('disclaimerAria')}><p>{legal.footer}</p></aside>
   </section>
 </main>
 
@@ -2428,8 +2424,7 @@
     text-wrap: balance;
   }
 
-  .storage-alert,
-  .legal-footer {
+  .storage-alert {
     width: min(1180px, 100%);
     margin: 32px auto 0;
     padding: 18px 0;
@@ -2448,22 +2443,8 @@
     line-height: 1.45;
   }
 
-  .legal-footer {
-    margin-top: clamp(52px, 7vw, 80px);
-    border-block: 1px solid var(--line);
-  }
-
-  .legal-footer p,
   .section-heading p {
     margin: 0;
-  }
-
-  .legal-footer p {
-    max-width: 72ch;
-    margin: 6px 0 0;
-    color: var(--muted);
-    line-height: 1.45;
-    text-wrap: pretty;
   }
 
   .compact {

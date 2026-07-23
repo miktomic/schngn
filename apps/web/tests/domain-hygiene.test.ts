@@ -53,6 +53,8 @@ describe('canonical domain hygiene', () => {
     expect(sitemap).toContain('<loc>https://schngn.com/faq</loc>');
     expect(sitemap).toContain('<loc>https://schngn.com/contact</loc>');
     expect(sitemap).toContain('<loc>https://schngn.com/agents</loc>');
+    expect(sitemap).toContain('<loc>https://schngn.com/privacy</loc>');
+    expect(sitemap).toContain('<loc>https://schngn.com/terms</loc>');
     expect(sitemap).not.toContain('www.schngn.com');
   });
 });

@@ -167,6 +167,40 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.getByRole('heading', { name: 'כיצד נוכל לעזור?' })).toBeVisible();
   });
 
+  test('publishes localized privacy and terms pages from the shared footer', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.goto('/');
+
+    const footer = page.locator('footer.site-footer');
+    await expect(footer.getByRole('link', { name: 'Privacy Policy', exact: true })).toHaveAttribute('href', '/privacy');
+    await expect(footer.getByRole('link', { name: 'Terms of Service', exact: true })).toHaveAttribute('href', '/terms');
+    await expect(footer.getByRole('link', { name: 'Support center', exact: true })).toHaveAttribute('href', '/contact');
+
+    await page.goto('/privacy');
+    await expect(page).toHaveTitle('Privacy Policy | SCHNGN');
+    await expect(page.getByRole('heading', { name: 'Privacy Policy', level: 1 })).toBeVisible();
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://schngn.com/privacy');
+    await expect(page.getByRole('link', { name: 'Google Privacy Policy' })).toHaveAttribute('href', 'https://policies.google.com/privacy');
+
+    await page.setViewportSize({ width: 320, height: 760 });
+    const privacyGeometry = await page.locator('body').evaluate((body) => ({
+      clientWidth: body.clientWidth,
+      scrollWidth: body.scrollWidth
+    }));
+    expect(privacyGeometry.scrollWidth).toBeLessThanOrEqual(privacyGeometry.clientWidth + 1);
+
+    await page.goto('/he/terms');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'he');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('main h1')).toBeVisible();
+    await expect(page.locator('footer.site-footer a[href="/he/privacy"]')).toBeVisible();
+    const rtlGeometry = await page.locator('body').evaluate((body) => ({
+      clientWidth: body.clientWidth,
+      scrollWidth: body.scrollWidth
+    }));
+    expect(rtlGeometry.scrollWidth).toBeLessThanOrEqual(rtlGeometry.clientWidth + 1);
+  });
+
   test('accuracy page states the checked-in evidence without claiming official output parity', async ({ page }) => {
     const requests = observeNetwork(page);
 

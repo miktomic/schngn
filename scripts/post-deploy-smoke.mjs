@@ -37,6 +37,8 @@ const publicChecks = [
   { path: '/faq', type: 'text/html', contains: ['Frequently asked questions', 'What does “90 days in any 180 days” mean?'] },
   { path: '/agents', type: 'text/html', contains: ['Put SCHNGN behind your agent', 'codex mcp add schngn -- schngn-mcp'] },
   { path: '/contact', type: 'text/html', contains: ['How can we help?', 'Send message'] },
+  { path: '/privacy', type: 'text/html', contains: ['Privacy Policy'] },
+  { path: '/terms', type: 'text/html', contains: ['Terms of Use'] },
   { path: '/manifest.json', type: 'application/json', contains: ['SCHNGN', '/app', '/icons/icon-192.png'] },
   { path: '/service-worker.js', type: 'text/javascript', contains: ['SCHNGN_STATIC_CACHE', '/app'] },
   { path: '/favicon.png', type: 'image/png', contains: [] },
@@ -44,7 +46,7 @@ const publicChecks = [
   { path: '/brand/schngn-social.png', type: 'image/png', contains: [] },
   { path: '/icons/icon-maskable-512.png', type: 'image/png', contains: [] },
   { path: '/robots.txt', type: 'text/plain', contains: ['Sitemap: https://schngn.com/sitemap.xml'] },
-  { path: '/sitemap.xml', type: 'application/xml', contains: ['<loc>https://schngn.com/</loc>', '<loc>https://schngn.com/app</loc>', '<loc>https://schngn.com/accuracy</loc>', '<loc>https://schngn.com/explainer</loc>', '<loc>https://schngn.com/faq</loc>', '<loc>https://schngn.com/agents</loc>', '<loc>https://schngn.com/contact</loc>'] }
+  { path: '/sitemap.xml', type: 'application/xml', contains: ['<loc>https://schngn.com/</loc>', '<loc>https://schngn.com/app</loc>', '<loc>https://schngn.com/accuracy</loc>', '<loc>https://schngn.com/explainer</loc>', '<loc>https://schngn.com/faq</loc>', '<loc>https://schngn.com/agents</loc>', '<loc>https://schngn.com/contact</loc>', '<loc>https://schngn.com/privacy</loc>', '<loc>https://schngn.com/terms</loc>'] }
 ];
 
 const anonymousAccountChecks = [

@@ -66,5 +66,5 @@ export function intlLocale(locale: Locale): string {
 }
 
 export function isLocalizedNavigationPath(pathname: string): boolean {
-  return ['/', '/app', '/accuracy', '/explainer', '/faq', '/agents', '/contact'].includes(stripLocalePrefix(pathname));
+  return ['/', '/app', '/accuracy', '/explainer', '/faq', '/agents', '/contact', '/privacy', '/terms'].includes(stripLocalePrefix(pathname));
 }

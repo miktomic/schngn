@@ -1,6 +1,8 @@
 export { default as FactCard } from './FactCard.svelte';
 export { default as CommandBlock } from './CommandBlock.svelte';
+export { default as LegalDocument } from './LegalDocument.svelte';
 export { default as SchngnLogo } from './SchngnLogo.svelte';
+export { default as SiteFooter } from './SiteFooter.svelte';
 export { default as SiteHeader } from './SiteHeader.svelte';
 export { default as SchengenCountryGuide } from './SchengenCountryGuide.svelte';
 export { default as StatusChip } from './StatusChip.svelte';

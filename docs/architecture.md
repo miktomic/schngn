@@ -233,7 +233,7 @@ Implemented:
 - Pure TypeScript engine with deterministic fixtures, boundary cases, a golden scenario, and independent-oracle property checks.
 - Strict local agent capability with a TypeScript API, JSON CLI, loopback HTTP/OpenAPI service, and stdio MCP tools.
 - Local trip CRUD, semantic validation, persistence, and JSON backup/restore.
-- A tab-free calculator workspace with timeline and trips, plus a header-linked Account & data destination on the same mounted route and dedicated localized `/explainer`, `/faq`, `/agents`, and `/contact` public resources.
+- A tab-free calculator workspace with timeline and trips, plus a header-linked Account & data destination on the same mounted route and dedicated localized `/explainer`, `/faq`, `/agents`, `/contact`, `/privacy`, and `/terms` public resources.
 - Installable offline PWA shell.
 - Aggregate-only analytics adapter with no email capture.
 - Unit, type, build, browser, privacy-network, and post-deploy smoke gates.
