@@ -1,0 +1,146 @@
+name: One-time Infisical production import
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type IMPORT_PRODUCTION_TO_INFISICAL
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  import-production:
+    if: ${{ inputs.confirmation == 'IMPORT_PRODUCTION_TO_INFISICAL' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      SOURCE_CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      SOURCE_CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
+      SOURCE_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SOURCE_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SOURCE_TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      SOURCE_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      SOURCE_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
+      INFISICAL_API_BASE_URL: https://app.infisical.com/api
+      INFISICAL_IDENTITY_ID: 812097c6-b028-4a21-9af0-291ebc835cfa
+      INFISICAL_PROJECT_ID: 44e3b68f-6f17-458c-aaeb-da72b0faa793
+      INFISICAL_ENVIRONMENT: prod
+      INFISICAL_SECRET_PATH: /apps/web
+      OIDC_AUDIENCE: https://github.com/miktomic
+    steps:
+      - name: Import and verify the allowlisted production values
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const source = [
+            ["CLERK_SECRET_KEY", process.env.SOURCE_CLERK_SECRET_KEY],
+            ["CLERK_WEBHOOK_SIGNING_SECRET", process.env.SOURCE_CLERK_WEBHOOK_SIGNING_SECRET],
+            ["CLOUDFLARE_ACCOUNT_ID", process.env.SOURCE_CLOUDFLARE_ACCOUNT_ID],
+            ["CLOUDFLARE_API_TOKEN", process.env.SOURCE_CLOUDFLARE_API_TOKEN],
+            ["TURNSTILE_SECRET_KEY", process.env.SOURCE_TURNSTILE_SECRET_KEY],
+            ["PUBLIC_CLERK_PUBLISHABLE_KEY", process.env.SOURCE_PUBLIC_CLERK_PUBLISHABLE_KEY],
+            ["PUBLIC_TURNSTILE_SITE_KEY", process.env.SOURCE_PUBLIC_TURNSTILE_SITE_KEY]
+          ];
+
+          const missing = source.filter(([, value]) => typeof value !== "string" || value.length === 0);
+          if (missing.length > 0) {
+            throw new Error(`Missing required GitHub production values: ${missing.map(([key]) => key).join(", ")}`);
+          }
+
+          const requireEnv = (name) => {
+            const value = process.env[name];
+            if (typeof value !== "string" || value.length === 0) {
+              throw new Error(`Missing workflow setting: ${name}`);
+            }
+            return value;
+          };
+
+          const assertOk = (response, stage) => {
+            if (!response.ok) {
+              throw new Error(`${stage} failed with HTTP ${response.status}`);
+            }
+          };
+
+          const audience = requireEnv("OIDC_AUDIENCE");
+          const oidcRequestUrl = new URL(requireEnv("ACTIONS_ID_TOKEN_REQUEST_URL"));
+          oidcRequestUrl.searchParams.set("audience", audience);
+          const oidcResponse = await fetch(oidcRequestUrl, {
+            headers: {
+              authorization: `Bearer ${requireEnv("ACTIONS_ID_TOKEN_REQUEST_TOKEN")}`
+            }
+          });
+          assertOk(oidcResponse, "GitHub OIDC request");
+          const oidcPayload = await oidcResponse.json();
+          if (typeof oidcPayload.value !== "string" || oidcPayload.value.length === 0) {
+            throw new Error("GitHub OIDC response did not contain a token");
+          }
+
+          const apiBaseUrl = requireEnv("INFISICAL_API_BASE_URL");
+          const loginResponse = await fetch(`${apiBaseUrl}/v1/auth/oidc-auth/login`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              identityId: requireEnv("INFISICAL_IDENTITY_ID"),
+              jwt: oidcPayload.value
+            })
+          });
+          assertOk(loginResponse, "Infisical OIDC login");
+          const loginPayload = await loginResponse.json();
+          if (typeof loginPayload.accessToken !== "string" || loginPayload.accessToken.length === 0) {
+            throw new Error("Infisical OIDC response did not contain an access token");
+          }
+
+          const projectId = requireEnv("INFISICAL_PROJECT_ID");
+          const environment = requireEnv("INFISICAL_ENVIRONMENT");
+          const secretPath = requireEnv("INFISICAL_SECRET_PATH");
+          const authorization = `Bearer ${loginPayload.accessToken}`;
+          const upsertResponse = await fetch(`${apiBaseUrl}/v4/secrets/batch`, {
+            method: "PATCH",
+            headers: {
+              authorization,
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({
+              projectId,
+              environment,
+              secretPath,
+              mode: "upsert",
+              secrets: source.map(([secretKey, secretValue]) => ({ secretKey, secretValue }))
+            })
+          });
+          assertOk(upsertResponse, "Infisical bulk upsert");
+
+          const verifyUrl = new URL(`${apiBaseUrl}/v4/secrets`);
+          verifyUrl.searchParams.set("projectId", projectId);
+          verifyUrl.searchParams.set("environment", environment);
+          verifyUrl.searchParams.set("secretPath", secretPath);
+          verifyUrl.searchParams.set("viewSecretValue", "true");
+          verifyUrl.searchParams.set("expandSecretReferences", "false");
+          verifyUrl.searchParams.set("recursive", "false");
+          verifyUrl.searchParams.set("includeImports", "false");
+          const verifyResponse = await fetch(verifyUrl, {
+            headers: { authorization }
+          });
+          assertOk(verifyResponse, "Infisical verification");
+          const verifyPayload = await verifyResponse.json();
+          const actual = new Map(
+            Array.isArray(verifyPayload.secrets)
+              ? verifyPayload.secrets.map(({ secretKey, secretValue }) => [secretKey, secretValue])
+              : []
+          );
+          const mismatched = source
+            .filter(([key, value]) => actual.get(key) !== value)
+            .map(([key]) => key);
+          if (mismatched.length > 0) {
+            throw new Error(`Infisical verification failed for: ${mismatched.join(", ")}`);
+          }
+
+          console.log(`Imported and verified ${source.length} production configuration values.`);
+          NODE
