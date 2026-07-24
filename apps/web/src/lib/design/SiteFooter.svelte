@@ -137,6 +137,8 @@
     }
 
     nav a {
+      min-width: 0;
+      overflow-wrap: anywhere;
       font-size: 0.96rem;
     }
 

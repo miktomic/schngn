@@ -282,6 +282,30 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('main')).toBeVisible();
   });
 
+  test('keeps long localized footer links inside a 320px viewport', async ({ page }) => {
+    await installFakeClerk(page, null);
+    await page.setViewportSize({ width: 320, height: 760 });
+    await page.goto('/de/app');
+    await page.locator('#add-trip-button').click();
+    await expect(page.locator('dialog.trip-dialog')).toBeVisible();
+
+    const geometry = await page.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth
+    }));
+    expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth);
+
+    const footerLinks = page.locator('.site-footer nav a');
+    await expect(footerLinks).toHaveCount(4);
+    for (const link of await footerLinks.all()) {
+      const linkGeometry = await link.evaluate((element) => ({
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth
+      }));
+      expect(linkGeometry.scrollWidth).toBeLessThanOrEqual(linkGeometry.clientWidth + 1);
+    }
+  });
+
   test('opens account overlays in place from a public page header', async ({ page }) => {
     await installFakeClerk(page, null);
     await page.goto('/faq?source=header');
