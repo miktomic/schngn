@@ -460,6 +460,12 @@
     .calendar-day { font-size: 0.86rem; }
   }
 
+  @media (max-width: 360px) {
+    .date-range-calendar { padding: 3px; }
+    .calendar-toolbar { padding-inline: 6px; }
+    .day-grid { gap: 0; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .date-range-calendar * { scroll-behavior: auto; }
   }

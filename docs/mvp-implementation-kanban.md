@@ -430,7 +430,7 @@ The original MVP implementation cards above shipped code and automated coverage.
 - **Depends on:** US-04, US-13, DEC-13, DEC-14
 - **Implementation target:** a reusable, dependency-free calendar selector inside the Add trip dialog that writes to the existing canonical entry/exit fields.
 - **Acceptance summary:**
-  - Desktop shows two months; mobile shows one month without horizontal overflow.
+  - Desktop shows two months; mobile shows one month without horizontal overflow, retaining 44 px day targets down to a 320 px viewport.
   - Mouse, pen, and touch users can drag an inclusive period in either direction and across the two visible desktop months.
   - Tap-tap and Enter/Space selection remain available; arrow, Home/End, and Page Up/Page Down keys move focus without arbitrary past/future limits.
   - Exact native entry and exit inputs remain synchronized as an accessibility and precision fallback, and open-ended stays retain their existing behavior.

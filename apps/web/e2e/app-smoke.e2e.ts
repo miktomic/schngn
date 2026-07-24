@@ -524,22 +524,48 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const dialog = page.getByRole('dialog', { name: 'Add a past or future Schengen stay' });
     await expect(dialog).toBeVisible();
 
-    for (const width of [390, 320]) {
+    for (const width of [390, 361, 360, 320]) {
       await page.setViewportSize({ width, height: 760 });
 
       const dialogGeometry = await dialog.evaluate((element) => {
         const rect = element.getBoundingClientRect();
+        const calendar = element.querySelector('.date-range-calendar');
+        const calendarStyle = calendar ? getComputedStyle(calendar) : null;
+        const style = getComputedStyle(element);
         return {
           clientWidth: element.clientWidth,
           scrollWidth: element.scrollWidth,
           left: rect.left,
           right: rect.right,
-          viewportWidth: window.innerWidth
+          viewportWidth: window.innerWidth,
+          paddingInlineStart: Number.parseFloat(style.paddingInlineStart),
+          calendarMarginInlineStart: calendarStyle
+            ? Number.parseFloat(calendarStyle.marginInlineStart)
+            : Number.NaN
         };
       });
       expect(dialogGeometry.scrollWidth).toBeLessThanOrEqual(dialogGeometry.clientWidth + 1);
       expect(dialogGeometry.left).toBeGreaterThanOrEqual(0);
       expect(dialogGeometry.right).toBeLessThanOrEqual(dialogGeometry.viewportWidth + 1);
+      if (width <= 360) {
+        expect(dialogGeometry.paddingInlineStart).toBe(14);
+        expect(dialogGeometry.calendarMarginInlineStart).toBe(-14);
+      } else {
+        expect(dialogGeometry.paddingInlineStart).toBeGreaterThan(14);
+        expect(dialogGeometry.calendarMarginInlineStart).toBe(0);
+      }
+
+      const calendarDays = dialog.locator('.calendar-day:visible');
+      const minimumCalendarTarget = await calendarDays.evaluateAll((buttons) =>
+        Math.min(
+          ...buttons.map((button) => {
+            const rect = button.getBoundingClientRect();
+            return Math.min(rect.width, rect.height);
+          })
+        )
+      );
+      const expectedMinimumTarget = width <= 360 ? 44 : width === 361 ? 39 : 43;
+      expect(minimumCalendarTarget).toBeGreaterThanOrEqual(expectedMinimumTarget);
 
       const dateControls = dialog.locator('.field-group input[type="date"]:visible');
       await expect(dateControls).toHaveCount(2);

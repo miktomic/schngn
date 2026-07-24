@@ -3318,6 +3318,17 @@
     .signup-value-section button { width: 100%; }
   }
 
+  @media (max-width: 360px) {
+    .trip-dialog {
+      width: 100%;
+      padding-inline: 14px;
+    }
+    .trip-dialog :global(.date-range-calendar) {
+      width: calc(100% + 28px);
+      margin-inline: -14px;
+    }
+  }
+
   @media (max-width: 380px) {
     fieldset { grid-template-columns: 1fr; }
     .account-heading-row { align-items: stretch; flex-direction: column; }
