@@ -189,6 +189,8 @@
 
   function finishPointerSelection(event: PointerEvent): void {
     if (!dragSelection || dragSelection.pointerId !== event.pointerId) return;
+    // Fast touch gestures can coalesce the final move; include the release position.
+    handlePointerMove(event);
     const completed = dragSelection.moved || dragSelection.startedWithEntry;
     dragSelection = null;
     if (root.hasPointerCapture?.(event.pointerId)) root.releasePointerCapture(event.pointerId);
