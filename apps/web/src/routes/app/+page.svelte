@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
   import { latestSafeExitDate } from '@schngn/engine';
   import { DateRangeCalendar, FactCard, SchengenCountryGuide, SiteHeader, StatusChip, TimelineLedger, TripAdjustPanel, TripMiniTimeline } from '$lib/design';
+  import { calculationScopeLabel } from '$lib/i18n/calculationScopeUi';
   import BilateralPassportCheck from '$lib/design/BilateralPassportCheck.svelte';
   import { createTranslator, intlLocale, localeFromPath, localizedPath } from '$lib/i18n';
   import { createAppUiTranslator } from '$lib/i18n/appUi';
@@ -876,10 +877,11 @@
         if (focus) document.getElementById('account-section-heading')?.focus({ preventScroll: true });
         return;
       }
-      const section = document.getElementById(anchor);
+      const visibleAnchor = !historyReady && (anchor === 'trips' || anchor === 'timeline') ? 'status' : anchor;
+      const section = document.getElementById(visibleAnchor);
       if (!section) return;
       section.scrollIntoView({ behavior: smooth && !reducedMotion ? 'smooth' : 'auto', block: 'start' });
-      if (focus) document.getElementById(`${anchor}-heading`)?.focus({ preventScroll: true });
+      if (focus) document.getElementById(`${visibleAnchor}-heading`)?.focus({ preventScroll: true });
     });
   }
 
@@ -919,6 +921,9 @@
     formErrors = localizeValidationErrors(result.errors);
     if (Object.keys(result.errors).length > 0) {
       outsideWindowConfirmationVisible = false;
+      window.requestAnimationFrame(() => {
+        tripDialog?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      });
       return;
     }
 
@@ -1026,8 +1031,11 @@
   function deletePendingTrip(): void {
     if (!pendingDeleteTripId) return;
     if (quickAdjustSourceId === pendingDeleteTripId) resetQuickAdjuster();
+    const removedIndex = visibleTrips.findIndex((trip) => trip.id === pendingDeleteTripId);
+    const nextTrip = visibleTrips[removedIndex + 1] ?? visibleTrips[removedIndex - 1];
     persistTrips(deleteTripById(trips, pendingDeleteTripId));
     pendingDeleteTripId = null;
+    focusElementAfterRender(nextTrip ? `trip-trigger-${nextTrip.id}` : 'add-trip-button', 'add-trip-button');
   }
 
   function exportTrips(): void {
@@ -1490,7 +1498,7 @@
     {/if}
 
     {#if currentAnchor !== 'account'}
-    <div class="single-page-content" id="main-content">
+    <div class="single-page-content" class:onboarding={!historyReady} id="main-content">
       <section class="screen answer-section" id="status" aria-labelledby="status-heading">
         {#if !hasLoadedTrips}
           <div class="loading-state" aria-live="polite">
@@ -1502,11 +1510,13 @@
           <StatusChip tone="safe" label={tripOnboarding('step')} />
           <h1 id="status-heading" class="screen-title" tabindex="-1">{tripOnboarding('title')}</h1>
           <p class="intro-copy">{tripOnboarding('copy')}</p>
-          <div class="button-row">
+          <div class="button-row onboarding-actions">
+            <button id="add-trip-button" class="primary-button" type="button" aria-haspopup="dialog" aria-controls="trip-editor" onclick={startAddTrip}>{tripOnboarding('addNew')}</button>
             <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
           </div>
         {:else}
           <StatusChip tone={dashboardStatusTone} label={dashboardState.statusLabel} />
+          <p class="calculation-scope">{calculationScopeLabel(locale, dashboardState.firstConflictDate === dashboardState.referenceDate)} <time datetime={dashboardState.referenceDate}><bdi>{formatDate(dashboardState.referenceDate)}</bdi></time></p>
           <h1 id="status-heading" class={`verdict ${dashboardTextClass}`} tabindex="-1">{dashboardState.heroMetric}</h1>
           <div class="facts two">
             <FactCard label={ui('latestSafeExit')} value={dashboardState.latestSafeExitLabel} />
@@ -1535,36 +1545,11 @@
         aria-labelledby="trip-heading"
         oncancel={(event) => { event.preventDefault(); cancelTripForm(); }}
       >
-        <div class="section-heading">
-          <p>{ui('navTrips')}</p>
+        <div class="dialog-heading">
           <h2 id="trip-heading" class="screen-title" tabindex="-1">{deep('addStay')}</h2>
+          <button class="dialog-close secondary-button" type="button" aria-label={ui('dismiss')} onclick={cancelTripForm}><span aria-hidden="true">×</span></button>
         </div>
-        <p class="intro-copy">{tripOnboarding('copy')}</p>
         <form class="trip-form" aria-label={rt('tripFormAria')} novalidate onsubmit={(event) => { event.preventDefault(); saveTrip(); }}>
-          <label for="trip-label">
-            <span>{deep('tripLabel')} <small>{deep('optional')}</small></span>
-          </label>
-          <input
-            id="trip-label"
-            bind:value={tripForm.label}
-            maxlength={MAX_TRIP_LABEL_LENGTH}
-            placeholder={deep('summerTrip')}
-            aria-describedby={formErrors.label ? 'trip-label-help trip-label-error' : 'trip-label-help'}
-            aria-invalid={formErrors.label ? 'true' : undefined}
-          />
-          <small id="trip-label-help">{rt('labelHelp', { max: MAX_TRIP_LABEL_LENGTH })}</small>
-          {#if formErrors.label}<strong id="trip-label-error" class="field-error">{formErrors.label}</strong>{/if}
-
-          {#if !tripForm.ongoing}
-            <DateRangeCalendar
-              entryDate={tripForm.entryDate}
-              exitDate={tripForm.exitDate}
-              {locale}
-              onRangeChange={updateTripDateRange}
-              today={tripFormToday}
-            />
-          {/if}
-
           <div class="date-fields">
             <div class="field-group">
               <label for="trip-entry"><span>{deep('entered')}</span></label>
@@ -1605,6 +1590,30 @@
             <input id="trip-ongoing" type="checkbox" checked={tripForm.ongoing} onchange={updateOngoingStay} />
             <span><strong>{ongoingStay('label')}</strong><small>{ongoingStay('help')}</small></span>
           </label>
+
+          {#if !tripForm.ongoing}
+            <DateRangeCalendar
+              entryDate={tripForm.entryDate}
+              exitDate={tripForm.exitDate}
+              {locale}
+              onRangeChange={updateTripDateRange}
+              today={tripFormToday}
+            />
+          {/if}
+
+          <label for="trip-label">
+            <span>{deep('tripLabel')} <small>{deep('optional')}</small></span>
+          </label>
+          <input
+            id="trip-label"
+            bind:value={tripForm.label}
+            maxlength={MAX_TRIP_LABEL_LENGTH}
+            placeholder={deep('summerTrip')}
+            aria-describedby={formErrors.label ? 'trip-label-help trip-label-error' : 'trip-label-help'}
+            aria-invalid={formErrors.label ? 'true' : undefined}
+          />
+          <small id="trip-label-help">{rt('labelHelp', { max: MAX_TRIP_LABEL_LENGTH })}</small>
+          {#if formErrors.label}<strong id="trip-label-error" class="field-error">{formErrors.label}</strong>{/if}
 
           <div class="date-fields optional-border-fields" class:single-field={tripForm.ongoing}>
             <div class="field-group">
@@ -1721,6 +1730,7 @@
       </dialog>
       {/if}
 
+      {#if historyReady}
       <section class="screen timeline-section" id="timeline" aria-labelledby="timeline-heading">
         <div class="timeline-intro">
           <h2 id="timeline-heading" class="screen-title" tabindex="-1">{tripOnboarding('timelineTitle')}</h2>
@@ -1752,7 +1762,6 @@
           <section class="empty-state" aria-labelledby="empty-trips-heading">
             <h2 id="empty-trips-heading">{singlePage('noPreviousTrips')}</h2>
             <p>{tripOnboarding('copy')}</p>
-            <button class="secondary-button" type="button" onclick={confirmNoPreviousTrips}>{tripOnboarding('noHistory')}</button>
           </section>
         {:else}
           <p class="list-summary">
@@ -1875,6 +1884,7 @@
         </div>
       </section>
 
+      {/if}
       {#if SECOND_PLANNER_ENABLED}
       <section class="screen plan-section combined-planner" id="plan" aria-labelledby="plan-heading">
         <div class="section-heading">
@@ -2323,6 +2333,17 @@
     padding-top: clamp(48px, 7vw, 76px);
   }
 
+  .single-page-content.onboarding { grid-template-columns: minmax(0, 640px); justify-content: center; }
+  .onboarding .answer-section { position: static; }
+  .onboarding .workspace-flow { grid-column: 1; grid-row: 2; }
+  .onboarding-actions { flex-wrap: wrap; }
+  .calculation-scope { margin: 0 0 -8px; color: var(--muted); font-weight: 650; line-height: 1.5; }
+  .calculation-scope time { display: block; color: var(--ink); font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .dialog-heading { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+  .dialog-heading h2 { flex: 1; font-size: clamp(1.4rem, 4vw, 2rem); }
+  .dialog-close { flex: 0 0 44px; min-height: 44px; padding: 0; font-size: 1.6rem; }
+  .trip-dialog .form-actions { position: sticky; bottom: -24px; background: var(--paper); border-top: 1px solid var(--line); padding-block: 14px; z-index: 2; }
+
   .account-page-content {
     width: min(880px, 100%);
     margin: 0 auto;
@@ -2386,10 +2407,6 @@
 
   .trip-dialog::backdrop {
     background: rgb(10 32 27 / 56%);
-  }
-
-  .trip-dialog > .intro-copy {
-    margin-top: 8px;
   }
 
   .trip-dialog .trip-form {

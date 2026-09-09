@@ -8,6 +8,7 @@
   import type { ProposedTripInput, TripSimulationState } from '$lib/simulator/tripSimulator';
   import { SCHENGEN_COUNTRY_OPTIONS } from '$lib/trips/countries';
   import { createOutsideBreak, MAX_OUTSIDE_BREAKS, MAX_TRIP_LABEL_LENGTH } from '$lib/trips/tripCrud';
+  import { createAppUiTranslator } from '$lib/i18n/appUi';
   import StatusChip from './StatusChip.svelte';
   import SchengenCountryGuide from './SchengenCountryGuide.svelte';
   import WhatIfAdjuster from './WhatIfAdjuster.svelte';
@@ -58,6 +59,7 @@
   let headingId = $derived(requestedHeadingId ?? `${instanceId}-heading`);
   const resultId = `${instanceId}-result`;
 
+  let ui = $derived(createAppUiTranslator(locale));
   let whatIf = $derived(createWhatIfUiTranslator(locale));
   let deep = $derived(createAppDeepUiTranslator(locale));
   let ongoingStay = $derived(createOngoingStayUiTranslator(locale));
@@ -66,7 +68,7 @@
   let tone = $derived<'safe' | 'risk' | 'whatif'>(
     state.statusTone === 'risk' ? 'risk' : state.statusTone === 'safe' ? 'safe' : 'whatif'
   );
-  let cutoffDate = $derived(firstOverLimitDate(state));
+  let cutoffDate = $derived(state.completed && !hasChanges && !state.conflict ? null : firstOverLimitDate(state));
   let rangeFeedback = $derived(state.usage
     ? formatAdjusterFeedback(locale, state.usage.overBy, state.usage.daysRemaining, state.completed)
     : '');
@@ -250,7 +252,10 @@
         <span>{whatIf('live')}</span>
         <StatusChip {tone} label={state.statusLabel} />
       </div>
+      {#if !form.ongoing && (!state.completed || hasChanges)}
+      <span>{ui('latestSafeExit')}</span>
       <strong class:risk={state.statusTone === 'risk'}>{state.latestSafeExitLabel}</strong>
+      {/if}
       <p>{state.summaryCopy}</p>
     </div>
 

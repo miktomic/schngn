@@ -249,14 +249,14 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'he');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page).toHaveURL(/\/he\/app#trips$/);
-    await expect(page.locator('#trips')).toBeVisible();
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
     await expect(page.locator('#plan')).toHaveCount(0);
     const appLanguageSelector = page.getByRole('combobox', { name: 'שפה' });
     await appLanguageSelector.selectOption('fr');
     await expect(page).toHaveURL(/\/fr\/app#trips$/);
     await page.reload();
     await expect(page).toHaveURL(/\/fr\/app#trips$/);
-    await expect(page.locator('#trips')).toBeVisible();
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
     await navigateToAppAnchor(page, 'account');
     await expect(page.getByRole('heading', { name: 'Continuer sans compte' })).toBeVisible();
 
@@ -389,6 +389,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/he/app#details');
+    await page.locator('#status .secondary-button').click();
+    await navigateToAppAnchor(page, 'trips');
     await expect(page).toHaveURL(/\/he\/app#trips$/);
     await page.locator('#trips').evaluate((section) => section.scrollIntoView());
     const rtlAnswerBox = await page.locator('#status').boundingBox();
@@ -745,7 +747,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.locator('#add-trip-button').click();
     const dialog = page.getByRole('dialog', { name: 'Add a past or future Schengen stay' });
     const form = dialog.getByRole('form', { name: 'Trip form' });
-    await expect(dialog).toContainText('Add a trip from the past, a stay you are on now, or a future plan.');
+    await expect(form.getByLabel('Entry date', { exact: true })).toBeInViewport();
     await form.getByLabel(/Trip label/).fill('Future open stay');
     await form.getByLabel('Entry date').fill('2026-08-01');
     await form.locator('#trip-ongoing').check();
@@ -785,10 +787,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     });
     expect(offlineReady).toBe(true);
 
-    await expect(page.getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
-    await expect(page.getByRole('img', { name: /0 counted days in this inclusive 180-day window/i })).toHaveCount(0);
-    await expect(page.locator('#timeline')).toBeVisible();
-    await expect(page.locator('#timeline #timeline-heading')).toBeVisible();
+    await expect(page.locator('#timeline')).toHaveCount(0);
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
     await page.locator('#add-trip-button').click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Add a past or future Schengen stay' })).toBeFocused();
@@ -880,7 +880,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await page.goto('/app');
     const answer = page.locator('#status');
     await expect(answer.getByRole('heading', { name: 'Add any Schengen trip' })).toBeVisible();
-    await expect(answer.getByRole('button', { name: /Add .*trip/ })).toHaveCount(0);
+    await expect(answer.getByRole('button', { name: 'Add new trip', exact: true })).toBeVisible();
     await expect(page.locator('#add-trip-button')).toBeVisible();
     await expect(page.getByRole('form', { name: 'Trip form' })).toHaveCount(0);
 
@@ -906,16 +906,10 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('#status')).toBeVisible();
     await expect(page.locator('#account')).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    const timelineBox = await page.locator('#timeline').boundingBox();
-    const tripsBox = await page.locator('#trips').boundingBox();
-    expect(timelineBox).not.toBeNull();
-    expect(tripsBox).not.toBeNull();
-    expect(timelineBox!.y).toBeLessThan(tripsBox!.y);
-    await navigateToAppAnchor(page, 'timeline');
-    await expect(page.locator('#timeline').getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
+    await expect(page.locator('#timeline')).toHaveCount(0);
+    await expect(page.locator('#trips')).toHaveCount(0);
     await navigateToAppAnchor(page, 'trips');
-    await expect(page.locator('#trips').getByRole('heading', { name: 'Your Trips' })).toBeVisible();
-    await expect(page.locator('#trips .empty-state')).toContainText('Add a trip from the past, a stay you are on now, or a future plan.');
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
     await page.locator('#add-trip-button').click();
     await expect(page.getByRole('dialog', { name: 'Add a past or future Schengen stay' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Add a past or future Schengen stay' })).toBeFocused();
@@ -943,13 +937,13 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await navigateToAppAnchor(page, 'trips');
     await page.reload();
     await expect(page).toHaveURL(/\/app\?campaign=summer#trips$/);
-    await expect(page.locator('#trips')).toBeVisible();
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
 
     await navigateToAppAnchor(page, 'account');
     await expect(page).toHaveURL(/\/app\?campaign=summer#account$/);
     await page.goBack();
     await expect(page).toHaveURL(/\/app\?campaign=summer#trips$/);
-    await expect(page.getByRole('heading', { name: 'Your 180-day timeline' })).toBeVisible();
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
   });
 
   test('maps legacy section URLs to stable single-page anchors', async ({ page }) => {
@@ -958,7 +952,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await page.goto('/app?campaign=summer&section=planner');
     await expect(page).toHaveURL(/\/app\?campaign=summer#trips$/);
-    await expect(page.locator('#trips')).toBeVisible();
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
     await expect(page.locator('#plan')).toHaveCount(0);
 
     await page.goto('/app?section=trip');
@@ -966,7 +960,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await page.goto('/app#timeline');
     await expect(page).toHaveURL(/\/app#timeline$/);
-    await expect(page.locator('#timeline')).toBeVisible();
+    await expect(page.locator('#status #add-trip-button')).toBeVisible();
 
     await page.goto('/app#status');
     await expect(page).toHaveURL(/\/app#timeline$/);
@@ -1178,8 +1172,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(tripRowTrigger).toHaveAttribute('aria-expanded', 'true');
     await expect(quickAdjuster).toHaveCount(1);
     await expect(quickAdjuster.getByRole('heading', { name: 'Adjust trip dates' })).toBeFocused();
-    await expect(quickAdjuster.getByLabel('Arrival', { exact: true })).toBeVisible();
-    await expect(quickAdjuster.getByLabel('Departure', { exact: true })).toBeVisible();
+    await expect(quickAdjuster.getByLabel('Entry date', { exact: true })).toBeVisible();
+    await expect(quickAdjuster.getByLabel('Exit date', { exact: true })).toBeVisible();
     await expect(quickAdjuster.getByText('Exact dates', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('dialog', { name: 'Edit Schengen stay' })).toHaveCount(0);
     await quickAdjuster.getByText('Trip details', { exact: true }).click();
@@ -1188,7 +1182,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(quickAdjuster.getByLabel(/Exit country/)).toBeVisible();
     await expect(quickAdjuster.getByRole('button', { name: 'Add time outside' })).toBeVisible();
     const moveTrip = quickAdjuster.getByRole('button', { name: /Move trip:/ });
-    const exitHandle = quickAdjuster.getByRole('slider', { name: /Departure:/ });
+    const exitHandle = quickAdjuster.getByRole('slider', { name: /Exit date:/ });
     const saveChanges = quickAdjuster.getByRole('button', { name: 'Save changes' });
     await expect(quickAdjuster.getByText('Live what-if result')).toBeVisible();
     await expect(quickAdjuster.locator('.entry-date')).toContainText('1 Jul 2026');
@@ -1215,8 +1209,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(page.locator('#trips .list-summary')).toHaveText('1 trip');
     await tripRowTrigger.click();
     await expect(quickAdjuster).toHaveCount(1);
-    await expect(quickAdjuster.getByLabel('Arrival', { exact: true })).toHaveValue('2026-07-02');
-    await expect(quickAdjuster.getByLabel('Departure', { exact: true })).toHaveValue('2026-09-29');
+    await expect(quickAdjuster.getByLabel('Entry date', { exact: true })).toHaveValue('2026-07-02');
+    await expect(quickAdjuster.getByLabel('Exit date', { exact: true })).toHaveValue('2026-09-29');
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
@@ -1368,8 +1362,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(quickAdjuster.getByText('France overlap', { exact: true })).toBeVisible();
     await expect(franceRow).toHaveAttribute('aria-expanded', 'true');
     await expect(franceCard.locator('.trip-expand-action')).toHaveText(/Collapse/);
-    await expect(quickAdjuster.getByLabel('Arrival', { exact: true })).toBeVisible();
-    await expect(quickAdjuster.getByLabel('Departure', { exact: true })).toBeVisible();
+    await expect(quickAdjuster.getByLabel('Entry date', { exact: true })).toBeVisible();
+    await expect(quickAdjuster.getByLabel('Exit date', { exact: true })).toBeVisible();
     await expect(quickAdjuster.getByText('Exact dates', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('dialog', { name: 'Edit Schengen stay' })).toHaveCount(0);
 
@@ -1381,7 +1375,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(italyRow).toHaveAttribute('aria-expanded', 'true');
     await expect(franceRow).toHaveAttribute('aria-expanded', 'false');
 
-    await italyAdjuster.getByRole('slider', { name: /Departure:/ }).press('ArrowLeft');
+    await italyAdjuster.getByRole('slider', { name: /Exit date:/ }).press('ArrowLeft');
     await page.locator('#add-trip-button').click();
     await expect(page.getByRole('dialog', { name: 'Add a past or future Schengen stay' })).toHaveCount(0);
     await expect(italyAdjuster.getByText('Save changes or keep the original before opening another trip.')).toBeVisible();
@@ -1506,8 +1500,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await tripDisclosure(page, 'Spain booking').click();
     const quickAdjuster = savedTripCard(page, 'Spain booking').locator('.trip-adjust-panel');
     await expect(quickAdjuster).toBeVisible();
-    await expect(quickAdjuster.getByLabel('Arrival', { exact: true })).toBeVisible();
-    await expect(quickAdjuster.getByLabel('Departure', { exact: true })).toBeVisible();
+    await expect(quickAdjuster.getByLabel('Entry date', { exact: true })).toBeVisible();
+    await expect(quickAdjuster.getByLabel('Exit date', { exact: true })).toBeVisible();
     await expect(quickAdjuster.getByText('Exact dates', { exact: true })).toHaveCount(0);
     await quickAdjuster.getByRole('button', { name: /Move trip:/ }).press('ArrowRight');
     const exactDates = quickAdjuster.locator('input[type="date"]');

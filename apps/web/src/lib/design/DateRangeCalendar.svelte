@@ -342,8 +342,8 @@
 
   .month-navigation {
     display: grid;
-    width: 40px;
-    min-height: 40px;
+    width: 44px;
+    min-height: 44px;
     place-items: center;
     border: 1px solid var(--control-line, #718079);
     border-radius: 8px;

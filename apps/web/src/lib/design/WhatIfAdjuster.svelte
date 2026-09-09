@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatDate, type Locale } from '$lib/i18n';
+  import { createAppDeepUiTranslator } from '$lib/i18n/appDeepUi';
   import { createWhatIfUiTranslator } from '$lib/i18n/whatIfUi';
   import {
     differenceInDays,
@@ -40,6 +41,7 @@
   }: Props = $props();
   let rail: HTMLDivElement;
   let drag = $state<{ entryDate: string; exitDate: string; mode: AdjustmentMode; pointerX: number; width: number } | null>(null);
+  let deep = $derived(createAppDeepUiTranslator(locale));
   let copy = $derived(createWhatIfUiTranslator(locale));
   let entryOffset = $derived(differenceInDays(range.minDate, entryDate));
   let exitOffset = $derived(differenceInDays(range.minDate, exitDate));
@@ -103,10 +105,10 @@
     <div class="rail" bind:this={rail}>
       <span class="rail-line" aria-hidden="true"></span>
       <span class="handle-date entry-date" class:compact style={`left:${left}%`}>
-        <small>{copy('entry')}</small><bdi>{labelDate(entryDate)}</bdi>
+        <small>{deep('entered')}</small><bdi>{labelDate(entryDate)}</bdi>
       </span>
       <span class="handle-date exit-date" class:compact style={`left:${right}%`}>
-        <small>{copy('exit')}</small><bdi>{labelDate(exitDate)}</bdi>
+        <small>{deep('left')}</small><bdi>{labelDate(exitDate)}</bdi>
       </span>
       {#if cutoffVisible && cutoffDate}
         <span class="cutoff-marker" style={`left:${cutoffPosition}%`} aria-label={`${copy('overFrom')} ${labelDate(cutoffDate)}`}>
@@ -131,7 +133,7 @@
         type="button"
         style={`left:${left}%`}
         role="slider"
-        aria-label={`${copy('entry')}: ${labelDate(entryDate)}`}
+        aria-label={`${deep('entered')}: ${labelDate(entryDate)}`}
         aria-valuemin={0}
         aria-valuemax={entryMaximumOffset}
         aria-valuenow={entryOffset}
@@ -149,7 +151,7 @@
         type="button"
         style={`left:${right}%`}
         role="slider"
-        aria-label={`${copy('exit')}: ${labelDate(exitDate)}`}
+        aria-label={`${deep('left')}: ${labelDate(exitDate)}`}
         aria-valuemin={exitMinimumOffset}
         aria-valuemax={range.totalDays}
         aria-valuenow={exitOffset}
@@ -177,8 +179,8 @@
 
   <div class="exact-date-area">
     <div class="exact-dates">
-      <label><span>{copy('entry')}</span><input type="date" min={range.minDate} max={entryMaximum} value={entryDate} onchange={(event) => updateExactDate(event, 'entry')} /></label>
-      <label><span>{copy('exit')}</span><input type="date" min={exitMinimum} max={range.maxDate} value={exitDate} onchange={(event) => updateExactDate(event, 'exit')} /></label>
+      <label><span>{deep('entered')}</span><input type="date" min={range.minDate} max={entryMaximum} value={entryDate} onchange={(event) => updateExactDate(event, 'entry')} /></label>
+      <label><span>{deep('left')}</span><input type="date" min={exitMinimum} max={range.maxDate} value={exitDate} onchange={(event) => updateExactDate(event, 'exit')} /></label>
     </div>
   </div>
 </section>

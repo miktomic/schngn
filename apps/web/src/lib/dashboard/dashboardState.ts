@@ -19,6 +19,7 @@ export interface DashboardState {
   latestSafeExitLabel: string;
   latestSafeExitDate: string | null;
   referenceDate: string;
+  firstConflictDate: string | null;
   statusLabel: string;
   statusTone: DashboardStatusTone;
   targetTrip: EditableTrip | null;
@@ -60,6 +61,7 @@ export function buildDashboardState(
         : "Add dates",
     latestSafeExitDate: latestSafeExit,
     referenceDate: effectiveReferenceDate,
+    firstConflictDate: earliestConflict?.date ?? null,
     statusLabel: formatStatusLabel(statusTone, targetName, targetTrip, completed),
     statusTone,
     targetTrip,
