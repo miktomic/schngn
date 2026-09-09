@@ -455,7 +455,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-14');
     await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-17');
 
-    await calendar.getByRole('button', { name: '27 July 2026' }).scrollIntoViewIfNeeded();
+    await calendar.getByRole('button', { name: '27 July 2026' }).evaluate((day) => day.scrollIntoView({ block: 'center', behavior: 'instant' }));
     const dragStart = await calendar.getByRole('button', { name: '24 July 2026' }).boundingBox();
     const dragEnd = await calendar.getByRole('button', { name: '27 July 2026' }).boundingBox();
     expect(dragStart).not.toBeNull();
@@ -463,8 +463,18 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     const touch = await page.context().newCDPSession(page);
     const startPoint = { x: dragStart!.x + dragStart!.width / 2, y: dragStart!.y + dragStart!.height / 2 };
     const endPoint = { x: dragEnd!.x + dragEnd!.width / 2, y: dragEnd!.y + dragEnd!.height / 2 };
+    expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-calendar-date]')?.getAttribute('data-calendar-date'), endPoint)).toBe('2026-07-27');
     await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [startPoint] });
-    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [endPoint] });
+    // Deliver a real sequence of rendered movement frames instead of an instantaneous jump.
+    for (let step = 1; step <= 6; step += 1) {
+      await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: startPoint.x + (endPoint.x - startPoint.x) * step / 6,
+          y: startPoint.y + (endPoint.y - startPoint.y) * step / 6 }]
+      });
+    }
+    await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-27');
     await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-24');
     await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-27');
