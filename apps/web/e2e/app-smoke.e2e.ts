@@ -455,6 +455,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(dialog.getByLabel('Entry date')).toHaveValue('2026-07-14');
     await expect(dialog.getByLabel('Exit date', { exact: true })).toHaveValue('2026-07-17');
 
+    await calendar.getByRole('button', { name: '27 July 2026' }).scrollIntoViewIfNeeded();
     const dragStart = await calendar.getByRole('button', { name: '24 July 2026' }).boundingBox();
     const dragEnd = await calendar.getByRole('button', { name: '27 July 2026' }).boundingBox();
     expect(dragStart).not.toBeNull();

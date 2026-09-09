@@ -146,7 +146,7 @@
   function handlePointerDown(event: PointerEvent, date: string): void {
     if (!event.isPrimary || event.button !== 0) return;
     event.preventDefault();
-    (event.currentTarget as HTMLButtonElement).focus();
+    (event.currentTarget as HTMLButtonElement).focus({ preventScroll: true });
     suppressClick = true;
     focusDate = date;
 
