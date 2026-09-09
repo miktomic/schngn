@@ -73,6 +73,12 @@
         <section id="legal-contact" class="contact" aria-labelledby="legal-contact-title">
           <h2 id="legal-contact-title">{copy.contactTitle}</h2>
           <p>{copy.contactBody}</p>
+          <address dir="ltr">
+            <strong>Domifis SRL</strong><br />
+            Clos Paul Delforge 1<br />
+            1160 Auderghem<br />
+            Belgium
+          </address>
           <a href="mailto:support@schngn.com"><bdi>{copy.contactLinkLabel}</bdi></a>
         </section>
       </div>
@@ -81,6 +87,7 @@
 </main>
 
 <style>
+  address { font-style: normal; margin-block: 16px; overflow-wrap: anywhere; }
   .legal-page {
     min-height: 100svh;
     padding: 0 clamp(16px, 4vw, 48px) 72px;

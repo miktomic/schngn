@@ -88,8 +88,9 @@ describe('privacy policy and terms', () => {
       expect(terms.sections.map((section) => section.id)).toEqual(
         englishTerms.sections.map((section) => section.id)
       );
-      expect(privacy.updatedDate).toBe('2026-07-14');
-      expect(terms.updatedDate).toBe('2026-07-14');
+      expect(privacy.updatedDate).toBe('2026-09-09');
+      expect(privacy.sections.find((section) => section.id === 'responsibility')?.paragraphs.join(' ')).toContain('Domifis SRL');
+      expect(terms.updatedDate).toBe('2026-09-09');
       expect(privacy.providerLinks?.map((provider) => provider.url)).toEqual(
         englishPrivacy.providerLinks?.map((provider) => provider.url)
       );

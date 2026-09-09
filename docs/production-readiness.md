@@ -195,3 +195,11 @@ Production traffic is allowed only when:
 - public accuracy copy describes the checked-in evidence without claiming EU certification or unrecorded official-calculator parity.
 
 If any item fails, keep the apex deployment available only for controlled verification, stop paid acquisition, and fix or roll back before resuming.
+
+## Operator details confirmed by the owner
+
+On 9 September 2026, the owner supplied Domifis SRL, Clos Paul Delforge 1,
+1160 Auderghem, Belgium, as SCHNGN’s operator and contact address. These details
+are listed on both legal pages, and every localized privacy responsibility
+section names Domifis SRL. This does not establish completion of legal or
+native-language review, a company registration/VAT number, or a choice of court.
