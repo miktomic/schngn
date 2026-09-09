@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'codex/**']
   pull_request:
 
 permissions:
@@ -37,26 +37,8 @@ jobs:
           node --version
           bun --version
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Run tests
-        run: bun run test
-
-      - name: Run type checks
-        run: bun run typecheck
-
-      - name: Build packages and app
-        run: bun run build
-
-      - name: Smoke compiled agent interfaces
-        run: bun run smoke:agent
-
-      - name: Install Playwright browser
-        run: bunx playwright install --with-deps chromium
-
-      - name: Run browser tests
-        run: bun run test:e2e
+      - name: Run pre-PR gate
+        run: bun run prepr
 
   deploy-production:
     name: Deploy production

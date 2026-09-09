@@ -37,7 +37,9 @@
     "deploy": "cd apps/web && bun run deploy",
     "agent:cli": "bun apps/agent/src/cli.ts",
     "agent:api": "bun apps/agent/src/api.ts",
-    "agent:mcp": "bun apps/agent/src/mcp.ts"
+    "agent:mcp": "bun apps/agent/src/mcp.ts",
+    "prepr": "bun install --frozen-lockfile && bun run check && bun run test:e2e:install && CI=1 bun run test:e2e",
+    "test:e2e:install": "cd apps/web && bunx --no-install playwright install --with-deps chromium"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

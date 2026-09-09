@@ -70,9 +70,10 @@ describe('post-deploy smoke and privacy-safe operations', () => {
   });
 
   test('GitHub Actions applies D1 migrations and gates changes with Playwright', () => {
-    expect(ci).toContain('Install Playwright browser');
-    expect(ci).toContain('bunx playwright install --with-deps chromium');
-    expect(ci).toContain('bun run test:e2e');
+    expect(ci).toContain("branches: [main, 'codex/**']");
+    expect(ci).toContain('run: bun run prepr');
+    expect(packageJson.scripts.prepr).toBe('bun install --frozen-lockfile && bun run check && bun run test:e2e:install && CI=1 bun run test:e2e');
+    expect(packageJson.scripts['test:e2e:install']).toBe('cd apps/web && bunx --no-install playwright install --with-deps chromium');
     expect(ci).toContain('Provision Cloudflare resources without changing production traffic');
     expect(ci).toContain('wrangler versions upload');
     expect(ci).toContain('--secrets-file');

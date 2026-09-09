@@ -90,7 +90,7 @@
   select {
     width: 100%;
     min-width: 0;
-    min-height: 40px;
+    min-height: 44px;
     appearance: none;
     border: 1px solid var(--line);
     border-radius: 9px;

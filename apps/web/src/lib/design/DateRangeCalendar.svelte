@@ -146,7 +146,7 @@
   function handlePointerDown(event: PointerEvent, date: string): void {
     if (!event.isPrimary || event.button !== 0) return;
     event.preventDefault();
-    (event.currentTarget as HTMLButtonElement).focus();
+    (event.currentTarget as HTMLButtonElement).focus({ preventScroll: true });
     suppressClick = true;
     focusDate = date;
 
@@ -189,6 +189,8 @@
 
   function finishPointerSelection(event: PointerEvent): void {
     if (!dragSelection || dragSelection.pointerId !== event.pointerId) return;
+    // Fast touch gestures can coalesce the final move; include the release position.
+    handlePointerMove(event);
     const completed = dragSelection.moved || dragSelection.startedWithEntry;
     dragSelection = null;
     if (root.hasPointerCapture?.(event.pointerId)) root.releasePointerCapture(event.pointerId);
@@ -327,7 +329,7 @@
 
   .calendar-toolbar {
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
     align-items: center;
     gap: 8px;
   }
@@ -342,8 +344,8 @@
 
   .month-navigation {
     display: grid;
-    width: 40px;
-    min-height: 40px;
+    width: 44px;
+    min-height: 44px;
     place-items: center;
     border: 1px solid var(--control-line, #718079);
     border-radius: 8px;

@@ -133,6 +133,8 @@ Migration `0002_create_account_trip_snapshots.sql` records the verified Clerk ow
 
 ### Authenticated-write edge rate limiting
 
+On 2026-09-09, production enabled a Cloudflare Free-plan rule for `/api/account/trips` and `/api/account`: 60 requests per 10 seconds per client IP and Cloudflare location, with a 10-second block returning JSON HTTP 429. The Free plan matches paths rather than methods, so account reads also count. Public pages and the guest calculator are outside the rule. Ruleset `2f60a04c28f946bcac1a87c9286e8c1c`, rule `9a470cf4376c45839f4e48573a2b0936`; API configuration and a bounded unauthenticated write probe verified: 60 requests returned 401, the following 15 returned 429, and `/app` remained HTTP 200. No account data was written.
+
 Apply a Cloudflare rate-limiting rule to `PUT /api/account/trips` and `DELETE /api/account`. Keep its threshold high enough for normal multi-device sync bursts, key it per client IP where the active Cloudflare plan permits, and return `429` before the Worker reads a body. Clerk authentication, the 1 MB streaming body cap, and optimistic revisions remain the application controls; the edge rule is defense in depth and must not log request bodies or Clerk tokens.
 
 ### Plausible Cloud
