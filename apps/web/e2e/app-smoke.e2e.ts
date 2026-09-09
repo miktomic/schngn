@@ -873,6 +873,8 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     expect(offlineShell.ok).toBe(true);
     expect(offlineShell.status).toBe(200);
     expect(offlineShell.text).toContain('href="/manifest.json"');
+    await expect(page).toHaveURL(/#trips$/);
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: '85 safe buffer days' })).toBeVisible();
     await expect(page.locator('#status .status-chip').getByText('Offline Spain stay · Completed', { exact: true })).toBeVisible();
     await expect(page.locator('#trips .list-summary')).toHaveText('1 trip');

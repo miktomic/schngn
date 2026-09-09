@@ -176,6 +176,20 @@ describe('installable offline PWA shell', () => {
     expect(source).toContain('caches.match(request)');
   });
 
+  test('offline navigation with a section fragment serves the cached app shell', async () => {
+    const harness = createServiceWorkerHarness({
+      fetcher: async () => { throw new Error('offline'); },
+      match: async (input) => cacheKey(input) === '/app' ? new Response('cached shell') : undefined
+    });
+    let response: Promise<Response> | undefined;
+    harness.dispatch('fetch', {
+      request: { method: 'GET', mode: 'navigate', url: `${TEST_ORIGIN}/app#trips` },
+      respondWith: (value: Promise<Response>) => { response = value; }
+    });
+    expect(response).toBeDefined();
+    expect(await (await response!).text()).toBe('cached shell');
+  });
+
   test('authenticated API fetches bypass every service-worker cache path', () => {
     const harness = createServiceWorkerHarness();
     let responsePromise: Promise<Response> | undefined;
