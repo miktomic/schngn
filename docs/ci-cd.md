@@ -10,12 +10,28 @@ GitHub Actions runs on:
 
 - every pull request
 - every push to `main`
+- every push to a `codex/**` branch, before a PR exists
 
 Workflow file:
 
 ```text
 .github/workflows/ci.yml
 ```
+
+## Before opening a PR
+
+Run `bun run prepr` on the finished tree. The same command runs in Linux CI:
+frozen dependency installation, `bun run check` (unit tests, type checks, all
+builds, compiled-agent smoke), Chromium installation from the locked web
+Playwright package, then the complete browser suite with `CI=1` and a fresh
+server. Do not edit source or run competing builds during this gate.
+
+Commit and push a `codex/` branch, then wait for its `CI` workflow to succeed on
+that exact commit before opening even a draft PR. Any subsequent edits require
+fresh checks. A local Mac pass alone is insufficient: Linux must also pass.
+The PR still runs CI against its merge context, catching changes on the base
+branch. Passing pre-PR checks reduces failures; it cannot guarantee external
+services or future changes will remain healthy.
 
 ## CI stages
 
@@ -249,9 +265,9 @@ Fresh databases start with `0002_create_account_trip_snapshots.sql`, which owns 
 
 For now:
 
-1. Work on branches or local commits.
-2. PR to `main`.
-3. CI must pass.
+1. Work on a `codex/` branch and pass `bun run prepr` locally.
+2. Commit and push; wait for Linux branch CI to pass on that exact SHA.
+3. Open the PR to `main`; PR CI must also pass.
 4. Merge to `main`.
 5. Auto-deploy through the protected `production` Environment; fail closed if OIDC authentication or any required Infisical value is unavailable or invalid.
 

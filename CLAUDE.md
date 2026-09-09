@@ -417,6 +417,13 @@ While coding:
 - Prefer small vertical slices with tests.
 - Update docs when architecture or commands change.
 
+Before opening a PR:
+
+1. Finish all edits and run `bun run prepr` without concurrent source edits, builds, or dev servers. This runs the frozen install, full check, locked Chromium install, and browser suite with a fresh server.
+2. Commit the tested tree and push a `codex/` branch. Wait for the Linux `CI` workflow to succeed on that exact head SHA before creating the PR, including draft PRs.
+3. If anything changes, repeat the local gate and wait for CI on the new commit. Never use a PR as the first test run or claim a gate is green from an older SHA.
+4. Open the PR only after both gates pass, then require PR CI before merge. Branch CI cannot guarantee against later base-branch or infrastructure changes. Production still deploys only through the protected main workflow.
+
 Before finishing:
 
 ```bash
