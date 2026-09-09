@@ -327,7 +327,7 @@
 
   .calendar-toolbar {
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
     align-items: center;
     gap: 8px;
   }
