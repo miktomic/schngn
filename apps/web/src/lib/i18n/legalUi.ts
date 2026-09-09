@@ -46,7 +46,7 @@ export interface LegalLocaleCatalog {
   terms: LegalPageCopy;
 }
 
-const UPDATED_DATE = '2026-07-14';
+const UPDATED_DATE = '2026-09-09';
 
 const providerLinks: LegalProviderLink[] = [
   { label: 'Cloudflare Privacy Policy', url: 'https://www.cloudflare.com/privacypolicy/' },
@@ -91,7 +91,7 @@ const englishCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Who is responsible and why data is processed',
         paragraphs: [
-          'SCHNGN operates schngn.com and is responsible for the application-specific processing described here. Contact support@schngn.com with privacy questions. We process account, synchronization and support data to provide features you request; limited analytics and security data to understand and protect the service; consent-based data where consent is required; and data needed to meet applicable legal obligations.'
+          'Domifis SRL operates schngn.com and is responsible for the application-specific processing described here. Contact support@schngn.com with privacy questions. We process account, synchronization and support data to provide features you request; limited analytics and security data to understand and protect the service; consent-based data where consent is required; and data needed to meet applicable legal obligations.'
         ]
       },
       {

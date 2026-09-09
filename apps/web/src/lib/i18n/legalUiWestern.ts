@@ -3,7 +3,7 @@ import type { Locale } from './locales';
 
 type WesternLocale = 'fr' | 'de' | 'es' | 'it' | 'pt-br' | 'ru' | 'uk' | 'tr';
 
-const UPDATED_DATE = '2026-07-14';
+const UPDATED_DATE = '2026-09-09';
 
 const providerUrls = {
   cloudflare: 'https://www.cloudflare.com/privacypolicy/',
@@ -55,7 +55,7 @@ const frCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Responsable et finalités du traitement',
         paragraphs: [
-          'SCHNGN exploite schngn.com et est responsable des traitements propres à l’application décrits ici. Pour toute question relative à la confidentialité, écrivez à support@schngn.com. Nous traitons les données de compte, de synchronisation et d’assistance afin de fournir les fonctions que vous demandez ; des données limitées de statistiques et de sécurité afin de comprendre et de protéger le service ; les données fondées sur le consentement lorsque celui-ci est requis ; et les données nécessaires au respect des obligations légales applicables.'
+          'Domifis SRL exploite schngn.com et est responsable des traitements propres à l’application décrits ici. Pour toute question relative à la confidentialité, écrivez à support@schngn.com. Nous traitons les données de compte, de synchronisation et d’assistance afin de fournir les fonctions que vous demandez ; des données limitées de statistiques et de sécurité afin de comprendre et de protéger le service ; les données fondées sur le consentement lorsque celui-ci est requis ; et les données nécessaires au respect des obligations légales applicables.'
         ]
       },
       {
@@ -252,7 +252,7 @@ const deCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Verantwortlichkeit und Zwecke der Datenverarbeitung',
         paragraphs: [
-          'SCHNGN betreibt schngn.com und ist für die hier beschriebene anwendungsspezifische Verarbeitung verantwortlich. Bei Datenschutzfragen wenden Sie sich an support@schngn.com. Wir verarbeiten Konto-, Synchronisierungs- und Supportdaten, um von Ihnen angeforderte Funktionen bereitzustellen; begrenzte Analyse- und Sicherheitsdaten, um den Dienst zu verstehen und zu schützen; einwilligungsbasierte Daten, soweit eine Einwilligung erforderlich ist; sowie Daten, die zur Erfüllung geltender gesetzlicher Pflichten benötigt werden.'
+          'Domifis SRL betreibt schngn.com und ist für die hier beschriebene anwendungsspezifische Verarbeitung verantwortlich. Bei Datenschutzfragen wenden Sie sich an support@schngn.com. Wir verarbeiten Konto-, Synchronisierungs- und Supportdaten, um von Ihnen angeforderte Funktionen bereitzustellen; begrenzte Analyse- und Sicherheitsdaten, um den Dienst zu verstehen und zu schützen; einwilligungsbasierte Daten, soweit eine Einwilligung erforderlich ist; sowie Daten, die zur Erfüllung geltender gesetzlicher Pflichten benötigt werden.'
         ]
       },
       {
@@ -449,7 +449,7 @@ const esCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Quién es responsable y por qué se tratan los datos',
         paragraphs: [
-          'SCHNGN gestiona schngn.com y es responsable del tratamiento específico de la aplicación que aquí se describe. Para preguntas sobre privacidad, escribe a support@schngn.com. Tratamos los datos de cuenta, sincronización y asistencia para ofrecer las funciones que solicitas; datos limitados de analítica y seguridad para comprender y proteger el servicio; datos basados en el consentimiento cuando este sea necesario; y datos necesarios para cumplir las obligaciones legales aplicables.'
+          'Domifis SRL gestiona schngn.com y es responsable del tratamiento específico de la aplicación que aquí se describe. Para preguntas sobre privacidad, escribe a support@schngn.com. Tratamos los datos de cuenta, sincronización y asistencia para ofrecer las funciones que solicitas; datos limitados de analítica y seguridad para comprender y proteger el servicio; datos basados en el consentimiento cuando este sea necesario; y datos necesarios para cumplir las obligaciones legales aplicables.'
         ]
       },
       {
@@ -646,7 +646,7 @@ const itCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Titolare e motivi del trattamento dei dati',
         paragraphs: [
-          'SCHNGN gestisce schngn.com ed è responsabile del trattamento specifico dell’applicazione descritto qui. Per domande sulla privacy, contatta support@schngn.com. Trattiamo i dati di account, sincronizzazione e assistenza per fornire le funzioni richieste; dati limitati di analisi e sicurezza per comprendere e proteggere il servizio; dati basati sul consenso quando questo è necessario; e dati necessari per adempiere agli obblighi di legge applicabili.'
+          'Domifis SRL gestisce schngn.com ed è responsabile del trattamento specifico dell’applicazione descritto qui. Per domande sulla privacy, contatta support@schngn.com. Trattiamo i dati di account, sincronizzazione e assistenza per fornire le funzioni richieste; dati limitati di analisi e sicurezza per comprendere e proteggere il servizio; dati basati sul consenso quando questo è necessario; e dati necessari per adempiere agli obblighi di legge applicabili.'
         ]
       },
       {
@@ -843,7 +843,7 @@ const ptBrCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Quem é responsável e por que os dados são tratados',
         paragraphs: [
-          'O SCHNGN opera o schngn.com e é responsável pelo tratamento específico do aplicativo descrito aqui. Envie dúvidas sobre privacidade para support@schngn.com. Tratamos dados de conta, sincronização e suporte para oferecer os recursos solicitados; dados limitados de análise e segurança para compreender e proteger o serviço; dados baseados em consentimento quando ele for exigido; e dados necessários para cumprir obrigações legais aplicáveis.'
+          'O Domifis SRL opera o schngn.com e é responsável pelo tratamento específico do aplicativo descrito aqui. Envie dúvidas sobre privacidade para support@schngn.com. Tratamos dados de conta, sincronização e suporte para oferecer os recursos solicitados; dados limitados de análise e segurança para compreender e proteger o serviço; dados baseados em consentimento quando ele for exigido; e dados necessários para cumprir obrigações legais aplicáveis.'
         ]
       },
       {
@@ -1040,7 +1040,7 @@ const ruCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Кто отвечает за данные и зачем они обрабатываются',
         paragraphs: [
-          'SCHNGN управляет сайтом schngn.com и отвечает за описанную здесь обработку данных, необходимую для работы приложения. По вопросам конфиденциальности обращайтесь по адресу support@schngn.com. Мы обрабатываем данные аккаунта, синхронизации и поддержки, чтобы предоставлять запрошенные вами функции; ограниченные аналитические данные и данные безопасности — чтобы понимать работу сервиса и защищать его; данные на основании согласия — когда оно требуется; а также данные, необходимые для выполнения применимых требований закона.'
+          'Domifis SRL управляет сайтом schngn.com и отвечает за описанную здесь обработку данных, необходимую для работы приложения. По вопросам конфиденциальности обращайтесь по адресу support@schngn.com. Мы обрабатываем данные аккаунта, синхронизации и поддержки, чтобы предоставлять запрошенные вами функции; ограниченные аналитические данные и данные безопасности — чтобы понимать работу сервиса и защищать его; данные на основании согласия — когда оно требуется; а также данные, необходимые для выполнения применимых требований закона.'
         ]
       },
       {
@@ -1237,7 +1237,7 @@ const ukCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Хто відповідає за дані й навіщо вони обробляються',
         paragraphs: [
-          'SCHNGN керує сайтом schngn.com і відповідає за описану тут обробку даних, потрібну для роботи застосунку. З питань конфіденційності звертайтеся на support@schngn.com. Ми обробляємо дані облікового запису, синхронізації та підтримки, щоб надавати запитані вами функції; обмежені аналітичні дані й дані безпеки — щоб розуміти роботу сервісу та захищати його; дані на підставі згоди — коли вона потрібна; а також дані, необхідні для виконання застосовних правових обов’язків.'
+          'Domifis SRL керує сайтом schngn.com і відповідає за описану тут обробку даних, потрібну для роботи застосунку. З питань конфіденційності звертайтеся на support@schngn.com. Ми обробляємо дані облікового запису, синхронізації та підтримки, щоб надавати запитані вами функції; обмежені аналітичні дані й дані безпеки — щоб розуміти роботу сервісу та захищати його; дані на підставі згоди — коли вона потрібна; а також дані, необхідні для виконання застосовних правових обов’язків.'
         ]
       },
       {
@@ -1434,7 +1434,7 @@ const trCatalog: LegalLocaleCatalog = {
         id: 'responsibility',
         title: '2. Sorumlu taraf ve verilerin işlenme amaçları',
         paragraphs: [
-          'SCHNGN, schngn.com’u işletir ve burada açıklanan uygulamaya özgü işlemeden sorumludur. Gizlilik sorularınız için support@schngn.com adresine yazın. Hesap, eşitleme ve destek verilerini istediğiniz özellikleri sunmak; sınırlı analiz ve güvenlik verilerini hizmeti anlamak ve korumak; onay gerektiğinde onaya dayalı verileri işlemek; ayrıca geçerli yasal yükümlülükleri yerine getirmek için gerekli verileri kullanırız.'
+          'Domifis SRL, schngn.com’u işletir ve burada açıklanan uygulamaya özgü işlemeden sorumludur. Gizlilik sorularınız için support@schngn.com adresine yazın. Hesap, eşitleme ve destek verilerini istediğiniz özellikleri sunmak; sınırlı analiz ve güvenlik verilerini hizmeti anlamak ve korumak; onay gerektiğinde onaya dayalı verileri işlemek; ayrıca geçerli yasal yükümlülükleri yerine getirmek için gerekli verileri kullanırız.'
         ]
       },
       {

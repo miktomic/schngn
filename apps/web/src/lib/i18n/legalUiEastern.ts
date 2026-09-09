@@ -2,7 +2,7 @@ import type { LegalLocaleCatalog, LegalProviderLink } from './legalUi';
 
 type EasternLegalLocale = 'sr' | 'sq' | 'ka' | 'zh-cn' | 'ja' | 'ko' | 'he' | 'ar';
 
-const UPDATED_DATE = '2026-07-14';
+const UPDATED_DATE = '2026-09-09';
 
 function providerLinks(labels: readonly [string, string, string, string, string]): LegalProviderLink[] {
   return [
@@ -50,7 +50,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. Ko je odgovoran i zašto se podaci obrađuju',
           paragraphs: [
-            'SCHNGN upravlja sajtom schngn.com i odgovoran je za obradu specifičnu za aplikaciju koja je ovde opisana. Za pitanja o privatnosti pišite na support@schngn.com. Podatke o nalogu, sinhronizaciji i podršci obrađujemo da bismo pružili funkcije koje tražite; ograničene analitičke i bezbednosne podatke da bismo razumeli i zaštitili uslugu; podatke zasnovane na pristanku kada je pristanak potreban; i podatke potrebne za ispunjavanje primenljivih zakonskih obaveza.'
+            'Domifis SRL upravlja sajtom schngn.com i odgovoran je za obradu specifičnu za aplikaciju koja je ovde opisana. Za pitanja o privatnosti pišite na support@schngn.com. Podatke o nalogu, sinhronizaciji i podršci obrađujemo da bismo pružili funkcije koje tražite; ograničene analitičke i bezbednosne podatke da bismo razumeli i zaštitili uslugu; podatke zasnovane na pristanku kada je pristanak potreban; i podatke potrebne za ispunjavanje primenljivih zakonskih obaveza.'
           ]
         },
         {
@@ -246,7 +246,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. Kush është përgjegjës dhe pse përpunohen të dhënat',
           paragraphs: [
-            'SCHNGN operon schngn.com dhe është përgjegjës për përpunimin specifik të aplikacionit që përshkruhet këtu. Për pyetje rreth privatësisë kontaktoni support@schngn.com. Ne përpunojmë të dhëna të llogarisë, sinkronizimit dhe mbështetjes për të ofruar funksionet që kërkoni; të dhëna të kufizuara analitike dhe sigurie për të kuptuar dhe mbrojtur shërbimin; të dhëna të bazuara në pëlqim kur kërkohet pëlqimi; dhe të dhëna të nevojshme për të përmbushur detyrimet ligjore të zbatueshme.'
+            'Domifis SRL operon schngn.com dhe është përgjegjës për përpunimin specifik të aplikacionit që përshkruhet këtu. Për pyetje rreth privatësisë kontaktoni support@schngn.com. Ne përpunojmë të dhëna të llogarisë, sinkronizimit dhe mbështetjes për të ofruar funksionet që kërkoni; të dhëna të kufizuara analitike dhe sigurie për të kuptuar dhe mbrojtur shërbimin; të dhëna të bazuara në pëlqim kur kërkohet pëlqimi; dhe të dhëna të nevojshme për të përmbushur detyrimet ligjore të zbatueshme.'
           ]
         },
         {
@@ -442,7 +442,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. ვინ არის პასუხისმგებელი და რატომ მუშავდება მონაცემები',
           paragraphs: [
-            'SCHNGN მართავს schngn.com-ს და პასუხისმგებელია აქ აღწერილ, აპლიკაციასთან დაკავშირებულ მონაცემთა დამუშავებაზე. კონფიდენციალურობის საკითხებზე მოგვწერეთ support@schngn.com-ზე. ანგარიშის, სინქრონიზაციისა და მხარდაჭერის მონაცემებს ვამუშავებთ თქვენ მიერ მოთხოვნილი ფუნქციების მისაწოდებლად; შეზღუდულ ანალიტიკურ და უსაფრთხოების მონაცემებს — სერვისის გასაგებად და დასაცავად; თანხმობაზე დაფუძნებულ მონაცემებს — როცა თანხმობა აუცილებელია; და მონაცემებს, რომლებიც მოქმედი სამართლებრივი ვალდებულებების შესასრულებლად გვჭირდება.'
+            'Domifis SRL მართავს schngn.com-ს და პასუხისმგებელია აქ აღწერილ, აპლიკაციასთან დაკავშირებულ მონაცემთა დამუშავებაზე. კონფიდენციალურობის საკითხებზე მოგვწერეთ support@schngn.com-ზე. ანგარიშის, სინქრონიზაციისა და მხარდაჭერის მონაცემებს ვამუშავებთ თქვენ მიერ მოთხოვნილი ფუნქციების მისაწოდებლად; შეზღუდულ ანალიტიკურ და უსაფრთხოების მონაცემებს — სერვისის გასაგებად და დასაცავად; თანხმობაზე დაფუძნებულ მონაცემებს — როცა თანხმობა აუცილებელია; და მონაცემებს, რომლებიც მოქმედი სამართლებრივი ვალდებულებების შესასრულებლად გვჭირდება.'
           ]
         },
         {
@@ -638,7 +638,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. 谁负责以及为何处理数据',
           paragraphs: [
-            'SCHNGN 运营 schngn.com，并负责此处所述的应用特定处理。如有隐私问题，请联系 support@schngn.com。我们处理账户、同步和支持数据，以提供您所请求的功能；处理有限的分析和安全数据，以了解并保护服务；在需要同意时处理基于同意的数据；以及处理履行适用法律义务所需的数据。'
+            'Domifis SRL 运营 schngn.com，并负责此处所述的应用特定处理。如有隐私问题，请联系 support@schngn.com。我们处理账户、同步和支持数据，以提供您所请求的功能；处理有限的分析和安全数据，以了解并保护服务；在需要同意时处理基于同意的数据；以及处理履行适用法律义务所需的数据。'
           ]
         },
         {
@@ -834,7 +834,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. 責任主体とデータを処理する理由',
           paragraphs: [
-            'SCHNGN は schngn.com を運営し、ここに記載するアプリ固有の処理について責任を負います。プライバシーに関するご質問は support@schngn.com までお寄せください。アカウント、同期、サポートのデータはお客様が求める機能を提供するために、限定的な解析データとセキュリティデータはサービスを把握し保護するために、同意が必要な場合のデータは同意に基づいて、また適用される法的義務を履行するために必要なデータを処理します。'
+            'Domifis SRL は schngn.com を運営し、ここに記載するアプリ固有の処理について責任を負います。プライバシーに関するご質問は support@schngn.com までお寄せください。アカウント、同期、サポートのデータはお客様が求める機能を提供するために、限定的な解析データとセキュリティデータはサービスを把握し保護するために、同意が必要な場合のデータは同意に基づいて、また適用される法的義務を履行するために必要なデータを処理します。'
           ]
         },
         {
@@ -1030,7 +1030,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. 책임 주체와 데이터 처리 이유',
           paragraphs: [
-            'SCHNGN은 schngn.com을 운영하며 여기에 설명된 앱 고유의 처리에 책임을 집니다. 개인정보 보호 관련 문의는 support@schngn.com으로 보내 주세요. 당사는 사용자가 요청한 기능을 제공하기 위해 계정, 동기화 및 지원 데이터를 처리하고, 서비스를 이해하고 보호하기 위해 제한된 분석 및 보안 데이터를 처리하며, 동의가 필요한 경우 동의에 기반한 데이터를 처리하고, 적용되는 법적 의무를 이행하는 데 필요한 데이터를 처리합니다.'
+            'Domifis SRL은 schngn.com을 운영하며 여기에 설명된 앱 고유의 처리에 책임을 집니다. 개인정보 보호 관련 문의는 support@schngn.com으로 보내 주세요. 당사는 사용자가 요청한 기능을 제공하기 위해 계정, 동기화 및 지원 데이터를 처리하고, 서비스를 이해하고 보호하기 위해 제한된 분석 및 보안 데이터를 처리하며, 동의가 필요한 경우 동의에 기반한 데이터를 처리하고, 적용되는 법적 의무를 이행하는 데 필요한 데이터를 처리합니다.'
           ]
         },
         {
@@ -1226,7 +1226,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. מי אחראי ומדוע הנתונים מעובדים',
           paragraphs: [
-            'SCHNGN מפעילה את schngn.com ואחראית לעיבוד הייחודי ליישום המתואר כאן. לשאלות פרטיות פנו אל support@schngn.com. אנו מעבדים נתוני חשבון, סנכרון ותמיכה כדי לספק תכונות שביקשתם; נתוני ניתוח ואבטחה מוגבלים כדי להבין את השירות ולהגן עליו; נתונים המבוססים על הסכמה כאשר נדרשת הסכמה; ונתונים הדרושים לעמידה בחובות משפטיות חלות.'
+            'Domifis SRL מפעילה את schngn.com ואחראית לעיבוד הייחודי ליישום המתואר כאן. לשאלות פרטיות פנו אל support@schngn.com. אנו מעבדים נתוני חשבון, סנכרון ותמיכה כדי לספק תכונות שביקשתם; נתוני ניתוח ואבטחה מוגבלים כדי להבין את השירות ולהגן עליו; נתונים המבוססים על הסכמה כאשר נדרשת הסכמה; ונתונים הדרושים לעמידה בחובות משפטיות חלות.'
           ]
         },
         {
@@ -1422,7 +1422,7 @@ export const easternLegalCatalogs: Record<EasternLegalLocale, LegalLocaleCatalog
           id: 'responsibility',
           title: '2. الجهة المسؤولة وسبب معالجة البيانات',
           paragraphs: [
-            'تدير SCHNGN موقع schngn.com وهي مسؤولة عن المعالجة الخاصة بالتطبيق والموضحة هنا. أرسل أسئلة الخصوصية إلى support@schngn.com. نعالج بيانات الحساب والمزامنة والدعم لتقديم الميزات التي تطلبها؛ وبيانات محدودة للتحليلات والأمان لفهم الخدمة وحمايتها؛ والبيانات المستندة إلى الموافقة عندما تكون الموافقة مطلوبة؛ والبيانات اللازمة للوفاء بالالتزامات القانونية السارية.'
+            'تدير Domifis SRL موقع schngn.com وهي مسؤولة عن المعالجة الخاصة بالتطبيق والموضحة هنا. أرسل أسئلة الخصوصية إلى support@schngn.com. نعالج بيانات الحساب والمزامنة والدعم لتقديم الميزات التي تطلبها؛ وبيانات محدودة للتحليلات والأمان لفهم الخدمة وحمايتها؛ والبيانات المستندة إلى الموافقة عندما تكون الموافقة مطلوبة؛ والبيانات اللازمة للوفاء بالالتزامات القانونية السارية.'
           ]
         },
         {
