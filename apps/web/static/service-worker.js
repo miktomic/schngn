@@ -115,9 +115,9 @@ function toSafeCacheUrl(candidate) {
 }
 
 function isSafeRuntimeRequest(request, url) {
-  if (isApiPath(url.pathname) || url.hash) return false;
+  if (isApiPath(url.pathname)) return false;
   if (request.mode === 'navigate') return url.search === '' && isSafeNavigationPath(url.pathname);
-  return isSafeStaticUrl(url);
+  return !url.hash && isSafeStaticUrl(url);
 }
 
 function isCacheEligibleResponse(response) {
