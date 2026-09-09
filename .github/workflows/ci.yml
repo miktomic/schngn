@@ -53,7 +53,8 @@ jobs:
         run: bun run smoke:agent
 
       - name: Install Playwright browser
-        run: bunx playwright install --with-deps chromium
+        working-directory: apps/web
+        run: bunx --no-install playwright install --with-deps chromium
 
       - name: Run browser tests
         run: bun run test:e2e
