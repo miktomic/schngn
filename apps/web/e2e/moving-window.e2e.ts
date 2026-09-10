@@ -34,6 +34,7 @@ test('calculator date exploration keeps saved trips and the main verdict intact'
 });
 
 test('example toggle changes later usage and the window fits every locale at 320px', async ({ page }) => {
+  test.setTimeout(90_000); // Includes seventeen localized page navigations.
   await page.clock.setFixedTime(new Date('2026-09-09T12:00:00Z'));
   await page.goto('/explainer');
   const example = page.locator('.moving-example');
@@ -67,4 +68,26 @@ test('example toggle changes later usage and the window fits every locale at 320
     await expect(example.locator('.moving-window')).toHaveAttribute('data-checking-date', '2026-09-08');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
+});
+
+
+test('invalid checking dates restore the calculated date and explain the constraint', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-09-09T12:00:00Z'));
+  await page.goto('/explainer');
+  const timeline = page.locator('.moving-example .moving-window');
+  const input = timeline.getByLabel('Checking date', { exact: true });
+  await expect(input).toBeEnabled();
+  const accepted = await input.inputValue();
+  const result = await timeline.locator('.window-result').innerText();
+  for (const invalid of ['2025-01-01', '2099-01-01', '']) {
+    await input.fill(invalid);
+    await input.blur();
+    await expect(input).toHaveValue(accepted);
+    await expect(timeline).toHaveAttribute('data-checking-date', accepted);
+    await expect(timeline.locator('.window-result')).toHaveText(result);
+    await expect(timeline.getByRole('alert')).toHaveText(/.+/);
+  }
+  await timeline.getByRole('slider').press('ArrowLeft');
+  await expect(timeline.getByRole('alert')).toHaveCount(0);
+  await expect(input).toHaveValue('2026-09-08');
 });

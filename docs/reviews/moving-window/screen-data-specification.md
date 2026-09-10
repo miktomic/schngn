@@ -4,7 +4,7 @@
 
 **Source of truth:** the current implementation in [`apps/web/src/lib/design/MovingWindowTimeline.svelte`](../../../apps/web/src/lib/design/MovingWindowTimeline.svelte), [`apps/web/src/lib/timeline/movingWindow.ts`](../../../apps/web/src/lib/timeline/movingWindow.ts), [`apps/web/src/lib/design/TimelineLedger.svelte`](../../../apps/web/src/lib/design/TimelineLedger.svelte), [`apps/web/src/lib/dashboard/dashboardState.ts`](../../../apps/web/src/lib/dashboard/dashboardState.ts), [`apps/web/src/lib/trips/tripCrud.ts`](../../../apps/web/src/lib/trips/tripCrud.ts), and `packages/engine`.
 
-**Design exploration:** the ten directions below are the authoritative variants in `/Users/michael/.gstack/projects/miktomic-schngn/designs/timeline-ten-directions-20260910/variants.json`. Their shared synthetic scenario is `/Users/michael/.gstack/projects/miktomic-schngn/designs/timeline-ten-directions-20260910/scenario.json`, generated with seed `1276709372`. No second design seed or independently generated range table is part of this review.
+**Design exploration:** the ten directions below are the authoritative variants in `~/.gstack/projects/miktomic-schngn/designs/timeline-ten-directions-20260910/variants.json`. Their shared synthetic scenario is `~/.gstack/projects/miktomic-schngn/designs/timeline-ten-directions-20260910/scenario.json`, generated with seed `1276709372`. No second design seed or independently generated range table is part of this review.
 
 ## The screen’s job
 

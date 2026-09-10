@@ -2,6 +2,17 @@
 
 Verified 2026-09-10. All screenshots and browser inputs use synthetic trips. Earlier captures and automated tests use a fixed 2026-09-09 clock; the single-axis captures use 2026-09-10.
 
+## Alternative expert reviews and ten design studies — 2026-09-10
+
+Independent report-only design-review and qa-only passes found two urgent issues: invalid checking-date text can disagree with the active answer, and dense/overlapping markers become ambiguous. The detailed reviews and full data specification are linked below.
+
+- [Review synthesis](alternative-review-summary.md)
+- [Independent design review](alternative-design-review.md)
+- [Independent usability review](alternative-usability-review.md)
+- [Full screen data specification](screen-data-specification.md)
+
+Ten working design studies, a comparison board, and mobile/desktop screenshots are stored at ~/.gstack/projects/miktomic-schngn/designs/timeline-ten-directions-20260910/. They share real engine frames and random seed 1276709372. The shortlist is H (risk hierarchy), C (scenario comparison), B (instrument clarity), with A as an evidence-oriented alternative. None is an approved production replacement. Ten prototype interaction/layout checks passed; the current full repository gate passed 448 tests with zero Svelte errors/warnings.
+
 ## Square flags and transparent labels — 2026-09-10
 
 Replaced platform emoji flags with locally bundled 32×32 SVG assets for all 29 supported country codes. Removed paper backgrounds from Today, durations, trip names, and expanded trip details. Assets come from MIT-licensed flag-icons 7.5.0 and are all bundled inline, avoiding country-specific network requests.
@@ -86,3 +97,7 @@ The first full browser run had two assertions targeting the retired static image
 - [Explainer, Arabic](explainer-ar-390.png)
 
 Browser contexts containing synthetic data were closed, and the temporary development server was stopped. The original study remains in `sketches/rolling-window-study/`. Unrelated pre-existing `.codex/config.toml` and `docs/research/` files were not changed. Implementation is local; no commit, push or deployment was performed. Translated product controls have automated layout coverage but have not received independent native-speaker review.
+
+## Release validation — 2026-09-10
+
+MW-001 is fixed: invalid or empty checking dates restore the date used by the calculation and announce the browser's localized validation message. Valid date, slider, and shortcut changes clear that message. The full release gate passed 448 unit tests and 41 browser tests, including out-of-range and empty date regression coverage. The remaining marker-density and design-study findings remain documented design follow-ups; no alternative prototype was promoted to production in this release.

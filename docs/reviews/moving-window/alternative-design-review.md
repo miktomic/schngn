@@ -8,7 +8,7 @@
 
 **Surfaces reviewed:** `/app#timeline`, `/app#trips`, and the synthetic moving-window example on `/explainer`.
 
-**Viewport evidence:** 390×844, 320×700, and 1280px desktop captures. The reference set is the six supplied 390×844 screenshots showing one teaching sequence: two past stays, one future stay, a moving 180-day band, a Today marker, and a large counted-days total.
+**Viewport evidence:** 390×844, 320×700, and 1280px desktop captures. The reference set is the six supplied mobile screenshots showing one teaching sequence: two past stays, one future stay, a moving 180-day band, a Today marker, and a large counted-days total.
 
 **Scope constraint:** This review did not edit production code, tests, or prototypes. The active working tree was already dirty from the moving-window implementation, so the review treated it as a shared read-only surface.
 
@@ -65,7 +65,7 @@ The current synthetic example is a useful test case: France 15 days and Italy 10
 
 **Category:** composition, responsive hierarchy, content design
 
-**Evidence:** [full explainer capture](alternative-design-review-assets/explainer-desktop.png), [moving example at 390px](alternative-design-review-assets/explainer-moving-mobile.png), and the supplied reference frame 1 at `/tmp/codex-remote-attachments/01a0881c-f791-7c90-b22b-d83e955eca36/6AD2ED02-F4B6-41BA-9585-FB99AA548C7C/1-Photo-1.jpg`.
+**Evidence:** [full explainer capture](alternative-design-review-assets/explainer-desktop.png), [moving example at 390px](alternative-design-review-assets/explainer-moving-mobile.png), and the supplied reference frame 1 (external user-supplied reference capture).
 
 **I notice:** The supplied reference uses a short six-state teaching sequence with a title, progress dots, one sentence, one diagram, and one large result. The current `/explainer` places the moving example after the rule walkthrough and country guide, roughly thousands of pixels down the page. Its section itself is clear, but it does not feel like the same authored “why the window moves” moment.
 

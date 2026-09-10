@@ -15,6 +15,7 @@
   const id = $props.id();
   let selected = $state<string | null>(null);
   let ready = $state(false);
+  let dateError = $state('');
   onMount(() => { ready = true; });
   let copy = $derived(movingWindowUi(locale));
   let bounds = $derived(movingWindowBounds(trips, referenceDate, today));
@@ -50,9 +51,16 @@
   const dateLabel = (date: string, compact = false) => new Intl.DateTimeFormat(intlLocale(locale), {
     day: 'numeric', month: 'short', ...(!compact || date.slice(0, 4) !== today.slice(0, 4) ? { year: 'numeric' as const } : {}), timeZone: 'UTC'
   }).format(new Date(`${date}T00:00:00Z`));
+  function selectDate(date: string) {
+    selected = date;
+    dateError = '';
+  }
   function changeDate(input: HTMLInputElement) {
-    if (input.value && input.validity.valid) selected = input.value;
-    else { input.reportValidity(); }
+    if (input.value && input.validity.valid) selectDate(input.value);
+    else {
+      dateError = input.validationMessage;
+      input.value = checkingDate;
+    }
   }
 </script>
 
@@ -88,16 +96,17 @@
   </div>
   <div class="date-explorer">
     <label class="scrubber-label" for={`${id}-scrubber`}>{copy.moveDate}</label>
-    <input class="window-scrubber" id={`${id}-scrubber`} type="range" disabled={!ready} min="0" max={distance(bounds.minDate, bounds.endDate)} step="1" value={distance(bounds.minDate, checkingDate)} aria-valuetext={dateLabel(checkingDate)} oninput={(event) => selected = shiftDate(bounds.minDate, Number(event.currentTarget.value))} />
+    <input class="window-scrubber" id={`${id}-scrubber`} type="range" disabled={!ready} min="0" max={distance(bounds.minDate, bounds.endDate)} step="1" value={distance(bounds.minDate, checkingDate)} aria-valuetext={dateLabel(checkingDate)} oninput={(event) => selectDate(shiftDate(bounds.minDate, Number(event.currentTarget.value)))} />
     <div class="window-controls">
       <label for={`${id}-date`}>{copy.checking}
-        <input id={`${id}-date`} type="date" required disabled={!ready} value={checkingDate} min={bounds.minDate} max={bounds.endDate} onchange={(event) => changeDate(event.currentTarget)} />
+        <input id={`${id}-date`} type="date" required aria-describedby={dateError ? `${id}-date-error` : undefined} disabled={!ready} value={checkingDate} min={bounds.minDate} max={bounds.endDate} onchange={(event) => changeDate(event.currentTarget)} />
       </label>
       <div class="date-shortcuts">
-        <button type="button" onclick={() => selected = today} disabled={!ready || checkingDate === today}>{copy.today}</button>
-        <button type="button" onclick={() => selected = referenceDate} disabled={!ready || checkingDate === referenceDate}>{resultLabel ?? copy.reset}</button>
+        <button type="button" onclick={() => selectDate(today)} disabled={!ready || checkingDate === today}>{copy.today}</button>
+        <button type="button" onclick={() => selectDate(referenceDate)} disabled={!ready || checkingDate === referenceDate}>{resultLabel ?? copy.reset}</button>
       </div>
     </div>
+    {#if dateError}<p id={`${id}-date-error`} role="alert">{dateError}</p>{/if}
   </div>
   <details class="trip-details">
     <summary>{label} · {copy.counted}</summary>
