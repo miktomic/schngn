@@ -3,7 +3,7 @@
   "name": "schngn-web",
   "main": ".svelte-kit/cloudflare/_worker.js",
   "compatibility_date": "2026-07-08",
-  "compatibility_flags": ["nodejs_als"],
+  "compatibility_flags": ["nodejs_als", "global_fetch_strictly_public"],
   "secrets": {
     "required": [
       "PUBLIC_CLERK_PUBLISHABLE_KEY",
@@ -15,16 +15,18 @@
   },
   "assets": {
     "binding": "ASSETS",
-    "run_worker_first": ["/*", "!/_app/immutable/*", "!/brand/*", "!/icons/*", "!/.well-known/*", "!/agent-content/*", "!/llms.txt", "!/robots.txt", "!/sitemap.xml"],
+    "run_worker_first": ["/*", "!/_app/immutable/*", "!/brand/*", "!/icons/*", "!/agent-content/*", "!/.well-known/agent-skills/*", "!/.well-known/ai-catalog.json", "!/auth.md", "!/llms.txt", "!/robots.txt", "!/sitemap.xml"],
     "directory": ".svelte-kit/cloudflare"
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": false }
   },
   "routes": [
     { "pattern": "schngn.com", "custom_domain": true },
     { "pattern": "www.schngn.com", "custom_domain": true }
   ],
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "9a43cdc1fa624565b866d98bac6dcffc" }],
   "d1_databases": [
     {
       "binding": "DB",
@@ -38,7 +40,10 @@
       "allowed_sender_addresses": ["support@schngn.com"]
     }
   ],
+  "triggers": { "crons": ["17 * * * *"] },
   "ratelimits": [
+    { "name": "AGENT_REGISTRATION_LIMITER", "namespace_id": "900181", "simple": { "limit": 10, "period": 60 } },
+    { "name": "AGENT_RATE_LIMITER", "namespace_id": "900182", "simple": { "limit": 120, "period": 60 } },
     {
       "name": "CONTACT_RATE_LIMITER",
       "namespace_id": "900180",

@@ -297,6 +297,8 @@ This is an approved **scope change** after the original no-account MVP cards. It
 
 **Moving-window interaction:** The canonical calculator timeline supports local date scrubbing and direct date entry over fixed trip bars. Only its inspected window and per-date evidence change; the saved-plan verdict and trip records remain unchanged. The saved-result checkpoint and reset control remain visible. Open-ended stays are explicitly labeled as projections. The Explainer includes a separate synthetic multi-trip example with an optional what-if stay, rendered through the same `TimelineLedger` interaction; its existing reviewed walkthrough remains intact. Controls are localized in all supported languages and work with keyboard navigation and RTL layouts. The initial extent focuses on the current window and planned exits, with full-width trip tracks, visible stay dates, entry markers, counted/outside-window labels, and a fixed Today anchor. The Explainer starts at today without the 65-day what-if stay; travelers can add it and jump to the planned exit. The saved-result forecast is separately labeled and collapsed until requested.
 
+**Approved graphic views (2026-09-10):** Following the graphic-only comparison, use A (Sliding window) as the default and J (Layered contributions) as a selectable alternative in the canonical calculator and synthetic explainer. The two buttons change only the graphic; checking date, what-if inputs, saved result, and controls are shared. Layer totals come from the engine's unique counted dates. Overlapping dates are shown once, assigned to the earliest-starting trip (stable trip-ID tie-break); a visible note explains this attribution. At most six layers are shown, grouping earlier trips when necessary, with open-ended projections explicitly marked. The plot uses exact change points rather than sampling away short conflicts or iterating through years of empty dates. This view switch is not a workspace navigation tab and does not save or transmit trip data.
+
 ## DEC-15 — Support and feature-request contact form
 
 **Decision:** Add a small localized `/contact` form for help and feature requests. It is not an account, waitlist, newsletter, or analytics surface.
@@ -351,3 +353,54 @@ The original MVP Hermes Kanban decision cards on board `schngn` were completed o
 Public discovery and build-derived Markdown are approved by the website audit task;
 see `docs/agent-readiness.md`. This improves the public documentation surface and
 existing local skill distribution without changing DEC-16 or account consent.
+
+
+## DEC-17 — Read-only delegated account access and browser tools (2026-09-10)
+
+The owner selected “Documentation and consented account access” while extending
+the live agent-readiness audit. This approves hosted retrieval of reviewed public
+documentation and trips already saved to a signed-in account. Anonymous
+calculation stays local under DEC-16; no hosted calculation or agent writes.
+
+Clerk remains the identity authority. Cloudflare's OAuth provider issues
+600-second access tokens after authorization-code S256 PKCE and a visible,
+explicit allow/deny screen. Consent transactions are single-use, five-minute,
+D1 records bound to the verified Clerk user/session and the original request.
+The resource is exactly `https://schngn.com`; scopes are `docs:read` and
+`trips:read`. Existing account APIs still require Clerk session tokens.
+
+Remote interfaces: stateless Streamable HTTP MCP at `/mcp`, read-only paginated
+REST at `/api/agent/trips`, and structured A2A 1.0 JSON-RPC at `/a2a`. Trip pages
+contain at most 25 saved trips, with dates, labels, countries, status and IDs.
+They omit internal account revision/consent metadata. Labels are untrusted data.
+A2A returns immediate messages and retains no conversation/task history.
+
+The consent screen discloses the requesting client name (unverified), return
+origin, scopes, shared fields, provider handling and expiry in all 17 locales.
+It never reads browser trip storage or auto-approves. Account switching discards
+old pending responses. Users revoke at `/agent/connections`, linked from Account
+& data. RFC 7009 revocation and both account deletion paths are supported.
+D1 deny lists bridge KV revocation propagation; storage failures deny access.
+
+OAuth KV stores provider-managed client/grant/token metadata, not trip copies.
+Tokens expire in 600 seconds, client registrations in one day, and each grant
+write is capped at 1,200 seconds (shorter authorization-code TTL preserved).
+There are no refresh tokens. Expired D1 consent and revocation metadata is cleaned
+on use and hourly; revocation rows last at most one hour, token-digest rows until
+token expiry. Invocation logs are disabled; bodies, dates and OAuth material are
+never logged. Requests are streamed with byte limits. Registration is limited to
+10/minute/IP and other agent requests to 120/minute/IP. Public clients use HTTPS
+or loopback callbacks. CIMD fetching is restricted to the public network.
+
+Browser WebMCP registers three strict stateless calculation tools through the
+supported document API or its earlier navigator API. They operate only on
+explicit input and never read saved trips or make network requests. As with local
+CLI/MCP, an external agent/model provider may process inputs and outputs.
+
+Discovery describes real endpoints and versions: API Catalog, OAuth AS/resource
+metadata, MCP card, A2A card, auth.md and DNS-AID. WorkOS identity assertions,
+claims/ID-JAG and payment protocols are not implemented or advertised. Experimental
+server cards, WebMCP and DNS-AID are versioned draft integrations, not claims of
+standards certification. See `docs/agent-readiness.md` for gates and evidence.
+
+Each explicit approval creates an independent connection. Approving again does not revoke existing connections; revoke each connection from Account & data or let its 10-minute token expire. A2A JSON-RPC requests require the `A2A-Version: 1.0` header.

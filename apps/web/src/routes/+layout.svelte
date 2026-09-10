@@ -7,6 +7,7 @@
   import SiteFooter from '$lib/design/SiteFooter.svelte';
   import { isLocalizedNavigationPath, localeFromPath, stripLocalePrefix } from '$lib/i18n';
   import { onMount } from 'svelte';
+  import { registerBrowserTools, type BrowserModelContext } from '$lib/agent/browserTools';
   import '../app.css';
 
   let { children } = $props();
@@ -18,6 +19,18 @@
     const pathname = to ? stripLocalePrefix(to.url.pathname) : '';
     if (pathname === '/') trackAnalyticsEvent('page_view', { source: 'landing' });
     if (pathname === '/accuracy') trackAnalyticsEvent('page_view', { source: 'accuracy' });
+  });
+
+  onMount(() => {
+    let disposed = false;
+    let unregister = async () => {};
+    const context = (document as Document & { modelContext?: BrowserModelContext }).modelContext
+      ?? (navigator as Navigator & { modelContext?: BrowserModelContext }).modelContext;
+    void registerBrowserTools(context).then(cleanup => {
+      unregister = cleanup;
+      if (disposed) void cleanup();
+    });
+    return () => { disposed = true; void unregister(); };
   });
 
   onMount(() => {

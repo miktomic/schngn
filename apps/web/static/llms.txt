@@ -16,6 +16,6 @@
 ## Agent access
 
 Request public documentation with Accept: text/markdown. HTML remains the browser default.
-Install the public @schngn/agent package on the operator's machine to use its stdio MCP, CLI, or loopback-only HTTP service. Read the setup guide and skill before calling tools. Never POST trip dates to schngn.com for calculation. There is no hosted calculation API, remote MCP server, OAuth agent registration, or agent commerce endpoint.
+Install the public @schngn/agent package on the operator's machine to use its stdio MCP, CLI, or loopback-only HTTP service. Read the setup guide and skill before calling tools. Never POST trip dates to schngn.com for calculation. There is no hosted calculation API or agent commerce endpoint. Read-only remote MCP, REST and A2A support reviewed documentation and saved account trips after explicit OAuth consent. Read https://schngn.com/auth.md for registration, scopes, privacy limits and revocation; discovery starts at https://schngn.com/.well-known/api-catalog.
 
-Account storage requires verified Clerk ownership and explicit signup-and-save or sync consent. Do not collect account data through this discovery surface. The SCHNGN runtime has no outbound networking; a cloud-backed agent host may still receive and retain tool inputs/results under its own policies.
+Account storage requires verified Clerk ownership and explicit signup-and-save or sync consent. Public discovery contains no account data. Never collect Clerk session tokens; delegated access uses short-lived OAuth tokens after the user approves the exact scopes. The SCHNGN runtime has no outbound networking; a cloud-backed agent host may still receive and retain tool inputs/results under its own policies.

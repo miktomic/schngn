@@ -31,6 +31,7 @@
     "d1:migrate:local": "cd apps/web && bun run d1:migrate:local",
     "d1:migrate:remote": "cd apps/web && bun run d1:migrate:remote",
     "cloudflare:provision": "cd apps/web && bun run provision:production",
+    "cloudflare:agent-dns": "node scripts/configure-agent-dns.mjs",
     "cloudflare:canonical-www": "node scripts/configure-cloudflare-canonical-www.mjs",
     "secrets:check:dev": "infisical run --env=dev --path=/apps/web -- node scripts/validate-infisical-env.mjs dev",
     "secrets:check:prod": "infisical run --env=prod --path=/apps/web -- node scripts/validate-infisical-env.mjs prod",

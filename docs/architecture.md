@@ -246,3 +246,23 @@ Public content negotiation and skill discovery are described in
 Markdown assets before the SvelteKit adapter; private routes remain unchanged.
 
 The moving-window view uses one shared chronological axis, optional country markers, a translucent 180-day band, and a large counted-day total below. Full per-trip dates and counts are available in a collapsed disclosure. The example separates the two historical trips visually while retaining its 25/26/95-day checkpoints.
+
+`MovingWindowTimeline.svelte` also offers the approved layered-contributions graphic through `LayeredContributions.svelte`. Both views share the same selected date, engine reading, saved checkpoint, and native date controls. `lib/timeline/layeredContributions.ts` partitions overlapping stay intervals for stable visual attribution, then assigns the engine's de-duplicated counted dates to at most six layers. Earlier trips are grouped for large histories. Exact rolling-count turn points preserve the count between plotted dates while avoiding day-by-day expansion of long empty spans. Open-ended stays use the existing projection adapter and are labeled in the chart. Switching views does not persist preferences or trip changes and never makes a network request.
+
+
+## Read-only delegated agent access (DEC-17)
+
+The web Worker wraps SvelteKit in Cloudflare's OAuth provider. Clerk session
+verification authorizes the human consent page only; OAuth tokens authorize
+`/mcp`, `/api/agent/trips` and `/a2a` only. The issuer and exact protected resource
+are `https://schngn.com`; scopes are `docs:read` and `trips:read`. The server derives
+trip ownership from encrypted grant props, never request parameters. Tools use
+existing D1 account snapshots and fixed generated Markdown assets.
+
+D1 one-time consent records bind the original request to a user/session. KV
+contains opaque-token/grant/client metadata, with bounded retention. D1 grant and
+token-digest deny lists cover distributed KV revocation. Deletion revokes grants
+and clears pending consent; deleted-account tombstones continue to guard reads.
+There are no new trip stores, hosted calculations, agent writes or task logs.
+Browser WebMCP uses the existing pure capability directly with explicit inputs.
+See `docs/agent-readiness.md` for current draft versions and the final-build gate.

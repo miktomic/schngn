@@ -39,6 +39,6 @@ export async function agentResponse(request, env, next, pages) {
   response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
   const vary = response.headers.get('Vary');
   response.headers.set('Vary', [vary, 'Accept'].filter(Boolean).join(', '));
-  response.headers.append('Link', `<${page}>; rel="alternate"; type="text/markdown", </llms.txt>; rel="service-doc"; type="text/plain", </.well-known/agent-skills/index.json>; rel="https://agentskills.io/discovery"; type="application/json"`);
+  response.headers.append('Link', `</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </auth.md>; rel="service-doc"; type="text/markdown", <${page}>; rel="alternate"; type="text/markdown", </llms.txt>; rel="service-doc"; type="text/plain", </.well-known/agent-skills/index.json>; rel="https://agentskills.io/discovery"; type="application/json"`);
   return response;
 }

@@ -5,10 +5,14 @@ import {
   type AccountD1Database
 } from '../../../../lib/account/accountRepository';
 
+import { revokeAllAgentGrants } from '../../../../lib/agent/connections';
+import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
+
 const NO_STORE_HEADERS = { 'cache-control': 'no-store' };
 
 interface ClerkWebhookEnvironment {
   DB?: unknown;
+  OAUTH_PROVIDER?: OAuthHelpers;
   CLERK_WEBHOOK_SIGNING_SECRET?: unknown;
 }
 
@@ -74,6 +78,9 @@ export function _createClerkWebhookHandler(dependencies: ClerkWebhookDependencie
 
     try {
       await dependencies.tombstoneDeletedAccountData(env.DB, userId);
+      if (env.OAUTH_PROVIDER) {
+        await revokeAllAgentGrants(env.OAUTH_PROVIDER, userId, env.DB as AccountD1Database);
+      }
     } catch {
       return json(
         { ok: false, error: 'Account deletion is temporarily unavailable' },

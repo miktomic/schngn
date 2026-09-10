@@ -1,3 +1,4 @@
+import { agentCopy } from '../agent/copy';
 import type { Locale } from './locales';
 import { easternLegalCatalogs } from './legalUiEastern';
 import { westernLegalCatalogs } from './legalUiWestern';
@@ -254,7 +255,8 @@ const catalogs: Record<Locale, LegalLocaleCatalog> = {
 };
 
 export function privacyUi(locale: Locale): LegalPageCopy {
-  return catalogs[locale].privacy;
+  const base = catalogs[locale].privacy;
+  return { ...base, updatedDate: '2026-09-10', sections: [...base.sections, { id: 'agent-connections', title: agentCopy[locale].manage, paragraphs: [agentCopy[locale].manageIntro + " " + agentCopy[locale].limits, agentCopy[locale].trips] }] };
 }
 
 export function termsUi(locale: Locale): LegalPageCopy {

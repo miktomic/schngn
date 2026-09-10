@@ -203,3 +203,14 @@ On 9 September 2026, the owner supplied Domifis SRL, Clos Paul Delforge 1,
 are listed on both legal pages, and every localized privacy responsibility
 section names Domifis SRL. This does not establish completion of legal or
 native-language review, a company registration/VAT number, or a choice of court.
+
+
+## Agent account access release (2026-09-10)
+
+The owner approved public documentation plus explicitly consented saved-account
+access (DEC-17). Implementation and preview verification are separate from live
+activation. Before activation, require the exact-head `prepr` and Linux gates,
+real KV binding, migration 0006, final-artifact discovery/auth tests, consent and
+account-switch browser tests, no guest input transmission, and independent
+security review. Then verify deployed metadata, protected routes, DNSSEC and the
+full external scanner. Do not infer WorkOS assertion/claim support from auth.md.

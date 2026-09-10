@@ -14,6 +14,24 @@
         "How do I connect SCHNGN to my agent?",
         "How can I calculate Schengen days locally?"
       ]
+    },
+    {
+      "identifier": "urn:air:schngn.com:mcp:account",
+      "displayName": "SCHNGN read-only MCP with account consent",
+      "type": "application/mcp-server-card+json",
+      "url": "https://schngn.com/mcp/server-card"
+    },
+    {
+      "identifier": "urn:air:schngn.com:a2a:account",
+      "displayName": "SCHNGN stateless read-only A2A",
+      "type": "application/a2a+json",
+      "url": "https://schngn.com/.well-known/agent-card.json"
+    },
+    {
+      "identifier": "urn:air:schngn.com:documentation:authorization",
+      "displayName": "Agent authorization and privacy contract",
+      "type": "text/markdown",
+      "url": "https://schngn.com/auth.md"
     }
   ]
 }

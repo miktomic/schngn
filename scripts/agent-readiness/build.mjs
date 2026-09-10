@@ -42,5 +42,7 @@ await writeFile(resolve(output, '.well-known/agent-skills/index.json'), JSON.str
 }, null, 2));
 await copyFile(resolve(output, '_worker.js'), resolve(output, '../cloudflare-tmp/app-worker.js'));
 await copyFile(resolve(root, 'apps/web/agent-readiness/negotiate.mjs'), resolve(output, '../cloudflare-tmp/negotiate.mjs'));
-await writeFile(resolve(output, '_worker.js'), `import app from '../cloudflare-tmp/app-worker.js';\nimport { agentResponse } from '../cloudflare-tmp/negotiate.mjs';\nconst pages = ${JSON.stringify(pages)};\nexport default { ...app, fetch(request, env, ctx) { return agentResponse(request, env, () => app.fetch(request, env, ctx), pages); } };\n`);
+await copyFile(resolve(root, 'apps/web/agent-readiness/oauth.mjs'), resolve(output, '../cloudflare-tmp/oauth.mjs'));
+await copyFile(resolve(root, 'apps/web/agent-readiness/body.mjs'), resolve(output, '../cloudflare-tmp/body.mjs'));
+await writeFile(resolve(output, '_worker.js'), `import app from '../cloudflare-tmp/app-worker.js';\nimport { agentResponse } from '../cloudflare-tmp/negotiate.mjs';\nimport { withAgentAuthorization } from '../cloudflare-tmp/oauth.mjs';\nconst pages = ${JSON.stringify(pages)};\nconst authorized = withAgentAuthorization(app);\nexport default { ...app, scheduled(event, env, ctx) { return authorized.scheduled(event, env, ctx); }, fetch(request, env, ctx) { return agentResponse(request, env, () => authorized.fetch(request, env, ctx), pages); } };\n`);
 console.log(`Agent readiness: ${Object.keys(pages).length} public Markdown pages and verified skill discovery generated.`);

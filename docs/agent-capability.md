@@ -179,6 +179,6 @@ The SCHNGN runtime performs no outbound network calls, analytics, logging, accou
 
 That local runtime boundary does not make the surrounding agent private by default. A cloud-backed agent host or model provider may receive and retain MCP tool arguments and results under its own policies. Review the host's data controls before supplying travel history, and do not copy dates into agent logs or telemetry.
 
-There is deliberately no hosted SCHNGN API or remote MCP endpoint. Sending anonymous trip history to SCHNGN infrastructure would require a separately approved consent, authentication, authorization, retention, and operational-logging design.
+This calculation package has no hosted endpoint. DEC-17 separately approves read-only documentation and saved-account retrieval through the web Worker; it never accepts anonymous calculation inputs. Sending anonymous trip history to SCHNGN infrastructure would require a separately approved consent, authentication, authorization, retention, and operational-logging design.
 
 SCHNGN models ordinary short stays under the Schengen 90/180-day rule. It does not account for residence permits, long-stay or national visas, bilateral waivers, nationality-specific exceptions, work, study, asylum or temporary-protection status, EES/ETIAS transition issues, or border-officer discretion. It is a planning aid, not legal advice or a guarantee of entry; verify with official sources before booking or travelling.

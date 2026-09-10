@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { agentCopy } from '$lib/agent/copy';
   import { page } from '$app/state';
   import CommandBlock from '$lib/design/CommandBlock.svelte';
   import SiteHeader from '$lib/design/SiteHeader.svelte';
@@ -275,9 +276,15 @@ const result = calculateUsage({
       </section>
     </article>
   </div>
+  <section aria-labelledby="account-agent-access" class="agent-account-access">
+    <h2 id="account-agent-access">{agentCopy[locale].manage}</h2>
+    <p>{agentCopy[locale].manageIntro}</p><p>{agentCopy[locale].trips}</p><p>{agentCopy[locale].limits}</p>
+    <p><a href="/auth.md">OAuth · MCP · A2A</a> · <a href={localizedPath('/agent/connections', locale)}>{agentCopy[locale].manage}</a></p>
+  </section>
 </main>
 
 <style>
+  .agent-account-access { padding-block: 32px; max-width: 70ch; }
   :global(html) { scroll-behavior: smooth; }
 
   .agents-page {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { goto, pushState, replaceState } from '$app/navigation';
+  import { agentCopy } from '$lib/agent/copy';
   import { page } from '$app/state';
   import { env } from '$env/dynamic/public';
   import { onMount } from 'svelte';
@@ -2128,6 +2129,7 @@
               <span class="account-state-badge neutral">{deep('localOnly')}</span>
             </div>
             <p>{rt('guestCopy')}</p>
+            <p><a href={localizedPath('/agent/connections', locale)}>{agentCopy[locale].manage}</a></p>
             <div class="button-row account-actions">
               <button class="primary-button" type="button" disabled={signupOpening} aria-busy={signupOpening ? 'true' : undefined} onclick={startAccountSignUp}>{signupValue('compactButton')}</button>
               <button class="secondary-button" type="button" onclick={startAccountSignIn}>{deep('signIn')}</button>
@@ -2207,6 +2209,7 @@
           </div>
 
           {#if accountSignedIn}
+            <p><a href={localizedPath('/agent/connections', locale)}>{agentCopy[locale].manage}</a></p>
             <div class="button-row account-actions">
               <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={manageClerkAccount}>{deep('manageAccount')}</button>
               <button class="secondary-button" type="button" disabled={accountState === 'syncing'} onclick={signOutAccount}>{deep('signOut')}</button>

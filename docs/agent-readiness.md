@@ -1,7 +1,7 @@
 # Public agent readiness
 
 Owner: SCHNGN. Audit source: https://isitagentready.com/schngn.com,
-retrieved 2026-09-10. HQ coordination: miktomic/mg-hq#7.
+retrieved 2026-09-10. HQ coordination: miktomic/mg-hq#7 (baseline) and #10 (delegated access).
 
 ## Contract
 
@@ -34,18 +34,37 @@ placeholder digests or repurpose internal AGENTS.md as a public skill.
 The baseline scanner score was 20/100. Applicable defects: discovery headers,
 Markdown, Content Signals, skills discovery, and ARD. Robots and sitemap passed.
 
-OAuth authorization-server discovery, protected-resource metadata, auth.md
-registration, hosted MCP cards, A2A, Web Bot Auth signing, DNS-AID service records,
-and payment protocols are not implemented product services. Do not fabricate
-endpoints or credentials to raise a score. Clerk sign-in is not an OAuth
-agent-delegation contract. DNS-AID is deferred until a remotely discoverable
-service is approved. WebMCP is a potential browser-local feature, not a
-requirement to expose user data; the existing local CLI/stdio MCP is the
-supported calculation contract. Revisit these entries when capabilities change.
+DEC-17 approves read-only documentation and explicitly consented account access.
+The public OAuth authorization server, protected-resource metadata, OAuth guide
+at `/auth.md`, hosted MCP, paginated REST and A2A services now have executable
+contracts and regression tests. The exact OAuth resource is `https://schngn.com`
+for all three agent endpoints. Tokens do not authorize Clerk-only account APIs.
+`services.mjs` checks these contracts against the final production artifact.
 
-Hosted anonymous calculation remains prohibited by DEC-16. The operator's
-local runtime never transmits dates; an agent host/model provider may handle
-inputs/results under its own policies. Discovery does not change this boundary.
+WebMCP uses `document.modelContext` and the earlier `navigator.modelContext`
+where available. Tools only calculate explicit inputs locally, with no saved
+state access. Browser tests execute both registrations, inspect requests and
+storage, and exercise consent/revocation and account switching.
+
+MCP server cards use the experimental v1 schema and are published at both
+`/mcp/server-card` and the scanner's older well-known URL. A2A uses the 1.0 JSON-RPC
+binding with immediate structured messages; no streaming, writes, hosted
+calculation, task retention or free-text model processing is advertised.
+
+`/auth.md` documents the real OAuth code/PKCE and DCR/CIMD flow. It deliberately
+does not advertise WorkOS `agent_auth`, identity assertions, claim tokens or
+ID-JAG. A scanner's older advice cannot authorize a fabricated protocol.
+Web Bot Auth and commerce remain conditional on an approved future service.
+
+DNS-AID uses an SVCB organization index targeting the live HTTPS origin. Standard
+ALPN and explicit port parameters identify the transport; the origin's HTTP Link
+header leads to the API catalog. Draft custom key numbers are not invented.
+Cloudflare DNSSEC activation and a validating resolver's AD response are checked
+separately. `configure-agent-dns.mjs` owns only its marked discovery record.
+
+Hosted anonymous calculation remains prohibited by DEC-16. Local runtime and
+browser tools never transmit dates; an external agent/model provider may still
+handle inputs and results. Saved account data is shared only after DEC-17 consent.
 
 ## Change and release gates
 
@@ -86,3 +105,30 @@ also checks its final build. Rebuilding requires another check. Changed UI,
 content claims, auth, or protocol capabilities still require browser/manual
 review; these automatic checks are not a complete accessibility/security audit.
 Live DNS/WAF/CDN and the full external score remain post-deployment evidence.
+
+## Delegated-access release checks
+
+`bun run prepr` includes real-provider OAuth code/PKCE, resource/scope/replay,
+retention and revocation tests, D1 transaction/principal tests, MCP/A2A execution,
+all-locale privacy disclosure, and browser consent/account-switch/WebMCP checks.
+The final workerd preview also registers a synthetic ephemeral client in local KV.
+Production smoke is read-only and must not silently mint account grants.
+
+The provider's revocation state is eventually consistent; D1 is the immediate
+extra deny-list. Both token and user-initiated grant revocation are exercised.
+Expired metadata cleanup is hourly. There is no OAuth token or trip-body logging.
+The public registry, tokens, grants, input/output sizes and pagination all have
+independent bounds. Never relax a required check to obtain a scanner score.
+
+Current primary sources reviewed 2026-09-10:
+- https://github.com/cloudflare/workers-oauth-provider
+- https://modelcontextprotocol.io/specification/latest/basic/authorization
+- https://github.com/modelcontextprotocol/experimental-ext-server-card
+- https://developer.chrome.com/docs/ai/webmcp/imperative-api
+- https://webmachinelearning.github.io/webmcp/
+- https://a2a-protocol.org/v1.0.0/specification/
+- https://github.com/workos/auth.md
+- https://www.rfc-editor.org/rfc/rfc9727.html
+- https://datatracker.ietf.org/doc/html/draft-mozleywilliams-dnsop-dnsaid-02
+
+Each explicit approval creates an independent connection. Approving again does not revoke existing connections; revoke each connection from Account & data or let its 10-minute token expire. A2A JSON-RPC requests require the `A2A-Version: 1.0` header.

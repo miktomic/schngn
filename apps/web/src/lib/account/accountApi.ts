@@ -1,3 +1,4 @@
+import { revokeAllAgentGrants } from '../agent/connections';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import {
   AccountDeletedError,
@@ -100,6 +101,7 @@ export function createAccountDeletionHandler(
 
     try {
       await deleteAccountData(db, auth.userId);
+      if (platform?.env.OAUTH_PROVIDER) await revokeAllAgentGrants(platform.env.OAUTH_PROVIDER, auth.userId, db);
       return json({ ok: true }, { headers: NO_STORE_HEADERS });
     } catch {
       return serviceUnavailable();

@@ -115,7 +115,7 @@ The gate covers:
 - loopback-only HTTP binding/request guards, 64 KiB body limits, no-store responses, and OpenAPI 3.1 discovery;
 - three read-only MCP tools over stdio with structured output and safe error results.
 
-No agent test may add persistence, telemetry, outbound network calls, or a hosted listener. Remote HTTP or MCP is outside the approved scope and requires a new privacy/authentication/consent decision.
+The local calculation package tests preserve no persistence, telemetry, outbound network calls, or hosted listener. DEC-17 adds separate web-Worker tests for explicitly consented read-only account access; no remote calculation is approved.
 
 ### Build gate
 
@@ -157,7 +157,7 @@ commit's GitHub Actions run. Do not use the repository's low-level
 `bun run deploy` command as a production runbook: by itself it does not perform
 the surrounding migration, binding-file lifecycle, redirect, or smoke steps.
 
-The local `apps/agent` build is exercised by the repository gate but is not uploaded by Wrangler and does not create a production calculation endpoint. The word “API” in this surface means the in-process TypeScript contract or the loopback-only HTTP service. Any hosted API/MCP phase remains unapproved because it would cause submitted trip dates to leave the operator's machine.
+The local `apps/agent` build is exercised by the repository gate but is not uploaded by Wrangler and does not create a production calculation endpoint. The word “API” in this surface means the in-process TypeScript contract or the loopback-only HTTP service. Hosted calculation remains unapproved. DEC-17 separately permits read-only documentation and previously saved account trips with explicit OAuth consent.
 
 The GitHub Actions production deploy job only runs on a push to `main`, after unit/type/build/browser gates pass, and is attached to the protected GitHub Environment named `production`. GitHub Actions remains the runner, while Infisical `prod` `/apps/web` is the only value store. The deploy job alone receives `id-token: write`; its repository wrapper exchanges the short-lived GitHub OIDC token directly with Infisical identity `812097c6-b028-4a21-9af0-291ebc835cfa`. No production value is copied into a GitHub Actions secret or variable, and no Infisical Secret Sync is used. A non-cancelling `schngn-production` concurrency group serializes migrations and deployment, and both checkout steps disable persisted Git credentials.
 
@@ -274,3 +274,21 @@ For now:
 No manual deploys from dirty working trees.
 
 Do not publish or deploy the local agent HTTP/MCP surfaces remotely without a new approved product decision covering authentication, explicit consent, privacy disclosure, logging/retention, and abuse controls.
+
+
+## Delegated agent release (DEC-17)
+
+The final deployable Worker includes the OAuth wrapper and its bounded-storage
+adapter, local WebMCP tools, MCP/A2A/REST handlers and discovery. D1 migration 0006
+adds consent transactions and immediate revocation deny lists. `OAUTH_KV` is the
+separate `schngn-agent-oauth` namespace; its real ID is checked into Wrangler.
+No additional secret value is needed: Clerk verifies identity, and the OAuth
+provider manages its own opaque credentials in KV. Public client registration
+is capped at 10/minute/IP, other agent requests at 120/minute/IP. Expired D1
+metadata is purged by the hourly Worker schedule; invocation logs are disabled.
+
+CI runs the expanded `services.mjs` checks before upload and again after deploy.
+After deployment, `bun run cloudflare:agent-dns` idempotently publishes the marked
+SVCB index record. DNSSEC is an edge/registrar setting; confirm a valid DS/AD chain
+with the post-deploy external scan. Preserve the user-approved website release
+workflow: exact-head local and branch CI, PR CI, protected-main deployment.
