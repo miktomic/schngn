@@ -222,3 +222,17 @@ apps/web/src/lib/import-export/ # JSON import/export
 apps/web/src/lib/auth/          # Clerk client/session integration
 apps/web/src/lib/account/       # consented authenticated sync and account lifecycle helpers
 ```
+
+
+## Web agent interfaces (DEC-17)
+
+`apps/web/src/lib/agent/` owns explicit consent, revocation, remote read-only MCP
+and A2A, shared translated permission copy and browser-local WebMCP tools.
+`apps/web/agent-readiness/oauth.mjs` wraps the generated Worker with OAuth,
+rate limits, bounded bodies and grant retention. Migration 0006 stores only
+consent and revocation metadata; existing account snapshots supply shared trips.
+Discovery routes live under `.well-known`, `/mcp/server-card` and `/openapi.json`.
+`static/auth.md` is the technical client contract. `scripts/agent-readiness/services.mjs`
+extends the final-artifact HTTP gate; `scripts/configure-agent-dns.mjs` manages
+the DNS-AID index after deployment. These hosted read-only services do not change
+the transport or privacy restrictions of the local `apps/agent` package.

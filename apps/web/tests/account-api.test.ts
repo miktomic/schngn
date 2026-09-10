@@ -741,7 +741,8 @@ describe('authenticated account trip API', () => {
       '0002_create_account_trip_snapshots.sql',
       '0003_create_account_deletion_tombstones.sql',
       '0004_reset_account_trip_snapshots_v2.sql',
-      '0005_drop_waitlist_signups.sql'
+      '0005_drop_waitlist_signups.sql',
+      '0006_agent_authorization.sql'
     ]);
     expect(cleanupMigration).toContain('drop table if exists waitlist_signups;');
     expect(cleanupMigration).not.toContain('account_trip_snapshots');

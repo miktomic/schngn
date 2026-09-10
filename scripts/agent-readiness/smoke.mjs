@@ -1,3 +1,4 @@
+import { assertAgentServicesHttp } from './services.mjs';
 const VARY_ACCEPT = /(?:^|,)\s*accept\s*(?:,|$)/i;
 import assert from 'node:assert/strict';
 import { assertPublicHttp } from './http-contract.mjs';
@@ -76,4 +77,5 @@ assert.match(head.headers.get('content-type') || '', /text\/markdown/);
 assert.equal(await head.text(), '');
 assert.equal((await get('/.well-known/agent-skills/not-a-real-skill/SKILL.md')).status, 404);
 assert.equal((await get('/definitely-not-a-real-page-agent-audit')).status, 404);
+await assertAgentServicesHttp(get, local);
 console.log(`Agent readiness HTTP smoke passed: ${base.origin}, ${new Set(paths).size} public documents, HTML/Markdown/HEAD, discovery, CORS, integrity, and 404s.`);

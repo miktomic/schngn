@@ -75,7 +75,7 @@ describe('privacy policy and terms', () => {
     const englishPrivacy = privacyUi('en');
     const englishTerms = termsUi('en');
 
-    expect(englishPrivacy.sections).toHaveLength(10);
+    expect(englishPrivacy.sections).toHaveLength(11);
     expect(englishTerms.sections).toHaveLength(9);
 
     for (const locale of SUPPORTED_LOCALES) {
@@ -88,7 +88,7 @@ describe('privacy policy and terms', () => {
       expect(terms.sections.map((section) => section.id)).toEqual(
         englishTerms.sections.map((section) => section.id)
       );
-      expect(privacy.updatedDate).toBe('2026-09-09');
+      expect(privacy.updatedDate).toBe('2026-09-10');
       expect(privacy.sections.find((section) => section.id === 'responsibility')?.paragraphs.join(' ')).toContain('Domifis SRL');
       expect(terms.updatedDate).toBe('2026-09-09');
       expect(privacy.providerLinks?.map((provider) => provider.url)).toEqual(

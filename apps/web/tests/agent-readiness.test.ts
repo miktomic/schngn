@@ -46,7 +46,11 @@ test('all public source routes remain discoverable in the sitemap', () => {
   for (const file of readdirSync(routes, { recursive: true })) {
     if (typeof file !== 'string' || !file.endsWith('+page.svelte')) continue;
     const path = '/' + file.replace(/\/?\+page\.svelte$/, '');
-    if (path === '/app') continue;
+    // Private consent and connection-management screens must never enter the public sitemap.
+    if (['/app', '/agent/authorize', '/agent/connections'].includes(path)) {
+      if (path.startsWith('/agent/')) expect(sitemap).not.toContain(`<loc>https://schngn.com${path}</loc>`);
+      continue;
+    }
     expect(sitemap).toContain(`<loc>https://schngn.com${path}</loc>`);
   }
 });

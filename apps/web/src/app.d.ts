@@ -36,6 +36,8 @@ declare global {
     interface Platform {
       env: {
         DB?: SCHNGND1Database;
+        OAUTH_PROVIDER?: import('@cloudflare/workers-oauth-provider').OAuthHelpers;
+        SCHNGN_AGENT_AUTH?: import('./lib/agent/consent').AgentAuthProps;
         PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
         CLERK_SECRET_KEY?: string;
         CLERK_WEBHOOK_SIGNING_SECRET?: string;

@@ -462,6 +462,26 @@ boundary. Never advertise unimplemented protocols to satisfy a scanner.
 
 The moving-window view uses one shared chronological axis, optional country markers, a translucent 180-day band, and a large counted-day total below. Full per-trip dates and counts are available in a collapsed disclosure. The example separates the two historical trips visually while retaining its 25/26/95-day checkpoints.
 
+The approved A/J graphic selection adds a local switch between the default Sliding window and Layered contributions views. `LayeredContributions.svelte` and `lib/timeline/layeredContributions.ts` show stacked trip contributions across checking dates, using engine-counted unique dates, stable overlap attribution, exact turn points, and at most six visible layers. Date controls, inspected count, what-if inputs and saved result are shared across both graphics; switching never writes trips or changes the dashboard verdict. Labels are localized in all 17 languages and open-ended layers remain marked as projections.
+
 Before public website releases, use `$agent-readiness` when installed and follow
 `docs/agent-readiness.md`. Run the product-owned final-build gate even if the
 skill is unavailable. Do not deploy a rebuilt artifact on an earlier test result.
+
+
+## Delegated agent access (DEC-17, 2026-09-10)
+
+The owner approved hosted read-only public documentation and saved-account trip
+retrieval after explicit OAuth consent. The approved interfaces are `/mcp`,
+`/api/agent/trips`, and `/a2a`; Clerk continues to verify the consenting person.
+Their single OAuth resource is exactly `https://schngn.com`. Scopes, short expiry,
+revocation, strict principal derivation and no-store responses are mandatory.
+Anonymous calculations, account writes and browser saved-state access remain
+outside those hosted interfaces. Local WebMCP calculates explicit inputs only.
+
+Follow `docs/agent-readiness.md`, DEC-17, and the actual provider/runtime tests
+when modifying these surfaces. No hosted calculation is approved. Read-only
+retrieval does not relax DEC-16's local CLI/HTTP/stdio boundaries. KV grant/client/
+token retention, D1 consent/deny lists, account-switch races, deletion, streamed
+body bounds and discovery versions are part of the release gate. Auth.md is an
+OAuth guide; WorkOS identity assertions and claim tokens are not implemented.

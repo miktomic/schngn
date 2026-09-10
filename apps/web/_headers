@@ -1,5 +1,5 @@
 /*
-  Link: </llms.txt>; rel="service-doc"; type="text/plain", </.well-known/agent-skills/index.json>; rel="https://agentskills.io/discovery"; type="application/json"
+  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </auth.md>; rel="service-doc"; type="text/markdown", </llms.txt>; rel="service-doc"; type="text/plain", </.well-known/agent-skills/index.json>; rel="https://agentskills.io/discovery"; type="application/json"
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
@@ -16,4 +16,8 @@
   Access-Control-Allow-Origin: *
 
 /.well-known/ai-catalog.json
+  Access-Control-Allow-Origin: *
+
+/auth.md
+  Content-Type: text/markdown; charset=utf-8
   Access-Control-Allow-Origin: *

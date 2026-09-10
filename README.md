@@ -88,7 +88,7 @@ codex mcp add schngn -- schngn-mcp
 npx skills add miktomic/schngn --skill schngn
 ```
 
-The SCHNGN runtime itself performs no persistence, telemetry, logging, or outbound network calls. A cloud-backed agent host or model provider may still receive and retain tool inputs and results under its own policies. There is no hosted SCHNGN API or MCP endpoint.
+The SCHNGN runtime itself performs no persistence, telemetry, logging, or outbound network calls. A cloud-backed agent host or model provider may still receive and retain tool inputs and results under its own policies. Hosted read-only MCP, REST and A2A are separately approved by DEC-17 for reviewed documentation and explicitly shared saved account trips. Anonymous calculations remain local. See [agent authentication](https://schngn.com/auth.md) and [the release contract](docs/agent-readiness.md).
 
 See the [agent capability guide](docs/agent-capability.md) for source builds, request contracts, examples, privacy boundaries, and client setup.
 
