@@ -15,7 +15,7 @@ The layered geometry is derived from trips and the date extent, so moving the ch
 
 ## Verification
 
-- Six new contribution tests pass, including an every-day engine/interpolation comparison, overlap de-duplication and input-order invariance, outside-Schengen gaps, open-ended stays, grouping, empty and distant trips, and 500 overlapping records with an intermediate over-limit peak.
+- Seven new contribution tests pass, including an every-day engine/interpolation comparison, overlap de-duplication and input-order invariance, outside-Schengen gaps, open-ended stays, grouping, empty and distant trips, and 500 overlapping records with an intermediate over-limit peak. A fragmented-history regression bounds each engine call to the disjoint ranges intersecting its 180-day window, preventing repeated full-history scans.
 - Focused moving-window browser tests: 4 passed. All 17 locales at 320px; keyboard view switching preserves focus; view changes preserve the checking date, saved verdict and trip storage. What-if changes update the selected graphic without resetting the view.
 - Full browser suite: 48 passed.
 - Type checks: pass; Svelte reports 0 errors and 0 warnings.

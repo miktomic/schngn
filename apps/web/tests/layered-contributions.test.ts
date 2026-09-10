@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, spyOn, test } from 'bun:test';
+import * as engine from '@schngn/engine';
 import { calculateUsageOnDate } from '@schngn/engine';
 import { buildContributionSeries, contributionReading } from '../src/lib/timeline/layeredContributions';
 import { movingWindowBounds, shiftDate } from '../src/lib/timeline/movingWindow';
@@ -76,5 +77,29 @@ describe('layered contribution evidence', () => {
     expect(series.points.at(-1)?.used).toBe(0);
     expect(series.points.length).toBeLessThan(10);
     expect(series.hasOverlap).toBe(true);
+  });
+
+  test('bounds engine work to intersecting ranges for large fragmented histories', () => {
+    const trips = Array.from({ length: 100 }, (_, owner) => ({
+      ...trip(`fragmented-${owner}`, owner * 42, owner * 42),
+      stays: Array.from({ length: 21 }, (_, segment) => trip('stay', owner * 42 + segment * 2, owner * 42 + segment * 2).stays[0])
+    }));
+    const calculate = engine.calculateUsageOnDate;
+    let largestInput = 0;
+    const usageSpy = spyOn(engine, 'calculateUsageOnDate').mockImplementation((stays, date) => {
+      largestInput = Math.max(largestInput, stays.length);
+      return calculate(stays, date);
+    });
+    try {
+      const series = buildContributionSeries(trips, movingWindowBounds(trips, '2026-09-10'));
+      // Disjoint, non-adjacent ranges permit at most 90 intersections in 180 days.
+      // This structural budget avoids timing thresholds that vary between CI hosts.
+      expect(largestInput).toBeLessThanOrEqual(90);
+      expect(series.points.length).toBeGreaterThan(4000);
+      for (const point of series.points) expect(point.values.reduce((a, b) => a + b, 0)).toBe(point.used);
+      for (const point of [series.points[0], series.points[Math.floor(series.points.length / 2)], series.points.at(-1)!]) {
+        expect(point.used).toBe(calculate(toEngineTrips(trips), point.date).daysUsed);
+      }
+    } finally { usageSpy.mockRestore(); }
   });
 });

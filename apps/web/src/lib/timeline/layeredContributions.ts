@@ -104,9 +104,15 @@ export function buildContributionSeries(trips: EditableTrip[], bounds: MovingWin
   }
   const stays: SchengenStay[] = union.map(range => ({ entryDate: iso(range.start), exitDate: iso(range.end) }));
   const series: ContributionSeries = { startDate: bounds.minDate, endDate: bounds.endDate, layers, ranges, ownerLayers, points: [], hasOverlap };
+  let first = 0, afterLast = 0;
   series.points = [...dates].sort((a, b) => a - b).map(day => {
     const date = iso(day);
-    const usage = calculateUsageOnDate(stays, date);
+    // Dates and disjoint union ranges are sorted. Advance through them once so
+    // the engine sees only ranges intersecting this inclusive 180-day window,
+    // never the whole history again for every turn point.
+    while (first < union.length && union[first].end < day - 179) first++;
+    while (afterLast < union.length && union[afterLast].start <= day) afterLast++;
+    const usage = calculateUsageOnDate(stays.slice(first, afterLast), date);
     return { date, used: usage.daysUsed, values: contributionReading(series, usage) };
   });
   return series;
