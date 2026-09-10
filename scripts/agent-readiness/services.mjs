@@ -25,7 +25,7 @@ export async function assertAgentServicesHttp(get, local) {
     }
   }
   const mcp = await (await get('/mcp/server-card')).json(); const legacy = await (await get('/.well-known/mcp/server-card.json')).json();
-  assert.deepEqual(mcp, legacy); assert.equal(mcp.name, 'com.schngn/account'); assert.equal(mcp.remotes[0].url, 'https://schngn.com/mcp');
+  assert.deepEqual(legacy.serverInfo, { name: mcp.name, version: mcp.version }); assert.equal(legacy.endpoint, mcp.remotes[0].url); assert.deepEqual(legacy.capabilities, { tools: {}, resources: {} }); assert.equal(mcp.name, 'com.schngn/account'); assert.equal(mcp.remotes[0].url, 'https://schngn.com/mcp');
   assert.ok(mcp.remotes[0].supportedProtocolVersions.includes('2025-11-25'));
   const a2a = await (await get('/.well-known/agent-card.json')).json(); assert.equal(a2a.supportedInterfaces[0].url, 'https://schngn.com/a2a'); assert.equal(a2a.supportedInterfaces[0].protocolVersion, '1.0'); assert.equal(a2a.capabilities.streaming, false);
   assert.deepEqual(a2a.securityRequirements, [{ schemes: { oauth: { list: ['docs:read'] } } }, { schemes: { oauth: { list: ['trips:read'] } } }]);

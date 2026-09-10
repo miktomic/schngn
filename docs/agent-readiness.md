@@ -132,3 +132,5 @@ Current primary sources reviewed 2026-09-10:
 - https://datatracker.ietf.org/doc/html/draft-mozleywilliams-dnsop-dnsaid-02
 
 Each explicit approval creates an independent connection. Approving again does not revoke existing connections; revoke each connection from Account & data or let its 10-minute token expire. A2A JSON-RPC requests require the `A2A-Version: 1.0` header.
+
+The historical MCP card URL additionally exposes the older SEP-1649 `serverInfo`, `endpoint` and `capabilities` fields for existing clients/scanners; `/mcp/server-card` follows the current experimental schema. Both describe the same running service.

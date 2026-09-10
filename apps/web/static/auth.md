@@ -1,4 +1,4 @@
-# SCHNGN agent authentication
+# SCHNGN auth.md
 
 SCHNGN supports OAuth authorization code + S256 PKCE for read-only delegated
 account access. Public documentation at https://schngn.com/agents and its
