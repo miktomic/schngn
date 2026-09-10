@@ -1,4 +1,6 @@
 <script lang="ts">
+  import MovingWindowTimeline from './MovingWindowTimeline.svelte';
+  import { movingWindowUi } from '$lib/i18n/movingWindowUi';
   import {
     addDays,
     calculateUsageOnDate,
@@ -50,6 +52,10 @@
   }
 
   interface TimelineProps {
+    interactive?: boolean;
+    resultLabel?: string;
+    initialDate?: string;
+    today?: string;
     headingId?: string;
     horizonDays?: number;
     label: string;
@@ -65,6 +71,10 @@
   }
 
   let {
+    interactive = false,
+    resultLabel,
+    initialDate,
+    today,
     headingId: requestedHeadingId,
     horizonDays = 30,
     label,
@@ -304,6 +314,11 @@
 
 <section class="timeline-card" aria-labelledby={headingId}>
   <h2 id={headingId}>{label}</h2>
+  {#if interactive && mode !== 'returns'}
+    {#key referenceDate}
+      <MovingWindowTimeline {trips} {referenceDate} {today} {locale} {tripName} {label} {resultLabel} {initialDate} />
+    {/key}
+  {:else}
   <div
     class="timeline-rail"
     style={`--timeline-days: ${model.dayCount}`}
@@ -323,27 +338,39 @@
     <bdi>{formatDateRange(model.endDate, model.endDate)}</bdi>
   </div>
   <p class="timeline-summary">{model.summary}</p>
-  {#if mode !== 'returns' && firstReturnDate}
+  {/if}
+  {#snippet savedForecast()}
     <section class="return-start-forecast" aria-label={returnStartLabel(locale)}>
       <div class="return-start-head">
         <strong>{returnStartLabel(locale)}</strong>
-        <bdi>{formatDateRange(firstReturnDate, firstReturnDate)}</bdi>
+        <bdi>{formatDateRange(firstReturnDate ?? referenceDate, firstReturnDate ?? referenceDate)}</bdi>
       </div>
       <div
         class="return-start-track"
         style={`--return-position: ${returnMarkerPosition}%`}
         role="img"
-        aria-label={formatReturnStartAria(locale, formatDateRange(firstReturnDate, firstReturnDate))}
+        aria-label={formatReturnStartAria(locale, formatDateRange(firstReturnDate ?? referenceDate, firstReturnDate ?? referenceDate))}
       >
         <span class="return-start-active" aria-hidden="true"></span>
-        <span class="return-start-marker" title={formatReturnStartAria(locale, formatDateRange(firstReturnDate, firstReturnDate))} aria-hidden="true"></span>
+        <span class="return-start-marker" title={formatReturnStartAria(locale, formatDateRange(firstReturnDate ?? referenceDate, firstReturnDate ?? referenceDate))} aria-hidden="true"></span>
       </div>
       <div class="return-start-ticks" aria-hidden="true">
         <bdi>{formatDateRange(referenceDate, referenceDate)}</bdi>
         <bdi>{formatDateRange(returnForecastEndDate, returnForecastEndDate)}</bdi>
       </div>
     </section>
+  {/snippet}
+  {#if mode !== 'returns' && firstReturnDate}
+    {#if interactive}
+      <details class="saved-forecast">
+        <summary>{movingWindowUi(locale).savedForecast}</summary>
+        {@render savedForecast()}
+      </details>
+    {:else}
+      {@render savedForecast()}
+    {/if}
   {/if}
+  {#if !interactive}
   {#if onTripSelect && tripLanes.length > 0}
     <section class="timeline-trip-lanes" aria-label={adjustmentCopy('tripToAdjust')}>
       <p>{adjustmentCopy('chooseTrip')}</p>
@@ -381,9 +408,12 @@
       {/if}
     {/each}
   </ul>
+  {/if}
 </section>
 
 <style>
+  .saved-forecast summary { cursor: pointer; min-height: 44px; align-content: center; font-size: .9rem; font-weight: 650; }
+  .saved-forecast summary:focus-visible { outline: 3px solid var(--safe); outline-offset: 3px; }
   .timeline-card {
     display: grid;
     gap: 10px;

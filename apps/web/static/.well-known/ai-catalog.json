@@ -1,0 +1,19 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "SCHNGN",
+    "identifier": "https://schngn.com"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:schngn.com:documentation:local-agent",
+      "displayName": "SCHNGN local agent setup and privacy boundaries",
+      "type": "text/html",
+      "url": "https://schngn.com/agents",
+      "representativeQueries": [
+        "How do I connect SCHNGN to my agent?",
+        "How can I calculate Schengen days locally?"
+      ]
+    }
+  ]
+}

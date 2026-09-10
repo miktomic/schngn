@@ -244,6 +244,9 @@ describe('installable offline PWA shell', () => {
         urls: [
           '/src/routes/app/+page.svelte?svelte&type=style&lang.css',
           '/src/lib/bilateral/data/runtime.v1.json?import',
+          '/src/lib/design/flags/es.svg?import&raw',
+          '/src/lib/design/flags/fr.svg?raw&import',
+          '/src/lib/design/flags/es.svg?import&raw&token=private',
           '/@fs/Users/example/packages/engine/src/index.ts?v=6ca8cddd',
           '/api/account/trips',
           '/src/private.ts?token=not-a-static-version',
@@ -260,10 +263,12 @@ describe('installable offline PWA shell', () => {
     expect(harness.fetchCalls.sort()).toEqual([
       '/@fs/Users/example/packages/engine/src/index.ts?v=6ca8cddd',
       '/src/lib/bilateral/data/runtime.v1.json?import',
+      '/src/lib/design/flags/es.svg?import&raw',
+      '/src/lib/design/flags/fr.svg?raw&import',
       '/src/routes/app/+page.svelte?svelte&type=style&lang.css'
     ]);
     expect([...harness.cachePuts.values()].flat().sort()).toEqual(harness.fetchCalls);
-    expect(replies).toEqual([{ ok: true, cached: 3 }]);
+    expect(replies).toEqual([{ ok: true, cached: 5 }]);
   });
 
   test('development source paths remain ineligible away from loopback', async () => {
@@ -272,7 +277,7 @@ describe('installable offline PWA shell', () => {
     let completion: Promise<unknown> | undefined;
 
     harness.dispatch('message', {
-      data: { type: 'SCHNGN_CACHE_URLS', urls: ['/src/routes/app/+page.svelte'] },
+      data: { type: 'SCHNGN_CACHE_URLS', urls: ['/src/routes/app/+page.svelte', '/src/lib/design/flags/es.svg?import&raw'] },
       ports: [{ postMessage: (message: unknown) => replies.push(message) }],
       waitUntil: (promise: Promise<unknown>) => {
         completion = promise;

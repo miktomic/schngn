@@ -1740,6 +1740,9 @@
         {#if historyReady}
           <TimelineLedger
             headingId="canonical-timeline-heading"
+            interactive
+            today={tripFormToday}
+            tripName={displayTripName}
             label={ui('rollingWindow')}
             {locale}
             mode={dashboardState.statusTone === 'risk' ? 'risk' : 'safe'}

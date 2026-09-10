@@ -813,7 +813,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await tripForm.getByRole('button', { name: 'Save trip' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(tripDisclosure(page, 'Offline Spain stay')).toBeVisible();
-    await expect(page.getByRole('img', { name: /5 counted days in this inclusive 180-day window/i })).toBeVisible();
+    await expect(page.locator('#timeline .window-result')).toContainText('5 counted days in this inclusive 180-day window');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Your Trips', exact: true })).toBeVisible();
@@ -1248,7 +1248,7 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
     await expect(form.getByText(/10 Schengen days · 2 days outside/)).toBeVisible();
     await form.getByRole('button', { name: 'Save trip' }).click();
     await expect(page.locator('#status').getByRole('heading', { name: '80 safe buffer days' })).toBeVisible();
-    await expect(page.locator('#timeline').getByRole('img', { name: /10 counted days/i })).toBeVisible();
+    await expect(page.locator('#timeline .window-result')).toContainText('10 counted days');
     await expect(page.getByText('Italy → Austria')).toBeVisible();
     await expect(savedTripCard(page, 'Summer trip').locator('.trip-day-count')).toHaveText('10 days');
     await expect(savedTripCard(page, 'Summer trip').locator('.trip-dates')).toContainText('2 days outside');
@@ -1501,10 +1501,11 @@ test.describe('SCHNGN production smoke and privacy checks', () => {
 
     await expect(page.getByRole('heading', { name: '39 safe buffer days' })).toBeVisible();
     await expect(page.locator('#status .status-chip').getByText('Spain booking fits', { exact: true })).toBeVisible();
-    const overviewTimeline = page.getByRole('img', { name: /Rolling 180-day window\. 51 counted days/i });
-    await expect(overviewTimeline).toBeVisible();
+    const overviewTimeline = page.locator('#timeline .moving-window');
+    await expect(overviewTimeline.locator('.window-result')).toContainText('51 counted days');
     await expect(page.locator('#canonical-timeline-heading + bdi')).toHaveCount(0);
-    await expect(page.locator('#timeline .timeline-ticks > bdi')).toHaveText(['21 Jan 2026', '19 Jul 2026']);
+    await expect(overviewTimeline.locator('.window-range')).toContainText('21 Jan 2026 – 19 Jul 2026');
+    await page.locator('#timeline .saved-forecast summary').click();
     const returnStart = page.locator('#timeline .return-start-forecast');
     await expect(returnStart.getByText('Days start returning')).toBeVisible();
     await expect(returnStart.getByText('24 Jul 2026')).toBeVisible();

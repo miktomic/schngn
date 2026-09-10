@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && node ../../scripts/agent-readiness/build.mjs",
     "preview": "wrangler dev .svelte-kit/cloudflare/_worker.js --assets .svelte-kit/cloudflare",
-    "deploy": "vite build && wrangler deploy",
+    "deploy": "bun run build && node ../../scripts/agent-readiness/check-preview.mjs && wrangler deploy",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test:e2e": "playwright test --config playwright.config.ts",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
