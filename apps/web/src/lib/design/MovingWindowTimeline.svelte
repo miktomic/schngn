@@ -3,10 +3,12 @@
   import { calculateUsageOnDate } from '@schngn/engine';
   import { intlLocale, type Locale } from '$lib/i18n';
   import { formatLocalizedCount, formatLocalizedNumber } from '$lib/i18n/countUi';
-  import { movingWindowUi } from '$lib/i18n/movingWindowUi';
+  import { movingWindowUi, timelineViewUi } from '$lib/i18n/movingWindowUi';
   import { formatRollingTimelineSummary } from '$lib/i18n/timelineUi';
   import { countTripSchengenDays, toEngineTrips, type EditableTrip } from '$lib/trips/tripCrud';
   import { buildMovingWindow, distance, movingWindowBounds, shiftDate } from '$lib/timeline/movingWindow';
+  import { buildContributionSeries } from '$lib/timeline/layeredContributions';
+  import LayeredContributions from './LayeredContributions.svelte';
 
   let { trips, referenceDate, today = referenceDate, locale, tripName, label, resultLabel, initialDate }: {
     trips: EditableTrip[]; referenceDate: string; today?: string; locale: Locale;
@@ -16,13 +18,17 @@
   let selected = $state<string | null>(null);
   let ready = $state(false);
   let dateError = $state('');
+  let view = $state<'sliding' | 'layered'>('sliding');
   onMount(() => { ready = true; });
   let copy = $derived(movingWindowUi(locale));
+  let viewCopy = $derived(timelineViewUi(locale));
   let bounds = $derived(movingWindowBounds(trips, referenceDate, today));
   let totals = $derived(new Map(trips.filter(trip => !trip.ongoing).map(trip => [trip.id, countTripSchengenDays(trip)])));
   let requestedDate = $derived(selected ?? initialDate ?? referenceDate);
   let checkingDate = $derived(requestedDate >= bounds.minDate && requestedDate <= bounds.endDate ? requestedDate : referenceDate);
   let model = $derived(buildMovingWindow(trips, checkingDate, bounds));
+  // Plot geometry depends on trips and extent, not on the moving date cursor.
+  let contributions = $derived(view === 'layered' ? buildContributionSeries(trips, bounds) : null);
   let todayPosition = $derived(distance(bounds.startDate, today) / bounds.days * 100);
   let markers = $derived.by(() => {
     const ends: number[] = [];
@@ -64,8 +70,21 @@
   }
 </script>
 
-<div class="moving-window" data-checking-date={checkingDate}>
+<div class="moving-window" data-checking-date={checkingDate} data-view={view}>
+  <div class="view-switch" role="group" aria-label={viewCopy.view}>
+    <button type="button" aria-pressed={view === 'sliding'} disabled={!ready} onclick={() => view = 'sliding'}>
+      <svg viewBox="0 0 24 20" width="24" height="20" aria-hidden="true"><path d="M1 10h22M6 5v10M17 5v10" /><rect x="10" y="2" width="10" height="16" /></svg>
+      {viewCopy.sliding}
+    </button>
+    <button type="button" aria-pressed={view === 'layered'} disabled={!ready} onclick={() => view = 'layered'}>
+      <svg viewBox="0 0 24 20" width="24" height="20" aria-hidden="true"><path d="M2 17V3M2 17h21M2 13l7-2 6-5 7-3M2 16l7-1 6-3 7-3" /></svg>
+      {viewCopy.layered}
+    </button>
+  </div>
   <div class="window-range"><bdi>{dateLabel(model.usage.windowStart)} – {dateLabel(checkingDate)}</bdi></div>
+  {#if view === 'layered' && contributions}
+    <LayeredContributions series={contributions} usage={model.usage} {today} {locale} {tripName} {flag} />
+  {:else}
   <div class="journey-chart" class:over={model.usage.overLimit} style={`--window-left:${model.window.left}%;--window-width:${model.window.width}%;--today-position:${todayPosition}%;--axis-top:${70 + (markerTiers - 1) * 120}px`}>
     <div class="window-band" aria-hidden="true"><span>{label}</span></div>
     <div class="journey-axis" aria-hidden="true"></div>
@@ -89,6 +108,7 @@
     {/each}
   </div>
   <div class="axis-dates" dir="ltr"><bdi>{dateLabel(bounds.startDate)}</bdi><bdi>{dateLabel(bounds.endDate)}</bdi></div>
+  {/if}
   <div class="window-result" class:over={model.usage.overLimit} aria-live="polite" aria-atomic="true">
     <span class="count-label">{copy.counted}</span>
     <strong><bdi dir="ltr"><span class="used-days">{number(model.usage.daysUsed)}</span> / {number(90)}</bdi></strong>
@@ -138,6 +158,14 @@
 
 <style>
   .moving-window { display: grid; gap: 12px; min-width: 0; }
+  .view-switch { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--control-line); border-radius: 10px; margin-bottom: 8px; }
+  .view-switch button { flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; border-color: transparent; background: transparent; font-size: .875rem; font-weight: 600; line-height: 1.3; padding: 10px 8px; min-width: 0; }
+  .view-switch button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+  .view-switch button[aria-pressed='true']:hover:not(:disabled), .view-switch button[aria-pressed='true']:active:not(:disabled) { background: var(--ink); color: var(--paper); }
+  .view-switch button[aria-pressed='false']:hover:not(:disabled) { background: var(--safe-bg); }
+  .view-switch svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .view-switch rect { fill: currentColor; fill-opacity: .15; }
+  @media (max-width: 420px) { .view-switch button { flex-direction: column; gap: 6px; } }
   .window-result { display: grid; justify-items: center; gap: 8px; color: var(--ink); text-align: center; padding-block: 16px 24px; }
   .window-result strong { font-size: clamp(2.75rem, 9vw, 4rem); line-height: 1.15; font-variant-numeric: tabular-nums; }
   .used-days { color: var(--safe); }

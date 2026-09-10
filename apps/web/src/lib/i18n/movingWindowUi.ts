@@ -49,3 +49,29 @@ const details: Record<Locale, readonly [string, string, string, string, string, 
   he: ['הזזת תאריך הבדיקה', 'היום', 'יציאה מתוכננת', 'מחוץ לחלון הזה', 'תאריך כניסה', '{count} מתוך {total} ימים נספרים בחלון הזה', 'תחזית מהתוצאה השמורה'],
   ar: ['حرّك تاريخ التحقق', 'اليوم', 'المغادرة المخططة', 'خارج هذه النافذة', 'تاريخ الدخول', 'يُحتسب {count} من أصل {total} يومًا في هذه النافذة', 'التوقع انطلاقًا من النتيجة المحفوظة']
 };
+
+// Alternate visual encodings of the same local calculation, not workspace tabs.
+const viewLabels: Record<Locale, readonly [string, string, string, string, string, string, string]> = {
+  en: ['Timeline view', 'Sliding window', 'Layered contributions', 'Earlier trips', '90-day limit', 'Each layer adds to the counted-day total.', 'Shared days appear once, under the earliest-starting trip.'],
+  fr: ['Vue de la chronologie', 'Fenêtre mobile', 'Contributions empilées', 'Voyages antérieurs', 'Limite de 90 jours', 'Chaque couche contribue au total des jours comptés.', 'Les jours communs apparaissent une seule fois, dans le voyage commencé le plus tôt.'],
+  de: ['Zeitachsenansicht', 'Rollierendes Fenster', 'Gestapelte Beiträge', 'Frühere Reisen', '90-Tage-Grenze', 'Jede Fläche trägt zur Summe der gezählten Tage bei.', 'Gemeinsame Tage erscheinen einmal bei der zuerst begonnenen Reise.'],
+  es: ['Vista de la cronología', 'Ventana móvil', 'Contribuciones apiladas', 'Viajes anteriores', 'Límite de 90 días', 'Cada capa contribuye al total de días contados.', 'Los días compartidos aparecen una sola vez, en el viaje que empezó antes.'],
+  it: ['Vista della cronologia', 'Finestra mobile', 'Contributi sovrapposti', 'Viaggi precedenti', 'Limite di 90 giorni', 'Ogni area contribuisce al totale dei giorni conteggiati.', 'I giorni condivisi appaiono una sola volta, nel viaggio iniziato per primo.'],
+  'pt-br': ['Visualização da linha do tempo', 'Janela móvel', 'Contribuições empilhadas', 'Viagens anteriores', 'Limite de 90 dias', 'Cada camada contribui para o total de dias contados.', 'Os dias compartilhados aparecem uma única vez, na viagem que começou primeiro.'],
+  ru: ['Вид временной шкалы', 'Скользящее окно', 'Вклад поездок', 'Предыдущие поездки', 'Лимит 90 дней', 'Каждый слой входит в общее число учтённых дней.', 'Общие дни показаны один раз в поездке, начавшейся раньше.'],
+  uk: ['Вигляд часової шкали', 'Рухоме вікно', 'Внесок поїздок', 'Попередні поїздки', 'Ліміт 90 днів', 'Кожен шар входить до загальної кількості врахованих днів.', 'Спільні дні показано один раз у поїздці, що почалася раніше.'],
+  tr: ['Zaman çizelgesi görünümü', 'Hareketli pencere', 'Katmanlı katkılar', 'Önceki seyahatler', '90 günlük sınır', 'Her katman, sayılan günlerin toplamına katkıda bulunur.', 'Ortak günler, önce başlayan seyahatte yalnızca bir kez gösterilir.'],
+  sr: ['Prikaz vremenske linije', 'Pomerajući prozor', 'Slojevi boravaka', 'Ranija putovanja', 'Granica od 90 dana', 'Svaki sloj doprinosi ukupnom broju izbrojanih dana.', 'Zajednički dani prikazani su jednom, u putovanju koje je prvo počelo.'],
+  sq: ['Pamja e kronologjisë', 'Dritarja lëvizëse', 'Kontributet me shtresa', 'Udhëtime të mëparshme', 'Kufiri prej 90 ditësh', 'Çdo shtresë kontribuon në totalin e ditëve të numëruara.', 'Ditët e përbashkëta shfaqen vetëm një herë, në udhëtimin që filloi më herët.'],
+  ka: ['დროის ხაზის ხედი', 'მოძრავი ფანჯარა', 'მოგზაურობების წვლილი', 'წინა მოგზაურობები', '90-დღიანი ზღვარი', 'თითოეული ფენა დათვლილი დღეების ჯამს ემატება.', 'საერთო დღეები ერთხელ, უფრო ადრე დაწყებულ მოგზაურობაში ჩანს.'],
+  'zh-cn': ['时间轴视图', '滚动窗口', '行程天数分层', '较早行程', '90天上限', '各层共同组成计入天数的总数。', '重叠日期仅计入一次，归于最早开始的行程。'],
+  ja: ['タイムライン表示', '移動する期間', '旅行別の積み上げ', '以前の旅行', '90日の上限', '各層を合計すると算入日数になります。', '重なる日は、最も早く始まった旅行に一度だけ表示されます。'],
+  ko: ['타임라인 보기', '이동 기간', '여행별 누적 일수', '이전 여행', '90일 한도', '각 영역을 합하면 계산된 총 일수가 됩니다.', '겹치는 날짜는 가장 먼저 시작한 여행에 한 번만 표시됩니다.'],
+  he: ['תצוגת ציר הזמן', 'חלון נע', 'שכבות של נסיעות', 'נסיעות קודמות', 'מגבלת 90 יום', 'כל שכבה תורמת למספר הימים הכולל שנספר.', 'ימים משותפים מוצגים פעם אחת, בנסיעה שהתחילה מוקדם יותר.'],
+  ar: ['عرض المخطط الزمني', 'النافذة المتحركة', 'مساهمات الرحلات', 'رحلات سابقة', 'حد 90 يومًا', 'تُضاف كل طبقة إلى إجمالي الأيام المحتسبة.', 'تظهر الأيام المشتركة مرة واحدة ضمن الرحلة التي بدأت أولًا.']
+};
+
+export function timelineViewUi(locale: Locale) {
+  const [view, sliding, layered, earlierTrips, limit, layerHint, overlapHint] = viewLabels[locale];
+  return { view, sliding, layered, earlierTrips, limit, layerHint, overlapHint };
+}

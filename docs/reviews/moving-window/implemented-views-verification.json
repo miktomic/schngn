@@ -1,0 +1,42 @@
+[
+  {
+    "locale": "en",
+    "width": 390,
+    "errors": [],
+    "submitted": [],
+    "clipping": [],
+    "overflow": false
+  },
+  {
+    "locale": "en",
+    "width": 1280,
+    "errors": [],
+    "submitted": [],
+    "clipping": [],
+    "overflow": false
+  },
+  {
+    "locale": "ar",
+    "width": 320,
+    "errors": [],
+    "submitted": [],
+    "clipping": [],
+    "overflow": false
+  },
+  {
+    "locale": "he",
+    "width": 320,
+    "errors": [],
+    "submitted": [],
+    "clipping": [],
+    "overflow": false
+  },
+  {
+    "locale": "de",
+    "width": 320,
+    "errors": [],
+    "submitted": [],
+    "clipping": [],
+    "overflow": false
+  }
+]

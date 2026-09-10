@@ -25,6 +25,15 @@ test('calculator date exploration keeps saved trips and the main verdict intact'
   await expect(timeline.locator('.window-result')).toContainText('26 / 90');
   await timeline.getByLabel('Checking date', { exact: true }).fill('2026-12-27');
   await expect(timeline.locator('.window-result')).toContainText('95 / 90');
+  await timeline.getByRole('button', { name: 'Layered contributions', exact: true }).click();
+  await expect(timeline.locator('.contribution-chart')).toBeVisible();
+  await expect(timeline).toHaveAttribute('data-checking-date', '2026-12-27');
+  await expect(timeline.locator('.window-result')).toContainText('95 / 90');
+  await timeline.getByRole('slider').press('ArrowLeft');
+  await expect(timeline.locator('.window-result')).toContainText('94 / 90');
+  await timeline.getByRole('button', { name: 'Sliding window', exact: true }).click();
+  await expect(timeline.locator('.journey-chart')).toBeVisible();
+  await expect(timeline).toHaveAttribute('data-checking-date', '2026-12-26');
   await expect(page.locator('#status-heading')).toHaveText(verdict);
   expect(await page.evaluate(() => localStorage.getItem('schngn.trips.v2'))).toBe(storage);
   await timeline.getByRole('button', { name: 'Back to result' }).click();
@@ -66,8 +75,34 @@ test('example toggle changes later usage and the window fits every locale at 320
     await expect(example.getByRole('slider')).toBeEnabled();
     await example.getByRole('slider').press('ArrowLeft');
     await expect(example.locator('.moving-window')).toHaveAttribute('data-checking-date', '2026-09-08');
+    await example.locator('.view-switch button').last().click();
+    await expect(example.locator('.contribution-chart')).toBeVisible();
+    await expect(example.locator('.view-switch button').last()).toHaveAttribute('aria-pressed', 'true');
+    await expect(example.locator('.moving-window')).toHaveAttribute('data-checking-date', '2026-09-08');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
+});
+
+test('both views share the what-if state and support keyboard switching without saving trips', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-09-09T12:00:00Z'));
+  await page.goto('/explainer');
+  const example = page.locator('.moving-example');
+  const layered = example.getByRole('button', { name: 'Layered contributions', exact: true });
+  await expect(layered).toBeEnabled();
+  await layered.focus();
+  await layered.press('Enter');
+  await expect(layered).toBeFocused();
+  await expect(layered).toHaveAttribute('aria-pressed', 'true');
+  await expect(example.locator('.contribution-chart')).toBeVisible();
+  await example.getByLabel('Include what-if stay').check();
+  await expect(example.locator('.window-result')).toContainText('26 / 90');
+  await example.getByRole('button', { name: 'Planned exit', exact: true }).click();
+  await expect(example.locator('.window-result')).toContainText('95 / 90');
+  await expect(example.locator('.contribution-reading')).toContainText('65');
+  await example.getByLabel('Include what-if stay').uncheck();
+  await expect(example.locator('.window-result')).toContainText('30 / 90');
+  await expect(layered).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => localStorage.getItem('schngn.trips.v2'))).toBeNull();
 });
 
 
