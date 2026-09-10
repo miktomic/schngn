@@ -295,6 +295,8 @@ This is an approved **scope change** after the original no-account MVP cards. It
 - Account/data controls are always visible in the dedicated `#account` destination, while the calculator omits them entirely.
 - The unrecognized “border-ready PDF” fake door and its analytics event are retired. The visible bottom CTA instead explains the real account value: keeping trip history for future 90/180 calculations and optional cross-device sync after explicit consent.
 
+**Moving-window interaction:** The canonical calculator timeline supports local date scrubbing and direct date entry over fixed trip bars. Only its inspected window and per-date evidence change; the saved-plan verdict and trip records remain unchanged. The saved-result checkpoint and reset control remain visible. Open-ended stays are explicitly labeled as projections. The Explainer includes a separate synthetic multi-trip example with an optional what-if stay, rendered through the same `TimelineLedger` interaction; its existing reviewed walkthrough remains intact. Controls are localized in all supported languages and work with keyboard navigation and RTL layouts. The initial extent focuses on the current window and planned exits, with full-width trip tracks, visible stay dates, entry markers, counted/outside-window labels, and a fixed Today anchor. The Explainer starts at today without the 65-day what-if stay; travelers can add it and jump to the planned exit. The saved-result forecast is separately labeled and collapsed until requested.
+
 ## DEC-15 — Support and feature-request contact form
 
 **Decision:** Add a small localized `/contact` form for help and feature requests. It is not an account, waitlist, newsletter, or analytics surface.
@@ -343,3 +345,9 @@ This is an approved post-MVP scope change. “API” currently means an in-proce
 ## Board state
 
 The original MVP Hermes Kanban decision cards on board `schngn` were completed on 2026-07-09 with comments and structured metadata. DEC-16 is the later local-agent scope decision recorded with completed repository card US-23.
+
+## Agent-readiness implementation (2026-09-10)
+
+Public discovery and build-derived Markdown are approved by the website audit task;
+see `docs/agent-readiness.md`. This improves the public documentation surface and
+existing local skill distribution without changing DEC-16 or account consent.

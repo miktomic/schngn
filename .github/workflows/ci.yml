@@ -90,6 +90,9 @@ jobs:
           --keys PUBLIC_CLERK_PUBLISHABLE_KEY,PUBLIC_TURNSTILE_SITE_KEY
           -- bun run build
 
+      - name: Verify final production build agent readiness
+        run: bun run check:agent-readiness
+
       - name: Prepare Worker bindings for inactive upload
         shell: bash
         run: |
@@ -147,4 +150,6 @@ jobs:
           -- bun run cloudflare:canonical-www
 
       - name: Run production smoke checks
-        run: bun run smoke:production
+        run: |
+          bun run smoke:production
+          bun run smoke:agent-readiness -- https://schngn.com

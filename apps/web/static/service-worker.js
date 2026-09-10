@@ -87,6 +87,8 @@ function isSafeLocalDevSearch(search) {
   return (
     search === '' ||
     search === '?import' ||
+      search === '?import&raw' ||
+      search === '?raw&import' ||
     /^\?v=[a-z0-9_-]+$/i.test(search) ||
     /^\?t=\d+$/.test(search) ||
     search === '?svelte&type=style&lang.css'

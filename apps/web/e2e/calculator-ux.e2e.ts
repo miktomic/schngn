@@ -38,6 +38,7 @@ test('risk verdict identifies the first conflict checkpoint, not the full trip o
 });
 
 test('completed history does not imply a future overstay and new scope labels fit every locale', async ({ page }) => {
+  test.setTimeout(90_000); // Seventeen full navigations share this aggregate test budget.
   await page.clock.setFixedTime(new Date('2026-09-08T12:00:00Z'));
   await page.goto('/app');
   await page.locator('#add-trip-button').click();

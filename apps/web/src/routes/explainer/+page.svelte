@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import ExplainerWalkthrough from '$lib/design/ExplainerWalkthrough.svelte';
+  import MovingWindowExample from '$lib/design/MovingWindowExample.svelte';
   import SiteHeader from '$lib/design/SiteHeader.svelte';
   import SchengenCountryGuide from '$lib/design/SchengenCountryGuide.svelte';
   import { createTranslator, localeFromPath, localizedPath, SUPPORTED_LOCALES } from '$lib/i18n';
@@ -44,6 +45,7 @@
     </header>
 
     <ExplainerWalkthrough {locale} />
+    <MovingWindowExample {locale} />
 
     <SchengenCountryGuide {locale} />
 

@@ -1,0 +1,21 @@
+# SCHNGN
+
+> Privacy-first ordinary Schengen 90/180-day planning, in the browser or a local agent runtime. Planning aid, not legal advice or a guarantee of entry.
+
+## Public documentation
+
+- [Agent setup and interfaces](https://schngn.com/agents): MCP, CLI, loopback HTTP/OpenAPI, and TypeScript.
+- [Rule explanation](https://schngn.com/explainer): inclusive rolling-window model.
+- [FAQ](https://schngn.com/faq): reviewed answers and official sources.
+- [Accuracy](https://schngn.com/accuracy): evidence and limitations.
+- [Calculator](https://schngn.com/app): guest trip data stays in the browser.
+- [Privacy](https://schngn.com/privacy): account and data boundaries.
+- [Sitemap](https://schngn.com/sitemap.xml): all supported public languages.
+- [Skills index](https://schngn.com/.well-known/agent-skills/index.json): integrity-checked local-runtime skill.
+
+## Agent access
+
+Request public documentation with Accept: text/markdown. HTML remains the browser default.
+Install the public @schngn/agent package on the operator's machine to use its stdio MCP, CLI, or loopback-only HTTP service. Read the setup guide and skill before calling tools. Never POST trip dates to schngn.com for calculation. There is no hosted calculation API, remote MCP server, OAuth agent registration, or agent commerce endpoint.
+
+Account storage requires verified Clerk ownership and explicit signup-and-save or sync consent. Do not collect account data through this discovery surface. The SCHNGN runtime has no outbound networking; a cloud-backed agent host may still receive and retain tool inputs/results under its own policies.

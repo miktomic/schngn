@@ -23,7 +23,7 @@
     "test:agent": "bun run build:agent && bun test apps/agent/tests",
     "test:e2e": "cd apps/web && bun run test:e2e",
     "typecheck": "cd packages/engine && bun run typecheck && cd ../capability && bun run typecheck && cd ../../apps/agent && bun run typecheck && cd ../web && bun run check",
-    "check": "bun run test && bun run typecheck && bun run build && bun run smoke:agent",
+    "check": "bun run test && bun run typecheck && bun run build && bun run smoke:agent && bun run check:agent-readiness",
     "smoke:production": "node scripts/post-deploy-smoke.mjs",
     "smoke:agent": "cd apps/agent && bun run smoke",
     "release:packages:check": "bun run build:agent && node scripts/verify-published-packages.mjs",
@@ -39,9 +39,14 @@
     "agent:api": "bun apps/agent/src/api.ts",
     "agent:mcp": "bun apps/agent/src/mcp.ts",
     "prepr": "bun install --frozen-lockfile && bun run check && bun run test:e2e:install && CI=1 bun run test:e2e",
-    "test:e2e:install": "cd apps/web && bunx --no-install playwright install --with-deps chromium"
+    "test:e2e:install": "cd apps/web && bunx --no-install playwright install --with-deps chromium",
+    "smoke:agent-readiness": "node scripts/agent-readiness/smoke.mjs",
+    "check:agent-readiness": "node scripts/agent-readiness/check-preview.mjs"
   },
   "devDependencies": {
+    "linkedom": "0.18.13",
+    "turndown": "7.2.4",
+    "turndown-plugin-gfm": "1.0.2",
     "typescript": "^7.0.2"
   }
 }

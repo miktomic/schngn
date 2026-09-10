@@ -1,0 +1,1459 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Moving Window</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="Moving Window" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Moving Window&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 10px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover,
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;schngn-window-study&quot;&gt;
+  &lt;h3&gt;See how the window moves&lt;/h3&gt;
+  &lt;div class=&quot;viz-controls&quot;&gt;
+    &lt;label class=&quot;form-check&quot;&gt;&lt;input class=&quot;form-check-input&quot; type=&quot;checkbox&quot; id=&quot;include-stay&quot; checked&gt;&lt;span class=&quot;form-check-label&quot;&gt;Include the 65-day what-if stay&lt;/span&gt;&lt;/label&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;viz-row&quot;&gt;&lt;span id=&quot;window-dates&quot; class=&quot;text-small&quot;&gt;&lt;/span&gt;&lt;span id=&quot;count&quot; class=&quot;tabular-nums&quot; aria-live=&quot;polite&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div id=&quot;window-chart&quot;&gt;&lt;/div&gt;
+  &lt;label class=&quot;form-label&quot; for=&quot;check-date&quot;&gt;Checking date: &lt;span id=&quot;date-label&quot; class=&quot;tabular-nums&quot;&gt;&lt;/span&gt;&lt;/label&gt;
+  &lt;input id=&quot;check-date&quot; class=&quot;form-range&quot; type=&quot;range&quot; min=&quot;-1&quot; max=&quot;130&quot; value=&quot;-1&quot; step=&quot;1&quot;&gt;
+  &lt;div class=&quot;viz-controls&quot;&gt;
+    &lt;button class=&quot;btn&quot; type=&quot;button&quot; data-day=&quot;-1&quot;&gt;Before new stay&lt;/button&gt;
+    &lt;button class=&quot;btn&quot; type=&quot;button&quot; data-day=&quot;105&quot;&gt;First day over&lt;/button&gt;
+    &lt;button class=&quot;btn&quot; type=&quot;button&quot; data-day=&quot;109&quot;&gt;Spain exit&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div id=&quot;window-summary&quot; class=&quot;text-small&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;
+  &lt;span class=&quot;text-small text-muted&quot;&gt;Illustrative dates · calculated with the SCHNGN engine&lt;/span&gt;
+&lt;/div&gt;
+&lt;style&gt;
+#schngn-window-study #window-chart { width:100%; margin-block:16px; }
+#schngn-window-study .window-svg { display:block; width:100%; }
+#schngn-window-study .window-svg text { fill:var(--foreground); font-size:12px; }
+#schngn-window-study .window-lens { fill:var(--viz-series-1); fill-opacity:0.1; }
+#schngn-window-study .window-edge { stroke:var(--foreground); stroke-width:1; }
+#schngn-window-study .trip-base { fill:var(--foreground); opacity:0.15; }
+#schngn-window-study .trip-counted { fill:var(--viz-series-1); }
+#schngn-window-study .what-if { fill:var(--orange); }
+#schngn-window-study #window-summary { margin-block:12px; }
+&lt;/style&gt;
+&lt;script&gt;
+(() =&gt; {
+  const root = document.getElementById(&#x27;schngn-window-study&#x27;);
+  const data = {&quot;trips&quot;:[{&quot;label&quot;:&quot;France&quot;,&quot;start&quot;:-160,&quot;end&quot;:-146},{&quot;label&quot;:&quot;Italy&quot;,&quot;start&quot;:-140,&quot;end&quot;:-131},{&quot;label&quot;:&quot;What-if stay&quot;,&quot;start&quot;:0,&quot;end&quot;:64},{&quot;label&quot;:&quot;Spain&quot;,&quot;start&quot;:80,&quot;end&quot;:109}],&quot;frames&quot;:[[{&quot;day&quot;:-1,&quot;date&quot;:&quot;2026-09-08&quot;,&quot;start&quot;:&quot;2026-03-13&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:0,&quot;date&quot;:&quot;2026-09-09&quot;,&quot;start&quot;:&quot;2026-03-14&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:1,&quot;date&quot;:&quot;2026-09-10&quot;,&quot;start&quot;:&quot;2026-03-15&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:2,&quot;date&quot;:&quot;2026-09-11&quot;,&quot;start&quot;:&quot;2026-03-16&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:3,&quot;date&quot;:&quot;2026-09-12&quot;,&quot;start&quot;:&quot;2026-03-17&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:4,&quot;date&quot;:&quot;2026-09-13&quot;,&quot;start&quot;:&quot;2026-03-18&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:5,&quot;date&quot;:&quot;2026-09-14&quot;,&quot;start&quot;:&quot;2026-03-19&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:6,&quot;date&quot;:&quot;2026-09-15&quot;,&quot;start&quot;:&quot;2026-03-20&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:7,&quot;date&quot;:&quot;2026-09-16&quot;,&quot;start&quot;:&quot;2026-03-21&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:8,&quot;date&quot;:&quot;2026-09-17&quot;,&quot;start&quot;:&quot;2026-03-22&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:9,&quot;date&quot;:&quot;2026-09-18&quot;,&quot;start&quot;:&quot;2026-03-23&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:10,&quot;date&quot;:&quot;2026-09-19&quot;,&quot;start&quot;:&quot;2026-03-24&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:11,&quot;date&quot;:&quot;2026-09-20&quot;,&quot;start&quot;:&quot;2026-03-25&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:12,&quot;date&quot;:&quot;2026-09-21&quot;,&quot;start&quot;:&quot;2026-03-26&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:13,&quot;date&quot;:&quot;2026-09-22&quot;,&quot;start&quot;:&quot;2026-03-27&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:14,&quot;date&quot;:&quot;2026-09-23&quot;,&quot;start&quot;:&quot;2026-03-28&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:15,&quot;date&quot;:&quot;2026-09-24&quot;,&quot;start&quot;:&quot;2026-03-29&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:16,&quot;date&quot;:&quot;2026-09-25&quot;,&quot;start&quot;:&quot;2026-03-30&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:17,&quot;date&quot;:&quot;2026-09-26&quot;,&quot;start&quot;:&quot;2026-03-31&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:18,&quot;date&quot;:&quot;2026-09-27&quot;,&quot;start&quot;:&quot;2026-04-01&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:19,&quot;date&quot;:&quot;2026-09-28&quot;,&quot;start&quot;:&quot;2026-04-02&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:20,&quot;date&quot;:&quot;2026-09-29&quot;,&quot;start&quot;:&quot;2026-04-03&quot;,&quot;used&quot;:24,&quot;over&quot;:0},{&quot;day&quot;:21,&quot;date&quot;:&quot;2026-09-30&quot;,&quot;start&quot;:&quot;2026-04-04&quot;,&quot;used&quot;:23,&quot;over&quot;:0},{&quot;day&quot;:22,&quot;date&quot;:&quot;2026-10-01&quot;,&quot;start&quot;:&quot;2026-04-05&quot;,&quot;used&quot;:22,&quot;over&quot;:0},{&quot;day&quot;:23,&quot;date&quot;:&quot;2026-10-02&quot;,&quot;start&quot;:&quot;2026-04-06&quot;,&quot;used&quot;:21,&quot;over&quot;:0},{&quot;day&quot;:24,&quot;date&quot;:&quot;2026-10-03&quot;,&quot;start&quot;:&quot;2026-04-07&quot;,&quot;used&quot;:20,&quot;over&quot;:0},{&quot;day&quot;:25,&quot;date&quot;:&quot;2026-10-04&quot;,&quot;start&quot;:&quot;2026-04-08&quot;,&quot;used&quot;:19,&quot;over&quot;:0},{&quot;day&quot;:26,&quot;date&quot;:&quot;2026-10-05&quot;,&quot;start&quot;:&quot;2026-04-09&quot;,&quot;used&quot;:18,&quot;over&quot;:0},{&quot;day&quot;:27,&quot;date&quot;:&quot;2026-10-06&quot;,&quot;start&quot;:&quot;2026-04-10&quot;,&quot;used&quot;:17,&quot;over&quot;:0},{&quot;day&quot;:28,&quot;date&quot;:&quot;2026-10-07&quot;,&quot;start&quot;:&quot;2026-04-11&quot;,&quot;used&quot;:16,&quot;over&quot;:0},{&quot;day&quot;:29,&quot;date&quot;:&quot;2026-10-08&quot;,&quot;start&quot;:&quot;2026-04-12&quot;,&quot;used&quot;:15,&quot;over&quot;:0},{&quot;day&quot;:30,&quot;date&quot;:&quot;2026-10-09&quot;,&quot;start&quot;:&quot;2026-04-13&quot;,&quot;used&quot;:14,&quot;over&quot;:0},{&quot;day&quot;:31,&quot;date&quot;:&quot;2026-10-10&quot;,&quot;start&quot;:&quot;2026-04-14&quot;,&quot;used&quot;:13,&quot;over&quot;:0},{&quot;day&quot;:32,&quot;date&quot;:&quot;2026-10-11&quot;,&quot;start&quot;:&quot;2026-04-15&quot;,&quot;used&quot;:12,&quot;over&quot;:0},{&quot;day&quot;:33,&quot;date&quot;:&quot;2026-10-12&quot;,&quot;start&quot;:&quot;2026-04-16&quot;,&quot;used&quot;:11,&quot;over&quot;:0},{&quot;day&quot;:34,&quot;date&quot;:&quot;2026-10-13&quot;,&quot;start&quot;:&quot;2026-04-17&quot;,&quot;used&quot;:10,&quot;over&quot;:0},{&quot;day&quot;:35,&quot;date&quot;:&quot;2026-10-14&quot;,&quot;start&quot;:&quot;2026-04-18&quot;,&quot;used&quot;:10,&quot;over&quot;:0},{&quot;day&quot;:36,&quot;date&quot;:&quot;2026-10-15&quot;,&quot;start&quot;:&quot;2026-04-19&quot;,&quot;used&quot;:10,&quot;over&quot;:0},{&quot;day&quot;:37,&quot;date&quot;:&quot;2026-10-16&quot;,&quot;start&quot;:&quot;2026-04-20&quot;,&quot;used&quot;:10,&quot;over&quot;:0},{&quot;day&quot;:38,&quot;date&quot;:&quot;2026-10-17&quot;,&quot;start&quot;:&quot;2026-04-21&quot;,&quot;used&quot;:10,&quot;over&quot;:0},{&quot;day&quot;:39,&quot;date&quot;:&quot;2026-10-18&quot;,&quot;start&quot;:&quot;2026-04-22&quot;,&quot;used&quot;:10,&quot;over&quot;:0},{&quot;day&quot;:40,&quot;date&quot;:&quot;2026-10-19&quot;,&quot;start&quot;:&quot;2026-04-23&quot;,&quot;used&quot;:9,&quot;over&quot;:0},{&quot;day&quot;:41,&quot;date&quot;:&quot;2026-10-20&quot;,&quot;start&quot;:&quot;2026-04-24&quot;,&quot;used&quot;:8,&quot;over&quot;:0},{&quot;day&quot;:42,&quot;date&quot;:&quot;2026-10-21&quot;,&quot;start&quot;:&quot;2026-04-25&quot;,&quot;used&quot;:7,&quot;over&quot;:0},{&quot;day&quot;:43,&quot;date&quot;:&quot;2026-10-22&quot;,&quot;start&quot;:&quot;2026-04-26&quot;,&quot;used&quot;:6,&quot;over&quot;:0},{&quot;day&quot;:44,&quot;date&quot;:&quot;2026-10-23&quot;,&quot;start&quot;:&quot;2026-04-27&quot;,&quot;used&quot;:5,&quot;over&quot;:0},{&quot;day&quot;:45,&quot;date&quot;:&quot;2026-10-24&quot;,&quot;start&quot;:&quot;2026-04-28&quot;,&quot;used&quot;:4,&quot;over&quot;:0},{&quot;day&quot;:46,&quot;date&quot;:&quot;2026-10-25&quot;,&quot;start&quot;:&quot;2026-04-29&quot;,&quot;used&quot;:3,&quot;over&quot;:0},{&quot;day&quot;:47,&quot;date&quot;:&quot;2026-10-26&quot;,&quot;start&quot;:&quot;2026-04-30&quot;,&quot;used&quot;:2,&quot;over&quot;:0},{&quot;day&quot;:48,&quot;date&quot;:&quot;2026-10-27&quot;,&quot;start&quot;:&quot;2026-05-01&quot;,&quot;used&quot;:1,&quot;over&quot;:0},{&quot;day&quot;:49,&quot;date&quot;:&quot;2026-10-28&quot;,&quot;start&quot;:&quot;2026-05-02&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:50,&quot;date&quot;:&quot;2026-10-29&quot;,&quot;start&quot;:&quot;2026-05-03&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:51,&quot;date&quot;:&quot;2026-10-30&quot;,&quot;start&quot;:&quot;2026-05-04&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:52,&quot;date&quot;:&quot;2026-10-31&quot;,&quot;start&quot;:&quot;2026-05-05&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:53,&quot;date&quot;:&quot;2026-11-01&quot;,&quot;start&quot;:&quot;2026-05-06&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:54,&quot;date&quot;:&quot;2026-11-02&quot;,&quot;start&quot;:&quot;2026-05-07&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:55,&quot;date&quot;:&quot;2026-11-03&quot;,&quot;start&quot;:&quot;2026-05-08&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:56,&quot;date&quot;:&quot;2026-11-04&quot;,&quot;start&quot;:&quot;2026-05-09&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:57,&quot;date&quot;:&quot;2026-11-05&quot;,&quot;start&quot;:&quot;2026-05-10&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:58,&quot;date&quot;:&quot;2026-11-06&quot;,&quot;start&quot;:&quot;2026-05-11&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:59,&quot;date&quot;:&quot;2026-11-07&quot;,&quot;start&quot;:&quot;2026-05-12&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:60,&quot;date&quot;:&quot;2026-11-08&quot;,&quot;start&quot;:&quot;2026-05-13&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:61,&quot;date&quot;:&quot;2026-11-09&quot;,&quot;start&quot;:&quot;2026-05-14&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:62,&quot;date&quot;:&quot;2026-11-10&quot;,&quot;start&quot;:&quot;2026-05-15&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:63,&quot;date&quot;:&quot;2026-11-11&quot;,&quot;start&quot;:&quot;2026-05-16&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:64,&quot;date&quot;:&quot;2026-11-12&quot;,&quot;start&quot;:&quot;2026-05-17&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:65,&quot;date&quot;:&quot;2026-11-13&quot;,&quot;start&quot;:&quot;2026-05-18&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:66,&quot;date&quot;:&quot;2026-11-14&quot;,&quot;start&quot;:&quot;2026-05-19&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:67,&quot;date&quot;:&quot;2026-11-15&quot;,&quot;start&quot;:&quot;2026-05-20&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:68,&quot;date&quot;:&quot;2026-11-16&quot;,&quot;start&quot;:&quot;2026-05-21&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:69,&quot;date&quot;:&quot;2026-11-17&quot;,&quot;start&quot;:&quot;2026-05-22&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:70,&quot;date&quot;:&quot;2026-11-18&quot;,&quot;start&quot;:&quot;2026-05-23&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:71,&quot;date&quot;:&quot;2026-11-19&quot;,&quot;start&quot;:&quot;2026-05-24&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:72,&quot;date&quot;:&quot;2026-11-20&quot;,&quot;start&quot;:&quot;2026-05-25&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:73,&quot;date&quot;:&quot;2026-11-21&quot;,&quot;start&quot;:&quot;2026-05-26&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:74,&quot;date&quot;:&quot;2026-11-22&quot;,&quot;start&quot;:&quot;2026-05-27&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:75,&quot;date&quot;:&quot;2026-11-23&quot;,&quot;start&quot;:&quot;2026-05-28&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:76,&quot;date&quot;:&quot;2026-11-24&quot;,&quot;start&quot;:&quot;2026-05-29&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:77,&quot;date&quot;:&quot;2026-11-25&quot;,&quot;start&quot;:&quot;2026-05-30&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:78,&quot;date&quot;:&quot;2026-11-26&quot;,&quot;start&quot;:&quot;2026-05-31&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:79,&quot;date&quot;:&quot;2026-11-27&quot;,&quot;start&quot;:&quot;2026-06-01&quot;,&quot;used&quot;:0,&quot;over&quot;:0},{&quot;day&quot;:80,&quot;date&quot;:&quot;2026-11-28&quot;,&quot;start&quot;:&quot;2026-06-02&quot;,&quot;used&quot;:1,&quot;over&quot;:0},{&quot;day&quot;:81,&quot;date&quot;:&quot;2026-11-29&quot;,&quot;start&quot;:&quot;2026-06-03&quot;,&quot;used&quot;:2,&quot;over&quot;:0},{&quot;day&quot;:82,&quot;date&quot;:&quot;2026-11-30&quot;,&quot;start&quot;:&quot;2026-06-04&quot;,&quot;used&quot;:3,&quot;over&quot;:0},{&quot;day&quot;:83,&quot;date&quot;:&quot;2026-12-01&quot;,&quot;start&quot;:&quot;2026-06-05&quot;,&quot;used&quot;:4,&quot;over&quot;:0},{&quot;day&quot;:84,&quot;date&quot;:&quot;2026-12-02&quot;,&quot;start&quot;:&quot;2026-06-06&quot;,&quot;used&quot;:5,&quot;over&quot;:0},{&quot;day&quot;:85,&quot;date&quot;:&quot;2026-12-03&quot;,&quot;start&quot;:&quot;2026-06-07&quot;,&quot;used&quot;:6,&quot;over&quot;:0},{&quot;day&quot;:86,&quot;date&quot;:&quot;2026-12-04&quot;,&quot;start&quot;:&quot;2026-06-08&quot;,&quot;used&quot;:7,&quot;over&quot;:0},{&quot;day&quot;:87,&quot;date&quot;:&quot;2026-12-05&quot;,&quot;start&quot;:&quot;2026-06-09&quot;,&quot;used&quot;:8,&quot;over&quot;:0},{&quot;day&quot;:88,&quot;date&quot;:&quot;2026-12-06&quot;,&quot;start&quot;:&quot;2026-06-10&quot;,&quot;used&quot;:9,&quot;over&quot;:0},{&quot;day&quot;:89,&quot;date&quot;:&quot;2026-12-07&quot;,&quot;start&quot;:&quot;2026-06-11&quot;,&quot;used&quot;:10,&quot;over&quot;:0},{&quot;day&quot;:90,&quot;date&quot;:&quot;2026-12-08&quot;,&quot;start&quot;:&quot;2026-06-12&quot;,&quot;used&quot;:11,&quot;over&quot;:0},{&quot;day&quot;:91,&quot;date&quot;:&quot;2026-12-09&quot;,&quot;start&quot;:&quot;2026-06-13&quot;,&quot;used&quot;:12,&quot;over&quot;:0},{&quot;day&quot;:92,&quot;date&quot;:&quot;2026-12-10&quot;,&quot;start&quot;:&quot;2026-06-14&quot;,&quot;used&quot;:13,&quot;over&quot;:0},{&quot;day&quot;:93,&quot;date&quot;:&quot;2026-12-11&quot;,&quot;start&quot;:&quot;2026-06-15&quot;,&quot;used&quot;:14,&quot;over&quot;:0},{&quot;day&quot;:94,&quot;date&quot;:&quot;2026-12-12&quot;,&quot;start&quot;:&quot;2026-06-16&quot;,&quot;used&quot;:15,&quot;over&quot;:0},{&quot;day&quot;:95,&quot;date&quot;:&quot;2026-12-13&quot;,&quot;start&quot;:&quot;2026-06-17&quot;,&quot;used&quot;:16,&quot;over&quot;:0},{&quot;day&quot;:96,&quot;date&quot;:&quot;2026-12-14&quot;,&quot;start&quot;:&quot;2026-06-18&quot;,&quot;used&quot;:17,&quot;over&quot;:0},{&quot;day&quot;:97,&quot;date&quot;:&quot;2026-12-15&quot;,&quot;start&quot;:&quot;2026-06-19&quot;,&quot;used&quot;:18,&quot;over&quot;:0},{&quot;day&quot;:98,&quot;date&quot;:&quot;2026-12-16&quot;,&quot;start&quot;:&quot;2026-06-20&quot;,&quot;used&quot;:19,&quot;over&quot;:0},{&quot;day&quot;:99,&quot;date&quot;:&quot;2026-12-17&quot;,&quot;start&quot;:&quot;2026-06-21&quot;,&quot;used&quot;:20,&quot;over&quot;:0},{&quot;day&quot;:100,&quot;date&quot;:&quot;2026-12-18&quot;,&quot;start&quot;:&quot;2026-06-22&quot;,&quot;used&quot;:21,&quot;over&quot;:0},{&quot;day&quot;:101,&quot;date&quot;:&quot;2026-12-19&quot;,&quot;start&quot;:&quot;2026-06-23&quot;,&quot;used&quot;:22,&quot;over&quot;:0},{&quot;day&quot;:102,&quot;date&quot;:&quot;2026-12-20&quot;,&quot;start&quot;:&quot;2026-06-24&quot;,&quot;used&quot;:23,&quot;over&quot;:0},{&quot;day&quot;:103,&quot;date&quot;:&quot;2026-12-21&quot;,&quot;start&quot;:&quot;2026-06-25&quot;,&quot;used&quot;:24,&quot;over&quot;:0},{&quot;day&quot;:104,&quot;date&quot;:&quot;2026-12-22&quot;,&quot;start&quot;:&quot;2026-06-26&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:105,&quot;date&quot;:&quot;2026-12-23&quot;,&quot;start&quot;:&quot;2026-06-27&quot;,&quot;used&quot;:26,&quot;over&quot;:0},{&quot;day&quot;:106,&quot;date&quot;:&quot;2026-12-24&quot;,&quot;start&quot;:&quot;2026-06-28&quot;,&quot;used&quot;:27,&quot;over&quot;:0},{&quot;day&quot;:107,&quot;date&quot;:&quot;2026-12-25&quot;,&quot;start&quot;:&quot;2026-06-29&quot;,&quot;used&quot;:28,&quot;over&quot;:0},{&quot;day&quot;:108,&quot;date&quot;:&quot;2026-12-26&quot;,&quot;start&quot;:&quot;2026-06-30&quot;,&quot;used&quot;:29,&quot;over&quot;:0},{&quot;day&quot;:109,&quot;date&quot;:&quot;2026-12-27&quot;,&quot;start&quot;:&quot;2026-07-01&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:110,&quot;date&quot;:&quot;2026-12-28&quot;,&quot;start&quot;:&quot;2026-07-02&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:111,&quot;date&quot;:&quot;2026-12-29&quot;,&quot;start&quot;:&quot;2026-07-03&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:112,&quot;date&quot;:&quot;2026-12-30&quot;,&quot;start&quot;:&quot;2026-07-04&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:113,&quot;date&quot;:&quot;2026-12-31&quot;,&quot;start&quot;:&quot;2026-07-05&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:114,&quot;date&quot;:&quot;2027-01-01&quot;,&quot;start&quot;:&quot;2026-07-06&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:115,&quot;date&quot;:&quot;2027-01-02&quot;,&quot;start&quot;:&quot;2026-07-07&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:116,&quot;date&quot;:&quot;2027-01-03&quot;,&quot;start&quot;:&quot;2026-07-08&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:117,&quot;date&quot;:&quot;2027-01-04&quot;,&quot;start&quot;:&quot;2026-07-09&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:118,&quot;date&quot;:&quot;2027-01-05&quot;,&quot;start&quot;:&quot;2026-07-10&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:119,&quot;date&quot;:&quot;2027-01-06&quot;,&quot;start&quot;:&quot;2026-07-11&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:120,&quot;date&quot;:&quot;2027-01-07&quot;,&quot;start&quot;:&quot;2026-07-12&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:121,&quot;date&quot;:&quot;2027-01-08&quot;,&quot;start&quot;:&quot;2026-07-13&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:122,&quot;date&quot;:&quot;2027-01-09&quot;,&quot;start&quot;:&quot;2026-07-14&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:123,&quot;date&quot;:&quot;2027-01-10&quot;,&quot;start&quot;:&quot;2026-07-15&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:124,&quot;date&quot;:&quot;2027-01-11&quot;,&quot;start&quot;:&quot;2026-07-16&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:125,&quot;date&quot;:&quot;2027-01-12&quot;,&quot;start&quot;:&quot;2026-07-17&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:126,&quot;date&quot;:&quot;2027-01-13&quot;,&quot;start&quot;:&quot;2026-07-18&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:127,&quot;date&quot;:&quot;2027-01-14&quot;,&quot;start&quot;:&quot;2026-07-19&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:128,&quot;date&quot;:&quot;2027-01-15&quot;,&quot;start&quot;:&quot;2026-07-20&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:129,&quot;date&quot;:&quot;2027-01-16&quot;,&quot;start&quot;:&quot;2026-07-21&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:130,&quot;date&quot;:&quot;2027-01-17&quot;,&quot;start&quot;:&quot;2026-07-22&quot;,&quot;used&quot;:30,&quot;over&quot;:0}],[{&quot;day&quot;:-1,&quot;date&quot;:&quot;2026-09-08&quot;,&quot;start&quot;:&quot;2026-03-13&quot;,&quot;used&quot;:25,&quot;over&quot;:0},{&quot;day&quot;:0,&quot;date&quot;:&quot;2026-09-09&quot;,&quot;start&quot;:&quot;2026-03-14&quot;,&quot;used&quot;:26,&quot;over&quot;:0},{&quot;day&quot;:1,&quot;date&quot;:&quot;2026-09-10&quot;,&quot;start&quot;:&quot;2026-03-15&quot;,&quot;used&quot;:27,&quot;over&quot;:0},{&quot;day&quot;:2,&quot;date&quot;:&quot;2026-09-11&quot;,&quot;start&quot;:&quot;2026-03-16&quot;,&quot;used&quot;:28,&quot;over&quot;:0},{&quot;day&quot;:3,&quot;date&quot;:&quot;2026-09-12&quot;,&quot;start&quot;:&quot;2026-03-17&quot;,&quot;used&quot;:29,&quot;over&quot;:0},{&quot;day&quot;:4,&quot;date&quot;:&quot;2026-09-13&quot;,&quot;start&quot;:&quot;2026-03-18&quot;,&quot;used&quot;:30,&quot;over&quot;:0},{&quot;day&quot;:5,&quot;date&quot;:&quot;2026-09-14&quot;,&quot;start&quot;:&quot;2026-03-19&quot;,&quot;used&quot;:31,&quot;over&quot;:0},{&quot;day&quot;:6,&quot;date&quot;:&quot;2026-09-15&quot;,&quot;start&quot;:&quot;2026-03-20&quot;,&quot;used&quot;:32,&quot;over&quot;:0},{&quot;day&quot;:7,&quot;date&quot;:&quot;2026-09-16&quot;,&quot;start&quot;:&quot;2026-03-21&quot;,&quot;used&quot;:33,&quot;over&quot;:0},{&quot;day&quot;:8,&quot;date&quot;:&quot;2026-09-17&quot;,&quot;start&quot;:&quot;2026-03-22&quot;,&quot;used&quot;:34,&quot;over&quot;:0},{&quot;day&quot;:9,&quot;date&quot;:&quot;2026-09-18&quot;,&quot;start&quot;:&quot;2026-03-23&quot;,&quot;used&quot;:35,&quot;over&quot;:0},{&quot;day&quot;:10,&quot;date&quot;:&quot;2026-09-19&quot;,&quot;start&quot;:&quot;2026-03-24&quot;,&quot;used&quot;:36,&quot;over&quot;:0},{&quot;day&quot;:11,&quot;date&quot;:&quot;2026-09-20&quot;,&quot;start&quot;:&quot;2026-03-25&quot;,&quot;used&quot;:37,&quot;over&quot;:0},{&quot;day&quot;:12,&quot;date&quot;:&quot;2026-09-21&quot;,&quot;start&quot;:&quot;2026-03-26&quot;,&quot;used&quot;:38,&quot;over&quot;:0},{&quot;day&quot;:13,&quot;date&quot;:&quot;2026-09-22&quot;,&quot;start&quot;:&quot;2026-03-27&quot;,&quot;used&quot;:39,&quot;over&quot;:0},{&quot;day&quot;:14,&quot;date&quot;:&quot;2026-09-23&quot;,&quot;start&quot;:&quot;2026-03-28&quot;,&quot;used&quot;:40,&quot;over&quot;:0},{&quot;day&quot;:15,&quot;date&quot;:&quot;2026-09-24&quot;,&quot;start&quot;:&quot;2026-03-29&quot;,&quot;used&quot;:41,&quot;over&quot;:0},{&quot;day&quot;:16,&quot;date&quot;:&quot;2026-09-25&quot;,&quot;start&quot;:&quot;2026-03-30&quot;,&quot;used&quot;:42,&quot;over&quot;:0},{&quot;day&quot;:17,&quot;date&quot;:&quot;2026-09-26&quot;,&quot;start&quot;:&quot;2026-03-31&quot;,&quot;used&quot;:43,&quot;over&quot;:0},{&quot;day&quot;:18,&quot;date&quot;:&quot;2026-09-27&quot;,&quot;start&quot;:&quot;2026-04-01&quot;,&quot;used&quot;:44,&quot;over&quot;:0},{&quot;day&quot;:19,&quot;date&quot;:&quot;2026-09-28&quot;,&quot;start&quot;:&quot;2026-04-02&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:20,&quot;date&quot;:&quot;2026-09-29&quot;,&quot;start&quot;:&quot;2026-04-03&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:21,&quot;date&quot;:&quot;2026-09-30&quot;,&quot;start&quot;:&quot;2026-04-04&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:22,&quot;date&quot;:&quot;2026-10-01&quot;,&quot;start&quot;:&quot;2026-04-05&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:23,&quot;date&quot;:&quot;2026-10-02&quot;,&quot;start&quot;:&quot;2026-04-06&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:24,&quot;date&quot;:&quot;2026-10-03&quot;,&quot;start&quot;:&quot;2026-04-07&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:25,&quot;date&quot;:&quot;2026-10-04&quot;,&quot;start&quot;:&quot;2026-04-08&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:26,&quot;date&quot;:&quot;2026-10-05&quot;,&quot;start&quot;:&quot;2026-04-09&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:27,&quot;date&quot;:&quot;2026-10-06&quot;,&quot;start&quot;:&quot;2026-04-10&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:28,&quot;date&quot;:&quot;2026-10-07&quot;,&quot;start&quot;:&quot;2026-04-11&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:29,&quot;date&quot;:&quot;2026-10-08&quot;,&quot;start&quot;:&quot;2026-04-12&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:30,&quot;date&quot;:&quot;2026-10-09&quot;,&quot;start&quot;:&quot;2026-04-13&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:31,&quot;date&quot;:&quot;2026-10-10&quot;,&quot;start&quot;:&quot;2026-04-14&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:32,&quot;date&quot;:&quot;2026-10-11&quot;,&quot;start&quot;:&quot;2026-04-15&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:33,&quot;date&quot;:&quot;2026-10-12&quot;,&quot;start&quot;:&quot;2026-04-16&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:34,&quot;date&quot;:&quot;2026-10-13&quot;,&quot;start&quot;:&quot;2026-04-17&quot;,&quot;used&quot;:45,&quot;over&quot;:0},{&quot;day&quot;:35,&quot;date&quot;:&quot;2026-10-14&quot;,&quot;start&quot;:&quot;2026-04-18&quot;,&quot;used&quot;:46,&quot;over&quot;:0},{&quot;day&quot;:36,&quot;date&quot;:&quot;2026-10-15&quot;,&quot;start&quot;:&quot;2026-04-19&quot;,&quot;used&quot;:47,&quot;over&quot;:0},{&quot;day&quot;:37,&quot;date&quot;:&quot;2026-10-16&quot;,&quot;start&quot;:&quot;2026-04-20&quot;,&quot;used&quot;:48,&quot;over&quot;:0},{&quot;day&quot;:38,&quot;date&quot;:&quot;2026-10-17&quot;,&quot;start&quot;:&quot;2026-04-21&quot;,&quot;used&quot;:49,&quot;over&quot;:0},{&quot;day&quot;:39,&quot;date&quot;:&quot;2026-10-18&quot;,&quot;start&quot;:&quot;2026-04-22&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:40,&quot;date&quot;:&quot;2026-10-19&quot;,&quot;start&quot;:&quot;2026-04-23&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:41,&quot;date&quot;:&quot;2026-10-20&quot;,&quot;start&quot;:&quot;2026-04-24&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:42,&quot;date&quot;:&quot;2026-10-21&quot;,&quot;start&quot;:&quot;2026-04-25&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:43,&quot;date&quot;:&quot;2026-10-22&quot;,&quot;start&quot;:&quot;2026-04-26&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:44,&quot;date&quot;:&quot;2026-10-23&quot;,&quot;start&quot;:&quot;2026-04-27&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:45,&quot;date&quot;:&quot;2026-10-24&quot;,&quot;start&quot;:&quot;2026-04-28&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:46,&quot;date&quot;:&quot;2026-10-25&quot;,&quot;start&quot;:&quot;2026-04-29&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:47,&quot;date&quot;:&quot;2026-10-26&quot;,&quot;start&quot;:&quot;2026-04-30&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:48,&quot;date&quot;:&quot;2026-10-27&quot;,&quot;start&quot;:&quot;2026-05-01&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:49,&quot;date&quot;:&quot;2026-10-28&quot;,&quot;start&quot;:&quot;2026-05-02&quot;,&quot;used&quot;:50,&quot;over&quot;:0},{&quot;day&quot;:50,&quot;date&quot;:&quot;2026-10-29&quot;,&quot;start&quot;:&quot;2026-05-03&quot;,&quot;used&quot;:51,&quot;over&quot;:0},{&quot;day&quot;:51,&quot;date&quot;:&quot;2026-10-30&quot;,&quot;start&quot;:&quot;2026-05-04&quot;,&quot;used&quot;:52,&quot;over&quot;:0},{&quot;day&quot;:52,&quot;date&quot;:&quot;2026-10-31&quot;,&quot;start&quot;:&quot;2026-05-05&quot;,&quot;used&quot;:53,&quot;over&quot;:0},{&quot;day&quot;:53,&quot;date&quot;:&quot;2026-11-01&quot;,&quot;start&quot;:&quot;2026-05-06&quot;,&quot;used&quot;:54,&quot;over&quot;:0},{&quot;day&quot;:54,&quot;date&quot;:&quot;2026-11-02&quot;,&quot;start&quot;:&quot;2026-05-07&quot;,&quot;used&quot;:55,&quot;over&quot;:0},{&quot;day&quot;:55,&quot;date&quot;:&quot;2026-11-03&quot;,&quot;start&quot;:&quot;2026-05-08&quot;,&quot;used&quot;:56,&quot;over&quot;:0},{&quot;day&quot;:56,&quot;date&quot;:&quot;2026-11-04&quot;,&quot;start&quot;:&quot;2026-05-09&quot;,&quot;used&quot;:57,&quot;over&quot;:0},{&quot;day&quot;:57,&quot;date&quot;:&quot;2026-11-05&quot;,&quot;start&quot;:&quot;2026-05-10&quot;,&quot;used&quot;:58,&quot;over&quot;:0},{&quot;day&quot;:58,&quot;date&quot;:&quot;2026-11-06&quot;,&quot;start&quot;:&quot;2026-05-11&quot;,&quot;used&quot;:59,&quot;over&quot;:0},{&quot;day&quot;:59,&quot;date&quot;:&quot;2026-11-07&quot;,&quot;start&quot;:&quot;2026-05-12&quot;,&quot;used&quot;:60,&quot;over&quot;:0},{&quot;day&quot;:60,&quot;date&quot;:&quot;2026-11-08&quot;,&quot;start&quot;:&quot;2026-05-13&quot;,&quot;used&quot;:61,&quot;over&quot;:0},{&quot;day&quot;:61,&quot;date&quot;:&quot;2026-11-09&quot;,&quot;start&quot;:&quot;2026-05-14&quot;,&quot;used&quot;:62,&quot;over&quot;:0},{&quot;day&quot;:62,&quot;date&quot;:&quot;2026-11-10&quot;,&quot;start&quot;:&quot;2026-05-15&quot;,&quot;used&quot;:63,&quot;over&quot;:0},{&quot;day&quot;:63,&quot;date&quot;:&quot;2026-11-11&quot;,&quot;start&quot;:&quot;2026-05-16&quot;,&quot;used&quot;:64,&quot;over&quot;:0},{&quot;day&quot;:64,&quot;date&quot;:&quot;2026-11-12&quot;,&quot;start&quot;:&quot;2026-05-17&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:65,&quot;date&quot;:&quot;2026-11-13&quot;,&quot;start&quot;:&quot;2026-05-18&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:66,&quot;date&quot;:&quot;2026-11-14&quot;,&quot;start&quot;:&quot;2026-05-19&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:67,&quot;date&quot;:&quot;2026-11-15&quot;,&quot;start&quot;:&quot;2026-05-20&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:68,&quot;date&quot;:&quot;2026-11-16&quot;,&quot;start&quot;:&quot;2026-05-21&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:69,&quot;date&quot;:&quot;2026-11-17&quot;,&quot;start&quot;:&quot;2026-05-22&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:70,&quot;date&quot;:&quot;2026-11-18&quot;,&quot;start&quot;:&quot;2026-05-23&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:71,&quot;date&quot;:&quot;2026-11-19&quot;,&quot;start&quot;:&quot;2026-05-24&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:72,&quot;date&quot;:&quot;2026-11-20&quot;,&quot;start&quot;:&quot;2026-05-25&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:73,&quot;date&quot;:&quot;2026-11-21&quot;,&quot;start&quot;:&quot;2026-05-26&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:74,&quot;date&quot;:&quot;2026-11-22&quot;,&quot;start&quot;:&quot;2026-05-27&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:75,&quot;date&quot;:&quot;2026-11-23&quot;,&quot;start&quot;:&quot;2026-05-28&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:76,&quot;date&quot;:&quot;2026-11-24&quot;,&quot;start&quot;:&quot;2026-05-29&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:77,&quot;date&quot;:&quot;2026-11-25&quot;,&quot;start&quot;:&quot;2026-05-30&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:78,&quot;date&quot;:&quot;2026-11-26&quot;,&quot;start&quot;:&quot;2026-05-31&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:79,&quot;date&quot;:&quot;2026-11-27&quot;,&quot;start&quot;:&quot;2026-06-01&quot;,&quot;used&quot;:65,&quot;over&quot;:0},{&quot;day&quot;:80,&quot;date&quot;:&quot;2026-11-28&quot;,&quot;start&quot;:&quot;2026-06-02&quot;,&quot;used&quot;:66,&quot;over&quot;:0},{&quot;day&quot;:81,&quot;date&quot;:&quot;2026-11-29&quot;,&quot;start&quot;:&quot;2026-06-03&quot;,&quot;used&quot;:67,&quot;over&quot;:0},{&quot;day&quot;:82,&quot;date&quot;:&quot;2026-11-30&quot;,&quot;start&quot;:&quot;2026-06-04&quot;,&quot;used&quot;:68,&quot;over&quot;:0},{&quot;day&quot;:83,&quot;date&quot;:&quot;2026-12-01&quot;,&quot;start&quot;:&quot;2026-06-05&quot;,&quot;used&quot;:69,&quot;over&quot;:0},{&quot;day&quot;:84,&quot;date&quot;:&quot;2026-12-02&quot;,&quot;start&quot;:&quot;2026-06-06&quot;,&quot;used&quot;:70,&quot;over&quot;:0},{&quot;day&quot;:85,&quot;date&quot;:&quot;2026-12-03&quot;,&quot;start&quot;:&quot;2026-06-07&quot;,&quot;used&quot;:71,&quot;over&quot;:0},{&quot;day&quot;:86,&quot;date&quot;:&quot;2026-12-04&quot;,&quot;start&quot;:&quot;2026-06-08&quot;,&quot;used&quot;:72,&quot;over&quot;:0},{&quot;day&quot;:87,&quot;date&quot;:&quot;2026-12-05&quot;,&quot;start&quot;:&quot;2026-06-09&quot;,&quot;used&quot;:73,&quot;over&quot;:0},{&quot;day&quot;:88,&quot;date&quot;:&quot;2026-12-06&quot;,&quot;start&quot;:&quot;2026-06-10&quot;,&quot;used&quot;:74,&quot;over&quot;:0},{&quot;day&quot;:89,&quot;date&quot;:&quot;2026-12-07&quot;,&quot;start&quot;:&quot;2026-06-11&quot;,&quot;used&quot;:75,&quot;over&quot;:0},{&quot;day&quot;:90,&quot;date&quot;:&quot;2026-12-08&quot;,&quot;start&quot;:&quot;2026-06-12&quot;,&quot;used&quot;:76,&quot;over&quot;:0},{&quot;day&quot;:91,&quot;date&quot;:&quot;2026-12-09&quot;,&quot;start&quot;:&quot;2026-06-13&quot;,&quot;used&quot;:77,&quot;over&quot;:0},{&quot;day&quot;:92,&quot;date&quot;:&quot;2026-12-10&quot;,&quot;start&quot;:&quot;2026-06-14&quot;,&quot;used&quot;:78,&quot;over&quot;:0},{&quot;day&quot;:93,&quot;date&quot;:&quot;2026-12-11&quot;,&quot;start&quot;:&quot;2026-06-15&quot;,&quot;used&quot;:79,&quot;over&quot;:0},{&quot;day&quot;:94,&quot;date&quot;:&quot;2026-12-12&quot;,&quot;start&quot;:&quot;2026-06-16&quot;,&quot;used&quot;:80,&quot;over&quot;:0},{&quot;day&quot;:95,&quot;date&quot;:&quot;2026-12-13&quot;,&quot;start&quot;:&quot;2026-06-17&quot;,&quot;used&quot;:81,&quot;over&quot;:0},{&quot;day&quot;:96,&quot;date&quot;:&quot;2026-12-14&quot;,&quot;start&quot;:&quot;2026-06-18&quot;,&quot;used&quot;:82,&quot;over&quot;:0},{&quot;day&quot;:97,&quot;date&quot;:&quot;2026-12-15&quot;,&quot;start&quot;:&quot;2026-06-19&quot;,&quot;used&quot;:83,&quot;over&quot;:0},{&quot;day&quot;:98,&quot;date&quot;:&quot;2026-12-16&quot;,&quot;start&quot;:&quot;2026-06-20&quot;,&quot;used&quot;:84,&quot;over&quot;:0},{&quot;day&quot;:99,&quot;date&quot;:&quot;2026-12-17&quot;,&quot;start&quot;:&quot;2026-06-21&quot;,&quot;used&quot;:85,&quot;over&quot;:0},{&quot;day&quot;:100,&quot;date&quot;:&quot;2026-12-18&quot;,&quot;start&quot;:&quot;2026-06-22&quot;,&quot;used&quot;:86,&quot;over&quot;:0},{&quot;day&quot;:101,&quot;date&quot;:&quot;2026-12-19&quot;,&quot;start&quot;:&quot;2026-06-23&quot;,&quot;used&quot;:87,&quot;over&quot;:0},{&quot;day&quot;:102,&quot;date&quot;:&quot;2026-12-20&quot;,&quot;start&quot;:&quot;2026-06-24&quot;,&quot;used&quot;:88,&quot;over&quot;:0},{&quot;day&quot;:103,&quot;date&quot;:&quot;2026-12-21&quot;,&quot;start&quot;:&quot;2026-06-25&quot;,&quot;used&quot;:89,&quot;over&quot;:0},{&quot;day&quot;:104,&quot;date&quot;:&quot;2026-12-22&quot;,&quot;start&quot;:&quot;2026-06-26&quot;,&quot;used&quot;:90,&quot;over&quot;:0},{&quot;day&quot;:105,&quot;date&quot;:&quot;2026-12-23&quot;,&quot;start&quot;:&quot;2026-06-27&quot;,&quot;used&quot;:91,&quot;over&quot;:1},{&quot;day&quot;:106,&quot;date&quot;:&quot;2026-12-24&quot;,&quot;start&quot;:&quot;2026-06-28&quot;,&quot;used&quot;:92,&quot;over&quot;:2},{&quot;day&quot;:107,&quot;date&quot;:&quot;2026-12-25&quot;,&quot;start&quot;:&quot;2026-06-29&quot;,&quot;used&quot;:93,&quot;over&quot;:3},{&quot;day&quot;:108,&quot;date&quot;:&quot;2026-12-26&quot;,&quot;start&quot;:&quot;2026-06-30&quot;,&quot;used&quot;:94,&quot;over&quot;:4},{&quot;day&quot;:109,&quot;date&quot;:&quot;2026-12-27&quot;,&quot;start&quot;:&quot;2026-07-01&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:110,&quot;date&quot;:&quot;2026-12-28&quot;,&quot;start&quot;:&quot;2026-07-02&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:111,&quot;date&quot;:&quot;2026-12-29&quot;,&quot;start&quot;:&quot;2026-07-03&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:112,&quot;date&quot;:&quot;2026-12-30&quot;,&quot;start&quot;:&quot;2026-07-04&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:113,&quot;date&quot;:&quot;2026-12-31&quot;,&quot;start&quot;:&quot;2026-07-05&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:114,&quot;date&quot;:&quot;2027-01-01&quot;,&quot;start&quot;:&quot;2026-07-06&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:115,&quot;date&quot;:&quot;2027-01-02&quot;,&quot;start&quot;:&quot;2026-07-07&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:116,&quot;date&quot;:&quot;2027-01-03&quot;,&quot;start&quot;:&quot;2026-07-08&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:117,&quot;date&quot;:&quot;2027-01-04&quot;,&quot;start&quot;:&quot;2026-07-09&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:118,&quot;date&quot;:&quot;2027-01-05&quot;,&quot;start&quot;:&quot;2026-07-10&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:119,&quot;date&quot;:&quot;2027-01-06&quot;,&quot;start&quot;:&quot;2026-07-11&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:120,&quot;date&quot;:&quot;2027-01-07&quot;,&quot;start&quot;:&quot;2026-07-12&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:121,&quot;date&quot;:&quot;2027-01-08&quot;,&quot;start&quot;:&quot;2026-07-13&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:122,&quot;date&quot;:&quot;2027-01-09&quot;,&quot;start&quot;:&quot;2026-07-14&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:123,&quot;date&quot;:&quot;2027-01-10&quot;,&quot;start&quot;:&quot;2026-07-15&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:124,&quot;date&quot;:&quot;2027-01-11&quot;,&quot;start&quot;:&quot;2026-07-16&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:125,&quot;date&quot;:&quot;2027-01-12&quot;,&quot;start&quot;:&quot;2026-07-17&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:126,&quot;date&quot;:&quot;2027-01-13&quot;,&quot;start&quot;:&quot;2026-07-18&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:127,&quot;date&quot;:&quot;2027-01-14&quot;,&quot;start&quot;:&quot;2026-07-19&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:128,&quot;date&quot;:&quot;2027-01-15&quot;,&quot;start&quot;:&quot;2026-07-20&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:129,&quot;date&quot;:&quot;2027-01-16&quot;,&quot;start&quot;:&quot;2026-07-21&quot;,&quot;used&quot;:95,&quot;over&quot;:5},{&quot;day&quot;:130,&quot;date&quot;:&quot;2027-01-17&quot;,&quot;start&quot;:&quot;2026-07-22&quot;,&quot;used&quot;:95,&quot;over&quot;:5}]]};
+  const slider = root.querySelector(&#x27;#check-date&#x27;);
+  const toggle = root.querySelector(&#x27;#include-stay&#x27;);
+  const chart = root.querySelector(&#x27;#window-chart&#x27;);
+  const fmt = iso =&gt; new Intl.DateTimeFormat(&#x27;en-GB&#x27;, {day:&#x27;numeric&#x27;,month:&#x27;short&#x27;,year:&#x27;numeric&#x27;,timeZone:&#x27;UTC&#x27;}).format(new Date(iso+&#x27;T00:00:00Z&#x27;));
+  function draw() {
+    const day = Number(slider.value), include = toggle.checked;
+    const frame = data.frames[include ? 1 : 0][day+1];
+    const width = Math.max(280, chart.clientWidth), left = width &lt; 430 ? 80 : 108, right = width-12;
+    const x = d =&gt; left+(d+180)/311*(right-left);
+    root.querySelector(&#x27;#date-label&#x27;).textContent = fmt(frame.date);
+    slider.setAttribute(&#x27;aria-valuetext&#x27;,fmt(frame.date));
+    root.querySelector(&#x27;#window-dates&#x27;).textContent = fmt(frame.start)+&#x27; – &#x27;+fmt(frame.date);
+    root.querySelector(&#x27;#count&#x27;).textContent = frame.used+&#x27; / 90 days&#x27;+(frame.over ? &#x27; · &#x27;+frame.over+&#x27; over&#x27; : &#x27; · &#x27;+(90-frame.used)+&#x27; remaining on this date&#x27;);
+    root.querySelector(&#x27;#window-summary&#x27;).textContent = include ? (day &lt; 105 ? &#x27;Whole plan: first exceeds 90 days on &#x27;+fmt(data.frames[1][106].date)+&#x27;.&#x27; : &#x27;Whole plan: 5 days over at Spain exit.&#x27;) : &#x27;Whole plan: no over-limit day in this example.&#x27;;
+    root.querySelector(&#x27;[data-day=&quot;105&quot;]&#x27;).disabled = !include;
+    let svg = &#x27;&lt;svg class=&quot;window-svg&quot; viewBox=&quot;0 0 &#x27;+width+&#x27; 270&quot; role=&quot;img&quot; aria-label=&quot;Fixed trip dates with a moving 180-day window. &#x27;+frame.used+&#x27; counted days on &#x27;+fmt(frame.date)+&#x27;.&quot;&gt;&lt;rect class=&quot;window-lens&quot; x=&quot;&#x27;+x(day-179)+&#x27;&quot; y=&quot;15&quot; width=&quot;&#x27;+(x(day+1)-x(day-179))+&#x27;&quot; height=&quot;218&quot;/&gt;&lt;line class=&quot;window-edge&quot; x1=&quot;&#x27;+x(day+1)+&#x27;&quot; x2=&quot;&#x27;+x(day+1)+&#x27;&quot; y1=&quot;15&quot; y2=&quot;233&quot;/&gt;&#x27;;
+    data.trips.forEach((t,i) =&gt; {
+      const y=40+i*48, enabled=i!==2||include;
+      const a=Math.max(t.start,day-179), b=Math.min(t.end,day);
+      const count=enabled?Math.max(0,b-a+1):0;
+      svg += &#x27;&lt;text x=&quot;0&quot; y=&quot;&#x27;+y+&#x27;&quot;&gt;&#x27;+t.label+&#x27;&lt;/text&gt;&lt;text x=&quot;0&quot; y=&quot;&#x27;+(y+17)+&#x27;&quot;&gt;&#x27;+count+&#x27; / &#x27;+(t.end-t.start+1)+&#x27; days&lt;/text&gt;&#x27;;
+      svg += &#x27;&lt;rect class=&quot;trip-base&quot; x=&quot;&#x27;+x(t.start)+&#x27;&quot; y=&quot;&#x27;+(y-7)+&#x27;&quot; width=&quot;&#x27;+(x(t.end+1)-x(t.start))+&#x27;&quot; height=&quot;13&quot;/&gt;&#x27;;
+      if(count) svg += &#x27;&lt;rect class=&quot;trip-counted &#x27;+(i===2?&#x27;what-if&#x27;:&#x27;&#x27;)+&#x27;&quot; x=&quot;&#x27;+x(a)+&#x27;&quot; y=&quot;&#x27;+(y-7)+&#x27;&quot; width=&quot;&#x27;+(x(b+1)-x(a))+&#x27;&quot; height=&quot;13&quot;/&gt;&#x27;;
+    });
+    svg += &#x27;&lt;line x1=&quot;&#x27;+left+&#x27;&quot; x2=&quot;&#x27;+right+&#x27;&quot; y1=&quot;237&quot; y2=&quot;237&quot; stroke=&quot;var(--border)&quot;/&gt;&lt;text x=&quot;&#x27;+left+&#x27;&quot; y=&quot;258&quot;&gt;Mar 2026&lt;/text&gt;&lt;text x=&quot;&#x27;+x(0)+&#x27;&quot; y=&quot;258&quot; text-anchor=&quot;middle&quot;&gt;Sep&lt;/text&gt;&lt;text x=&quot;&#x27;+right+&#x27;&quot; y=&quot;258&quot; text-anchor=&quot;end&quot;&gt;Jan 2027&lt;/text&gt;&lt;/svg&gt;&#x27;;
+    chart.innerHTML = svg;
+  }
+  slider.addEventListener(&#x27;input&#x27;,draw);
+  toggle.addEventListener(&#x27;change&#x27;,draw);
+  root.querySelectorAll(&#x27;[data-day]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{slider.value=button.dataset.day;draw();}));
+  new ResizeObserver(draw).observe(chart);
+  draw();
+})();
+&lt;/script&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerdown&quot;, handlePointer);
+    document.removeEventListener(&quot;pointercancel&quot;, handlePointer);
+    document.removeEventListener(&quot;click&quot;, handleTouchClick);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerdown&quot;, handlePointer);
+  document.addEventListener(&quot;pointercancel&quot;, handlePointer);
+  document.addEventListener(&quot;click&quot;, handleTouchClick);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>

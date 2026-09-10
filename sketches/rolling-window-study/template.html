@@ -1,0 +1,66 @@
+<div id="schngn-window-study">
+  <h3>See how the window moves</h3>
+  <div class="viz-controls">
+    <label class="form-check"><input class="form-check-input" type="checkbox" id="include-stay" checked><span class="form-check-label">Include the 65-day what-if stay</span></label>
+  </div>
+  <div class="viz-row"><span id="window-dates" class="text-small"></span><span id="count" class="tabular-nums" aria-live="polite"></span></div>
+  <div id="window-chart"></div>
+  <label class="form-label" for="check-date">Checking date: <span id="date-label" class="tabular-nums"></span></label>
+  <input id="check-date" class="form-range" type="range" min="-1" max="130" value="-1" step="1">
+  <div class="viz-controls">
+    <button class="btn" type="button" data-day="-1">Before new stay</button>
+    <button class="btn" type="button" data-day="105">First day over</button>
+    <button class="btn" type="button" data-day="109">Spain exit</button>
+  </div>
+  <div id="window-summary" class="text-small" aria-live="polite"></div>
+  <span class="text-small text-muted">Illustrative dates · calculated with the SCHNGN engine</span>
+</div>
+<style>
+#schngn-window-study #window-chart { width:100%; margin-block:16px; }
+#schngn-window-study .window-svg { display:block; width:100%; }
+#schngn-window-study .window-svg text { fill:var(--foreground); font-size:12px; }
+#schngn-window-study .window-lens { fill:var(--viz-series-1); fill-opacity:0.1; }
+#schngn-window-study .window-edge { stroke:var(--foreground); stroke-width:1; }
+#schngn-window-study .trip-base { fill:var(--foreground); opacity:0.15; }
+#schngn-window-study .trip-counted { fill:var(--viz-series-1); }
+#schngn-window-study .what-if { fill:var(--orange); }
+#schngn-window-study #window-summary { margin-block:12px; }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('schngn-window-study');
+  const data = /*SCENARIO*/;
+  const slider = root.querySelector('#check-date');
+  const toggle = root.querySelector('#include-stay');
+  const chart = root.querySelector('#window-chart');
+  const fmt = iso => new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T00:00:00Z'));
+  function draw() {
+    const day = Number(slider.value), include = toggle.checked;
+    const frame = data.frames[include ? 1 : 0][day+1];
+    const width = Math.max(280, chart.clientWidth), left = width < 430 ? 80 : 108, right = width-12;
+    const x = d => left+(d+180)/311*(right-left);
+    root.querySelector('#date-label').textContent = fmt(frame.date);
+    slider.setAttribute('aria-valuetext',fmt(frame.date));
+    root.querySelector('#window-dates').textContent = fmt(frame.start)+' – '+fmt(frame.date);
+    root.querySelector('#count').textContent = frame.used+' / 90 days'+(frame.over ? ' · '+frame.over+' over' : ' · '+(90-frame.used)+' remaining on this date');
+    root.querySelector('#window-summary').textContent = include ? (day < 105 ? 'Whole plan: first exceeds 90 days on '+fmt(data.frames[1][106].date)+'.' : 'Whole plan: 5 days over at Spain exit.') : 'Whole plan: no over-limit day in this example.';
+    root.querySelector('[data-day="105"]').disabled = !include;
+    let svg = '<svg class="window-svg" viewBox="0 0 '+width+' 270" role="img" aria-label="Fixed trip dates with a moving 180-day window. '+frame.used+' counted days on '+fmt(frame.date)+'."><rect class="window-lens" x="'+x(day-179)+'" y="15" width="'+(x(day+1)-x(day-179))+'" height="218"/><line class="window-edge" x1="'+x(day+1)+'" x2="'+x(day+1)+'" y1="15" y2="233"/>';
+    data.trips.forEach((t,i) => {
+      const y=40+i*48, enabled=i!==2||include;
+      const a=Math.max(t.start,day-179), b=Math.min(t.end,day);
+      const count=enabled?Math.max(0,b-a+1):0;
+      svg += '<text x="0" y="'+y+'">'+t.label+'</text><text x="0" y="'+(y+17)+'">'+count+' / '+(t.end-t.start+1)+' days</text>';
+      svg += '<rect class="trip-base" x="'+x(t.start)+'" y="'+(y-7)+'" width="'+(x(t.end+1)-x(t.start))+'" height="13"/>';
+      if(count) svg += '<rect class="trip-counted '+(i===2?'what-if':'')+'" x="'+x(a)+'" y="'+(y-7)+'" width="'+(x(b+1)-x(a))+'" height="13"/>';
+    });
+    svg += '<line x1="'+left+'" x2="'+right+'" y1="237" y2="237" stroke="var(--border)"/><text x="'+left+'" y="258">Mar 2026</text><text x="'+x(0)+'" y="258" text-anchor="middle">Sep</text><text x="'+right+'" y="258" text-anchor="end">Jan 2027</text></svg>';
+    chart.innerHTML = svg;
+  }
+  slider.addEventListener('input',draw);
+  toggle.addEventListener('change',draw);
+  root.querySelectorAll('[data-day]').forEach(button=>button.addEventListener('click',()=>{slider.value=button.dataset.day;draw();}));
+  new ResizeObserver(draw).observe(chart);
+  draw();
+})();
+</script>

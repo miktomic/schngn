@@ -6,6 +6,8 @@ SCHNGN is a local-first Schengen 90/180-day tracker and planner. Anonymous use r
 
 ## Runtime model
 
+The canonical calculator timeline exposes a browser-local moving-window inspector through `TimelineLedger.svelte` and `MovingWindowTimeline.svelte`. `lib/timeline/movingWindow.ts` computes fixed bar geometry and delegates counted days to the production engine. Inspecting another date never writes trips or changes the dashboard verdict. A synthetic `MovingWindowExample.svelte` on `/explainer` uses the same component to compare plans with and without a what-if stay. The explorer limits its selectable dates to the day before the earlier of today or the saved checkpoint through the planned horizon; older stay dates remain visible as evidence, with their marks clipped to the displayed axis. The Explainer starts at today with the hypothetical stay excluded. Static editor previews and the reviewed scroll walkthrough retain their existing compact timeline.
+
 Diagram artifacts:
 
 - [`docs/app-architecture-diagram.md`](app-architecture-diagram.md) — Mermaid diagram plus explanation.
@@ -238,3 +240,9 @@ Implemented:
 - Unit, type, build, browser, privacy-network, and post-deploy smoke gates.
 
 The checked-in suite verifies the published 90/180-day rule semantics. It does not claim captured output parity with the European Commission calculator until provenance-backed official outputs are added. Optional accounts are the explicit DEC-10/US-22 scope expansion. Infisical is authoritative for development and production secrets. GitHub Actions retrieves the production set directly with short-lived OIDC credentials and stores no duplicate Actions secret or variable copies; external Infisical/Clerk/D1/Plausible/Cloudflare configuration is tracked in `docs/production-readiness.md`.
+
+Public content negotiation and skill discovery are described in
+`docs/agent-readiness.md`. The build-generated Worker wrapper serves allowlisted
+Markdown assets before the SvelteKit adapter; private routes remain unchanged.
+
+The moving-window view uses one shared chronological axis, optional country markers, a translucent 180-day band, and a large counted-day total below. Full per-trip dates and counts are available in a collapsed disclosure. The example separates the two historical trips visually while retaining its 25/26/95-day checkpoints.

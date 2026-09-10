@@ -116,6 +116,8 @@
     const hasSafeLocalDevSearch =
       url.search === '' ||
       url.search === '?import' ||
+      url.search === '?import&raw' ||
+      url.search === '?raw&import' ||
       /^\?v=[a-z0-9_-]+$/i.test(url.search) ||
       /^\?t=\d+$/.test(url.search) ||
       url.search === '?svelte&type=style&lang.css';
